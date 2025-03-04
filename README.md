@@ -1,6 +1,6 @@
 This is not an officially supported Google product. This project is not
 eligible for the [Google Open Source Software Vulnerability Rewards
-Program](https://bughunters.google.com/open-source-security), [Google Cloud Platform/SecOps Terms of Service](https://cloud.google.com/terms), [How Gemini for Google Cloud uses your data](https://cloud.google.com/gemini/docs/discover/data-governance)
+Program](https://bughunters.google.com/open-source-security), [Google Cloud Platform/SecOps Terms of Service](https://cloud.google.com/terms), [How Gemini for Google Cloud uses your data](https://cloud.google.com/gemini/docs/discover/data-governance). This tool is provided "as is" without warranty of any kind. Users are solely responsible for understanding and managing the tool's interaction with their databases. Use of this tool constitutes acceptance of all risks associated with database access, reading, usage, and modifications.
 
 # DB Schema Enricher
 

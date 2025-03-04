@@ -1,3 +1,7 @@
+This is not an officially supported Google product. This project is not
+eligible for the [Google Open Source Software Vulnerability Rewards
+Program](https://bughunters.google.com/open-source-security).
+
 # DB Schema Enricher
 
 A command-line tool to enrich your database schema with metadata (primarily column comments) and easily manage those comments.  It's designed to help you document your database schema directly within the database itself, making it easier to understand and maintain.  It supports multiple database dialects, including PostgreSQL, MySQL, and SQL Server, with specific support for Google Cloud SQL.

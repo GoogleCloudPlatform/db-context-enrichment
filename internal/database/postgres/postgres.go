@@ -184,7 +184,7 @@ func (h postgresHandler) GetColumnMetadata(db *database.DB, tableName string, co
 	quotedColumn := h.QuoteIdentifier(columnName)
 
 	// Get distinct count
-	distinctQuery := fmt.Sprintf("SELECT COUNT(DISTINCT %s) FROM %s", quotedColumn, quotedTable)
+	distinctQuery := fmt.Sprintf("SELECT COUNT(DISTINCT %s::text) FROM %s", quotedColumn, quotedTable)
 	var distinctCount int
 	err := db.QueryRow(distinctQuery).Scan(&distinctCount)
 	if err != nil {
@@ -200,7 +200,7 @@ func (h postgresHandler) GetColumnMetadata(db *database.DB, tableName string, co
 	}
 
 	// Get example values (top 3)
-	exampleQuery := fmt.Sprintf("SELECT %s FROM %s WHERE %s IS NOT NULL LIMIT 3",
+	exampleQuery := fmt.Sprintf("SELECT DISTINCT %s::text FROM %s WHERE %s IS NOT NULL LIMIT 3",
 		quotedColumn, quotedTable, quotedColumn)
 	rows, err := db.Query(exampleQuery)
 	if err != nil {
@@ -224,47 +224,6 @@ func (h postgresHandler) GetColumnMetadata(db *database.DB, tableName string, co
 	}, nil
 }
 
-// GetForeignKeys for PostgreSQL (implements MetadataCollector).
-func (h postgresHandler) GetForeignKeys(db *database.DB, tableName string, columnName string) ([]database.ForeignKeyInfo, error) {
-	// Query to detect foreign keys from constraint metadata (PostgreSQL specific)
-	query := `
-        SELECT
-            ccu.table_name as ref_table,
-            ccu.column_name as ref_column
-        FROM information_schema.table_constraints tc
-        JOIN information_schema.key_column_usage kcu
-            ON tc.constraint_name = kcu.constraint_name
-            AND tc.table_schema = kcu.table_schema
-        JOIN information_schema.constraint_column_usage ccu
-            ON ccu.constraint_name = tc.constraint_name
-            AND ccu.table_schema = tc.table_schema
-        WHERE tc.constraint_type = 'FOREIGN KEY'
-            AND kcu.table_name = $1
-            AND kcu.column_name = $2
-            AND tc.table_schema = current_schema()`
-
-	rows, err := db.Query(query, tableName, columnName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute foreign key detection query: %w", err)
-	}
-	defer rows.Close()
-
-	var fks []database.ForeignKeyInfo
-	for rows.Next() {
-		var fk database.ForeignKeyInfo
-		if err := rows.Scan(&fk.RefTable, &fk.RefColumn); err != nil {
-			return nil, fmt.Errorf("failed to scan foreign key info: %w", err)
-		}
-		fks = append(fks, fk)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating foreign key rows: %w", err)
-	}
-
-	return fks, nil
-}
-
 // formatExampleValues formats a slice of example values for SQL comment in PostgreSQL
 func (h postgresHandler) formatExampleValues(values []string) string {
 	if len(values) == 0 {
@@ -273,12 +232,12 @@ func (h postgresHandler) formatExampleValues(values []string) string {
 	// Quote each value and join with comma
 	quoted := make([]string, len(values))
 	for i, v := range values {
-		quoted[i] = pq.QuoteLiteral(v)
+		quoted[i] = "\"" + v + "\""
 	}
 	return fmt.Sprintf("[%s]", strings.Join(quoted, ", "))
 }
 
-func (h postgresHandler) generateMetadataComment(data *database.CommentData, updateExistingMode string) string {
+func (h postgresHandler) generateMetadataComment(data *database.CommentData, enrichments map[string]bool) string {
 	if data == nil {
 		return ""
 	}
@@ -286,25 +245,50 @@ func (h postgresHandler) generateMetadataComment(data *database.CommentData, upd
 		return ""
 	}
 
-	commentText := fmt.Sprintf(
-		"Examples: %s | Distinct Values: %d | Null Count: %d",
-		h.formatExampleValues(data.ExampleValues),
-		data.DistinctCount,
-		data.NullCount,
-	)
+	var commentParts []string
 
-	if len(data.ForeignKeys) > 0 {
-		fkStrings := make([]string, len(data.ForeignKeys))
-		for i, fk := range data.ForeignKeys {
-			fkStrings[i] = fmt.Sprintf("%s.%s",
-				h.QuoteIdentifier(fk.RefTable),
-				h.QuoteIdentifier(fk.RefColumn),
-			)
+	// Helper function to check if enrichment is requested
+	isEnrichmentRequested := func(enrichment string) bool {
+		if len(enrichments) == 0 {
+			return true // If no enrichments specified, include all
 		}
-		commentText += fmt.Sprintf(" | Foreign Keys: [%s]", strings.Join(fkStrings, ", "))
+		return enrichments[enrichment]
 	}
 
-	return commentText
+	if isEnrichmentRequested("description") && data.Description != "" {
+		commentParts = append(commentParts, fmt.Sprintf("*Important Note*: %s", data.Description))
+	}
+
+	if isEnrichmentRequested("examples") && len(data.ExampleValues) > 0 {
+		commentParts = append(commentParts, fmt.Sprintf("Example Values: %s", h.formatExampleValues(data.ExampleValues)))
+	}
+	if isEnrichmentRequested("distinct_values") {
+		commentParts = append(commentParts, fmt.Sprintf("Count Distinct Values: %d", data.DistinctCount))
+	}
+	if isEnrichmentRequested("null_count") {
+		commentParts = append(commentParts, fmt.Sprintf("Count Null: %d", data.NullCount))
+	}
+
+	return strings.Join(commentParts, " | ")
+}
+
+func (h postgresHandler) generateTableMetadataComment(data *database.TableCommentData, enrichments map[string]bool) string {
+	if data == nil || data.TableName == "" {
+		return ""
+	}
+
+	var commentParts []string
+	isEnrichmentRequested := func(enrichment string) bool {
+		if len(enrichments) == 0 {
+			return true
+		}
+		return enrichments[enrichment]
+	}
+
+	if isEnrichmentRequested("description") && data.Description != "" {
+		commentParts = append(commentParts, fmt.Sprintf("*Important Note*: %s", data.Description))
+	}
+	return strings.Join(commentParts, " | ")
 }
 
 func (h postgresHandler) mergeComments(existingComment string, newMetadataComment string, updateExistingMode string) string {
@@ -313,29 +297,37 @@ func (h postgresHandler) mergeComments(existingComment string, newMetadataCommen
 	startIndex := strings.Index(existingComment, startTag)
 	endIndex := strings.LastIndex(existingComment, endTag)
 
+	comment := ""
+
 	if startIndex == -1 || endIndex == -1 || endIndex <= startIndex {
 		// No Gemini tag found, append new comment with tags
 		if existingComment != "" {
-			return existingComment + " " + startTag + newMetadataComment + endTag
+			comment = existingComment + " " + startTag + newMetadataComment + endTag
 		} else {
-			return startTag + newMetadataComment + endTag // Just add new comment with tags
+			comment = startTag + newMetadataComment + endTag // Just add new comment with tags
 		}
 	} else if updateExistingMode == "append" {
 		currentGeminiComment := existingComment[startIndex+len(startTag) : endIndex]
 		if currentGeminiComment != "" {
-			return existingComment[:endIndex] + " " + newMetadataComment + endTag + existingComment[endIndex+len(endTag):] // Append to existing gemini comment
+			comment = existingComment[:endIndex] + " " + newMetadataComment + endTag + existingComment[endIndex+len(endTag):] // Append to existing gemini comment
 		}
 	} else {
 		// Gemini tag found, replace content inside tags
 		prefix := existingComment[:startIndex]
 		suffix := existingComment[endIndex+len(endTag):]
-		return prefix + startTag + newMetadataComment + endTag + suffix
+		comment = prefix + startTag + newMetadataComment + endTag + suffix
 	}
-	return existingComment
+	if comment == "" {
+		comment = existingComment
+	}
+	if comment == "<gemini></gemini>" {
+		comment = ""
+	}
+	return comment
 }
 
 // GenerateCommentSQL creates SQL statements for column comments in PostgreSQL
-func (h postgresHandler) GenerateCommentSQL(db *database.DB, data *database.CommentData) (string, error) {
+func (h postgresHandler) GenerateCommentSQL(db *database.DB, data *database.CommentData, enrichments map[string]bool) (string, error) {
 	if data == nil {
 		return "", fmt.Errorf("comment data cannot be nil")
 	}
@@ -343,16 +335,20 @@ func (h postgresHandler) GenerateCommentSQL(db *database.DB, data *database.Comm
 		return "", fmt.Errorf("table and column names cannot be empty")
 	}
 
-	config := database.GetConfig()                                                   // Retrieve global config to access updateExistingMode
-	newMetadataComment := h.generateMetadataComment(data, config.UpdateExistingMode) // Pass updateExistingMode
+	config := database.GetConfig() // Retrieve global config
+
+	// Pass the enrichments map to generateMetadataComment
+	newMetadataComment := h.generateMetadataComment(data, enrichments)
 	existingComment, err := h.GetColumnComment(context.Background(), db, data.TableName, data.ColumnName)
 	if err != nil {
 		return "", err
 	}
-	finalComment := h.mergeComments(existingComment, newMetadataComment, config.UpdateExistingMode) // Pass updateExistingMode
-	// Escape single quotes in comment for SQL
-	escapedComment := strings.ReplaceAll(finalComment, "'", "''")
-	quotedComment := pq.QuoteLiteral(escapedComment)
+	finalComment := h.mergeComments(existingComment, newMetadataComment, config.UpdateExistingMode)
+	quotedComment := pq.QuoteLiteral(finalComment)
+
+	if finalComment == "" {
+		return "", nil
+	}
 
 	return fmt.Sprintf(
 		"COMMENT ON COLUMN %s.%s IS %s;",
@@ -424,6 +420,87 @@ func (h postgresHandler) GetColumnComment(ctx context.Context, db *database.DB, 
 	}
 
 	return "", nil // Comment is NULL in DB, return empty string
+}
+
+// GenerateTableCommentSQL generates the SQL to comment on a table.
+func (h postgresHandler) GenerateTableCommentSQL(db *database.DB, data *database.TableCommentData, enrichments map[string]bool) (string, error) {
+	if data == nil || data.TableName == "" {
+		return "", fmt.Errorf("table comment data cannot be nil or empty")
+	}
+
+	config := database.GetConfig()
+
+	newMetadataComment := h.generateTableMetadataComment(data, enrichments)
+	existingComment, err := h.GetTableComment(context.Background(), db, data.TableName)
+	if err != nil {
+		return "", err
+	}
+	finalComment := h.mergeComments(existingComment, newMetadataComment, config.UpdateExistingMode)
+	quotedComment := pq.QuoteLiteral(finalComment)
+
+	if finalComment == "" {
+		return "", nil
+	}
+
+	return fmt.Sprintf(
+		"COMMENT ON TABLE %s IS %s;",
+		h.QuoteIdentifier(data.TableName),
+		quotedComment,
+	), nil
+}
+
+// GetTableComment retrieves the existing comment for a table.
+func (h postgresHandler) GetTableComment(ctx context.Context, db *database.DB, tableName string) (string, error) {
+	query := `
+        SELECT pg_catalog.obj_description(c.oid, 'pg_class')
+        FROM pg_catalog.pg_class c
+        JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid
+        WHERE n.nspname = 'public'
+          AND c.relname = $1;
+    `
+
+	var comment sql.NullString
+	err := db.QueryRowContext(ctx, query, tableName).Scan(&comment)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil // No comment, return empty string.
+		}
+		return "", fmt.Errorf("failed to retrieve table comment: %w", err)
+	}
+
+	if comment.Valid {
+		return comment.String, nil
+	}
+	return "", nil // Comment is NULL.
+}
+
+// GenerateDeleteTableCommentSQL generates SQL to remove the Gemini-generated part of a table comment.
+func (h postgresHandler) GenerateDeleteTableCommentSQL(ctx context.Context, db *database.DB, tableName string) (string, error) {
+	if tableName == "" {
+		return "", fmt.Errorf("table name cannot be empty")
+	}
+
+	existingComment, err := h.GetTableComment(ctx, db, tableName)
+	if err != nil {
+		return "", err
+	}
+
+	startTag := "<gemini>"
+	endTag := "</gemini>"
+	startIndex := strings.Index(existingComment, startTag)
+	endIndex := strings.LastIndex(existingComment, endTag)
+
+	var finalComment string
+	if startIndex != -1 && endIndex != -1 && endIndex > startIndex {
+		prefix := existingComment[:startIndex]
+		suffix := existingComment[endIndex+len(endTag):]
+		finalComment = strings.TrimSpace(prefix + suffix)
+	} else {
+		finalComment = existingComment // No gemini tags, keep original.
+	}
+
+	quotedComment := pq.QuoteLiteral(finalComment)
+	return fmt.Sprintf("COMMENT ON TABLE %s IS %s;", h.QuoteIdentifier(tableName), quotedComment), nil
 }
 
 func init() {

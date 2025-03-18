@@ -15,17 +15,26 @@
  */
 package enricher
 
-import (
-	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/database"
-)
-
 // ColumnMetadata represents enrichment data for a column
 type ColumnMetadata struct {
-	Table         string                    // Table name
-	Column        string                    // Column name
-	DataType      string                    // Column datatype
-	ExampleValues []string                  // Sample of distinct values
-	DistinctCount int64                     // Total number of distinct values
-	NullCount     int64                     // Number of NULL values
-	ForeignKeys   []database.ForeignKeyInfo // Foreign key relationships
+	Table         string   // Table name
+	Column        string   // Column name
+	DataType      string   // Column datatype
+	ExampleValues []string // Sample of distinct values
+	DistinctCount int64    // Total number of distinct values
+	NullCount     int64    // Number of NULL values
+	Description   string   // Description of the column
+}
+
+// TableMetadata represents enrichment data for a table
+type TableMetadata struct {
+	Table       string
+	Description string
+}
+
+type OrderedSQL struct {
+	SQL            string
+	Table          string
+	Column         string
+	IsTableComment bool
 }

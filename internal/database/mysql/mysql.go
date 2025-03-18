@@ -207,44 +207,6 @@ func (h mysqlHandler) GetColumnMetadata(db *database.DB, tableName string, colum
 	}, nil
 }
 
-// GetForeignKeys for MySQL
-func (h mysqlHandler) GetForeignKeys(db *database.DB, tableName string, columnName string) ([]database.ForeignKeyInfo, error) {
-	query := `
-		SELECT
-			kcu.REFERENCED_TABLE_NAME AS ref_table,
-			kcu.REFERENCED_COLUMN_NAME AS ref_column
-		FROM
-			information_schema.KEY_COLUMN_USAGE kcu
-		JOIN
-			information_schema.TABLE_CONSTRAINTS tc ON kcu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
-		WHERE
-			tc.CONSTRAINT_TYPE = 'FOREIGN KEY'
-			AND kcu.TABLE_NAME = ?
-			AND kcu.COLUMN_NAME = ?
-			AND kcu.TABLE_SCHEMA = DATABASE()`
-
-	rows, err := db.Query(query, tableName, columnName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute foreign key detection query: %w", err)
-	}
-	defer rows.Close()
-
-	var fks []database.ForeignKeyInfo
-	for rows.Next() {
-		var fk database.ForeignKeyInfo
-		if err := rows.Scan(&fk.RefTable, &fk.RefColumn); err != nil {
-			return nil, fmt.Errorf("failed to scan foreign key info: %w", err)
-		}
-		fks = append(fks, fk)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating foreign key rows: %w", err)
-	}
-
-	return fks, nil
-}
-
 // formatExampleValues formats a slice of example values for SQL comment in MySQL
 func (h mysqlHandler) formatExampleValues(values []string) string {
 	if len(values) == 0 {
@@ -252,12 +214,12 @@ func (h mysqlHandler) formatExampleValues(values []string) string {
 	}
 	quoted := make([]string, len(values))
 	for i, v := range values {
-		quoted[i] = pq.QuoteLiteral(v)
+		quoted[i] = v
 	}
 	return fmt.Sprintf("[%s]", strings.Join(quoted, ", "))
 }
 
-func (h mysqlHandler) generateMetadataComment(data *database.CommentData, updateExistingMode string) string {
+func (h mysqlHandler) generateMetadataComment(data *database.CommentData, enrichments map[string]bool) string {
 	if data == nil {
 		return ""
 	}
@@ -265,25 +227,50 @@ func (h mysqlHandler) generateMetadataComment(data *database.CommentData, update
 		return ""
 	}
 
-	commentText := fmt.Sprintf(
-		"Examples: %s | Distinct Values: %d | Null Count: %d",
-		h.formatExampleValues(data.ExampleValues),
-		data.DistinctCount,
-		data.NullCount,
-	)
+	var commentParts []string
 
-	if len(data.ForeignKeys) > 0 {
-		fkStrings := make([]string, len(data.ForeignKeys))
-		for i, fk := range data.ForeignKeys {
-			fkStrings[i] = fmt.Sprintf("%s.%s",
-				h.QuoteIdentifier(fk.RefTable),
-				h.QuoteIdentifier(fk.RefColumn),
-			)
+	// Helper function to check if enrichment is requested
+	isEnrichmentRequested := func(enrichment string) bool {
+		if len(enrichments) == 0 {
+			return true // If no enrichments specified, include all
 		}
-		commentText += fmt.Sprintf(" | Foreign Keys: [%s]", strings.Join(fkStrings, ", "))
+		return enrichments[enrichment]
 	}
 
-	return commentText
+	if isEnrichmentRequested("description") && data.Description != "" {
+		commentParts = append(commentParts, fmt.Sprintf("Description: %s", data.Description))
+	}
+
+	if isEnrichmentRequested("examples") && len(data.ExampleValues) > 0 {
+		commentParts = append(commentParts, fmt.Sprintf("Examples: %s", h.formatExampleValues(data.ExampleValues)))
+	}
+	if isEnrichmentRequested("distinct_values") {
+		commentParts = append(commentParts, fmt.Sprintf("Distinct Values: %d", data.DistinctCount))
+	}
+	if isEnrichmentRequested("null_count") {
+		commentParts = append(commentParts, fmt.Sprintf("Null Count: %d", data.NullCount))
+	}
+
+	return strings.Join(commentParts, " | ")
+}
+
+func (h mysqlHandler) generateTableMetadataComment(data *database.TableCommentData, enrichments map[string]bool) string {
+	if data == nil || data.TableName == "" {
+		return ""
+	}
+
+	var commentParts []string
+	isEnrichmentRequested := func(enrichment string) bool {
+		if len(enrichments) == 0 {
+			return true // If no enrichments specified, include all
+		}
+		return enrichments[enrichment]
+	}
+
+	if isEnrichmentRequested("description") && data.Description != "" {
+		commentParts = append(commentParts, fmt.Sprintf("Description: %s", data.Description))
+	}
+	return strings.Join(commentParts, " | ")
 }
 
 func (h mysqlHandler) mergeComments(existingComment string, newMetadataComment string, updateExistingMode string) string {
@@ -292,30 +279,38 @@ func (h mysqlHandler) mergeComments(existingComment string, newMetadataComment s
 	startIndex := strings.Index(existingComment, startTag)
 	endIndex := strings.LastIndex(existingComment, endTag)
 
+	comment := ""
+
 	if startIndex == -1 || endIndex == -1 || endIndex <= startIndex {
 		// No Gemini tag found, append new comment with tags
 		if existingComment != "" {
-			return existingComment + " " + startTag + newMetadataComment + endTag
+			comment = existingComment + " " + startTag + newMetadataComment + endTag
 		} else {
-			return startTag + newMetadataComment + endTag // Just add new comment with tags
+			comment = startTag + newMetadataComment + endTag // Just add new comment with tags
 		}
 	} else if updateExistingMode == "append" {
 		currentGeminiComment := existingComment[startIndex+len(startTag) : endIndex]
 		if currentGeminiComment != "" {
-			return existingComment[:endIndex] + " " + newMetadataComment + endTag + existingComment[endIndex+len(endTag):] // Append to existing gemini comment
+			comment = existingComment[:endIndex] + " " + newMetadataComment + endTag + existingComment[endIndex+len(endTag):] // Append to existing gemini comment
 		}
 
 	} else {
 		// Gemini tag found, replace content inside tags
 		prefix := existingComment[:startIndex]
 		suffix := existingComment[endIndex+len(endTag):]
-		return prefix + startTag + newMetadataComment + endTag + suffix
+		comment = prefix + startTag + newMetadataComment + endTag + suffix
 	}
-	return existingComment
+	if comment == "" {
+		comment = existingComment
+	}
+	if comment == "<gemini></gemini>" {
+		comment = ""
+	}
+	return comment
 }
 
 // GenerateCommentSQL creates SQL statements for column comments in MySQL
-func (h mysqlHandler) GenerateCommentSQL(db *database.DB, data *database.CommentData) (string, error) {
+func (h mysqlHandler) GenerateCommentSQL(db *database.DB, data *database.CommentData, enrichments map[string]bool) (string, error) {
 	if data == nil {
 		return "", fmt.Errorf("metadata cannot be nil")
 	}
@@ -326,8 +321,8 @@ func (h mysqlHandler) GenerateCommentSQL(db *database.DB, data *database.Comment
 		return "", fmt.Errorf("column datatype cannot be empty for MySQL comment generation")
 	}
 
-	config := database.GetConfig()                                                                        // Retrieve global config to access updateExistingMode
-	newMetadataComment := h.generateMetadataComment(data, config.UpdateExistingMode)                      // Pass updateExistingMode
+	config := database.GetConfig() // Retrieve global config
+	newMetadataComment := h.generateMetadataComment(data, enrichments)
 	existingComment, err := h.GetColumnComment(context.Background(), db, data.TableName, data.ColumnName) // Get existing comment
 	if err != nil {
 		return "", err
@@ -336,6 +331,10 @@ func (h mysqlHandler) GenerateCommentSQL(db *database.DB, data *database.Comment
 	quotedComment, err := quotedCommentSQL(finalComment)
 	if err != nil {
 		return "", err
+	}
+
+	if finalComment == "" {
+		return "", nil
 	}
 
 	return fmt.Sprintf(
@@ -389,8 +388,7 @@ func (h mysqlHandler) GenerateDeleteCommentSQL(ctx context.Context, db *database
 }
 
 func quotedCommentSQL(comment string) (string, error) {
-	escapedComment := strings.ReplaceAll(comment, "'", "''")
-	quotedComment := pq.QuoteLiteral(escapedComment) // Use pq.QuoteLiteral for proper quoting
+	quotedComment := pq.QuoteLiteral(comment) // Use pq.QuoteLiteral for proper quoting
 	return quotedComment, nil
 }
 
@@ -437,6 +435,93 @@ func getColumnDataType(ctx context.Context, db *database.DB, tableName string, c
 	}
 	return columnType
 }
+
+// GenerateTableCommentSQL generates the SQL to comment on a table.
+func (h mysqlHandler) GenerateTableCommentSQL(db *database.DB, data *database.TableCommentData, enrichments map[string]bool) (string, error) {
+	if data == nil || data.TableName == "" {
+		return "", fmt.Errorf("table comment data cannot be nil or empty")
+	}
+
+	config := database.GetConfig()
+
+	newMetadataComment := h.generateTableMetadataComment(data, enrichments)
+	existingComment, err := h.GetTableComment(context.Background(), db, data.TableName)
+	if err != nil {
+		return "", err
+	}
+	finalComment := h.mergeComments(existingComment, newMetadataComment, config.UpdateExistingMode)
+	quotedComment, err := quotedCommentSQL(finalComment)
+	if err != nil {
+		return "", err
+	}
+
+	if finalComment == "" {
+		return "", nil
+	}
+
+	return fmt.Sprintf(
+		"ALTER TABLE %s COMMENT = %s;",
+		h.QuoteIdentifier(data.TableName),
+		quotedComment,
+	), nil
+}
+
+// GetTableComment retrieves the existing comment for a table.
+func (h mysqlHandler) GetTableComment(ctx context.Context, db *database.DB, tableName string) (string, error) {
+	query := `
+        SELECT table_comment
+        FROM information_schema.tables
+        WHERE table_name = ?
+          AND table_schema = DATABASE();
+    `
+
+	var comment sql.NullString
+	err := db.QueryRowContext(ctx, query, tableName).Scan(&comment)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil // No comment, return empty string.
+		}
+		return "", fmt.Errorf("failed to retrieve table comment: %w", err)
+	}
+
+	if comment.Valid {
+		return comment.String, nil
+	}
+	return "", nil // Comment is NULL.
+}
+
+// GenerateDeleteTableCommentSQL generates SQL to remove the Gemini-generated part of a table comment.
+func (h mysqlHandler) GenerateDeleteTableCommentSQL(ctx context.Context, db *database.DB, tableName string) (string, error) {
+	if tableName == "" {
+		return "", fmt.Errorf("table name cannot be empty")
+	}
+
+	existingComment, err := h.GetTableComment(ctx, db, tableName)
+	if err != nil {
+		return "", err
+	}
+
+	startTag := "<gemini>"
+	endTag := "</gemini>"
+	startIndex := strings.Index(existingComment, startTag)
+	endIndex := strings.LastIndex(existingComment, endTag)
+
+	var finalComment string
+	if startIndex != -1 && endIndex != -1 && endIndex > startIndex {
+		prefix := existingComment[:startIndex]
+		suffix := existingComment[endIndex+len(endTag):]
+		finalComment = strings.TrimSpace(prefix + suffix)
+	} else {
+		finalComment = existingComment // No gemini tags, keep original.
+	}
+
+	quotedComment, err := quotedCommentSQL(finalComment)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("ALTER TABLE %s COMMENT = %s;", h.QuoteIdentifier(tableName), quotedComment), nil
+}
+
 func init() {
 	database.RegisterDialectHandler("mysql", mysqlHandler{})
 	database.RegisterDialectHandler("cloudsqlmysql", mysqlHandler{})

@@ -54,7 +54,13 @@ type CommentData struct {
 	ExampleValues  []string
 	DistinctCount  int64
 	NullCount      int64
-	ForeignKeys    []ForeignKeyInfo
+	Description    string
+}
+
+// TableCommentData holds data for table comments.
+type TableCommentData struct {
+	TableName   string
+	Description string
 }
 
 // DialectHandler interface
@@ -65,10 +71,14 @@ type DialectHandler interface {
 	ListTables(db *DB) ([]string, error)
 	ListColumns(db *DB, tableName string) ([]ColumnInfo, error)
 	GetColumnMetadata(db *DB, tableName string, columnName string) (map[string]interface{}, error)
-	GetForeignKeys(db *DB, tableName string, columnName string) ([]ForeignKeyInfo, error)
-	GenerateCommentSQL(db *DB, data *CommentData) (string, error)
+	GenerateCommentSQL(db *DB, data *CommentData, enrichments map[string]bool) (string, error)
 	GetColumnComment(ctx context.Context, db *DB, tableName string, columnName string) (string, error)
 	GenerateDeleteCommentSQL(ctx context.Context, db *DB, tableName string, columnName string) (string, error)
+
+	// Added these methods for table-level comments
+	GenerateTableCommentSQL(db *DB, data *TableCommentData, enrichments map[string]bool) (string, error)
+	GetTableComment(ctx context.Context, db *DB, tableName string) (string, error)
+	GenerateDeleteTableCommentSQL(ctx context.Context, db *DB, tableName string) (string, error)
 }
 
 var (
@@ -160,14 +170,9 @@ func (db *DB) GetColumnMetadata(tableName string, columnName string) (map[string
 	return db.DialectHandler.GetColumnMetadata(db, tableName, columnName)
 }
 
-// GetForeignKeys collects foreign key metadata for a specific column
-func (db *DB) GetForeignKeys(tableName string, columnName string) ([]ForeignKeyInfo, error) {
-	return db.DialectHandler.GetForeignKeys(db, tableName, columnName)
-}
-
 // GenerateCommentSQL generates the SQL query to add comment to a column
-func (db *DB) GenerateCommentSQL(data *CommentData) (string, error) {
-	return db.DialectHandler.GenerateCommentSQL(db, data)
+func (db *DB) GenerateCommentSQL(data *CommentData, enrichments map[string]bool) (string, error) {
+	return db.DialectHandler.GenerateCommentSQL(db, data, enrichments)
 }
 
 // Close closes the database connection
@@ -183,6 +188,21 @@ func (db *DB) GetColumnComment(ctx context.Context, tableName string, columnName
 // GenerateDeleteCommentSQL generates the SQL query to delete gemini comment from a column
 func (db *DB) GenerateDeleteCommentSQL(ctx context.Context, tableName string, columnName string) (string, error) {
 	return db.DialectHandler.GenerateDeleteCommentSQL(ctx, db, tableName, columnName)
+}
+
+// GenerateTableCommentSQL generates the SQL query to add a comment to a table.
+func (db *DB) GenerateTableCommentSQL(data *TableCommentData, enrichments map[string]bool) (string, error) {
+	return db.DialectHandler.GenerateTableCommentSQL(db, data, enrichments)
+}
+
+// GetTableComment retrieves the comment for a specific table.
+func (db *DB) GetTableComment(ctx context.Context, tableName string) (string, error) {
+	return db.DialectHandler.GetTableComment(ctx, db, tableName)
+}
+
+// GenerateDeleteTableCommentSQL generates the SQL query to delete a gemini comment from a table.
+func (db *DB) GenerateDeleteTableCommentSQL(ctx context.Context, tableName string) (string, error) {
+	return db.DialectHandler.GenerateDeleteTableCommentSQL(ctx, db, tableName)
 }
 
 // ExecuteSQLStatements executes a batch of SQL statements from a string slice

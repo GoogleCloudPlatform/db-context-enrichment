@@ -1,24 +1,10 @@
-/*
- * Copyright 2025 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package cmd
 
 import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/database"
 	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/enricher"
@@ -27,92 +13,82 @@ import (
 )
 
 var deleteCommentsCmd = &cobra.Command{
-	Use:     "delete-comments",
-	Short:   "Delete comments added by gemini from database columns",
-	Long:    `Deletes the portion of column comments that are within the <gemini> tags, leaving other parts of the comment untouched.`,
-	Example: `./db_schema_enricher delete-comments --dialect cloudsqlpostgres --username user --password pass --database mydb --cloudsql-instance-connection-name my-project:my-region:my-instance --dry-run --tables "table1[column1,column3],table2,table4[columnx,columnz]"`,
+	Use:   "delete-comments",
+	Short: "Generate SQL to remove comments previously added by this tool",
+	Long: `Generates SQL statements to remove comments containing the specific <gemini> tags added by the 'add-comments' command.
+Outputs the SQL to a file. If --dry-run=false, prompts for application.`,
+	Example: `./db_schema_enricher delete-comments --dialect cloudsqlsqlserver --username user --password pass --database sales_db --cloudsql-instance-connection-name proj:reg:inst --out_file ./delete_sales_comments.sql --tables "orders,customers[email]"`,
 	RunE:    runDeleteComments,
 }
 
 func runDeleteComments(cmd *cobra.Command, args []string) error {
-	dbConfig := database.GetConfig()
-	if dbConfig == nil {
-		return fmt.Errorf("database config is not initialized")
-	}
-
-	if err := validateDialect(dialect); err != nil {
-		return err
-	}
-
-	outputFile := cmd.Flag("out_file").Value.String()
-	if outputFile == "" {
-		outputFile = utils.GetDefaultOutputFilePath(dbConfig.DBName, "delete-comments")
-	}
-
-	log.Println("INFO: Starting delete-comments operation", "dialect:", dbConfig.Dialect, "database:", dbConfig.DBName)
-
-	db, err := setupDatabase()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	metadataCollector := enricher.NewMetadataCollector(db, &enricher.DefaultRetryOptions, dryRun, geminiAPIKey, "", "")
-
+	cfg := getAppConfig()
 	ctx := cmd.Context()
 
-	tablesFlag := cmd.Flag("tables").Value.String()
-	tableFilters, err := utils.ParseTablesFlag(tablesFlag)
+	outputFile := cfg.OutputFile
+	if outputFile == "" {
+		outputFile = cfg.GetDefaultOutputFile("delete-comments")
+	}
+
+	log.Println("INFO: Starting delete-comments operation", "dialect:", cfg.Database.Dialect, "database:", cfg.Database.DBName, "dry-run:", cfg.DryRun)
+
+	dbAdapter, err := database.New(cfg.Database)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to initialize database connection: %w", err)
 	}
-	metadataCollector.TableFilters = tableFilters
+	defer dbAdapter.Close()
+	log.Println("INFO: Database connection established successfully.")
 
-	sqlStatements, err := metadataCollector.GenerateDeleteCommentSQLs(ctx)
+	enricherCfg := enricher.Config{}
+	svc := enricher.NewService(dbAdapter, nil, enricherCfg)
+
+	tableFilters, err := utils.ParseTablesFlag(cfg.TablesRaw)
 	if err != nil {
-		return fmt.Errorf("metadata collection and SQL generation for delete comments failed: %w", err)
+		return fmt.Errorf("error parsing --tables flag: %w", err)
 	}
 
-	file, createErr := os.Create(outputFile)
-	if createErr != nil {
-		return fmt.Errorf("failed to create output file: %w", createErr)
+	deleteParams := enricher.GenerateDeleteSQLParams{
+		TableFilters: tableFilters,
 	}
-	defer file.Close()
-
-	for _, sqlStmt := range sqlStatements {
-		if _, writeErr := file.WriteString(sqlStmt + "\n"); writeErr != nil {
-			return fmt.Errorf("failed to write SQL statement to file: %w", writeErr)
-		}
+	sqlStatements, err := svc.GenerateDeleteCommentSQLs(ctx, deleteParams)
+	if err != nil {
+		return fmt.Errorf("failed to generate SQL for comment deletion: %w", err)
 	}
-	log.Println("INFO: SQL statements to delete column comments have been written to:", outputFile)
 
-	if dryRun {
-		log.Println("INFO: No comments were actually deleted in dry-run mode. Run apply-comments to delete comments.")
+	if len(sqlStatements) == 0 {
+		log.Println("INFO: No SQL statements generated for deletion. This might be due to filters or no tagged comments found matching the criteria.")
 		return nil
 	}
 
-	if len(sqlStatements) > 0 {
-		if utils.ConfirmAction("SQL statements to delete column comments") {
-			if execErr := db.ExecuteSQLStatements(ctx, sqlStatements); execErr != nil {
-				return fmt.Errorf("failed to execute SQL statements to delete comments: %w", execErr)
-			}
-			log.Println("INFO: Successfully deleted gemini comments from the database.")
-		} else {
-			log.Println("INFO: Comment deletion aborted by user.")
-		}
-	} else {
-		log.Println("INFO: No gemini comments found to delete.")
+	fileContent := strings.Join(sqlStatements, "\n") + "\n"
+	writeErr := os.WriteFile(outputFile, []byte(fileContent), 0644)
+	if writeErr != nil {
+		return fmt.Errorf("failed to write output file '%s': %w", outputFile, writeErr)
+	}
+	log.Println("INFO: SQL statements successfully written to:", outputFile)
+
+	if cfg.DryRun {
+		log.Println("INFO: Delete comments operation completed in dry-run mode. Review the generated SQL file:", outputFile)
+		return nil
 	}
 
-	log.Println("INFO: Delete comments operation completed, dry_run:", dryRun)
+	// Dry run is false
+	if utils.ConfirmAction(fmt.Sprintf("apply %d generated SQL statements for comment DELETION from '%s'", len(sqlStatements), outputFile)) {
+		log.Println("INFO: Applying SQL statements to the database...")
+
+		if execErr := dbAdapter.ExecuteSQLStatements(ctx, sqlStatements); execErr != nil {
+			return fmt.Errorf("failed to execute SQL statements for comment deletion from '%s': %w. Review the file and database logs", outputFile, execErr)
+		}
+		log.Printf("INFO: Successfully applied %d SQL statements for comment deletion.", len(sqlStatements))
+	} else {
+		log.Println("INFO: Comment deletion aborted by user. Generated SQL statements remain in:", outputFile)
+	}
+
+	log.Println("INFO: Delete comments operation completed.")
 	return nil
 }
 
 func init() {
-	var outputFile string
-	var tables string
-
-	// Flags for delete-comments command
-	deleteCommentsCmd.Flags().StringVarP(&outputFile, "out_file", "o", "", "File path to output generated SQL statements (defaults to <database>_comments.sql)")
-	deleteCommentsCmd.Flags().StringVar(&tables, "tables", "", "Comma-separated list of tables and columns to include for comment deletion (e.g., 'table1[col1,col2],table2,table3[col4]')")
+	deleteCommentsCmd.Flags().StringVarP(&appCfg.OutputFile, "out_file", "o", "", "Path to the output SQL file (defaults to <database_name>_comments.sql)")
+	deleteCommentsCmd.Flags().StringVar(&appCfg.TablesRaw, "tables", "", "Comma-separated list of tables/columns to target for comment deletion (e.g., 'table1[col1],table2')")
 }

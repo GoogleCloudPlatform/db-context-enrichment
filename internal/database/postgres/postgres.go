@@ -1,45 +1,27 @@
-/*
- * Copyright 2025 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package postgres
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"net"
-	"os"
 	"strings"
 
 	"cloud.google.com/go/cloudsqlconn"
+	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/config"
+	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/database"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/lib/pq"
-
-	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/config"
-	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/database"
 )
 
-// postgresHandler struct implements database.DialectHandler for PostgreSQL.
 type postgresHandler struct{}
 
 var _ database.DialectHandler = (*postgresHandler)(nil)
 
-// CreateCloudSQLPool for PostgreSQL
 func (h postgresHandler) CreateCloudSQLPool(cfg config.DatabaseConfig) (*sql.DB, error) {
-	mustGetenv := func(k string, cfg config.DatabaseConfig) string { // Keep mustGetenv here as it's specific to connection
+	mustGetenv := func(k string, cfg config.DatabaseConfig) string {
 		v := ""
 		switch k {
 		case "user_name":
@@ -55,10 +37,6 @@ func (h postgresHandler) CreateCloudSQLPool(cfg config.DatabaseConfig) (*sql.DB,
 				v = "true"
 			}
 		}
-
-		if v == "" {
-			return os.Getenv(k) // Fallback to environment variable if not in Config
-		}
 		return v
 	}
 
@@ -68,63 +46,70 @@ func (h postgresHandler) CreateCloudSQLPool(cfg config.DatabaseConfig) (*sql.DB,
 	instanceConnectionName := mustGetenv("instance_name", cfg)
 	usePrivate := mustGetenv("PRIVATE_IP", cfg)
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s", dbUser, dbPwd, dbName)
-	config, err := pgx.ParseConfig(dsn)
-	if err != nil {
-		return nil, err
+	if dbUser == "" || dbPwd == "" || dbName == "" || instanceConnectionName == "" {
+		return nil, fmt.Errorf("missing required CloudSQL connection parameter (user, pass, db, instance)")
 	}
+
+	dsn := fmt.Sprintf("user=%s password=%s database=%s", dbUser, dbPwd, dbName)
+	pgxCfg, err := pgx.ParseConfig(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("pgx.ParseConfig failed: %w", err)
+	}
+
 	var opts []cloudsqlconn.Option
-	if usePrivate != "" && strings.ToLower(usePrivate) != "false" && usePrivate != "0" { // Handle boolean-like env vars
+	if usePrivate != "" && strings.ToLower(usePrivate) != "false" && usePrivate != "0" {
 		opts = append(opts, cloudsqlconn.WithDefaultDialOptions(cloudsqlconn.WithPrivateIP()))
 	}
 	d, err := cloudsqlconn.NewDialer(context.Background(), opts...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cloudsqlconn.NewDialer failed: %w", err)
 	}
-	config.DialFunc = func(ctx context.Context, network, instance string) (net.Conn, error) {
+
+	pgxCfg.DialFunc = func(ctx context.Context, network, instance string) (net.Conn, error) {
 		return d.Dial(ctx, instanceConnectionName)
 	}
-	dbURI := stdlib.RegisterConnConfig(config)
+
+	dbURI := stdlib.RegisterConnConfig(pgxCfg)
 	dbPool, err := sql.Open("pgx", dbURI)
 	if err != nil {
-		return nil, fmt.Errorf("sql.Open: %w", err)
+		d.Close()
+		return nil, fmt.Errorf("sql.Open failed for CloudSQL: %w", err)
 	}
 
 	return dbPool, nil
 }
 
-// CreateStandardPool creates a standard PostgreSQL connection pool
 func (h postgresHandler) CreateStandardPool(cfg config.DatabaseConfig) (*sql.DB, error) {
+	sslmode := cfg.SSLMode
+	if sslmode == "" {
+		sslmode = "disable"
+	}
 	connStr := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName, cfg.SSLMode,
+		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName, sslmode,
 	)
 
 	dbPool, err := sql.Open("postgres", connStr)
 	if err != nil {
-		return nil, fmt.Errorf("error opening database: %w", err)
+		return nil, fmt.Errorf("error opening standard database connection: %w", err)
 	}
-	return dbPool, err
+	return dbPool, nil
 }
 
-// QuoteIdentifier for PostgreSQL
 func (h postgresHandler) QuoteIdentifier(name string) string {
-	// Replace any existing quotes with double quotes to escape them
 	name = strings.Replace(name, `"`, `""`, -1)
-	// Wrap the entire name in quotes
 	return fmt.Sprintf(`"%s"`, name)
 }
 
-// ListTables for PostgreSQL
 func (h postgresHandler) ListTables(db *database.DB) ([]string, error) {
 	query := `
 		SELECT table_name
 		FROM information_schema.tables
-		WHERE table_schema = 'public'
+		WHERE table_schema = current_schema()
 		AND table_type = 'BASE TABLE'
 		ORDER BY table_name;`
 
-	rows, err := db.Query(query)
+	rows, err := db.Pool.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("error querying tables: %w", err)
 	}
@@ -146,16 +131,15 @@ func (h postgresHandler) ListTables(db *database.DB) ([]string, error) {
 	return tables, nil
 }
 
-// ListColumns for PostgreSQL
 func (h postgresHandler) ListColumns(db *database.DB, tableName string) ([]database.ColumnInfo, error) {
 	query := `
 		SELECT column_name, data_type
 		FROM information_schema.columns
-		WHERE table_schema = 'public'
+		WHERE table_schema = current_schema()
 		AND table_name = $1
 		ORDER BY ordinal_position;`
 
-	rows, err := db.Query(query, tableName)
+	rows, err := db.Pool.Query(query, tableName)
 	if err != nil {
 		return nil, fmt.Errorf("error querying columns for table %s: %w", tableName, err)
 	}
@@ -177,44 +161,47 @@ func (h postgresHandler) ListColumns(db *database.DB, tableName string) ([]datab
 	return columns, nil
 }
 
-// GetColumnMetadata for PostgreSQL
 func (h postgresHandler) GetColumnMetadata(db *database.DB, tableName string, columnName string) (map[string]interface{}, error) {
-	// Quote table and column names to handle special characters and spaces
-	quotedTable := h.QuoteIdentifier(tableName) // Use handler's QuoteIdentifier
+	quotedTable := h.QuoteIdentifier(tableName)
 	quotedColumn := h.QuoteIdentifier(columnName)
 
-	// Get distinct count
+	ctx := context.Background()
+
 	distinctQuery := fmt.Sprintf("SELECT COUNT(DISTINCT %s::text) FROM %s", quotedColumn, quotedTable)
-	var distinctCount int
-	err := db.QueryRow(distinctQuery).Scan(&distinctCount)
+	var distinctCount int64
+	err := db.Pool.QueryRowContext(ctx, distinctQuery).Scan(&distinctCount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get distinct count: %w", err)
+		log.Printf("WARN: Failed to get distinct count for %s.%s: %v. Reporting -1.", tableName, columnName, err)
+		distinctCount = -1
 	}
 
-	// Get null count
 	nullQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s IS NULL", quotedTable, quotedColumn)
-	var nullCount int
-	err = db.QueryRow(nullQuery).Scan(&nullCount)
+	var nullCount int64
+	err = db.Pool.QueryRowContext(ctx, nullQuery).Scan(&nullCount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get null count: %w", err)
+		return nil, fmt.Errorf("failed to get null count for %s.%s: %w", tableName, columnName, err)
 	}
 
-	// Get example values (top 3)
 	exampleQuery := fmt.Sprintf("SELECT DISTINCT %s::text FROM %s WHERE %s IS NOT NULL LIMIT 3",
 		quotedColumn, quotedTable, quotedColumn)
-	rows, err := db.Query(exampleQuery)
+	rows, err := db.Pool.QueryContext(ctx, exampleQuery)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get example values: %w", err)
+		return nil, fmt.Errorf("failed to get example values for %s.%s: %w", tableName, columnName, err)
 	}
 	defer rows.Close()
 
 	var examples []string
 	for rows.Next() {
-		var value string
+		var value sql.NullString
 		if err := rows.Scan(&value); err != nil {
-			return nil, fmt.Errorf("error scanning example value: %w", err)
+			return nil, fmt.Errorf("error scanning example value for %s.%s: %w", tableName, columnName, err)
 		}
-		examples = append(examples, value)
+		if value.Valid {
+			examples = append(examples, value.String)
+		}
+	}
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("error iterating example values for %s.%s: %w", tableName, columnName, rows.Err())
 	}
 
 	return map[string]interface{}{
@@ -224,132 +211,34 @@ func (h postgresHandler) GetColumnMetadata(db *database.DB, tableName string, co
 	}, nil
 }
 
-// formatExampleValues formats a slice of example values for SQL comment in PostgreSQL
 func (h postgresHandler) formatExampleValues(values []string) string {
 	if len(values) == 0 {
-		return "[]"
+		return ""
 	}
-	// Quote each value and join with comma
 	quoted := make([]string, len(values))
 	for i, v := range values {
-		quoted[i] = "\"" + v + "\""
+		quoted[i] = pq.QuoteLiteral(v)
 	}
-	return fmt.Sprintf("[%s]", strings.Join(quoted, ", "))
+	return fmt.Sprintf("Examples: %s", strings.Join(quoted, ", "))
 }
 
-func (h postgresHandler) generateMetadataComment(data *database.CommentData, enrichments map[string]bool) string {
-	if data == nil {
-		return ""
-	}
-	if data.TableName == "" || data.ColumnName == "" {
-		return ""
-	}
-
-	var commentParts []string
-
-	// Helper function to check if enrichment is requested
-	isEnrichmentRequested := func(enrichment string) bool {
-		if len(enrichments) == 0 {
-			return true // If no enrichments specified, include all
-		}
-		return enrichments[enrichment]
-	}
-
-	if isEnrichmentRequested("description") && data.Description != "" {
-		commentParts = append(commentParts, fmt.Sprintf("*Important Note*: %s", data.Description))
-	}
-
-	if isEnrichmentRequested("examples") && len(data.ExampleValues) > 0 {
-		commentParts = append(commentParts, fmt.Sprintf("Example Values: %s", h.formatExampleValues(data.ExampleValues)))
-	}
-	if isEnrichmentRequested("distinct_values") {
-		commentParts = append(commentParts, fmt.Sprintf("Count Distinct Values: %d", data.DistinctCount))
-	}
-	if isEnrichmentRequested("null_count") {
-		commentParts = append(commentParts, fmt.Sprintf("Count Null: %d", data.NullCount))
-	}
-
-	return strings.Join(commentParts, " | ")
-}
-
-func (h postgresHandler) generateTableMetadataComment(data *database.TableCommentData, enrichments map[string]bool) string {
-	if data == nil || data.TableName == "" {
-		return ""
-	}
-
-	var commentParts []string
-	isEnrichmentRequested := func(enrichment string) bool {
-		if len(enrichments) == 0 {
-			return true
-		}
-		return enrichments[enrichment]
-	}
-
-	if isEnrichmentRequested("description") && data.Description != "" {
-		commentParts = append(commentParts, fmt.Sprintf("*Important Note*: %s", data.Description))
-	}
-	return strings.Join(commentParts, " | ")
-}
-
-func (h postgresHandler) mergeComments(existingComment string, newMetadataComment string, updateExistingMode string) string {
-	startTag := "<gemini>"
-	endTag := "</gemini>"
-	startIndex := strings.Index(existingComment, startTag)
-	endIndex := strings.LastIndex(existingComment, endTag)
-
-	comment := ""
-
-	if startIndex == -1 || endIndex == -1 || endIndex <= startIndex {
-		// No Gemini tag found, append new comment with tags
-		if existingComment != "" {
-			comment = existingComment + " " + startTag + newMetadataComment + endTag
-		} else {
-			comment = startTag + newMetadataComment + endTag // Just add new comment with tags
-		}
-	} else if updateExistingMode == "append" {
-		currentGeminiComment := existingComment[startIndex+len(startTag) : endIndex]
-		if currentGeminiComment != "" {
-			comment = existingComment[:endIndex] + " " + newMetadataComment + endTag + existingComment[endIndex+len(endTag):] // Append to existing gemini comment
-		}
-	} else {
-		// Gemini tag found, replace content inside tags
-		prefix := existingComment[:startIndex]
-		suffix := existingComment[endIndex+len(endTag):]
-		comment = prefix + startTag + newMetadataComment + endTag + suffix
-	}
-	if comment == "" {
-		comment = existingComment
-	}
-	if comment == "<gemini></gemini>" {
-		comment = ""
-	}
-	return comment
-}
-
-// GenerateCommentSQL creates SQL statements for column comments in PostgreSQL
 func (h postgresHandler) GenerateCommentSQL(db *database.DB, data *database.CommentData, enrichments map[string]bool) (string, error) {
-	if data == nil {
-		return "", fmt.Errorf("comment data cannot be nil")
-	}
-	if data.TableName == "" || data.ColumnName == "" {
-		return "", fmt.Errorf("table and column names cannot be empty")
+	if data == nil || data.TableName == "" || data.ColumnName == "" {
+		return "", fmt.Errorf("invalid input for GenerateCommentSQL")
 	}
 
-	config := database.GetConfig() // Retrieve global config
+	formattedExamples := h.formatExampleValues(data.ExampleValues)
+	newMetadataComment := database.GenerateMetadataCommentString(data, enrichments, formattedExamples) // Use database.Generate...
 
-	// Pass the enrichments map to generateMetadataComment
-	newMetadataComment := h.generateMetadataComment(data, enrichments)
 	existingComment, err := h.GetColumnComment(context.Background(), db, data.TableName, data.ColumnName)
-	if err != nil {
-		return "", err
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("WARN: Failed to get existing column comment for %s.%s: %v. Proceeding as if empty.", data.TableName, data.ColumnName, err)
+		existingComment = ""
 	}
-	finalComment := h.mergeComments(existingComment, newMetadataComment, config.UpdateExistingMode)
+
+	finalComment := database.MergeComments(existingComment, newMetadataComment, db.Config.UpdateExistingMode) // Use database.Merge...
+
 	quotedComment := pq.QuoteLiteral(finalComment)
-
-	if finalComment == "" {
-		return "", nil
-	}
-
 	return fmt.Sprintf(
 		"COMMENT ON COLUMN %s.%s IS %s;",
 		h.QuoteIdentifier(data.TableName),
@@ -358,32 +247,25 @@ func (h postgresHandler) GenerateCommentSQL(db *database.DB, data *database.Comm
 	), nil
 }
 
-// GenerateDeleteCommentSQL for PostgreSQL
 func (h postgresHandler) GenerateDeleteCommentSQL(ctx context.Context, db *database.DB, tableName string, columnName string) (string, error) {
 	if tableName == "" || columnName == "" {
-		return "", fmt.Errorf("table and column names cannot be empty")
+		return "", fmt.Errorf("table and column names cannot be empty for GenerateDeleteCommentSQL")
 	}
 
 	existingComment, err := h.GetColumnComment(ctx, db, tableName, columnName)
 	if err != nil {
-		return "", err
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to get existing column comment for %s.%s before delete: %w", tableName, columnName, err)
 	}
 
-	startTag := "<gemini>"
-	endTag := "</gemini>"
-	startIndex := strings.Index(existingComment, startTag)
-	endIndex := strings.LastIndex(existingComment, endTag)
+	finalComment := database.MergeComments(existingComment, "", "")
 
-	var finalComment string
-	if startIndex != -1 && endIndex != -1 && endIndex > startIndex {
-		// Gemini tags found, remove content within tags
-		prefix := existingComment[:startIndex]
-		suffix := existingComment[endIndex+len(endTag):]
-		finalComment = strings.TrimSpace(prefix + suffix) // Trim leading/trailing spaces after removing gemini part
-	} else {
-		// Gemini tags not found, or invalid tags, keep original comment
-		finalComment = existingComment
+	if finalComment == strings.TrimSpace(existingComment) {
+		return "", nil
 	}
+
 	quotedComment := pq.QuoteLiteral(finalComment)
 	return fmt.Sprintf(
 		"COMMENT ON COLUMN %s.%s IS %s;",
@@ -393,7 +275,6 @@ func (h postgresHandler) GenerateDeleteCommentSQL(ctx context.Context, db *datab
 	), nil
 }
 
-// GetColumnComment for PostgreSQL retrieves the comment for a specific column.
 func (h postgresHandler) GetColumnComment(ctx context.Context, db *database.DB, tableName string, columnName string) (string, error) {
 	query := `
 		SELECT description
@@ -401,47 +282,43 @@ func (h postgresHandler) GetColumnComment(ctx context.Context, db *database.DB, 
 		JOIN pg_catalog.pg_class c ON pg_description.objoid = c.oid
 		JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid
 		JOIN pg_catalog.pg_attribute a ON pg_description.objoid = a.attrelid AND pg_description.objsubid = a.attnum
-		WHERE n.nspname = 'public' -- Assuming public schema
+		WHERE n.nspname = current_schema()
 		  AND c.relname = $1
 		  AND a.attname = $2;
 	`
-
-	var comment sql.NullString // Use sql.NullString to handle NULL values
-	err := db.QueryRowContext(ctx, query, tableName, columnName).Scan(&comment)
+	var comment sql.NullString
+	err := db.Pool.QueryRowContext(ctx, query, tableName, columnName).Scan(&comment)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", nil // No comment found, return empty string
+			return "", nil
 		}
-		return "", fmt.Errorf("failed to retrieve column comment: %w", err)
+		log.Printf("ERROR: Failed retrieving column comment for %s.%s: %v", tableName, columnName, err)
+		return "", fmt.Errorf("failed to retrieve column comment for %s.%s: %w", tableName, columnName, err)
 	}
-	if comment.Valid {
-		return comment.String, nil
-	}
-
-	return "", nil // Comment is NULL in DB, return empty string
+	return comment.String, nil
 }
 
-// GenerateTableCommentSQL generates the SQL to comment on a table.
 func (h postgresHandler) GenerateTableCommentSQL(db *database.DB, data *database.TableCommentData, enrichments map[string]bool) (string, error) {
 	if data == nil || data.TableName == "" {
-		return "", fmt.Errorf("table comment data cannot be nil or empty")
+		return "", fmt.Errorf("invalid input for GenerateTableCommentSQL")
 	}
 
-	config := database.GetConfig()
+	newMetadataComment := database.GenerateTableMetadataCommentString(data, enrichments) // Use database.Generate...
 
-	newMetadataComment := h.generateTableMetadataComment(data, enrichments)
 	existingComment, err := h.GetTableComment(context.Background(), db, data.TableName)
-	if err != nil {
-		return "", err
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("WARN: Failed to get existing table comment for %s: %v. Proceeding as if empty.", data.TableName, err)
+		existingComment = ""
 	}
-	finalComment := h.mergeComments(existingComment, newMetadataComment, config.UpdateExistingMode)
-	quotedComment := pq.QuoteLiteral(finalComment)
 
-	if finalComment == "" {
+	finalComment := database.MergeComments(existingComment, newMetadataComment, db.Config.UpdateExistingMode) // Use database.Merge...
+
+	if finalComment == strings.TrimSpace(existingComment) {
 		return "", nil
 	}
 
+	quotedComment := pq.QuoteLiteral(finalComment)
 	return fmt.Sprintf(
 		"COMMENT ON TABLE %s IS %s;",
 		h.QuoteIdentifier(data.TableName),
@@ -449,58 +326,51 @@ func (h postgresHandler) GenerateTableCommentSQL(db *database.DB, data *database
 	), nil
 }
 
-// GetTableComment retrieves the existing comment for a table.
 func (h postgresHandler) GetTableComment(ctx context.Context, db *database.DB, tableName string) (string, error) {
 	query := `
         SELECT pg_catalog.obj_description(c.oid, 'pg_class')
         FROM pg_catalog.pg_class c
         JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid
-        WHERE n.nspname = 'public'
+        WHERE n.nspname = current_schema()
           AND c.relname = $1;
     `
-
 	var comment sql.NullString
-	err := db.QueryRowContext(ctx, query, tableName).Scan(&comment)
+	err := db.Pool.QueryRowContext(ctx, query, tableName).Scan(&comment)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", nil // No comment, return empty string.
+			return "", nil
 		}
-		return "", fmt.Errorf("failed to retrieve table comment: %w", err)
+		log.Printf("ERROR: Failed retrieving table comment for %s: %v", tableName, err)
+		return "", fmt.Errorf("failed to retrieve table comment for %s: %w", tableName, err)
 	}
-
-	if comment.Valid {
-		return comment.String, nil
-	}
-	return "", nil // Comment is NULL.
+	return comment.String, nil
 }
 
-// GenerateDeleteTableCommentSQL generates SQL to remove the Gemini-generated part of a table comment.
 func (h postgresHandler) GenerateDeleteTableCommentSQL(ctx context.Context, db *database.DB, tableName string) (string, error) {
 	if tableName == "" {
-		return "", fmt.Errorf("table name cannot be empty")
+		return "", fmt.Errorf("table name cannot be empty for GenerateDeleteTableCommentSQL")
 	}
 
 	existingComment, err := h.GetTableComment(ctx, db, tableName)
 	if err != nil {
-		return "", err
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to get existing table comment for %s before delete: %w", tableName, err)
 	}
 
-	startTag := "<gemini>"
-	endTag := "</gemini>"
-	startIndex := strings.Index(existingComment, startTag)
-	endIndex := strings.LastIndex(existingComment, endTag)
+	finalComment := database.MergeComments(existingComment, "", "")
 
-	var finalComment string
-	if startIndex != -1 && endIndex != -1 && endIndex > startIndex {
-		prefix := existingComment[:startIndex]
-		suffix := existingComment[endIndex+len(endTag):]
-		finalComment = strings.TrimSpace(prefix + suffix)
-	} else {
-		finalComment = existingComment // No gemini tags, keep original.
+	if finalComment == strings.TrimSpace(existingComment) {
+		return "", nil
 	}
 
 	quotedComment := pq.QuoteLiteral(finalComment)
-	return fmt.Sprintf("COMMENT ON TABLE %s IS %s;", h.QuoteIdentifier(tableName), quotedComment), nil
+	return fmt.Sprintf(
+		"COMMENT ON TABLE %s IS %s;",
+		h.QuoteIdentifier(tableName),
+		quotedComment,
+	), nil
 }
 
 func init() {

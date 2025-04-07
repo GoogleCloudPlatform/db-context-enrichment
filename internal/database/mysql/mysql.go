@@ -1,42 +1,23 @@
-/*
- * Copyright 2025 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package mysql
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"net"
-	"os"
 	"strings"
 
 	"cloud.google.com/go/cloudsqlconn"
-	"github.com/go-sql-driver/mysql"
-	"github.com/lib/pq"
-
 	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/config"
 	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/database"
+	"github.com/go-sql-driver/mysql"
 )
 
-// mysqlHandler struct implements database.DialectHandler for MySQL.
 type mysqlHandler struct{}
 
 var _ database.DialectHandler = (*mysqlHandler)(nil)
 
-// CreateCloudSQLPool for MySQL
 func (h mysqlHandler) CreateCloudSQLPool(cfg config.DatabaseConfig) (*sql.DB, error) {
 	mustGetenv := func(k string, cfg config.DatabaseConfig) string {
 		v := ""
@@ -54,9 +35,6 @@ func (h mysqlHandler) CreateCloudSQLPool(cfg config.DatabaseConfig) (*sql.DB, er
 				v = "true"
 			}
 		}
-		if v == "" {
-			return os.Getenv(k)
-		}
 		return v
 	}
 
@@ -66,52 +44,78 @@ func (h mysqlHandler) CreateCloudSQLPool(cfg config.DatabaseConfig) (*sql.DB, er
 	instanceConnectionName := mustGetenv("instance_name", cfg)
 	usePrivate := mustGetenv("PRIVATE_IP", cfg)
 
+	if dbUser == "" || dbPwd == "" || dbName == "" || instanceConnectionName == "" {
+		return nil, fmt.Errorf("missing required CloudSQL connection parameter (user, pass, db, instance)")
+	}
+
 	d, err := cloudsqlconn.NewDialer(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("cloudsqlconn.NewDialer: %w", err)
 	}
+
 	var opts []cloudsqlconn.DialOption
 	if usePrivate != "" && strings.ToLower(usePrivate) != "false" && usePrivate != "0" {
 		opts = append(opts, cloudsqlconn.WithPrivateIP())
 	}
 
-	mysql.RegisterDialContext("cloudsqlconn",
+	network := fmt.Sprintf("cloudsql-%s", instanceConnectionName)
+
+	mysql.RegisterDialContext(network,
 		func(ctx context.Context, addr string) (net.Conn, error) {
-			return d.Dial(ctx, instanceConnectionName, opts...)
+			conn, dialErr := d.Dial(ctx, instanceConnectionName, opts...)
+			if dialErr != nil {
+				log.Printf("ERROR: Cloud SQL dial failed for %s: %v", instanceConnectionName, dialErr)
+			}
+			return conn, dialErr
 		})
 
-	dbURI := fmt.Sprintf("%s:%s@cloudsqlconn(localhost:3306)/%s?parseTime=true",
-		dbUser, dbPwd, dbName)
+	mysqlCfg := mysql.Config{
+		User:                 dbUser,
+		Passwd:               dbPwd,
+		Net:                  network,
+		Addr:                 instanceConnectionName,
+		DBName:               dbName,
+		AllowNativePasswords: true,
+		ParseTime:            true,
+	}
 
-	dbPool, err := sql.Open("mysql", dbURI)
+	dbPool, err := sql.Open("mysql", mysqlCfg.FormatDSN())
 	if err != nil {
-		return nil, fmt.Errorf("sql.Open: %w", err)
+		mysql.DeregisterDialContext(network)
+		d.Close()
+		return nil, fmt.Errorf("sql.Open failed for CloudSQL MySQL: %w", err)
 	}
 	return dbPool, nil
 }
 
-// CreateStandardPool creates a standard MySQL connection pool
 func (h mysqlHandler) CreateStandardPool(cfg config.DatabaseConfig) (*sql.DB, error) {
-	connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true",
-		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName)
+	mysqlCfg := mysql.Config{
+		User:                 cfg.User,
+		Passwd:               cfg.Password,
+		Net:                  "tcp",
+		Addr:                 fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+		DBName:               cfg.DBName,
+		AllowNativePasswords: true,
+		ParseTime:            true,
+	}
+	connStr := mysqlCfg.FormatDSN()
 
 	dbPool, err := sql.Open("mysql", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("sql.Open (standard mysql): %w", err)
 	}
-	return dbPool, err
+	return dbPool, nil
 }
 
-// QuoteIdentifier for MySQL
 func (h mysqlHandler) QuoteIdentifier(name string) string {
+	name = strings.ReplaceAll(name, "`", "``")
 	return fmt.Sprintf("`%s`", name)
 }
 
-// ListTables for MySQL
 func (h mysqlHandler) ListTables(db *database.DB) ([]string, error) {
-	query := "SHOW TABLES"
+	query := "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME"
 
-	rows, err := db.Query(query)
+	rows, err := db.Pool.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("error querying tables: %w", err)
 	}
@@ -131,30 +135,27 @@ func (h mysqlHandler) ListTables(db *database.DB) ([]string, error) {
 	return tables, nil
 }
 
-// ListColumns for MySQL
 func (h mysqlHandler) ListColumns(db *database.DB, tableName string) ([]database.ColumnInfo, error) {
-	query := fmt.Sprintf("SHOW COLUMNS FROM `%s`;", tableName)
+	query := `
+		  SELECT COLUMN_NAME, COLUMN_TYPE
+		  FROM information_schema.COLUMNS
+		  WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME = ?
+		  ORDER BY ORDINAL_POSITION;`
 
-	rows, err := db.Query(query)
+	rows, err := db.Pool.Query(query, tableName)
 	if err != nil {
 		return nil, fmt.Errorf("error querying columns for table %s: %w", tableName, err)
 	}
 	defer rows.Close()
 
-	var columns []database.ColumnInfo // Modified to []database.ColumnInfo
+	var columns []database.ColumnInfo
 	for rows.Next() {
-		var columnDetails struct {
-			Field   string      `db:"Field"`
-			Type    string      `db:"Type"` // This is the datatype
-			Null    string      `db:"Null"`
-			Key     string      `db:"Key"`
-			Default interface{} `db:"Default"`
-			Extra   string      `db:"Extra"`
+		var colInfo database.ColumnInfo
+		if err := rows.Scan(&colInfo.Name, &colInfo.DataType); err != nil {
+			return nil, fmt.Errorf("error scanning column name and data type: %w", err)
 		}
-		if err := rows.Scan(&columnDetails.Field, &columnDetails.Type, &columnDetails.Null, &columnDetails.Key, &columnDetails.Default, &columnDetails.Extra); err != nil {
-			return nil, fmt.Errorf("error scanning column details: %w", err)
-		}
-		columns = append(columns, database.ColumnInfo{Name: columnDetails.Field, DataType: columnDetails.Type}) // Store both name and datatype
+		columns = append(columns, colInfo)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -164,40 +165,46 @@ func (h mysqlHandler) ListColumns(db *database.DB, tableName string) ([]database
 	return columns, nil
 }
 
-// GetColumnMetadata for MySQL
 func (h mysqlHandler) GetColumnMetadata(db *database.DB, tableName string, columnName string) (map[string]interface{}, error) {
 	quotedTable := h.QuoteIdentifier(tableName)
 	quotedColumn := h.QuoteIdentifier(columnName)
+	ctx := context.Background()
 
 	distinctQuery := fmt.Sprintf("SELECT COUNT(DISTINCT %s) FROM %s", quotedColumn, quotedTable)
-	var distinctCount int
-	err := db.QueryRow(distinctQuery).Scan(&distinctCount)
+	var distinctCount int64
+	err := db.Pool.QueryRowContext(ctx, distinctQuery).Scan(&distinctCount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get distinct count: %w", err)
+		log.Printf("WARN: Failed to get distinct count for %s.%s (may require specific privileges or type): %v. Reporting -1.", tableName, columnName, err)
+		distinctCount = -1
 	}
 
 	nullQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s IS NULL", quotedTable, quotedColumn)
-	var nullCount int
-	err = db.QueryRow(nullQuery).Scan(&nullCount)
+	var nullCount int64
+	err = db.Pool.QueryRowContext(ctx, nullQuery).Scan(&nullCount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get null count: %w", err)
+		return nil, fmt.Errorf("failed to get null count for %s.%s: %w", tableName, columnName, err)
 	}
 
-	exampleQuery := fmt.Sprintf("SELECT %s FROM %s WHERE %s IS NOT NULL LIMIT 3",
+	exampleQuery := fmt.Sprintf("SELECT DISTINCT CAST(%s AS CHAR) FROM %s WHERE %s IS NOT NULL LIMIT 3",
 		quotedColumn, quotedTable, quotedColumn)
-	rows, err := db.Query(exampleQuery)
+	rows, err := db.Pool.QueryContext(ctx, exampleQuery)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get example values: %w", err)
+		return nil, fmt.Errorf("failed to get example values for %s.%s: %w", tableName, columnName, err)
 	}
 	defer rows.Close()
 
 	var examples []string
 	for rows.Next() {
-		var value string
+		var value sql.NullString
 		if err := rows.Scan(&value); err != nil {
-			return nil, fmt.Errorf("error scanning example value: %w", err)
+			return nil, fmt.Errorf("error scanning example value for %s.%s: %w", tableName, columnName, err)
 		}
-		examples = append(examples, value)
+		if value.Valid {
+			examples = append(examples, value.String)
+		}
+	}
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("error iterating example values for %s.%s: %w", tableName, columnName, rows.Err())
 	}
 
 	return map[string]interface{}{
@@ -207,258 +214,162 @@ func (h mysqlHandler) GetColumnMetadata(db *database.DB, tableName string, colum
 	}, nil
 }
 
-// formatExampleValues formats a slice of example values for SQL comment in MySQL
+func escapeMySQLString(value string) string {
+	value = strings.ReplaceAll(value, `\`, `\\`)
+	value = strings.ReplaceAll(value, `'`, `''`)
+	return value
+}
+
 func (h mysqlHandler) formatExampleValues(values []string) string {
 	if len(values) == 0 {
-		return "[]"
+		return ""
 	}
 	quoted := make([]string, len(values))
 	for i, v := range values {
-		quoted[i] = v
+		quoted[i] = fmt.Sprintf("'%s'", escapeMySQLString(v))
 	}
-	return fmt.Sprintf("[%s]", strings.Join(quoted, ", "))
+	return fmt.Sprintf("Examples: [%s]", strings.Join(quoted, ", "))
 }
 
-func (h mysqlHandler) generateMetadataComment(data *database.CommentData, enrichments map[string]bool) string {
-	if data == nil {
-		return ""
-	}
-	if data.TableName == "" || data.ColumnName == "" {
-		return ""
-	}
-
-	var commentParts []string
-
-	// Helper function to check if enrichment is requested
-	isEnrichmentRequested := func(enrichment string) bool {
-		if len(enrichments) == 0 {
-			return true // If no enrichments specified, include all
-		}
-		return enrichments[enrichment]
-	}
-
-	if isEnrichmentRequested("description") && data.Description != "" {
-		commentParts = append(commentParts, fmt.Sprintf("Description: %s", data.Description))
-	}
-
-	if isEnrichmentRequested("examples") && len(data.ExampleValues) > 0 {
-		commentParts = append(commentParts, fmt.Sprintf("Examples: %s", h.formatExampleValues(data.ExampleValues)))
-	}
-	if isEnrichmentRequested("distinct_values") {
-		commentParts = append(commentParts, fmt.Sprintf("Distinct Values: %d", data.DistinctCount))
-	}
-	if isEnrichmentRequested("null_count") {
-		commentParts = append(commentParts, fmt.Sprintf("Null Count: %d", data.NullCount))
-	}
-
-	return strings.Join(commentParts, " | ")
-}
-
-func (h mysqlHandler) generateTableMetadataComment(data *database.TableCommentData, enrichments map[string]bool) string {
-	if data == nil || data.TableName == "" {
-		return ""
-	}
-
-	var commentParts []string
-	isEnrichmentRequested := func(enrichment string) bool {
-		if len(enrichments) == 0 {
-			return true // If no enrichments specified, include all
-		}
-		return enrichments[enrichment]
-	}
-
-	if isEnrichmentRequested("description") && data.Description != "" {
-		commentParts = append(commentParts, fmt.Sprintf("Description: %s", data.Description))
-	}
-	return strings.Join(commentParts, " | ")
-}
-
-func (h mysqlHandler) mergeComments(existingComment string, newMetadataComment string, updateExistingMode string) string {
-	startTag := "<gemini>"
-	endTag := "</gemini>"
-	startIndex := strings.Index(existingComment, startTag)
-	endIndex := strings.LastIndex(existingComment, endTag)
-
-	comment := ""
-
-	if startIndex == -1 || endIndex == -1 || endIndex <= startIndex {
-		// No Gemini tag found, append new comment with tags
-		if existingComment != "" {
-			comment = existingComment + " " + startTag + newMetadataComment + endTag
-		} else {
-			comment = startTag + newMetadataComment + endTag // Just add new comment with tags
-		}
-	} else if updateExistingMode == "append" {
-		currentGeminiComment := existingComment[startIndex+len(startTag) : endIndex]
-		if currentGeminiComment != "" {
-			comment = existingComment[:endIndex] + " " + newMetadataComment + endTag + existingComment[endIndex+len(endTag):] // Append to existing gemini comment
-		}
-
-	} else {
-		// Gemini tag found, replace content inside tags
-		prefix := existingComment[:startIndex]
-		suffix := existingComment[endIndex+len(endTag):]
-		comment = prefix + startTag + newMetadataComment + endTag + suffix
-	}
-	if comment == "" {
-		comment = existingComment
-	}
-	if comment == "<gemini></gemini>" {
-		comment = ""
-	}
-	return comment
-}
-
-// GenerateCommentSQL creates SQL statements for column comments in MySQL
 func (h mysqlHandler) GenerateCommentSQL(db *database.DB, data *database.CommentData, enrichments map[string]bool) (string, error) {
-	if data == nil {
-		return "", fmt.Errorf("metadata cannot be nil")
-	}
-	if data.TableName == "" || data.ColumnName == "" {
-		return "", fmt.Errorf("table and column names cannot be empty")
-	}
-	if data.ColumnDataType == "" {
-		return "", fmt.Errorf("column datatype cannot be empty for MySQL comment generation")
+	if data == nil || data.TableName == "" || data.ColumnName == "" {
+		return "", fmt.Errorf("invalid input for GenerateCommentSQL")
 	}
 
-	config := database.GetConfig() // Retrieve global config
-	newMetadataComment := h.generateMetadataComment(data, enrichments)
-	existingComment, err := h.GetColumnComment(context.Background(), db, data.TableName, data.ColumnName) // Get existing comment
+	formattedExamples := h.formatExampleValues(data.ExampleValues)
+	newMetadataComment := database.GenerateMetadataCommentString(data, enrichments, formattedExamples)
+
+	existingComment, err := h.GetColumnComment(context.Background(), db, data.TableName, data.ColumnName)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("WARN: Failed to get existing column comment for %s.%s: %v. Proceeding as if empty.", data.TableName, data.ColumnName, err)
+		existingComment = ""
+	}
+
+	finalComment := database.MergeComments(existingComment, newMetadataComment, db.Config.UpdateExistingMode)
+
+	columnDataType, err := h.getColumnDataType(context.Background(), db, data.TableName, data.ColumnName)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get column data type for %s.%s: %w", data.TableName, data.ColumnName, err)
 	}
-	finalComment := h.mergeComments(existingComment, newMetadataComment, config.UpdateExistingMode) // Pass updateExistingMode
-	quotedComment, err := quotedCommentSQL(finalComment)
-	if err != nil {
-		return "", err
+	if columnDataType == "" {
+		return "", fmt.Errorf("could not determine data type for column %s.%s, cannot generate comment SQL", data.TableName, data.ColumnName)
 	}
 
-	if finalComment == "" {
-		return "", nil
-	}
-
+	quotedComment := fmt.Sprintf("'%s'", escapeMySQLString(finalComment))
 	return fmt.Sprintf(
 		"ALTER TABLE %s MODIFY COLUMN %s %s COMMENT %s;",
 		h.QuoteIdentifier(data.TableName),
 		h.QuoteIdentifier(data.ColumnName),
-		data.ColumnDataType,
+		columnDataType,
 		quotedComment,
 	), nil
 }
 
-// GenerateDeleteCommentSQL for MySQL
 func (h mysqlHandler) GenerateDeleteCommentSQL(ctx context.Context, db *database.DB, tableName string, columnName string) (string, error) {
 	if tableName == "" || columnName == "" {
-		return "", fmt.Errorf("table and column names cannot be empty")
+		return "", fmt.Errorf("table and column names cannot be empty for GenerateDeleteCommentSQL")
 	}
 
 	existingComment, err := h.GetColumnComment(ctx, db, tableName, columnName)
 	if err != nil {
-		return "", err
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to get existing column comment for %s.%s before delete: %w", tableName, columnName, err)
 	}
 
-	startTag := "<gemini>"
-	endTag := "</gemini>"
-	startIndex := strings.Index(existingComment, startTag)
-	endIndex := strings.LastIndex(existingComment, endTag)
+	finalComment := database.MergeComments(existingComment, "", "")
 
-	var finalComment string
-	if startIndex != -1 && endIndex != -1 && endIndex > startIndex {
-		// Gemini tags found, remove content within tags
-		prefix := existingComment[:startIndex]
-		suffix := existingComment[endIndex+len(endTag):]
-		finalComment = strings.TrimSpace(prefix + suffix) // Trim leading/trailing spaces after removing gemini part
-	} else {
-		// Gemini tags not found, or invalid tags, keep original comment (or remove gemini tags if present but invalid)
-		finalComment = existingComment
+	if finalComment == strings.TrimSpace(existingComment) {
+		return "", nil
 	}
 
-	quotedComment, err := quotedCommentSQL(finalComment)
+	columnDataType, err := h.getColumnDataType(ctx, db, tableName, columnName)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get column data type for deleting comment on %s.%s: %w", tableName, columnName, err)
+	}
+	if columnDataType == "" {
+		return "", fmt.Errorf("could not determine data type for column %s.%s, cannot generate delete comment SQL", tableName, columnName)
 	}
 
+	quotedComment := fmt.Sprintf("'%s'", escapeMySQLString(finalComment))
 	return fmt.Sprintf(
 		"ALTER TABLE %s MODIFY COLUMN %s %s COMMENT %s;",
 		h.QuoteIdentifier(tableName),
 		h.QuoteIdentifier(columnName),
-		getColumnDataType(ctx, db, tableName, columnName),
+		columnDataType,
 		quotedComment,
 	), nil
 }
 
-func quotedCommentSQL(comment string) (string, error) {
-	quotedComment := pq.QuoteLiteral(comment) // Use pq.QuoteLiteral for proper quoting
-	return quotedComment, nil
-}
-
-// GetColumnComment for MySQL retrieves the comment for a specific column.
 func (h mysqlHandler) GetColumnComment(ctx context.Context, db *database.DB, tableName string, columnName string) (string, error) {
 	query := `
-		SELECT column_comment
-		FROM information_schema.columns
-		WHERE table_name = ?
-		  AND column_name = ?
-		  AND table_schema = DATABASE();
-	`
+		  SELECT COLUMN_COMMENT
+		  FROM information_schema.COLUMNS
+		  WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME = ?
+			AND COLUMN_NAME = ?;
+	  `
 
-	var comment sql.NullString // Use sql.NullString to handle NULL values
-	err := db.QueryRowContext(ctx, query, tableName, columnName).Scan(&comment)
+	var comment sql.NullString
+	err := db.Pool.QueryRowContext(ctx, query, tableName, columnName).Scan(&comment)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", nil // No comment found, return empty string
+			return "", nil
 		}
-		return "", fmt.Errorf("failed to retrieve column comment: %w", err)
+		log.Printf("ERROR: Failed to retrieve column comment for %s.%s: %v", tableName, columnName, err)
+		return "", fmt.Errorf("failed to retrieve column comment for %s.%s: %w", tableName, columnName, err)
 	}
 
 	if comment.Valid {
 		return comment.String, nil
-	} else {
-		return "", nil // Comment is NULL in DB, return empty string
 	}
+	return "", nil
 }
 
-// getColumnDataType retrieves the data type of a column for MySQL.
-func getColumnDataType(ctx context.Context, db *database.DB, tableName string, columnName string) string {
+func (h mysqlHandler) getColumnDataType(ctx context.Context, db *database.DB, tableName string, columnName string) (string, error) {
 	query := `
-		SELECT column_type
-		FROM information_schema.columns
-		WHERE table_name = ?
-		  AND column_name = ?
-		  AND table_schema = DATABASE();
-	`
-	var columnType string
-	err := db.QueryRowContext(ctx, query, tableName, columnName).Scan(&columnType)
+		  SELECT COLUMN_TYPE
+		  FROM information_schema.COLUMNS
+		  WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME = ?
+			AND COLUMN_NAME = ?;
+	  `
+	var columnType sql.NullString
+	err := db.Pool.QueryRowContext(ctx, query, tableName, columnName).Scan(&columnType)
 	if err != nil {
-		return ""
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("column %s.%s not found when retrieving data type", tableName, columnName)
+		}
+		return "", fmt.Errorf("failed to retrieve column type for %s.%s: %w", tableName, columnName, err)
 	}
-	return columnType
+	if !columnType.Valid || columnType.String == "" {
+		return "", fmt.Errorf("retrieved null or empty column type for %s.%s", tableName, columnName)
+	}
+	return columnType.String, nil
 }
 
-// GenerateTableCommentSQL generates the SQL to comment on a table.
 func (h mysqlHandler) GenerateTableCommentSQL(db *database.DB, data *database.TableCommentData, enrichments map[string]bool) (string, error) {
 	if data == nil || data.TableName == "" {
 		return "", fmt.Errorf("table comment data cannot be nil or empty")
 	}
 
-	config := database.GetConfig()
+	newMetadataComment := database.GenerateTableMetadataCommentString(data, enrichments)
 
-	newMetadataComment := h.generateTableMetadataComment(data, enrichments)
 	existingComment, err := h.GetTableComment(context.Background(), db, data.TableName)
-	if err != nil {
-		return "", err
-	}
-	finalComment := h.mergeComments(existingComment, newMetadataComment, config.UpdateExistingMode)
-	quotedComment, err := quotedCommentSQL(finalComment)
-	if err != nil {
-		return "", err
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("WARN: Failed to get existing table comment for %s: %v. Proceeding as if empty.", data.TableName, err)
+		existingComment = ""
 	}
 
-	if finalComment == "" {
+	finalComment := database.MergeComments(existingComment, newMetadataComment, db.Config.UpdateExistingMode)
+
+	if finalComment == strings.TrimSpace(existingComment) {
 		return "", nil
 	}
 
+	quotedComment := fmt.Sprintf("'%s'", escapeMySQLString(finalComment))
 	return fmt.Sprintf(
 		"ALTER TABLE %s COMMENT = %s;",
 		h.QuoteIdentifier(data.TableName),
@@ -466,60 +377,55 @@ func (h mysqlHandler) GenerateTableCommentSQL(db *database.DB, data *database.Ta
 	), nil
 }
 
-// GetTableComment retrieves the existing comment for a table.
 func (h mysqlHandler) GetTableComment(ctx context.Context, db *database.DB, tableName string) (string, error) {
 	query := `
-        SELECT table_comment
-        FROM information_schema.tables
-        WHERE table_name = ?
-          AND table_schema = DATABASE();
-    `
+		  SELECT TABLE_COMMENT
+		  FROM information_schema.TABLES
+		  WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME = ?;
+	  `
 
 	var comment sql.NullString
-	err := db.QueryRowContext(ctx, query, tableName).Scan(&comment)
+	err := db.Pool.QueryRowContext(ctx, query, tableName).Scan(&comment)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", nil // No comment, return empty string.
+			return "", nil
 		}
-		return "", fmt.Errorf("failed to retrieve table comment: %w", err)
+		log.Printf("ERROR: Failed to retrieve table comment for %s: %v", tableName, err)
+		return "", fmt.Errorf("failed to retrieve table comment for %s: %w", tableName, err)
 	}
 
 	if comment.Valid {
 		return comment.String, nil
 	}
-	return "", nil // Comment is NULL.
+	return "", nil
 }
 
-// GenerateDeleteTableCommentSQL generates SQL to remove the Gemini-generated part of a table comment.
 func (h mysqlHandler) GenerateDeleteTableCommentSQL(ctx context.Context, db *database.DB, tableName string) (string, error) {
 	if tableName == "" {
-		return "", fmt.Errorf("table name cannot be empty")
+		return "", fmt.Errorf("table name cannot be empty for GenerateDeleteTableCommentSQL")
 	}
 
 	existingComment, err := h.GetTableComment(ctx, db, tableName)
 	if err != nil {
-		return "", err
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to get existing table comment for %s before delete: %w", tableName, err)
 	}
 
-	startTag := "<gemini>"
-	endTag := "</gemini>"
-	startIndex := strings.Index(existingComment, startTag)
-	endIndex := strings.LastIndex(existingComment, endTag)
+	finalComment := database.MergeComments(existingComment, "", "")
 
-	var finalComment string
-	if startIndex != -1 && endIndex != -1 && endIndex > startIndex {
-		prefix := existingComment[:startIndex]
-		suffix := existingComment[endIndex+len(endTag):]
-		finalComment = strings.TrimSpace(prefix + suffix)
-	} else {
-		finalComment = existingComment // No gemini tags, keep original.
+	if finalComment == strings.TrimSpace(existingComment) {
+		return "", nil
 	}
 
-	quotedComment, err := quotedCommentSQL(finalComment)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("ALTER TABLE %s COMMENT = %s;", h.QuoteIdentifier(tableName), quotedComment), nil
+	quotedComment := fmt.Sprintf("'%s'", escapeMySQLString(finalComment))
+	return fmt.Sprintf(
+		"ALTER TABLE %s COMMENT = %s;",
+		h.QuoteIdentifier(tableName),
+		quotedComment,
+	), nil
 }
 
 func init() {

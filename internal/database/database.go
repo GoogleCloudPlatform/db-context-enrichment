@@ -33,7 +33,7 @@ var _ DBAdapter = (*DB)(nil)
 // DB holds the database connection pool and dialect handler.
 type DB struct {
 	Pool    *sql.DB
-	handler DialectHandler
+	Handler DialectHandler
 	Config  config.DatabaseConfig
 }
 
@@ -109,7 +109,7 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 
 	return &DB{
 		Pool:    pool,
-		handler: handler,
+		Handler: handler,
 		Config:  cfg,
 	}, nil
 }
@@ -134,66 +134,66 @@ func (db *DB) Close() error {
 }
 
 func (db *DB) ListTables() ([]string, error) {
-	if db.handler == nil {
+	if db.Handler == nil {
 		return nil, fmt.Errorf("dialect handler not initialized")
 	}
-	return db.handler.ListTables(db)
+	return db.Handler.ListTables(db)
 }
 
 func (db *DB) ListColumns(tableName string) ([]ColumnInfo, error) {
-	if db.handler == nil {
+	if db.Handler == nil {
 		return nil, fmt.Errorf("dialect handler not initialized")
 	}
-	return db.handler.ListColumns(db, tableName)
+	return db.Handler.ListColumns(db, tableName)
 }
 
 func (db *DB) GetColumnMetadata(tableName string, columnName string) (map[string]interface{}, error) {
-	if db.handler == nil {
+	if db.Handler == nil {
 		return nil, fmt.Errorf("dialect handler not initialized")
 	}
-	return db.handler.GetColumnMetadata(db, tableName, columnName)
+	return db.Handler.GetColumnMetadata(db, tableName, columnName)
 }
 
 func (db *DB) GetColumnComment(ctx context.Context, tableName string, columnName string) (string, error) {
-	if db.handler == nil {
+	if db.Handler == nil {
 		return "", fmt.Errorf("dialect handler not initialized")
 	}
-	return db.handler.GetColumnComment(ctx, db, tableName, columnName)
+	return db.Handler.GetColumnComment(ctx, db, tableName, columnName)
 }
 
 func (db *DB) GetTableComment(ctx context.Context, tableName string) (string, error) {
-	if db.handler == nil {
+	if db.Handler == nil {
 		return "", fmt.Errorf("dialect handler not initialized")
 	}
-	return db.handler.GetTableComment(ctx, db, tableName)
+	return db.Handler.GetTableComment(ctx, db, tableName)
 }
 
 func (db *DB) GenerateCommentSQL(data *CommentData, enrichments map[string]bool) (string, error) {
-	if db.handler == nil {
+	if db.Handler == nil {
 		return "", fmt.Errorf("dialect handler not initialized")
 	}
-	return db.handler.GenerateCommentSQL(db, data, enrichments)
+	return db.Handler.GenerateCommentSQL(db, data, enrichments)
 }
 
 func (db *DB) GenerateTableCommentSQL(data *TableCommentData, enrichments map[string]bool) (string, error) {
-	if db.handler == nil {
+	if db.Handler == nil {
 		return "", fmt.Errorf("dialect handler not initialized")
 	}
-	return db.handler.GenerateTableCommentSQL(db, data, enrichments)
+	return db.Handler.GenerateTableCommentSQL(db, data, enrichments)
 }
 
 func (db *DB) GenerateDeleteCommentSQL(ctx context.Context, tableName string, columnName string) (string, error) {
-	if db.handler == nil {
+	if db.Handler == nil {
 		return "", fmt.Errorf("dialect handler not initialized")
 	}
-	return db.handler.GenerateDeleteCommentSQL(ctx, db, tableName, columnName)
+	return db.Handler.GenerateDeleteCommentSQL(ctx, db, tableName, columnName)
 }
 
 func (db *DB) GenerateDeleteTableCommentSQL(ctx context.Context, tableName string) (string, error) {
-	if db.handler == nil {
+	if db.Handler == nil {
 		return "", fmt.Errorf("dialect handler not initialized")
 	}
-	return db.handler.GenerateDeleteTableCommentSQL(ctx, db, tableName)
+	return db.Handler.GenerateDeleteTableCommentSQL(ctx, db, tableName)
 }
 
 func (db *DB) ExecuteSQLStatements(ctx context.Context, sqlStatements []string) error {

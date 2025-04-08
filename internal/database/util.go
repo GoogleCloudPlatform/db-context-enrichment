@@ -59,6 +59,7 @@ func GenerateTableMetadataCommentString(data *TableCommentData, enrichments map[
 // mergeComments combines an existing comment with new metadata, handling tags.
 func MergeComments(existingComment string, newMetadataComment string, updateExistingMode string) string {
 	trimmedExisting := strings.TrimSpace(existingComment)
+	newMetadataComment = strings.TrimSpace(newMetadataComment)
 
 	if newMetadataComment == "" {
 		if trimmedExisting == StartTag+EndTag || trimmedExisting == StartTag+" "+EndTag {
@@ -69,6 +70,9 @@ func MergeComments(existingComment string, newMetadataComment string, updateExis
 		if startIndex != -1 && endIndex != -1 && endIndex > startIndex {
 			prefix := strings.TrimSpace(existingComment[:startIndex])
 			suffix := strings.TrimSpace(existingComment[endIndex+len(EndTag):])
+			if updateExistingMode == "append" {
+				return trimmedExisting
+			}
 			if prefix != "" && suffix != "" {
 				return prefix + " " + suffix
 			}

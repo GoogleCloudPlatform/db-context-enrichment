@@ -1,4 +1,3 @@
-// File: internal/enricher/enricher.go
 package enricher
 
 import (
@@ -431,45 +430,6 @@ func (s *Service) GetComments(ctx context.Context, params GetCommentsParams) ([]
 
 	log.Printf("INFO: Comment retrieval completed in %s. Found %d comments.", time.Since(startTime), len(allComments))
 	return allComments, nil
-}
-
-// generateSchemaContext generates a string representation of the filtered database schema.
-func (s *Service) generateSchemaContext(filteredTables []string, tableFilters map[string][]string) (string, error) {
-	if s.dbAdapter == nil {
-		return "", fmt.Errorf("database connection not available for generating schema context")
-	}
-
-	var schemaContext strings.Builder
-	schemaContext.WriteString("Schema Context:\n")
-	if len(filteredTables) == 0 {
-		schemaContext.WriteString(" (No tables specified or found based on filters)\n")
-		return schemaContext.String(), nil
-	}
-
-	schemaContext.WriteString("Tables and Columns (based on filters):\n")
-	for _, table := range filteredTables {
-		columns, err := s.dbAdapter.ListColumns(table)
-		if err != nil {
-			log.Printf("WARN: Failed to list columns for table %s in schema context: %v", table, err)
-			schemaContext.WriteString(fmt.Sprintf("- %s: [Error fetching columns: %v]\n", table, err))
-			continue
-		}
-
-		filteredColumns := filterColumns(table, columns, tableFilters)
-
-		schemaContext.WriteString(fmt.Sprintf("- %s: [", table))
-		if len(filteredColumns) > 0 {
-			columnNames := make([]string, len(filteredColumns))
-			for i, col := range filteredColumns {
-				columnNames[i] = fmt.Sprintf("%s(%s)", col.Name, col.DataType)
-			}
-			schemaContext.WriteString(strings.Join(columnNames, ", "))
-		} else {
-			schemaContext.WriteString("(No columns specified by filters)")
-		}
-		schemaContext.WriteString("]\n")
-	}
-	return schemaContext.String(), nil
 }
 
 func filterTables(allTables []string, tableFilters map[string][]string) []string {

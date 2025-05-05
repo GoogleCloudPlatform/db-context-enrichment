@@ -1,26 +1,12 @@
-/*
- * Copyright 2025 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package sqlserver
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"net"
-	"os"
+	"net/url"
 	"strings"
 
 	"cloud.google.com/go/cloudsqlconn"
@@ -29,27 +15,28 @@ import (
 	mssql "github.com/denisenkom/go-mssqldb"
 )
 
-// sqlServerHandler struct implements database.DialectHandler for SQL Server.
 type sqlServerHandler struct{}
 
 var _ database.DialectHandler = (*sqlServerHandler)(nil)
 
 type csqlDialer struct {
-	dialer     *cloudsqlconn.Dialer
-	connName   string
-	usePrivate bool
+	instanceDialer *cloudsqlconn.Dialer
+	connName       string
+	usePrivate     bool
 }
 
-// DialContext adheres to the mssql.Dialer interface.
 func (c *csqlDialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
 	var opts []cloudsqlconn.DialOption
 	if c.usePrivate {
 		opts = append(opts, cloudsqlconn.WithPrivateIP())
 	}
-	return c.dialer.Dial(ctx, c.connName, opts...)
+	conn, err := c.instanceDialer.Dial(ctx, c.connName, opts...)
+	if err != nil {
+		log.Printf("ERROR: Cloud SQL dial failed for %s: %v", c.connName, err)
+	}
+	return conn, err
 }
 
-// CreateCloudSQLPool for SQL Server
 func (h sqlServerHandler) CreateCloudSQLPool(cfg config.DatabaseConfig) (*sql.DB, error) {
 	mustGetenv := func(k string, cfg config.DatabaseConfig) string {
 		v := ""
@@ -67,9 +54,6 @@ func (h sqlServerHandler) CreateCloudSQLPool(cfg config.DatabaseConfig) (*sql.DB
 				v = "true"
 			}
 		}
-		if v == "" {
-			return os.Getenv(k)
-		}
 		return v
 	}
 
@@ -77,41 +61,59 @@ func (h sqlServerHandler) CreateCloudSQLPool(cfg config.DatabaseConfig) (*sql.DB
 	dbPwd := mustGetenv("password", cfg)
 	dbName := mustGetenv("database_name", cfg)
 	instanceConnectionName := mustGetenv("instance_name", cfg)
-	usePrivate := mustGetenv("PRIVATE_IP", cfg)
+	usePrivateStr := mustGetenv("PRIVATE_IP", cfg)
 
-	// WithLazyRefresh() Option is used to perform refresh
-	// when needed, rather than on a scheduled interval.
-	// This is recommended for serverless environments to
-	// avoid background refreshes from throttling CPU.
-	dialer, err := cloudsqlconn.NewDialer(context.Background(), cloudsqlconn.WithLazyRefresh())
-	if err != nil {
-		return nil, fmt.Errorf("cloudsqlconn.NewDailer: %w", err)
+	if dbUser == "" || dbName == "" || instanceConnectionName == "" {
+		return nil, fmt.Errorf("missing required CloudSQL connection parameter (user, db, instance)")
 	}
-	connector, err := mssql.NewConnector(fmt.Sprintf("sqlserver://%s:%s@localhost:1433?database=%s&dial=cloudsqlconn&instance=%s",
-		dbUser, dbPwd, dbName, instanceConnectionName))
+
+	d, err := cloudsqlconn.NewDialer(context.Background(), cloudsqlconn.WithLazyRefresh())
 	if err != nil {
-		return nil, fmt.Errorf("mssql.NewConnector: %w", err)
+		return nil, fmt.Errorf("cloudsqlconn.NewDialer: %w", err)
 	}
+
+	query := url.Values{}
+	query.Add("database", dbName)
+	u := &url.URL{
+		Scheme:   "sqlserver",
+		User:     url.UserPassword(dbUser, dbPwd),
+		Host:     "cloudsql-instance",
+		RawQuery: query.Encode(),
+	}
+
+	connector, err := mssql.NewConnector(u.String())
+	if err != nil {
+		d.Close()
+		return nil, fmt.Errorf("mssql.NewConnector failed: %w", err)
+	}
+
 	connector.Dialer = &csqlDialer{
-		dialer:     dialer,
-		connName:   instanceConnectionName,
-		usePrivate: usePrivate != "",
+		instanceDialer: d,
+		connName:       instanceConnectionName,
+		usePrivate:     usePrivateStr != "" && strings.ToLower(usePrivateStr) != "false" && usePrivateStr != "0",
 	}
 
 	dbPool := sql.OpenDB(connector)
-
 	return dbPool, nil
 }
 
-// CreateStandardPool creates a standard SQL Server connection pool
 func (h sqlServerHandler) CreateStandardPool(cfg config.DatabaseConfig) (*sql.DB, error) {
 	port := cfg.Port
 	if port == 0 {
-		port = 1433 // Default SQL Server port
+		port = 1433
 	}
-	connStr := fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s",
-		cfg.User, cfg.Password, cfg.Host, port, cfg.DBName)
 
+	query := url.Values{}
+	query.Add("database", cfg.DBName)
+
+	u := &url.URL{
+		Scheme:   "sqlserver",
+		User:     url.UserPassword(cfg.User, cfg.Password),
+		Host:     fmt.Sprintf("%s:%d", cfg.Host, port),
+		RawQuery: query.Encode(),
+	}
+
+	connStr := u.String()
 	dbPool, err := sql.Open("sqlserver", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("sql.Open (standard sqlserver): %w", err)
@@ -119,17 +121,19 @@ func (h sqlServerHandler) CreateStandardPool(cfg config.DatabaseConfig) (*sql.DB
 	return dbPool, nil
 }
 
-// QuoteIdentifier for SQL Server
-// SQL Server uses square brackets [] for identifiers.
-// Double quotes "" are also accepted in some contexts but square brackets are standard and safer.
 func (h sqlServerHandler) QuoteIdentifier(name string) string {
+	name = strings.ReplaceAll(name, "]", "]]")
 	return fmt.Sprintf("[%s]", name)
 }
 
-// ListTables for SQL Server
 func (h sqlServerHandler) ListTables(db *database.DB) ([]string, error) {
-	query := "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_CATALOG = DB_NAME()"
-	rows, err := db.Query(query)
+	query := `
+		  SELECT TABLE_NAME
+		  FROM INFORMATION_SCHEMA.TABLES
+		  WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_CATALOG = DB_NAME() AND TABLE_SCHEMA = 'dbo'
+		  ORDER BY TABLE_NAME;
+		  `
+	rows, err := db.Pool.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("error querying tables: %w", err)
 	}
@@ -149,18 +153,23 @@ func (h sqlServerHandler) ListTables(db *database.DB) ([]string, error) {
 	return tables, nil
 }
 
-// ListColumns for SQL Server
 func (h sqlServerHandler) ListColumns(db *database.DB, tableName string) ([]database.ColumnInfo, error) {
-	query := fmt.Sprintf("SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '%s' AND TABLE_CATALOG = DB_NAME()", tableName)
+	query := `
+		  SELECT COLUMN_NAME, DATA_TYPE
+		  FROM INFORMATION_SCHEMA.COLUMNS
+		  WHERE TABLE_CATALOG = DB_NAME()
+			AND TABLE_SCHEMA = 'dbo'
+			AND TABLE_NAME = @p1
+		  ORDER BY ORDINAL_POSITION;
+		  `
 
-	rows, err := db.Query(query)
+	rows, err := db.Pool.Query(query, sql.Named("p1", tableName))
 	if err != nil {
 		return nil, fmt.Errorf("error querying columns for table %s: %w", tableName, err)
 	}
 	defer rows.Close()
 
 	var columns []database.ColumnInfo
-
 	for rows.Next() {
 		var colInfo database.ColumnInfo
 		if err := rows.Scan(&colInfo.Name, &colInfo.DataType); err != nil {
@@ -174,40 +183,51 @@ func (h sqlServerHandler) ListColumns(db *database.DB, tableName string) ([]data
 	return columns, nil
 }
 
-// GetColumnMetadata for SQL Server
 func (h sqlServerHandler) GetColumnMetadata(db *database.DB, tableName string, columnName string) (map[string]interface{}, error) {
+	schemaName := "dbo"
+	quotedSchema := h.QuoteIdentifier(schemaName)
 	quotedTable := h.QuoteIdentifier(tableName)
 	quotedColumn := h.QuoteIdentifier(columnName)
+	fullQuotedTable := fmt.Sprintf("%s.%s", quotedSchema, quotedTable)
 
-	distinctQuery := fmt.Sprintf("SELECT COUNT(DISTINCT %s) FROM %s", quotedColumn, quotedTable)
-	var distinctCount int
-	err := db.QueryRow(distinctQuery).Scan(&distinctCount)
+	ctx := context.Background()
+
+	distinctQuery := fmt.Sprintf("SELECT COUNT_BIG(DISTINCT %s) FROM %s", quotedColumn, fullQuotedTable)
+	var distinctCount int64
+	err := db.Pool.QueryRowContext(ctx, distinctQuery).Scan(&distinctCount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get distinct count: %w", err)
+		log.Printf("WARN: Failed to get distinct count for %s.%s.%s (type may not support DISTINCT): %v. Reporting -1.", schemaName, tableName, columnName, err)
+		distinctCount = -1
 	}
 
-	nullQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s IS NULL", quotedTable, quotedColumn)
-	var nullCount int
-	err = db.QueryRow(nullQuery).Scan(&nullCount)
+	nullQuery := fmt.Sprintf("SELECT COUNT_BIG(*) FROM %s WHERE %s IS NULL", fullQuotedTable, quotedColumn)
+	var nullCount int64
+	err = db.Pool.QueryRowContext(ctx, nullQuery).Scan(&nullCount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get null count: %w", err)
+		return nil, fmt.Errorf("failed to get null count for %s.%s: %w", tableName, columnName, err)
 	}
 
-	exampleQuery := fmt.Sprintf("SELECT TOP 3 %s FROM %s WHERE %s IS NOT NULL",
-		quotedColumn, quotedTable, quotedColumn)
-	rows, err := db.Query(exampleQuery)
+	exampleQuery := fmt.Sprintf("SELECT TOP (@p1) DISTINCT CAST(%s AS NVARCHAR(MAX)) FROM %s WHERE %s IS NOT NULL",
+		quotedColumn, fullQuotedTable, quotedColumn)
+	rows, err := db.Pool.QueryContext(ctx, exampleQuery, sql.Named("p1", 3))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get example values: %w", err)
+		log.Printf("ERROR executing example query [%s]: %v", exampleQuery, err)
+		return nil, fmt.Errorf("failed to get example values for %s.%s: %w", tableName, columnName, err)
 	}
 	defer rows.Close()
 
 	var examples []string
 	for rows.Next() {
-		var value string
+		var value sql.NullString
 		if err := rows.Scan(&value); err != nil {
-			return nil, fmt.Errorf("error scanning example value: %w", err)
+			return nil, fmt.Errorf("error scanning example value for %s.%s: %w", tableName, columnName, err)
 		}
-		examples = append(examples, value)
+		if value.Valid {
+			examples = append(examples, value.String)
+		}
+	}
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("error iterating example values for %s.%s: %w", tableName, columnName, rows.Err())
 	}
 
 	return map[string]interface{}{
@@ -217,356 +237,301 @@ func (h sqlServerHandler) GetColumnMetadata(db *database.DB, tableName string, c
 	}, nil
 }
 
-// formatExampleValues formats a slice of example values for SQL comment in SQL Server
+func escapeSQLServerString(value string) string {
+	return strings.ReplaceAll(value, "'", "''")
+}
+
+func escapeAndQuoteSQLServerString(value string) string {
+	return fmt.Sprintf("N'%s'", escapeSQLServerString(value))
+}
+
 func (h sqlServerHandler) formatExampleValues(values []string) string {
 	if len(values) == 0 {
-		return "[]"
+		return ""
 	}
-	quoted := make([]string, len(values))
+	escaped := make([]string, len(values))
 	for i, v := range values {
-		// Use %q to add double quotes and escape internal double quotes and backslashes.
-		quoted[i] = fmt.Sprintf("%q", v)
+		escaped[i] = escapeSQLServerString(v)
 	}
-	return fmt.Sprintf("[%s]", strings.Join(quoted, ", ")) // Format as array
+	return fmt.Sprintf("Examples: ['%s']", strings.Join(escaped, "', '"))
 }
 
-func (h sqlServerHandler) generateMetadataComment(data *database.CommentData, enrichments map[string]bool) string {
-	if data == nil {
-		return ""
-	}
-	if data.TableName == "" || data.ColumnName == "" {
-		return ""
-	}
-
-	var commentParts []string
-
-	// Helper function to check if enrichment is requested
-	isEnrichmentRequested := func(enrichment string) bool {
-		if len(enrichments) == 0 {
-			return true // If no enrichments specified, include all
-		}
-		return enrichments[enrichment]
-	}
-
-	if isEnrichmentRequested("description") && data.Description != "" {
-		commentParts = append(commentParts, fmt.Sprintf("Description: %s", data.Description))
-	}
-
-	if isEnrichmentRequested("examples") && len(data.ExampleValues) > 0 {
-		commentParts = append(commentParts, fmt.Sprintf("Examples: %s", h.formatExampleValues(data.ExampleValues)))
-	}
-	if isEnrichmentRequested("distinct_values") {
-		commentParts = append(commentParts, fmt.Sprintf("Distinct Values: %d", data.DistinctCount))
-	}
-	if isEnrichmentRequested("null_count") {
-		commentParts = append(commentParts, fmt.Sprintf("Null Count: %d", data.NullCount))
-	}
-
-	return strings.Join(commentParts, " | ")
-}
-
-func (h sqlServerHandler) generateTableMetadataComment(data *database.TableCommentData, enrichments map[string]bool) string {
-	if data == nil || data.TableName == "" {
-		return ""
-	}
-
-	var commentParts []string
-	isEnrichmentRequested := func(enrichment string) bool {
-		if len(enrichments) == 0 {
-			return true // If no enrichments specified, include all
-		}
-		return enrichments[enrichment]
-	}
-
-	if isEnrichmentRequested("description") && data.Description != "" {
-		commentParts = append(commentParts, fmt.Sprintf("Description: %s", data.Description))
-	}
-	return strings.Join(commentParts, " | ")
-}
-
-func (h sqlServerHandler) mergeComments(existingComment string, newMetadataComment string, updateExistingMode string) string {
-	startTag := "<gemini>"
-	endTag := "</gemini>"
-	startIndex := strings.Index(existingComment, startTag)
-	endIndex := strings.LastIndex(existingComment, endTag)
-
-	comment := ""
-
-	if startIndex == -1 || endIndex == -1 || endIndex <= startIndex {
-		// No Gemini tag found, append new comment with tags
-		if existingComment != "" {
-			comment = existingComment + " " + startTag + newMetadataComment + endTag
-		} else {
-			comment = startTag + newMetadataComment + endTag // Just add new comment with tags
-		}
-	} else if updateExistingMode == "append" {
-		currentGeminiComment := existingComment[startIndex+len(startTag) : endIndex]
-		if currentGeminiComment != "" {
-			comment = existingComment[:endIndex] + " " + newMetadataComment + endTag + existingComment[endIndex+len(endTag):] // Append to existing gemini comment
-		}
-	} else {
-		// Gemini tag found, replace content inside tags
-		prefix := existingComment[:startIndex]
-		suffix := existingComment[endIndex+len(endTag):]
-		comment = prefix + startTag + newMetadataComment + endTag + suffix
-	}
-	if comment == "" {
-		comment = existingComment
-	}
-	if comment == "<gemini></gemini>" {
-		comment = ""
-	}
-	return comment
-}
-
-// GenerateCommentSQL creates SQL statements for column comments in SQL Server
 func (h sqlServerHandler) GenerateCommentSQL(db *database.DB, data *database.CommentData, enrichments map[string]bool) (string, error) {
-	if data == nil {
-		return "", fmt.Errorf("metadata cannot be nil")
+	if data == nil || data.TableName == "" || data.ColumnName == "" {
+		return "", fmt.Errorf("invalid input for GenerateCommentSQL")
 	}
-	if data.TableName == "" || data.ColumnName == "" {
-		return "", fmt.Errorf("table and column names cannot be empty")
-	}
+	schemaName := "dbo"
 
-	config := database.GetConfig() // Retrieve global config
-	newMetadataComment := h.generateMetadataComment(data, enrichments)
-	existingComment, err := h.GetColumnComment(context.Background(), db, data.TableName, data.ColumnName)
-	if err != nil {
-		return "", err
-	}
-	finalComment := h.mergeComments(existingComment, newMetadataComment, config.UpdateExistingMode) // Pass updateExistingMode
+	formattedExamples := h.formatExampleValues(data.ExampleValues)
+	newMetadataComment := database.GenerateMetadataCommentString(data, enrichments, formattedExamples)
 
-	// Check if comment already exists to decide between sp_addextendedproperty and sp_updateextendedproperty
-	query := `
-		SELECT CAST(value as NVARCHAR(MAX))
-		FROM fn_listextendedproperty (N'MS_Description', N'SCHEMA', N'dbo', N'TABLE', @tableName, N'COLUMN', @columnName)
-	`
-	var existingCommentDB string
-	err = db.QueryRow(query, sql.Named("tableName", data.TableName), sql.Named("columnName", data.ColumnName)).Scan(&existingCommentDB)
-	if err != nil && err != sql.ErrNoRows {
-		return "", fmt.Errorf("failed to check for existing comment: %w", err)
+	existingComment, _ := h.GetColumnComment(context.Background(), db, data.TableName, data.ColumnName)
+
+	finalComment := database.MergeComments(existingComment, newMetadataComment, db.Config.UpdateExistingMode)
+
+	propertyExists, checkErr := h.checkExtendedPropertyExists(context.Background(), db, schemaName, data.TableName, data.ColumnName)
+	if checkErr != nil {
+		return "", fmt.Errorf("failed to check existing property for %s.%s.%s: %w", schemaName, data.TableName, data.ColumnName, checkErr)
 	}
 
 	var sqlStmt string
-	if err == sql.ErrNoRows {
-		// No existing comment, use sp_addextendedproperty
+	quotedSchema := escapeAndQuoteSQLServerString(schemaName)
+	quotedTable := escapeAndQuoteSQLServerString(data.TableName)
+	quotedColumn := escapeAndQuoteSQLServerString(data.ColumnName)
+	quotedCommentValue := escapeAndQuoteSQLServerString(finalComment)
+
+	if !propertyExists {
+		if finalComment == "" {
+			return "", nil
+		}
 		sqlStmt = fmt.Sprintf(
-			"EXEC sp_addextendedproperty N'MS_Description', N'%s', N'SCHEMA', N'dbo', N'TABLE', %s, N'COLUMN', %s;",
-			finalComment,
-			h.QuoteIdentifier(data.TableName),
-			h.QuoteIdentifier(data.ColumnName),
+			`EXEC sp_addextendedproperty @name=N'MS_Description', @value=%s, @level0type=N'SCHEMA', @level0name=%s, @level1type=N'TABLE', @level1name=%s, @level2type=N'COLUMN', @level2name=%s;`,
+			quotedCommentValue,
+			quotedSchema,
+			quotedTable,
+			quotedColumn,
 		)
 	} else {
-		// Existing comment found, use sp_updateextendedproperty
 		sqlStmt = fmt.Sprintf(
-			"EXEC sp_updateextendedproperty N'MS_Description', N'%s', N'SCHEMA', N'dbo', N'TABLE', %s, N'COLUMN', %s;",
-			finalComment, // Use the merged comment
-			h.QuoteIdentifier(data.TableName),
-			h.QuoteIdentifier(data.ColumnName),
+			`EXEC sp_updateextendedproperty @name=N'MS_Description', @value=%s, @level0type=N'SCHEMA', @level0name=%s, @level1type=N'TABLE', @level1name=%s, @level2type=N'COLUMN', @level2name=%s;`,
+			quotedCommentValue,
+			quotedSchema,
+			quotedTable,
+			quotedColumn,
 		)
 	}
-	return sqlStmt, nil
+	return strings.TrimSpace(sqlStmt), nil
 }
 
-// GenerateDeleteCommentSQL for SQL Server
 func (h sqlServerHandler) GenerateDeleteCommentSQL(ctx context.Context, db *database.DB, tableName string, columnName string) (string, error) {
 	if tableName == "" || columnName == "" {
-		return "", fmt.Errorf("table and column names cannot be empty")
+		return "", fmt.Errorf("table and column names cannot be empty for GenerateDeleteCommentSQL")
+	}
+	schemaName := "dbo"
+
+	propertyExists, checkErr := h.checkExtendedPropertyExists(ctx, db, schemaName, tableName, columnName)
+	if checkErr != nil {
+		return "", fmt.Errorf("failed to check existing property for delete %s.%s.%s: %w", schemaName, tableName, columnName, checkErr)
+	}
+	if !propertyExists {
+		return "", nil
 	}
 
 	existingComment, err := h.GetColumnComment(ctx, db, tableName, columnName)
 	if err != nil {
-		return "", err
+		log.Printf("WARN: Property MS_Description exists for %s.%s.%s but failed to get value: %v", schemaName, tableName, columnName, err)
+		existingComment = ""
 	}
 
-	startTag := "<gemini>"
-	endTag := "</gemini>"
-	startIndex := strings.Index(existingComment, startTag)
-	endIndex := strings.LastIndex(existingComment, endTag)
+	finalComment := database.MergeComments(existingComment, "", "")
 
-	var finalComment string
-	if startIndex != -1 && endIndex != -1 && endIndex > startIndex {
-		// Gemini tags found, remove content within tags
-		prefix := existingComment[:startIndex]
-		suffix := existingComment[endIndex+len(endTag):]
-		finalComment = strings.TrimSpace(prefix + suffix) // Trim leading/trailing spaces after removing gemini part
-	} else {
-		// Gemini tags not found, or invalid tags, keep original comment
-		finalComment = existingComment
+	if finalComment == strings.TrimSpace(existingComment) {
+		return "", nil
 	}
 
-	escapedComment := strings.ReplaceAll(finalComment, "'", "''")
+	quotedSchema := escapeAndQuoteSQLServerString(schemaName)
+	quotedTable := escapeAndQuoteSQLServerString(tableName)
+	quotedColumn := escapeAndQuoteSQLServerString(columnName)
+	quotedCommentValue := escapeAndQuoteSQLServerString(finalComment)
 
-	// Generate SQL to update or add extended property (same as in GenerateCommentSQL, but with the modified comment)
 	sqlStmt := fmt.Sprintf(
-		"EXEC sp_updateextendedproperty N'MS_Description', N'%s', N'SCHEMA', N'dbo', N'TABLE', %s, N'COLUMN', %s;",
-		escapedComment, // Use the modified comment (Gemini part removed)
-		h.QuoteIdentifier(tableName),
-		h.QuoteIdentifier(columnName),
+		`EXEC sp_updateextendedproperty @name=N'MS_Description', @value=%s, @level0type=N'SCHEMA', @level0name=%s, @level1type=N'TABLE', @level1name=%s, @level2type=N'COLUMN', @level2name=%s;`,
+		quotedCommentValue,
+		quotedSchema,
+		quotedTable,
+		quotedColumn,
 	)
-	return sqlStmt, nil
+	return strings.TrimSpace(sqlStmt), nil
 }
 
-// GetColumnComment for SQL Server retrieves the comment for a specific column.
 func (h sqlServerHandler) GetColumnComment(ctx context.Context, db *database.DB, tableName string, columnName string) (string, error) {
+	schemaName := "dbo"
 	query := `
-		SELECT CAST(value as NVARCHAR(MAX))
-		FROM fn_listextendedproperty (N'MS_Description', N'SCHEMA', N'dbo', N'TABLE', @tableName, N'COLUMN', @columnName)
-	`
+		  SELECT CAST(p.value AS NVARCHAR(MAX))
+		  FROM sys.extended_properties AS p
+		  INNER JOIN sys.tables AS t ON p.major_id = t.object_id
+		  INNER JOIN sys.columns AS c ON p.major_id = c.object_id AND p.minor_id = c.column_id
+		  INNER JOIN sys.schemas AS s ON t.schema_id = s.schema_id
+		  WHERE p.class = 1
+			AND p.name = N'MS_Description'
+			AND s.name = @p1
+			AND t.name = @p2
+			AND c.name = @p3;
+	  `
 
-	var comment sql.NullString // Use sql.NullString to handle NULL values
-	err := db.QueryRowContext(ctx, query, sql.Named("tableName", tableName), sql.Named("columnName", columnName)).Scan(&comment)
+	var comment sql.NullString
+	err := db.Pool.QueryRowContext(ctx, query,
+		sql.Named("p1", schemaName),
+		sql.Named("p2", tableName),
+		sql.Named("p3", columnName),
+	).Scan(&comment)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", nil // No comment found, return empty string
+			return "", nil
 		}
-		return "", fmt.Errorf("failed to retrieve column comment: %w", err)
+		log.Printf("ERROR: Failed to retrieve column comment for %s.%s.%s: %v", schemaName, tableName, columnName, err)
+		return "", fmt.Errorf("failed to retrieve column comment for %s.%s.%s: %w", schemaName, tableName, columnName, err)
 	}
 
 	if comment.Valid {
 		return comment.String, nil
-	} else {
-		return "", nil // Comment is NULL in DB, return nil, nil
 	}
+	return "", nil
 }
 
-// GenerateTableCommentSQL generates the SQL to comment on a table.
 func (h sqlServerHandler) GenerateTableCommentSQL(db *database.DB, data *database.TableCommentData, enrichments map[string]bool) (string, error) {
 	if data == nil || data.TableName == "" {
 		return "", fmt.Errorf("table comment data cannot be nil or empty")
 	}
+	schemaName := "dbo"
 
-	config := database.GetConfig()
+	newMetadataComment := database.GenerateTableMetadataCommentString(data, enrichments)
 
-	newMetadataComment := h.generateTableMetadataComment(data, enrichments)
-	existingComment, err := h.GetTableComment(context.Background(), db, data.TableName)
-	if err != nil {
-		return "", err
-	}
-	finalComment := h.mergeComments(existingComment, newMetadataComment, config.UpdateExistingMode)
+	existingComment, _ := h.GetTableComment(context.Background(), db, data.TableName)
 
-	if finalComment == "" {
+	finalComment := database.MergeComments(existingComment, newMetadataComment, db.Config.UpdateExistingMode)
+
+	if finalComment == strings.TrimSpace(existingComment) {
 		return "", nil
 	}
 
-	// Check if the extended property already exists for the table
-	checkQuery := `
-        SELECT 1
-        FROM sys.extended_properties
-        WHERE class = 1  -- Object or column
-          AND class_desc = 'OBJECT_OR_COLUMN'
-          AND major_id = OBJECT_ID(@tableName)
-          AND minor_id = 0  -- Table level (minor_id is 0 for table)
-          AND name = N'MS_Description';
-    `
-
-	var exists int
-	err = db.QueryRow(checkQuery, sql.Named("tableName", data.TableName)).Scan(&exists)
-	var sqlStmt string
-	if err != nil && err != sql.ErrNoRows {
-		// An actual error occurred during the check
-		return "", fmt.Errorf("failed to check for existing table comment: %w", err)
-	} else if err == sql.ErrNoRows {
-		// No existing comment, use sp_addextendedproperty
-
-		sqlStmt = fmt.Sprintf(`
-            EXEC sp_addextendedproperty 
-            @name = N'MS_Description', 
-            @value = N'%s', 
-            @level0type = N'SCHEMA', 
-            @level0name = N'dbo', 
-            @level1type = N'TABLE', 
-            @level1name = %s;`,
-			finalComment,
-			h.QuoteIdentifier(data.TableName),
-		)
-
-	} else {
-		//  Existing comment, use sp_updateextendedproperty
-		sqlStmt = fmt.Sprintf(`
-        EXEC sp_updateextendedproperty 
-        @name = N'MS_Description', 
-        @value = N'%s', 
-        @level0type = N'SCHEMA', 
-        @level0name = N'dbo', 
-        @level1type = N'TABLE', 
-        @level1name = %s;`,
-			finalComment,
-			h.QuoteIdentifier(data.TableName),
-		)
+	propertyExists, checkErr := h.checkExtendedPropertyExists(context.Background(), db, schemaName, data.TableName, "")
+	if checkErr != nil {
+		return "", fmt.Errorf("failed to check existing property for table %s.%s: %w", schemaName, data.TableName, checkErr)
 	}
 
-	return sqlStmt, nil
+	var sqlStmt string
+	quotedSchema := escapeAndQuoteSQLServerString(schemaName)
+	quotedTable := escapeAndQuoteSQLServerString(data.TableName)
+	quotedCommentValue := escapeAndQuoteSQLServerString(finalComment)
+
+	if !propertyExists {
+		if finalComment == "" {
+			return "", nil
+		}
+		sqlStmt = fmt.Sprintf(
+			`EXEC sp_addextendedproperty @name=N'MS_Description', @value=%s, @level0type=N'SCHEMA', @level0name=%s, @level1type=N'TABLE', @level1name=%s;`,
+			quotedCommentValue, quotedSchema, quotedTable)
+	} else {
+		sqlStmt = fmt.Sprintf(
+			`EXEC sp_updateextendedproperty @name=N'MS_Description', @value=%s, @level0type=N'SCHEMA', @level0name=%s, @level1type=N'TABLE', @level1name=%s;`,
+			quotedCommentValue, quotedSchema, quotedTable)
+	}
+	return strings.TrimSpace(sqlStmt), nil
 }
 
-// GetTableComment retrieves the existing comment for a table.
 func (h sqlServerHandler) GetTableComment(ctx context.Context, db *database.DB, tableName string) (string, error) {
+	schemaName := "dbo"
 	query := `
-    SELECT CAST(ep.value AS NVARCHAR(MAX))
-    FROM sys.extended_properties AS ep
-    INNER JOIN sys.tables AS t ON ep.major_id = t.object_id
-    INNER JOIN sys.schemas AS s ON t.schema_id = s.schema_id
-    WHERE ep.minor_id = 0
-    AND ep.name = 'MS_Description'
-    AND t.name = @tableName
-    AND s.name = 'dbo';
-    `
+		  SELECT CAST(p.value AS NVARCHAR(MAX))
+		  FROM sys.extended_properties AS p
+		  INNER JOIN sys.tables AS t ON p.major_id = t.object_id
+		  INNER JOIN sys.schemas AS s ON t.schema_id = s.schema_id
+		  WHERE p.class = 1
+			AND p.minor_id = 0
+			AND p.name = N'MS_Description'
+			AND s.name = @p1
+			AND t.name = @p2;
+	  `
 	var comment sql.NullString
-	err := db.QueryRowContext(ctx, query, sql.Named("tableName", tableName)).Scan(&comment)
+	err := db.Pool.QueryRowContext(ctx, query,
+		sql.Named("p1", schemaName),
+		sql.Named("p2", tableName),
+	).Scan(&comment)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", nil // No comment, return empty string.
+			return "", nil
 		}
-		return "", fmt.Errorf("failed to retrieve table comment: %w", err)
+		log.Printf("ERROR: Failed to retrieve table comment for %s.%s: %v", schemaName, tableName, err)
+		return "", fmt.Errorf("failed to retrieve table comment for %s.%s: %w", schemaName, tableName, err)
 	}
 
 	if comment.Valid {
 		return comment.String, nil
 	}
-	return "", nil // Comment is NULL.
+	return "", nil
 }
 
-// GenerateDeleteTableCommentSQL generates SQL to remove the Gemini-generated part of a table comment.
 func (h sqlServerHandler) GenerateDeleteTableCommentSQL(ctx context.Context, db *database.DB, tableName string) (string, error) {
 	if tableName == "" {
-		return "", fmt.Errorf("table name cannot be empty")
+		return "", fmt.Errorf("table name cannot be empty for GenerateDeleteTableCommentSQL")
+	}
+	schemaName := "dbo"
+
+	propertyExists, checkErr := h.checkExtendedPropertyExists(ctx, db, schemaName, tableName, "")
+	if checkErr != nil {
+		return "", fmt.Errorf("failed to check existing property for delete table %s.%s: %w", schemaName, tableName, checkErr)
+	}
+	if !propertyExists {
+		return "", nil
 	}
 
 	existingComment, err := h.GetTableComment(ctx, db, tableName)
 	if err != nil {
-		return "", err
+		log.Printf("WARN: Property MS_Description exists for table %s.%s but failed to get value: %v", schemaName, tableName, err)
+		existingComment = ""
 	}
 
-	startTag := "<gemini>"
-	endTag := "</gemini>"
-	startIndex := strings.Index(existingComment, startTag)
-	endIndex := strings.LastIndex(existingComment, endTag)
+	finalComment := database.MergeComments(existingComment, "", "")
 
-	var finalComment string
-	if startIndex != -1 && endIndex != -1 && endIndex > startIndex {
-		prefix := existingComment[:startIndex]
-		suffix := existingComment[endIndex+len(endTag):]
-		finalComment = strings.TrimSpace(prefix + suffix)
+	if finalComment == strings.TrimSpace(existingComment) {
+		return "", nil
+	}
+
+	quotedSchema := escapeAndQuoteSQLServerString(schemaName)
+	quotedTable := escapeAndQuoteSQLServerString(tableName)
+	quotedCommentValue := escapeAndQuoteSQLServerString(finalComment)
+
+	sqlStmt := fmt.Sprintf(
+		`EXEC sp_updateextendedproperty @name=N'MS_Description', @value=%s, @level0type=N'SCHEMA', @level0name=%s, @level1type=N'TABLE', @level1name=%s;`,
+		quotedCommentValue, quotedSchema, quotedTable)
+
+	return strings.TrimSpace(sqlStmt), nil
+}
+
+func (h sqlServerHandler) checkExtendedPropertyExists(ctx context.Context, db *database.DB, schemaName, tableName, columnName string) (bool, error) {
+	var query string
+	params := []interface{}{sql.Named("p1", schemaName), sql.Named("p2", tableName)}
+
+	if columnName == "" {
+		query = `
+			  SELECT 1
+			  FROM sys.extended_properties AS p
+			  INNER JOIN sys.tables AS t ON p.major_id = t.object_id
+			  INNER JOIN sys.schemas AS s ON t.schema_id = s.schema_id
+			  WHERE p.class = 1 AND p.minor_id = 0 AND p.name = N'MS_Description'
+				AND s.name = @p1 AND t.name = @p2;
+		  `
 	} else {
-		finalComment = existingComment // No gemini tags, keep original.
+		query = `
+			  SELECT 1
+			  FROM sys.extended_properties AS p
+			  INNER JOIN sys.tables AS t ON p.major_id = t.object_id
+			  INNER JOIN sys.columns AS c ON p.major_id = c.object_id AND p.minor_id = c.column_id
+			  INNER JOIN sys.schemas AS s ON t.schema_id = s.schema_id
+			  WHERE p.class = 1 AND p.name = N'MS_Description'
+				AND s.name = @p1 AND t.name = @p2 AND c.name = @p3;
+		  `
+		params = append(params, sql.Named("p3", columnName))
 	}
 
-	// Use sp_updateextendedproperty to update the comment (removing the Gemini part)
-	sqlStmt := fmt.Sprintf(`
-        EXEC sp_updateextendedproperty 
-        @name = N'MS_Description', 
-        @value = N'%s', 
-        @level0type = N'SCHEMA', 
-        @level0name = N'dbo', 
-        @level1type = N'TABLE', 
-        @level1name = %s;`,
-		finalComment,
-		h.QuoteIdentifier(tableName),
-	)
+	var exists int
+	err := db.Pool.QueryRowContext(ctx, query, params...).Scan(&exists)
 
-	return sqlStmt, nil
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		target := fmt.Sprintf("%s.%s", schemaName, tableName)
+		if columnName != "" {
+			target += "." + columnName
+		}
+		log.Printf("ERROR: Failed checking extended property existence for %s: %v", target, err)
+		return false, fmt.Errorf("failed checking extended property existence for %s: %w", target, err)
+	}
+	return true, nil
 }
 
 func init() {

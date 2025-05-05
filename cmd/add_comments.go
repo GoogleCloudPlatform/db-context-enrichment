@@ -1,18 +1,3 @@
-/*
- * Copyright 2025 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package cmd
 
 import (
@@ -23,137 +8,139 @@ import (
 
 	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/database"
 	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/enricher"
+	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/genai"
 	"github.com/GoogleCloudPlatform/db-context-enrichment/internal/utils"
 	"github.com/spf13/cobra"
 )
 
-// addCommentsCmd represents the addComments command
 var addCommentsCmd = &cobra.Command{
-	Use:               "add-comments",
-	Short:             "Generate SQL for adding comments to database columns based on metadata",
-	Long:              `Connects to the database, collects metadata, and generates SQL statements to add column comments. These SQL statements are outputted to a file for review before actual application.`,
-	Example:           `./db_schema_enricher add-comments --dialect cloudsqlpostgres --username user --password pass --database mydb --cloudsql-instance-connection-name my-project:my-region:my-instance --out_file ./mydb_comments.sql --tables "table1[column1,column3],table2,table4[columnx,columnz]" --enrichments "examples,distinct_values,null_count,foreign_keys,primary_keys"`,
-	PersistentPreRunE: initFlagsAndConfig,
-	RunE:              runAddComments,
+	Use:   "add-comments",
+	Short: "Generate SQL for adding comments to database columns based on metadata",
+	Long: `Connects to the database, collects metadata, potentially uses an LLM for descriptions/PII checks,
+and generates SQL statements to add column comments. These SQL statements are outputted to a file for review.
+If --dry-run=false, prompts for application.`,
+	Example: `./db_schema_enricher add-comments --dialect cloudsqlpostgres --username user --password pass --database mydb --cloudsql-instance-connection-name my-project:my-region:my-instance --out_file ./mydb_comments.sql --tables "table1[col1,column3],table2,table4[columnx,columnz]" --enrichments "description,examples,distinct_values" --context docs.txt --gemini-api-key YOUR_API_KEY`,
+	RunE:    runAddComments,
 }
 
 func runAddComments(cmd *cobra.Command, args []string) error {
-	dbConfig := database.GetConfig()
-	if dbConfig == nil {
-		return fmt.Errorf("database config is not initialized")
-	}
-
-	if err := validateDialect(dialect); err != nil {
-		return err
-	}
-
-	outputFile := cmd.Flag("out_file").Value.String()
-	if outputFile == "" {
-		outputFile = utils.GetDefaultOutputFilePath(dbConfig.DBName, "add-comments")
-	}
-
-	log.Println("INFO: Starting add-comments operation", "dialect:", dbConfig.Dialect, "database:", dbConfig.DBName)
-
-	db, err := setupDatabase()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	model := cmd.Flag("model").Value.String()
-	metadataCollector := enricher.NewMetadataCollector(db, &enricher.DefaultRetryOptions, dryRun, geminiAPIKey, "", model)
-
+	cfg := getAppConfig()
 	ctx := cmd.Context()
 
-	tablesFlag := cmd.Flag("tables").Value.String()
-	tableFilters, err := utils.ParseTablesFlag(tablesFlag)
-	if err != nil {
-		return err
+	outputFile := cfg.OutputFile
+	if outputFile == "" {
+		outputFile = cfg.GetDefaultOutputFile("add-comments")
 	}
-	metadataCollector.TableFilters = tableFilters
 
-	enrichmentsFlag := cmd.Flag("enrichments").Value.String()
+	log.Println("INFO: Starting add-comments operation", "dialect:", cfg.Database.Dialect, "database:", cfg.Database.DBName, "dry-run:", cfg.DryRun)
+
+	// Setup Database Connection
+	dbAdapter, err := database.New(cfg.Database)
+	if err != nil {
+		return fmt.Errorf("failed to initialize database connection: %w", err)
+	}
+	defer dbAdapter.Close()
+
+	var llmClient genai.LLMClient
+	var llmErr error
+	if cfg.GeminiAPIKey != "" {
+		llmConfig := genai.Config{
+			APIKey: cfg.GeminiAPIKey,
+			Model:  cfg.Model,
+		}
+		llmClient, llmErr = genai.NewClient(ctx, llmConfig)
+		if llmErr != nil {
+			return fmt.Errorf("failed to initialize Gemini client: %w", llmErr)
+		}
+		defer llmClient.Close()
+		log.Println("INFO: LLM client initialized.")
+	} else {
+		log.Println("INFO: No Gemini API key provided. LLM-based enrichments (Description, PII check) will be skipped.")
+	}
+
+	// Setup Enricher Service
+	enricherCfg := enricher.Config{}
+	svc := enricher.NewService(dbAdapter, llmClient, enricherCfg)
+
+	// Parse filters
+	tableFilters, err := utils.ParseTablesFlag(cfg.TablesRaw)
+	if err != nil {
+		return fmt.Errorf("error parsing --tables flag: %w", err)
+	}
+
+	// Parse enrichments
 	enrichmentSet := make(map[string]bool)
-	if enrichmentsFlag != "" {
-		enrichmentsFlag = strings.ReplaceAll(enrichmentsFlag, " ", "")
-		for _, e := range strings.Split(enrichmentsFlag, ",") {
+	if cfg.EnrichmentsRaw != "" {
+		enrichmentsList := strings.Split(strings.ReplaceAll(cfg.EnrichmentsRaw, " ", ""), ",")
+		for _, e := range enrichmentsList {
 			enrichmentSet[strings.TrimSpace(strings.ToLower(e))] = true
 		}
 	}
-	metadataCollector.Enrichments = enrichmentSet
 
-	contextFilesFlag := cmd.Flag("context").Value.String()
-	additionalContext, err := utils.ReadContextFiles(contextFilesFlag)
+	// Read context files
+	additionalContext, err := utils.ReadContextFiles(cfg.ContextFilesRaw)
 	if err != nil {
-		return fmt.Errorf("failed to read context files: %w", err)
+		return fmt.Errorf("failed to read context files specified via --context: %w", err)
 	}
-	metadataCollector.AdditionalContext = additionalContext
-
-	// API Key Validation Logic
 	if additionalContext != "" {
-		if geminiAPIKey == "" {
-			return fmt.Errorf("additional context is provided, but Gemini API key is not configured. Please set the GEMINI_API_KEY environment variable")
+		log.Printf("INFO: Loaded additional context from: %s", cfg.ContextFilesRaw)
+	}
+
+	needsLLM := additionalContext != "" || enrichmentSet["description"]
+	if needsLLM {
+		if llmClient == nil {
+			requiredBy := ""
+			if additionalContext != "" || enrichmentSet["description"] {
+				requiredBy = " for Description enrichment"
+			}
+			errorMsg := fmt.Sprintf("LLM features (%s) requested/implied, but Gemini API key is missing", strings.TrimSpace(requiredBy))
+			log.Println("ERROR:", errorMsg)
+			return fmt.Errorf("%s. Set --gemini-api-key flag or GEMINI_API_KEY environment variable", errorMsg)
 		}
-		if err := metadataCollector.IsGeminiAPIKeyValid(ctx); err != nil {
-			return fmt.Errorf("\nGemini API key is invalid. Please provide a valid api key\n")
+		if err := llmClient.IsAPIKeyValid(ctx); err != nil {
+			return fmt.Errorf("Gemini API key validation failed: %w. Ensure the key is correct and has permissions", err)
 		}
 	}
 
-	if len(enrichmentSet) == 0 || enrichmentSet["examples"] {
-		if geminiAPIKey == "" {
-			log.Println("WARN: No Gemini API key provided. PII identification will be skipped.")
-		}
-		if err := metadataCollector.IsGeminiAPIKeyValid(ctx); err != nil {
-			geminiAPIKey = ""
-			log.Println("WARN: Gemini API key provided is invalid. PII identification will be skipped.\n")
-		}
+	generationParams := enricher.GenerateSQLParams{
+		TableFilters:      tableFilters,
+		Enrichments:       enrichmentSet,
+		AdditionalContext: additionalContext,
 	}
-
-	metadataCollector.GeminiAPIKey = geminiAPIKey
-
-	sqlStatements, err := metadataCollector.GenerateCommentSQLs(ctx)
+	sqlStatements, err := svc.GenerateCommentSQLs(ctx, generationParams)
 	if err != nil {
-		return fmt.Errorf("metadata collection and SQL generation failed: %w", err)
+		return fmt.Errorf("SQL generation failed: %w", err)
 	}
 
-	file, createErr := os.Create(outputFile)
-	if createErr != nil {
-		return fmt.Errorf("failed to create output file: %w", createErr)
-	}
-	defer file.Close()
-
-	for _, sqlStmt := range sqlStatements {
-		if _, writeErr := file.WriteString(sqlStmt + "\n"); writeErr != nil {
-			return fmt.Errorf("failed to write SQL statement to file: %w", writeErr)
-		}
-	}
-
-	log.Println("INFO: SQL statements to add column comments have been written to:", outputFile)
-
-	if dryRun {
-		log.Println("INFO: Add comments operation completed in dry-run mode.  No changes were made to the database.")
+	if len(sqlStatements) == 0 {
+		log.Println("INFO: No SQL statements generated. This might be due to filters or lack of enrichable content meeting criteria.")
 		return nil
 	}
 
-	// --- User Confirmation ---
-	if len(sqlStatements) > 0 {
-		if utils.ConfirmAction("SQL statements to add column comments") {
-			// Re-read the SQL statements from the output file as changes may have been
-			fileContent, readErr := os.ReadFile(outputFile)
-			if readErr != nil {
-				return fmt.Errorf("failed to read SQL statements from output file: %w", readErr)
-			}
-			sqlStatements = strings.Split(strings.TrimSpace(string(fileContent)), "\n")
+	// Write SQL to File
+	fileContent := strings.Join(sqlStatements, "\n") + "\n"
+	writeErr := os.WriteFile(outputFile, []byte(fileContent), 0644)
+	if writeErr != nil {
+		return fmt.Errorf("failed to write output file '%s': %w", outputFile, writeErr)
+	}
+	log.Println("INFO: SQL statements successfully written to:", outputFile)
 
-			if execErr := db.ExecuteSQLStatements(ctx, sqlStatements); execErr != nil {
-				return fmt.Errorf("failed to execute SQL statements to add comments: %w", execErr)
-			}
-			log.Println("INFO: Successfully added comments to the database.")
-		} else {
-			log.Println("INFO: Comment addition aborted by user.")
+	if cfg.DryRun {
+		log.Println("INFO: Add comments operation completed in dry-run mode. Review the generated SQL file:", outputFile)
+		return nil
+	}
+
+	// Dry run is false
+	if utils.ConfirmAction(fmt.Sprintf("apply %d generated SQL statements from '%s'", len(sqlStatements), outputFile)) {
+		log.Println("INFO: Applying SQL statements to the database...")
+
+		if execErr := dbAdapter.ExecuteSQLStatements(ctx, sqlStatements); execErr != nil {
+			return fmt.Errorf("failed to execute SQL statements from '%s': %w. Review the file and database logs", outputFile, execErr)
 		}
+		log.Printf("INFO: Successfully applied %d SQL statements from %s.", len(sqlStatements), outputFile)
+
 	} else {
-		log.Println("INFO: No comments to add.")
+		log.Println("INFO: Comment addition aborted by user. Generated SQL statements remain in:", outputFile)
 	}
 
 	log.Println("INFO: Add comments operation completed.")
@@ -161,16 +148,9 @@ func runAddComments(cmd *cobra.Command, args []string) error {
 }
 
 func init() {
-	var outputFile string
-	var tables string
-	var enrichments string
-	var contextFiles string
-	var model string
-
-	// Flags for add-comments command
-	addCommentsCmd.Flags().StringVarP(&outputFile, "out_file", "o", "", "File path to output generated SQL statements (defaults to <database>_comments.sql)")
-	addCommentsCmd.Flags().StringVar(&tables, "tables", "", "Comma-separated list of tables and columns to include (e.g., 'table1[col1,col2],table2,table3[col4]')")
-	addCommentsCmd.Flags().StringVar(&enrichments, "enrichments", "", "Comma-separated list of enrichments to include (e.g., 'examples,distinct_values,null_count,foreign_keys,primary_keys,description').  If empty, all enrichments are included.")
-	addCommentsCmd.Flags().StringVar(&contextFiles, "context", "", "Comma-separated list of context files to provide additional information for description generation.")
-	addCommentsCmd.Flags().StringVar(&model, "model", "gemini-1.5-pro-002", "Model to use for description enrichment.  If empty, the default modelb is used.")
+	addCommentsCmd.Flags().StringVarP(&appCfg.OutputFile, "out_file", "o", "", "File path to output generated SQL statements (defaults to <database>_comments.sql)")
+	addCommentsCmd.Flags().StringVar(&appCfg.TablesRaw, "tables", "", "Comma-separated list of tables/columns to include (e.g., 'table1[col1,col2],table2')")
+	addCommentsCmd.Flags().StringVar(&appCfg.EnrichmentsRaw, "enrichments", "", "Comma-separated list of enrichments to include (e.g., 'description,examples'). If empty, all are included.")
+	addCommentsCmd.Flags().StringVar(&appCfg.ContextFilesRaw, "context", "", "Comma-separated list of context files for description generation.")
+	addCommentsCmd.Flags().StringVar(&appCfg.Model, "model", appCfg.Model, "Model to use for description/PII enrichment.")
 }

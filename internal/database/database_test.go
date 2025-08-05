@@ -25,6 +25,7 @@ type mockDialectHandler struct {
 	genCommentSQLFn            func(db *DB, data *CommentData, enrichments map[string]bool) (string, error)
 	genTableCommentSQLFn       func(db *DB, data *TableCommentData, enrichments map[string]bool) (string, error)
 	genDeleteCommentSQLFn      func(ctx context.Context, db *DB, tableName string, columnName string) (string, error)
+	getForeignKeysFn               func(db *DB, tableName string, columnName string) ([]ForeignKeyReference, error)
 	genDeleteTableCommentSQLFn func(ctx context.Context, db *DB, tableName string) (string, error)
 
 	// Call counters/trackers
@@ -152,6 +153,16 @@ func (m *mockDialectHandler) GenerateDeleteTableCommentSQL(ctx context.Context, 
 	return "DELETE TABLE COMMENT mock", nil
 }
 
+
+func (m *mockDialectHandler) GetForeignKeys(db *DB, tableName string, columnName string) ([]ForeignKeyReference, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.getForeignKeysFn != nil {
+		return m.getForeignKeysFn(db, tableName, columnName)
+	}
+	// Return empty slice as default
+	return []ForeignKeyReference{}, nil
+}
 // Reset mock state
 func (m *mockDialectHandler) Reset() {
 	m.mu.Lock()
@@ -247,7 +258,7 @@ func newTestDBWithMockHandler(t *testing.T, handler DialectHandler) (*DB, sqlmoc
 
 	return &DB{
 		Pool:    mockDb,
-		handler: handler,
+		Handler: handler,
 		Config:  config.DatabaseConfig{Dialect: "mock"},
 	}, mock
 }

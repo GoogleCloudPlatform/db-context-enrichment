@@ -77,7 +77,7 @@ func (h sqlServerHandler) CreateCloudSQLPool(cfg config.DatabaseConfig) (*sql.DB
 	u := &url.URL{
 		Scheme:   "sqlserver",
 		User:     url.UserPassword(dbUser, dbPwd),
-		Host:     "cloudsql-instance",
+		Host:     "localhost",
 		RawQuery: query.Encode(),
 	}
 
@@ -207,7 +207,7 @@ func (h sqlServerHandler) GetColumnMetadata(db *database.DB, tableName string, c
 		return nil, fmt.Errorf("failed to get null count for %s.%s: %w", tableName, columnName, err)
 	}
 
-	exampleQuery := fmt.Sprintf("SELECT TOP (@p1) DISTINCT CAST(%s AS NVARCHAR(MAX)) FROM %s WHERE %s IS NOT NULL",
+	exampleQuery := fmt.Sprintf("SELECT DISTINCT TOP (@p1) CAST(%s AS NVARCHAR(MAX)) FROM %s WHERE %s IS NOT NULL",
 		quotedColumn, fullQuotedTable, quotedColumn)
 	rows, err := db.Pool.QueryContext(ctx, exampleQuery, sql.Named("p1", 3))
 	if err != nil {
@@ -251,9 +251,13 @@ func (h sqlServerHandler) formatExampleValues(values []string) string {
 	}
 	escaped := make([]string, len(values))
 	for i, v := range values {
-		escaped[i] = escapeSQLServerString(v)
+		trimmed := strings.ReplaceAll(v, "\n", " ")
+		if len(trimmed) > 100 {
+			trimmed = trimmed[:100] + "...[truncated]"
+		}
+		escaped[i] = escapeSQLServerString(trimmed)
 	}
-	return fmt.Sprintf("Examples: ['%s']", strings.Join(escaped, "', '"))
+	return fmt.Sprintf("Example Values: ['%s']", strings.Join(escaped, "', '"))
 }
 
 func (h sqlServerHandler) GenerateCommentSQL(db *database.DB, data *database.CommentData, enrichments map[string]bool) (string, error) {
@@ -532,6 +536,44 @@ func (h sqlServerHandler) checkExtendedPropertyExists(ctx context.Context, db *d
 		return false, fmt.Errorf("failed checking extended property existence for %s: %w", target, err)
 	}
 	return true, nil
+}
+func (h sqlServerHandler) GetForeignKeys(db *database.DB, tableName string, columnName string) ([]database.ForeignKeyReference, error) {
+	query := `
+		SELECT 
+			rt.name as referenced_table,
+			rc.name as referenced_column,
+			fk.name as constraint_name
+		FROM sys.foreign_keys fk
+		INNER JOIN sys.foreign_key_columns fkc ON fk.object_id = fkc.constraint_object_id
+		INNER JOIN sys.tables t ON fkc.parent_object_id = t.object_id
+		INNER JOIN sys.columns c ON fkc.parent_object_id = c.object_id AND fkc.parent_column_id = c.column_id
+		INNER JOIN sys.tables rt ON fkc.referenced_object_id = rt.object_id
+		INNER JOIN sys.columns rc ON fkc.referenced_object_id = rc.object_id AND fkc.referenced_column_id = rc.column_id
+		INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+		WHERE s.name = 'dbo'
+			AND t.name = @p1
+			AND c.name = @p2`
+
+	rows, err := db.Pool.Query(query, sql.Named("p1", tableName), sql.Named("p2", columnName))
+	if err != nil {
+		return nil, fmt.Errorf("error querying foreign keys for %s.%s: %w", tableName, columnName, err)
+	}
+	defer rows.Close()
+
+	var foreignKeys []database.ForeignKeyReference
+	for rows.Next() {
+		var fk database.ForeignKeyReference
+		if err := rows.Scan(&fk.ReferencedTable, &fk.ReferencedColumn, &fk.ConstraintName); err != nil {
+			return nil, fmt.Errorf("error scanning foreign key data for %s.%s: %w", tableName, columnName, err)
+		}
+		foreignKeys = append(foreignKeys, fk)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating foreign key rows for %s.%s: %w", tableName, columnName, err)
+	}
+
+	return foreignKeys, nil
 }
 
 func init() {

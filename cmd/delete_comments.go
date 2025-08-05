@@ -39,14 +39,13 @@ func runDeleteComments(cmd *cobra.Command, args []string) error {
 	defer dbAdapter.Close()
 	log.Println("INFO: Database connection established successfully.")
 
-	enricherCfg := enricher.Config{}
+	enricherCfg := enricher.Config{MaskPII: appCfg.MaskPII}
 	svc := enricher.NewService(dbAdapter, nil, enricherCfg)
 
 	tableFilters, err := utils.ParseTablesFlag(cfg.TablesRaw)
 	if err != nil {
 		return fmt.Errorf("error parsing --tables flag: %w", err)
 	}
-
 	deleteParams := enricher.GenerateDeleteSQLParams{
 		TableFilters: tableFilters,
 	}

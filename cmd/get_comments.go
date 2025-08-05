@@ -36,7 +36,7 @@ func runGetComments(cmd *cobra.Command, args []string) error {
 	defer dbAdapter.Close()
 	log.Println("INFO: Database connection established successfully.")
 
-	enricherCfg := enricher.Config{}
+	enricherCfg := enricher.Config{MaskPII: appCfg.MaskPII}
 	svc := enricher.NewService(dbAdapter, nil, enricherCfg)
 
 	getParams := enricher.GetCommentsParams{}

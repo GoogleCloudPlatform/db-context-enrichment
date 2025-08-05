@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time" // Added time package
 
 	"github.com/google/generative-ai-go/genai"
+	"google.golang.org/api/googleapi" // Added to check for API errors
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/status"
 )
@@ -23,7 +25,7 @@ type LLMClient interface {
 	GenerateDescription(ctx context.Context, objectType, objectName, parentName, knowledgeContext string) (string, error)
 
 	// GenerateSyntheticExamples analyzes original examples and potentially returns synthetic ones if PII is detected.
-	GenerateSyntheticExamples(ctx context.Context, columnName, tableName, dataType string, originalExamples []string) (processedExamples []string, wasSynthesized bool, err error)
+	GenerateSyntheticExamples(ctx context.Context, columnName, tableName, dataType string, originalExamples []string, maskPII bool) (processedExamples []string, wasSynthesized bool, err error)
 
 	// IsAPIKeyValid checks if the configured API key is functional.
 	IsAPIKeyValid(ctx context.Context) error
@@ -34,8 +36,11 @@ type LLMClient interface {
 
 // Config holds configuration for the GenAI client.
 type Config struct {
-	APIKey string
-	Model  string
+	APIKey         string
+	Model          string
+	MaxRetries     int           // Number of retry attempts
+	InitialBackoff time.Duration // Initial delay for backoff
+	MaxBackoff     time.Duration // Maximum delay for backoff
 }
 
 // NewClient creates a new Gemini client.
@@ -52,6 +57,17 @@ func NewClient(ctx context.Context, cfg Config) (LLMClient, error) {
 	if cfg.Model == "" {
 		cfg.Model = "gemini-1.5-flash-latest"
 		log.Printf("INFO: Gemini model not specified, defaulting to %s", cfg.Model)
+	}
+
+	// Set default retry parameters if not provided
+	if cfg.MaxRetries == 0 {
+		cfg.MaxRetries = 3
+	}
+	if cfg.InitialBackoff == 0 {
+		cfg.InitialBackoff = 2 * time.Second
+	}
+	if cfg.MaxBackoff == 0 {
+		cfg.MaxBackoff = 30 * time.Second
 	}
 
 	return &geminiClient{
@@ -82,9 +98,59 @@ func (c *geminiClient) IsAPIKeyValid(ctx context.Context) error {
 				return fmt.Errorf("invalid Gemini API key or insufficient permissions: %w", err)
 			}
 		}
+		// Check for rate limit error on validation
+		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == 429 {
+			return fmt.Errorf("failed to verify Gemini API key due to rate limiting: %w", err)
+		}
 		return fmt.Errorf("failed to verify Gemini API key by listing models: %w", err)
 	}
 	return nil
+}
+
+// generateWithRetry wraps the GenerateContent call with retry logic for rate limit errors.
+func (c *geminiClient) generateWithRetry(ctx context.Context, model *genai.GenerativeModel, parts ...genai.Part) (*genai.GenerateContentResponse, error) {
+	var resp *genai.GenerateContentResponse
+	var err error
+	backoff := c.cfg.InitialBackoff
+
+	for i := 0; i <= c.cfg.MaxRetries; i++ {
+		if i > 0 {
+			// Wait before retrying
+			sleepDuration := backoff
+			log.Printf("INFO: Retrying Gemini API call (attempt %d/%d after %s delay)...", i, c.cfg.MaxRetries, sleepDuration)
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(sleepDuration):
+			}
+			// Exponential backoff
+			backoff *= 2
+			if backoff > c.cfg.MaxBackoff {
+				backoff = c.cfg.MaxBackoff
+			}
+		}
+
+		resp, err = model.GenerateContent(ctx, parts...)
+		if err == nil {
+			return resp, nil // Success
+		}
+
+		// Check if the error is a rate limit error (429)
+		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == 429 {
+			log.Printf("WARN: Gemini API rate limit exceeded (attempt %d/%d): %v", i, c.cfg.MaxRetries, err)
+			if i == c.cfg.MaxRetries {
+				return nil, fmt.Errorf("Gemini API call failed after %d retries due to rate limits: %w", c.cfg.MaxRetries, err)
+			}
+			// Continue to the next iteration to retry
+		} else if ctx.Err() == context.Canceled || ctx.Err() == context.DeadlineExceeded {
+			log.Printf("WARN: Context cancelled during Gemini API call: %v", ctx.Err())
+			return nil, ctx.Err()
+		} else {
+			// Non-retryable error
+			return nil, fmt.Errorf("Gemini API call failed: %w", err)
+		}
+	}
+	return nil, err // Should only be reached if MaxRetries is somehow 0 or less initially
 }
 
 // GenerateDescription generates a description using the Gemini API.
@@ -147,18 +213,20 @@ func (c *geminiClient) GenerateDescription(ctx context.Context, objectType, obje
 	// --- Call Gemini API ---
 	model := c.client.GenerativeModel(c.cfg.Model)
 	model.SetTemperature(0.3)
-	model.SetMaxOutputTokens(150)
+	model.SetMaxOutputTokens(5000) // Keep the increased token limit
 	model.SetTopP(0.9)
 	model.SetTopK(40)
 
-	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
+	resp, err := c.generateWithRetry(ctx, model, genai.Text(prompt)) // Use retry helper
 	if err != nil {
-		return "", fmt.Errorf("Gemini API call failed: %w", err)
+		return "", err // Error from generateWithRetry
 	}
 
 	description, err := extractTextBetweenTags(resp, "<result>", "</result>")
 	if err != nil {
-		log.Printf("WARN: Could not extract description from Gemini response for %s: %v. Response: %v", targetDescription, err, resp)
+		// Log the raw response text if extraction fails, for debugging
+		rawText, _ := getFirstTextPart(resp)
+		log.Printf("WARN: Could not extract description from Gemini response for %s: %v. Raw response: '%s'", targetDescription, err, rawText)
 		return "", nil
 	}
 
@@ -167,12 +235,17 @@ func (c *geminiClient) GenerateDescription(ctx context.Context, objectType, obje
 }
 
 // GenerateSyntheticExamples generates synthetic examples if PII is detected.
-func (c *geminiClient) GenerateSyntheticExamples(ctx context.Context, columnName, tableName, dataType string, originalExamples []string) (processedExamples []string, wasSynthesized bool, err error) {
+func (c *geminiClient) GenerateSyntheticExamples(ctx context.Context, columnName, tableName, dataType string, originalExamples []string, maskPII bool) (processedExamples []string, wasSynthesized bool, err error) {
 	if c.client == nil {
 		return originalExamples, false, fmt.Errorf("gemini client not initialized")
 	}
 	if len(originalExamples) == 0 {
 		return []string{}, false, nil
+	}
+
+	// If maskPII is false, return original examples without LLM processing
+	if !maskPII {
+		return originalExamples, false, nil
 	}
 
 	exampleValuesStr := strings.Join(originalExamples, ", ")
@@ -190,10 +263,10 @@ func (c *geminiClient) GenerateSyntheticExamples(ctx context.Context, columnName
 	1. **Analyze for PII:** Based ONLY on the column name, data type, and example values, determine if this column is LIKELY to contain PII (e.g., names, emails, phones, addresses, specific IDs). Be conservative; if unsure, assume it's NOT PII.
 	2. **Decision & Output:**
 	- **If LIKELY PII:** Generate %d synthetic, plausible-looking example values that match the likely *pattern* and *data type* (%s) of the original data but are clearly fake. Output these values as a comma-separated list enclosed ONLY in <synthetic_examples>...</synthetic_examples> tags.
-	- **If NOT LIKELY PII (or unsure):** Return the original example values provided. Output these values as a comma-separated list enclosed ONLY in <original_examples>...</original_examples> tags.
+	- **If NOT LIKELY PII (or unsure):** Output the tag <original_examples></original_examples> to indicate the original values should be used.
 
 	**Example Output (Synthetic):** <synthetic_examples>user1@example.com, user2@example.net, user3@example.org</synthetic_examples>
-	**Example Output (Original):** <original_examples>Active, Inactive, Pending</original_examples>
+	**Example Output (Original):** <original_examples></original_examples>
 
 	Provide your output based on the analysis:
 	`, columnName, tableName, dataType, exampleValuesStr, len(originalExamples), dataType) // Request same number of examples
@@ -204,13 +277,15 @@ func (c *geminiClient) GenerateSyntheticExamples(ctx context.Context, columnName
 	model.SetTopP(0.9)
 	model.SetTopK(40)
 
-	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
+	resp, err := c.generateWithRetry(ctx, model, genai.Text(prompt)) // Use retry helper
 	if err != nil {
+		log.Printf("WARN: Gemini API call for synthetic examples failed: %v. Returning original examples.", err)
 		return originalExamples, false, nil
 	}
 
 	fullResponseText, extractErr := getFirstTextPart(resp)
 	if extractErr != nil {
+		log.Printf("WARN: Could not get text part from Gemini response for synthetic examples: %v. Returning original examples.", extractErr)
 		return originalExamples, false, nil
 	}
 
@@ -221,19 +296,18 @@ func (c *geminiClient) GenerateSyntheticExamples(ctx context.Context, columnName
 			log.Printf("INFO: Gemini determined column '%s.%s' might be PII; generated %d synthetic examples.", tableName, columnName, len(examples))
 			return examples, true, nil
 		}
+		log.Printf("WARN: Found <synthetic_examples> tags but content was empty for '%s.%s'. Returning original.", tableName, columnName)
 		return originalExamples, false, nil
 	}
 
-	// Try extracting original
-	originalContent, foundOriginal := extractContentBetween(fullResponseText, "<original_examples>", "</original_examples>")
+	// Try extracting original tags - content inside doesn't matter
+	_, foundOriginal := extractContentBetween(fullResponseText, "<original_examples>", "</original_examples>")
 	if foundOriginal {
-		examples := parseCommaSeparated(originalContent)
-		if len(examples) > 0 {
-			return originalExamples, false, nil
-		}
+		log.Printf("INFO: Gemini determined column '%s.%s' is likely NOT PII. Using original examples.", tableName, columnName)
 		return originalExamples, false, nil
 	}
 
+	log.Printf("WARN: Neither <synthetic_examples> nor <original_examples> tags found in Gemini response for '%s.%s'. Returning original examples. Response: %s", tableName, columnName, fullResponseText)
 	return originalExamples, false, nil
 }
 

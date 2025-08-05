@@ -1,10 +1,12 @@
 module github.com/GoogleCloudPlatform/db-context-enrichment
 
-go 1.22.7
+go 1.23.0
+
 toolchain go1.24.1
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.14.2
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/denisenkom/go-mssqldb v0.12.3
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/generative-ai-go v0.19.0

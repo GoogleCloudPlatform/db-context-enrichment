@@ -26,6 +26,7 @@ type DBAdapter interface {
 	Ping(ctx context.Context) error
 	Close() error
 	GetConfig() config.DatabaseConfig
+	GetForeignKeys(tableName, columnName string) ([]ForeignKeyReference, error)
 }
 
 var _ DBAdapter = (*DB)(nil)
@@ -43,6 +44,13 @@ type ColumnInfo struct {
 	DataType string
 }
 
+// ForeignKeyReference holds information about a foreign key relationship.
+type ForeignKeyReference struct {
+	ReferencedTable  string
+	ReferencedColumn string
+	ConstraintName   string
+}
+
 // CommentData holds information needed to generate a column comment.
 type CommentData struct {
 	TableName      string
@@ -52,6 +60,7 @@ type CommentData struct {
 	DistinctCount  int64
 	NullCount      int64
 	Description    string
+	ForeignKeys    []ForeignKeyReference
 }
 
 // TableCommentData holds information needed to generate a table comment.
@@ -226,7 +235,13 @@ func (db *DB) ExecuteSQLStatements(ctx context.Context, sqlStatements []string) 
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
+
 	return nil
+}
+
+// GetForeignKeys retrieves foreign key references for a specific column.
+func (db *DB) GetForeignKeys(tableName, columnName string) ([]ForeignKeyReference, error) {
+	return db.Handler.GetForeignKeys(db, tableName, columnName)
 }
 
 // DialectHandler interface remains the same
@@ -236,6 +251,7 @@ type DialectHandler interface {
 	QuoteIdentifier(name string) string
 	ListTables(db *DB) ([]string, error)
 	ListColumns(db *DB, tableName string) ([]ColumnInfo, error)
+	GetForeignKeys(db *DB, tableName string, columnName string) ([]ForeignKeyReference, error)
 	GetColumnMetadata(db *DB, tableName string, columnName string) (map[string]interface{}, error)
 	GetColumnComment(ctx context.Context, db *DB, tableName string, columnName string) (string, error)
 	GetTableComment(ctx context.Context, db *DB, tableName string) (string, error)

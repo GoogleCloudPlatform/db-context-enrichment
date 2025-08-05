@@ -226,8 +226,13 @@ func (h mysqlHandler) formatExampleValues(values []string) string {
 	}
 	quoted := make([]string, len(values))
 	for i, v := range values {
-		quoted[i] = fmt.Sprintf("'%s'", escapeMySQLString(v))
+		trimmed := strings.ReplaceAll(v, "\n", " ")
+		if len(trimmed) > 100 {
+			trimmed = trimmed[:100] + "...[truncated]"
+		}
+		quoted[i] = fmt.Sprintf("'%s'", escapeMySQLString(trimmed))
 	}
+
 	return fmt.Sprintf("Examples: [%s]", strings.Join(quoted, ", "))
 }
 
@@ -426,6 +431,40 @@ func (h mysqlHandler) GenerateDeleteTableCommentSQL(ctx context.Context, db *dat
 		h.QuoteIdentifier(tableName),
 		quotedComment,
 	), nil
+}
+
+func (h mysqlHandler) GetForeignKeys(db *database.DB, tableName string, columnName string) ([]database.ForeignKeyReference, error) {
+	query := `
+		SELECT 
+			REFERENCED_TABLE_NAME as referenced_table,
+			REFERENCED_COLUMN_NAME as referenced_column,
+			CONSTRAINT_NAME as constraint_name
+		FROM information_schema.KEY_COLUMN_USAGE
+		WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME = ?
+			AND COLUMN_NAME = ?
+			AND REFERENCED_TABLE_NAME IS NOT NULL`
+
+	rows, err := db.Pool.Query(query, tableName, columnName)
+	if err != nil {
+		return nil, fmt.Errorf("error querying foreign keys for %s.%s: %w", tableName, columnName, err)
+	}
+	defer rows.Close()
+
+	var foreignKeys []database.ForeignKeyReference
+	for rows.Next() {
+		var fk database.ForeignKeyReference
+		if err := rows.Scan(&fk.ReferencedTable, &fk.ReferencedColumn, &fk.ConstraintName); err != nil {
+			return nil, fmt.Errorf("error scanning foreign key data for %s.%s: %w", tableName, columnName, err)
+		}
+		foreignKeys = append(foreignKeys, fk)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating foreign key rows for %s.%s: %w", tableName, columnName, err)
+	}
+
+	return foreignKeys, nil
 }
 
 func init() {

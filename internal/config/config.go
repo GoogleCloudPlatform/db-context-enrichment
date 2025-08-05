@@ -92,13 +92,15 @@ type AppConfig struct {
 	EnrichmentsRaw  string
 	ContextFilesRaw string
 	Model           string
+	MaskPII         bool
 }
 
 // NewAppConfig creates an AppConfig with default values.
 func NewAppConfig() *AppConfig {
 	return &AppConfig{
 		// Default values set here. They will be overridden by flags.
-		DryRun: true,
+		DryRun:  true,
+		MaskPII: true,
 		Database: DatabaseConfig{
 			SSLMode:            "disable",
 			UpdateExistingMode: "overwrite",

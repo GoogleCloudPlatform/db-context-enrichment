@@ -217,9 +217,13 @@ func (h postgresHandler) formatExampleValues(values []string) string {
 	}
 	quoted := make([]string, len(values))
 	for i, v := range values {
-		quoted[i] = pq.QuoteLiteral(v)
+		trimmed := strings.ReplaceAll(v, "\n", " ")
+		if len(trimmed) > 100 {
+			trimmed = trimmed[:100] + "...[truncated]"
+		}
+		quoted[i] = pq.QuoteLiteral(trimmed)
 	}
-	return fmt.Sprintf("Examples: %s", strings.Join(quoted, ", "))
+	return fmt.Sprintf("Examples: [%s]", strings.Join(quoted, ", "))
 }
 
 func (h postgresHandler) GenerateCommentSQL(db *database.DB, data *database.CommentData, enrichments map[string]bool) (string, error) {
@@ -371,6 +375,46 @@ func (h postgresHandler) GenerateDeleteTableCommentSQL(ctx context.Context, db *
 		h.QuoteIdentifier(tableName),
 		quotedComment,
 	), nil
+}
+
+func (h postgresHandler) GetForeignKeys(db *database.DB, tableName string, columnName string) ([]database.ForeignKeyReference, error) {
+	query := `
+		SELECT 
+		    ccu.table_name AS referenced_table,
+		    ccu.column_name AS referenced_column,
+		    tc.constraint_name
+		FROM information_schema.table_constraints tc
+		JOIN information_schema.key_column_usage kcu 
+		    ON tc.constraint_name = kcu.constraint_name
+		    AND tc.table_schema = kcu.table_schema
+		JOIN information_schema.constraint_column_usage ccu 
+		    ON ccu.constraint_name = tc.constraint_name
+		    AND ccu.table_schema = tc.table_schema
+		WHERE tc.constraint_type = 'FOREIGN KEY'
+		    AND tc.table_name = $1
+		    AND kcu.column_name = $2
+		    AND tc.table_schema = current_schema()`
+
+	rows, err := db.Pool.Query(query, tableName, columnName)
+	if err != nil {
+		return nil, fmt.Errorf("error querying foreign keys for table %s, column %s: %w", tableName, columnName, err)
+	}
+	defer rows.Close()
+
+	var foreignKeys []database.ForeignKeyReference
+	for rows.Next() {
+		var fk database.ForeignKeyReference
+		if err := rows.Scan(&fk.ReferencedTable, &fk.ReferencedColumn, &fk.ConstraintName); err != nil {
+			return nil, fmt.Errorf("error scanning foreign key data: %w", err)
+		}
+		foreignKeys = append(foreignKeys, fk)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating foreign key rows: %w", err)
+	}
+
+	return foreignKeys, nil
 }
 
 func init() {

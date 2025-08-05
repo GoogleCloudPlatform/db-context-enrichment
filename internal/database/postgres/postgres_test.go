@@ -930,3 +930,97 @@ func TestPostgresGenerateDeleteTableCommentSQL(t *testing.T) {
 		}
 	})
 }
+
+func TestPostgresGetForeignKeys(t *testing.T) {
+	db, mock, handler := newMockPostgresDB(t)
+	defer db.Close()
+	tableName := "orders"
+	columnName := "customer_id"
+
+	query := `
+		SELECT 
+		    ccu.table_name AS referenced_table,
+		    ccu.column_name AS referenced_column,
+		    tc.constraint_name
+		FROM information_schema.table_constraints tc
+		JOIN information_schema.key_column_usage kcu 
+		    ON tc.constraint_name = kcu.constraint_name
+		    AND tc.table_schema = kcu.table_schema
+		JOIN information_schema.constraint_column_usage ccu 
+		    ON ccu.constraint_name = tc.constraint_name
+		    AND ccu.table_schema = tc.table_schema
+		WHERE tc.constraint_type = 'FOREIGN KEY'
+		    AND tc.table_name = $1
+		    AND kcu.column_name = $2
+		    AND tc.table_schema = current_schema()`
+	expectedQuery := regexp.QuoteMeta(query)
+
+	t.Run("Success with foreign keys", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"referenced_table", "referenced_column", "constraint_name"}).
+			AddRow("customers", "id", "fk_orders_customer_id").
+			AddRow("users", "user_id", "fk_orders_user_id")
+		mock.ExpectQuery(expectedQuery).WithArgs(tableName, columnName).WillReturnRows(rows)
+
+		foreignKeys, err := handler.GetForeignKeys(db, tableName, columnName)
+		if err != nil {
+			t.Fatalf("GetForeignKeys() unexpected error: %v", err)
+		}
+
+		expectedForeignKeys := []database.ForeignKeyReference{
+			{ReferencedTable: "customers", ReferencedColumn: "id", ConstraintName: "fk_orders_customer_id"},
+			{ReferencedTable: "users", ReferencedColumn: "user_id", ConstraintName: "fk_orders_user_id"},
+		}
+
+		if len(foreignKeys) != len(expectedForeignKeys) {
+			t.Fatalf("GetForeignKeys() got %d foreign keys, want %d", len(foreignKeys), len(expectedForeignKeys))
+		}
+		for i := range foreignKeys {
+			if foreignKeys[i] != expectedForeignKeys[i] {
+				t.Errorf("GetForeignKeys() foreign key %d got %+v, want %+v", i, foreignKeys[i], expectedForeignKeys[i])
+			}
+		}
+	})
+
+	t.Run("No foreign keys found", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"referenced_table", "referenced_column", "constraint_name"})
+		mock.ExpectQuery(expectedQuery).WithArgs(tableName, columnName).WillReturnRows(rows)
+
+		foreignKeys, err := handler.GetForeignKeys(db, tableName, columnName)
+		if err != nil {
+			t.Fatalf("GetForeignKeys() unexpected error: %v", err)
+		}
+
+		if len(foreignKeys) != 0 {
+			t.Errorf("GetForeignKeys() got %d foreign keys, want 0", len(foreignKeys))
+		}
+	})
+
+	t.Run("Query Error", func(t *testing.T) {
+		dbError := errors.New("table not found")
+		mock.ExpectQuery(expectedQuery).WithArgs(tableName, columnName).WillReturnError(dbError)
+
+		_, err := handler.GetForeignKeys(db, tableName, columnName)
+		if err == nil {
+			t.Fatalf("GetForeignKeys() expected error, got nil")
+		}
+		if !errors.Is(err, dbError) {
+			t.Errorf("GetForeignKeys() got error %v, want error containing %v", err, dbError)
+		}
+	})
+
+	t.Run("Scan Error", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"referenced_table", "referenced_column", "constraint_name"}).
+			AddRow("customers", "id", "fk_orders_customer_id").
+			AddRow(nil, "invalid", "bad_constraint") // Simulate a scan error
+		mock.ExpectQuery(expectedQuery).WithArgs(tableName, columnName).WillReturnRows(rows)
+
+		_, err := handler.GetForeignKeys(db, tableName, columnName)
+		if err == nil {
+			t.Fatalf("GetForeignKeys() expected scan error, got nil")
+		}
+	})
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}

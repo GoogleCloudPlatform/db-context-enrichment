@@ -19,7 +19,7 @@ var addCommentsCmd = &cobra.Command{
 	Long: `Connects to the database, collects metadata, potentially uses an LLM for descriptions/PII checks,
 and generates SQL statements to add column comments. These SQL statements are outputted to a file for review.
 If --dry-run=false, prompts for application.`,
-	Example: `./db_schema_enricher add-comments --dialect cloudsqlpostgres --username user --password pass --database mydb --cloudsql-instance-connection-name my-project:my-region:my-instance --out_file ./mydb_comments.sql --tables "table1[col1,column3],table2,table4[columnx,columnz]" --enrichments "description,examples,distinct_values" --context docs.txt --gemini-api-key YOUR_API_KEY`,
+		Example: `./db_schema_enricher add-comments --dialect cloudsqlpostgres --username user --password pass --database mydb --cloudsql-instance-connection-name my-project:my-region:my-instance --out_file ./mydb_comments.sql --tables "table1[col1,column3],table2,table4[columnx,columnz]" --enrichments "description,examples,distinct_values,foreign_keys" --context docs.txt --gemini-api-key YOUR_API_KEY`,
 	RunE:    runAddComments,
 }
 
@@ -59,7 +59,7 @@ func runAddComments(cmd *cobra.Command, args []string) error {
 	}
 
 	// Setup Enricher Service
-	enricherCfg := enricher.Config{}
+	enricherCfg := enricher.Config{MaskPII: appCfg.MaskPII}
 	svc := enricher.NewService(dbAdapter, llmClient, enricherCfg)
 
 	// Parse filters
@@ -138,7 +138,6 @@ func runAddComments(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to execute SQL statements from '%s': %w. Review the file and database logs", outputFile, execErr)
 		}
 		log.Printf("INFO: Successfully applied %d SQL statements from %s.", len(sqlStatements), outputFile)
-
 	} else {
 		log.Println("INFO: Comment addition aborted by user. Generated SQL statements remain in:", outputFile)
 	}
@@ -150,7 +149,8 @@ func runAddComments(cmd *cobra.Command, args []string) error {
 func init() {
 	addCommentsCmd.Flags().StringVarP(&appCfg.OutputFile, "out_file", "o", "", "File path to output generated SQL statements (defaults to <database>_comments.sql)")
 	addCommentsCmd.Flags().StringVar(&appCfg.TablesRaw, "tables", "", "Comma-separated list of tables/columns to include (e.g., 'table1[col1,col2],table2')")
-	addCommentsCmd.Flags().StringVar(&appCfg.EnrichmentsRaw, "enrichments", "", "Comma-separated list of enrichments to include (e.g., 'description,examples'). If empty, all are included.")
+	addCommentsCmd.Flags().StringVar(&appCfg.EnrichmentsRaw, "enrichments", "", "Comma-separated list of enrichments to include (e.g., 'description,examples,distinct_values,foreign_keys'). If empty, all are included.")
 	addCommentsCmd.Flags().StringVar(&appCfg.ContextFilesRaw, "context", "", "Comma-separated list of context files for description generation.")
 	addCommentsCmd.Flags().StringVar(&appCfg.Model, "model", appCfg.Model, "Model to use for description/PII enrichment.")
+	addCommentsCmd.Flags().BoolVar(&appCfg.MaskPII, "mask_pii", appCfg.MaskPII, "Enable PII masking using LLM-based detection (default: true). When false, skips LLM PII handling.")
 }

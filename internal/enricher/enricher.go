@@ -17,15 +17,17 @@ import (
 type Service struct {
 	dbAdapter database.DBAdapter
 	llmClient genai.LLMClient
+	config    Config
 }
 
 type Config struct {
+	MaskPII bool
 }
-
 func NewService(db database.DBAdapter, llm genai.LLMClient, cfg Config) *Service {
 	return &Service{
 		dbAdapter: db,
 		llmClient: llm,
+		config:    cfg,
 	}
 }
 
@@ -107,11 +109,10 @@ func (s *Service) GenerateCommentSQLs(ctx context.Context, params GenerateSQLPar
 						errorChannel <- fmt.Errorf("%s collect DB meta: %w", colLogPrefix, colMetaErr)
 						return
 					}
-
 					if s.llmClient != nil {
 						// PII Check / Example Synthesis
 						if isEnrichmentRequested("examples", params.Enrichments) && len(columnMetadata.ExampleValues) > 0 {
-							processedExamples, wasSynthesized, piiErr := s.llmClient.GenerateSyntheticExamples(ctx, ci.Name, table, ci.DataType, columnMetadata.ExampleValues)
+						processedExamples, wasSynthesized, piiErr := s.llmClient.GenerateSyntheticExamples(ctx, ci.Name, table, ci.DataType, columnMetadata.ExampleValues, s.config.MaskPII)
 
 							if piiErr != nil {
 								log.Printf("WARN: %s Failed to process example values with LLM: %v. Using original examples.", colLogPrefix, piiErr)
@@ -142,6 +143,7 @@ func (s *Service) GenerateCommentSQLs(ctx context.Context, params GenerateSQLPar
 						DistinctCount:  columnMetadata.DistinctCount,
 						NullCount:      columnMetadata.NullCount,
 						Description:    columnMetadata.Description,
+						ForeignKeys:    columnMetadata.ForeignKeys,
 					}
 					sql, genErr := s.dbAdapter.GenerateCommentSQL(commentData, params.Enrichments)
 					if genErr != nil {
@@ -191,7 +193,8 @@ func (s *Service) collectColumnDBMetadata(ctx context.Context, tableName string,
 
 	needsDBQuery := isEnrichmentRequested("examples", enrichments) ||
 		isEnrichmentRequested("distinct_values", enrichments) ||
-		isEnrichmentRequested("null_count", enrichments)
+		isEnrichmentRequested("null_count", enrichments) ||
+		isEnrichmentRequested("foreign_keys", enrichments)
 
 	if !needsDBQuery {
 		return metadata, nil
@@ -221,6 +224,17 @@ func (s *Service) collectColumnDBMetadata(ctx context.Context, tableName string,
 	if isEnrichmentRequested("null_count", enrichments) {
 		if ncRaw, ok := dbMetadata["NullCount"]; ok {
 			metadata.NullCount = safeConvertToInt64(ncRaw)
+		}
+	}
+
+	// Add foreign key collection
+	needsForeignKeys := isEnrichmentRequested("foreign_keys", enrichments)
+	if needsForeignKeys {
+		foreignKeys, fkErr := s.dbAdapter.GetForeignKeys(tableName, colInfo.Name)
+		if fkErr != nil {
+			log.Printf("WARN: Column[%s.%s] Failed to get foreign keys: %v", tableName, colInfo.Name, fkErr)
+		} else {
+			metadata.ForeignKeys = foreignKeys
 		}
 	}
 
@@ -544,6 +558,7 @@ type ColumnMetadata struct {
 	DistinctCount int64
 	NullCount     int64
 	Description   string
+	ForeignKeys   []database.ForeignKeyReference
 }
 
 type TableMetadata struct {

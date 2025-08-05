@@ -21,7 +21,7 @@ var rootCmd = &cobra.Command{
 	Use:   "db_schema_enricher",
 	Short: "A tool to enrich database schema with metadata",
 	Long: `db_schema_enricher is a CLI tool that helps enrich database schemas
-with metadata like column descriptions, example values, and foreign key relationships.`,
+with metadata like column descriptions, example values, distinct values, null counts, and foreign key relationships.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		err := appCfg.LoadAndValidate()
 		if err != nil {

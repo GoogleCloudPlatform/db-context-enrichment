@@ -29,17 +29,25 @@ func GenerateMetadataCommentString(data *CommentData, enrichments map[string]boo
 	var commentParts []string
 	isReq := func(e string) bool { return isEnrichmentRequested(e, enrichments) }
 
-	if isReq("description") && data.Description != "" {
-		commentParts = append(commentParts, data.Description)
-	}
 	if isReq("examples") && formattedExamples != "" {
 		commentParts = append(commentParts, formattedExamples)
 	}
 	if isReq("distinct_values") && data.DistinctCount >= 0 {
-		commentParts = append(commentParts, fmt.Sprintf("Distinct: %d", data.DistinctCount))
+		commentParts = append(commentParts, fmt.Sprintf("Distinct Values: %d", data.DistinctCount))
 	}
 	if isReq("null_count") {
-		commentParts = append(commentParts, fmt.Sprintf("Nulls: %d", data.NullCount))
+		commentParts = append(commentParts, fmt.Sprintf("Null Count: %d |", data.NullCount))
+	}
+	if isReq("description") && data.Description != "" {
+		commentParts = append(commentParts, data.Description)
+	}
+	// Add foreign key information to comment
+	if isReq("foreign_keys") && len(data.ForeignKeys) > 0 {
+		var fkStrings []string
+		for _, fk := range data.ForeignKeys {
+			fkStrings = append(fkStrings, fmt.Sprintf(`\"%s\".\"%s\"`, fk.ReferencedTable, fk.ReferencedColumn))
+		}
+		commentParts = append(commentParts, fmt.Sprintf("Foreign Keys: [%s]", strings.Join(fkStrings, ", ")))
 	}
 
 	if len(commentParts) == 0 {

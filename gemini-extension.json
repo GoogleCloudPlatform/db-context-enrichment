@@ -6,7 +6,7 @@
     "nodeServer": {
       "command": "node",
       "args": ["${extensionPath}${/}mcp${/}dist${/}example.js"],
-      "cwd": "${extensionPath}${/}mcp"
+      "cwd": "${extensionPath}"
     }
   }
 }

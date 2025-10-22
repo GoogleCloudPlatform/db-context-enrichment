@@ -1,5 +1,12 @@
 {
   "name": "context-example",
   "version": "1.0.0",
-  "contextFileName": "./mcp/GEMINI.md"
+  "contextFileName": "./mcp/GEMINI.md",
+  "mcpServers": {
+    "nodeServer": {
+      "command": "node",
+      "args": ["${extensionPath}${/}mcp${/}dist${/}example.js"],
+      "cwd": "${extensionPath}${/}mcp"
+    }
+  }
 }

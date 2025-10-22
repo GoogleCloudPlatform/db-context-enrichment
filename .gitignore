@@ -31,3 +31,6 @@ vendor/
 ._*
 .Spotlight-V100
 .Trashes
+
+# Gemini CLI extension files
+mcp/node_modules/

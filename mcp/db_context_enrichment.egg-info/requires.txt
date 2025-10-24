@@ -1,0 +1,3 @@
+fastmcp>=2.12.5
+google-genai>=1.46.0
+toolbox-core>=0.5.2

@@ -1,0 +1,2 @@
+[console_scripts]
+mcp-db-context-gen = main:mcp.run

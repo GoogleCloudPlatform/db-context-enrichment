@@ -1,12 +1,17 @@
 {
-  "name": "context-example",
-  "version": "1.0.0",
+  "name": "mcp-db-context-enrichment",
+  "version": "0.1.0",
   "contextFileName": "./mcp/GEMINI.md",
   "mcpServers": {
-    "nodeServer": {
-      "command": "node",
-      "args": ["${extensionPath}${/}mcp${/}dist${/}example.js"],
-      "cwd": "${extensionPath}"
+    "mcp_db_context_enrichment": {
+      "command": "uv",
+      "args": [
+        "tool",
+        "run",
+        "--from",
+        "${extensionPath}${/}mcp${/}dist${/}db_context_enrichment-0.1.0-py3-none-any.whl",
+        "db-context-enrichment"
+      ]
     }
   }
 }

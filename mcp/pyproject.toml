@@ -1,0 +1,14 @@
+[project]
+name = "db-context-enrichment"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=2.12.5",
+    "google-genai>=1.46.0",
+    "toolbox-core>=0.5.2",
+]
+
+[project.scripts]
+db-context-enrichment = "main:mcp.run"

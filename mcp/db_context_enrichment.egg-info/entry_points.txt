@@ -1,0 +1,2 @@
+[console_scripts]
+db-context-enrichment = main:mcp.run

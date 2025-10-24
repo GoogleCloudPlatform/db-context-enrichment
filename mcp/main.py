@@ -1,7 +1,7 @@
 from fastmcp import FastMCP
 from typing import Optional, List
 import textwrap
-from template import generator
+from template import question_generator, template_generator
 
 mcp = FastMCP("DB Context Enrichment MCP")
 
@@ -27,43 +27,66 @@ async def generate_sql_pairs(
     Returns:
         A JSON string containing a list of question/SQL pairs.
     """
-    return await generator.generate_sql_pairs_from_schema(
+    return await question_generator.generate_sql_pairs_from_schema(
         db_schema, context, table_names, db_engine, num_pairs
     )
 
 
+@mcp.tool
+async def generate_templates(approved_pairs_json: str) -> str:
+    """
+    Generates final templates from a list of user-approved question/SQL pairs.
+    """
+    return await template_generator.generate_templates_from_pairs(approved_pairs_json)
+
+
 @mcp.prompt
-def generate_templates() -> str:
+def generate_bulk_templates() -> str:
     """Initiates a guided workflow to generate Question/SQL pair templates."""
     return textwrap.dedent(
         """
         **Workflow for Generating Question/SQL Pair Templates**
 
-        1.  **Verify Integration:**
-            - Confirm that the MCP Toolbox is integrated.
-            - Check for available database schema tools (e.g., 'list_mssql_schemas', 'list_alloydb_schemas').
+        1.  **Verify Integration & Discover Databases:**
+            - Check for available schema tools on the MCP Toolbox server and look for a `tools.yaml` file.
+            - Combine this information to deduce a list of available, connected databases.
 
         2.  **Database Selection:**
-            - List the available database connections based on the discovered schema tools.
-            - Ask the user to choose which database to generate templates for.
+            - Present the list of discovered databases to the user in a compact, single-line format. For example:
+              - Connection: my-prod-db | Instance: sql-server-123 | DB: customer_data
+            - Ask the user to choose one for template generation. **Remember the database name.**
 
         3.  **Schema Analysis:**
-            - Call the appropriate MCP Toolbox tool to fetch the schema for the user's selected database.
-            - Present a brief report to the user, listing the tables found in the schema.
+            - Fetch the schema for the selected database and present a summary of tables to the user.
 
         4.  **Scope Definition:**
-            - Ask the user if they want to generate templates for all tables or only for a specific list of tables.
-            - Ask the user how many template pairs they want to generate, noting that the default is 10.
+            - Ask the user to specify tables for generation (or all tables).
+            - Ask for the desired number of pairs (defaulting to 10).
 
-        5.  **Template Generation:**
-            - Call the `generate_sql_pairs` tool with the information gathered:
-                - `db_schema`: The schema fetched in step 3.
-                - `table_names`: The specific list of tables, if provided by the user.
-                - `db_engine`: The database type (e.g., 'mssql', 'alloydb'), inferred from the tool used in step 3.
-                - `num_pairs`: The number specified by the user, if provided by the user.
+        5.  **Initial Pair Generation:**
+            - Call the `generate_sql_pairs` tool with the collected information.
 
-        6.  **User Review:**
-            - Present the generated list of Question/SQL pairs to the user for their review and feedback.
+        6.  **Iterative User Review & Refinement:**
+            - Parse the JSON from the tool and present the Question/SQL pairs to the user. **Use the following format for each pair:**
+              ---
+              **Pair [Number]**
+              **Question:** [The natural language question]
+              **SQL:**
+              ```sql
+              [The SQL query, properly formatted]
+              ```
+              ---
+            - Ask for approval to proceed or for feedback.
+            - If feedback is given, handle minor edits or major regenerations by calling `generate_sql_pairs` again with the feedback as context.
+            - Repeat until the user approves the list.
+
+        7.  **Final Template Generation:**
+            - Once approved, call the `generate_templates` tool with the approved pairs.
+            - The tool will return the final JSON content as a string.
+
+        8.  **Save Templates:**
+            - Construct a filename using the database name from Step 2 and a current timestamp (e.g., `<db_name>_templates_YYYYMMDDHHMMSS.json`).
+            - Use a client-side file writing tool to save the JSON content from Step 7 to the generated filename in the current directory.
         """
     )
 

@@ -1,9 +1,0 @@
-Metadata-Version: 2.4
-Name: db-context-authoring-mcp
-Version: 0.1.0
-Summary: Add your description here
-Requires-Python: >=3.12
-Description-Content-Type: text/markdown
-Requires-Dist: fastmcp>=2.12.5
-Requires-Dist: google-genai>=1.46.0
-Requires-Dist: toolbox-core>=0.5.2

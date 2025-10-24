@@ -378,7 +378,7 @@ wheels = [
 ]
 
 [[package]]
-name = "db-context-authoring-mcp"
+name = "db-context-enrichment"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

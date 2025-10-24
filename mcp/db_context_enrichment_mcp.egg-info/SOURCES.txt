@@ -1,9 +1,0 @@
-README.md
-main.py
-pyproject.toml
-db_context_enrichment_mcp.egg-info/PKG-INFO
-db_context_enrichment_mcp.egg-info/SOURCES.txt
-db_context_enrichment_mcp.egg-info/dependency_links.txt
-db_context_enrichment_mcp.egg-info/entry_points.txt
-db_context_enrichment_mcp.egg-info/requires.txt
-db_context_enrichment_mcp.egg-info/top_level.txt

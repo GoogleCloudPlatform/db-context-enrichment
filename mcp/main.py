@@ -12,7 +12,6 @@ async def generate_sql_pairs(
     context: Optional[str] = None,
     table_names: Optional[List[str]] = None,
     db_engine: Optional[str] = None,
-    num_pairs: int = 10,
 ) -> str:
     """
     Generates a list of question/SQL pairs based on a database schema.
@@ -22,13 +21,12 @@ async def generate_sql_pairs(
         context: Optional user feedback or context to guide generation.
         table_names: Optional list of table names to focus on.
         db_engine: Optional name of the database engine for SQL dialect.
-        num_pairs: The number of pairs to generate.
 
     Returns:
         A JSON string containing a list of question/SQL pairs.
     """
     return await question_generator.generate_sql_pairs_from_schema(
-        db_schema, context, table_names, db_engine, num_pairs
+        db_schema, context, table_names, db_engine
     )
 
 
@@ -52,8 +50,9 @@ def generate_bulk_templates() -> str:
             - Combine this information to deduce a list of available, connected databases.
 
         2.  **Database Selection:**
-            - Present the list of discovered databases to the user in a compact, single-line format. For example:
-              - Connection: my-prod-db | Instance: sql-server-123 | DB: customer_data
+            - Present the list of discovered databases to the user in a compact, single-line format. 
+              - **Use the following format for each database:**
+                - Connection: my-prod-db | Instance: sql-server-123 | DB: customer_data
             - Ask the user to choose one for template generation. **Remember the database name.**
 
         3.  **Schema Analysis:**
@@ -61,21 +60,19 @@ def generate_bulk_templates() -> str:
 
         4.  **Scope Definition:**
             - Ask the user to specify tables for generation (or all tables).
-            - Ask for the desired number of pairs (defaulting to 10).
 
         5.  **Initial Pair Generation:**
             - Call the `generate_sql_pairs` tool with the collected information.
 
         6.  **Iterative User Review & Refinement:**
-            - Parse the JSON from the tool and present the Question/SQL pairs to the user. **Use the following format for each pair:**
-              ---
-              **Pair [Number]**
-              **Question:** [The natural language question]
-              **SQL:**
-              ```sql
-              [The SQL query, properly formatted]
-              ```
-              ---
+            - Parse the JSON from the tool and present the Question/SQL pairs to the user. 
+              - **Use the following format for each pair:**
+                **Pair [Number]**
+                **Question:** [The natural language question]
+                **SQL:**
+                ```sql
+                [The SQL query, properly formatted]
+                ```
             - Ask for approval to proceed or for feedback.
             - If feedback is given, handle minor edits or major regenerations by calling `generate_sql_pairs` again with the feedback as context.
             - Repeat until the user approves the list.

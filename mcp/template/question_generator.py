@@ -26,7 +26,6 @@ async def generate_sql_pairs_from_schema(
     context: Optional[str] = None,
     table_names: Optional[List[str]] = None,
     db_engine: Optional[str] = None,
-    num_pairs: int = 10,
 ) -> str:
     """
     Generates a list of question/SQL pairs based on a database schema.
@@ -36,15 +35,14 @@ async def generate_sql_pairs_from_schema(
         context: Optional user feedback or context to guide generation.
         table_names: Optional list of table names to focus on.
         db_engine: Optional name of the database engine for SQL dialect.
-        num_pairs: The number of pairs to generate.
 
     Returns:
         A JSON string containing a list of question/SQL pairs.
     """
     prompt = textwrap.dedent(
-        f"""
-        Based on the following database schema, generate a list of {num_pairs} diverse and useful question and SQL query pairs.
-        The user will review these pairs. Each pair should have a 'question' and a 'sql' query.
+        """
+        Based on the complexity of the following database schema, generate a comprehensive and diverse list of question and SQL query pairs to ensure good coverage of the tables and columns.
+        Generate at least 10 pairs. The user will review these pairs. Each pair should have a 'question' and a 'sql' query.
         """
     )
 
@@ -57,6 +55,8 @@ async def generate_sql_pairs_from_schema(
         prompt += f"\nThe SQL dialect should be for '{db_engine}'."
     else:
         prompt += "\nInfer the SQL dialect from the provided database schema."
+
+    prompt += '\nFor PostgreSQL, remember to enclose any case-sensitive identifiers (e.g., column names with capital letters) in double quotes ("").'
 
     prompt += f"\n\n**Database Schema:**\n{db_schema}"
 

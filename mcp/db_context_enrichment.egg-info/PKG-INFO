@@ -58,11 +58,32 @@ gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enri
 
 ## Configuration
 
-The MCP Toolbox requires a `tools.yaml` file to configure your database connections.
+The MCP Toolbox requires a `tools.yaml` file to configure your database connections. For a complete guide, please refer to the [MCP Toolbox Getting Started Guide](https://github.com/gemini-cli-extensions/mcp-toolbox/tree/main?tab=readme-ov-file#getting-started).
 
-1. Create a new, empty folder on your local machine.
-2. Inside that folder, create a file named `tools.yaml`.
-3. Add the configuration for your database connections to this file. For detailed instructions on how to configure this file, please refer to the MCP Toolbox documentation.
+1.  Create a new, empty folder on your local machine.
+2.  Inside that folder, create a file named `tools.yaml`.
+3.  Add the configuration for your database connections to this file. For detailed instructions on the `tools.yaml` format, see the [official configuration guide](https://googleapis.github.io/genai-toolbox/getting-started/configure/).
+
+### Example `tools.yaml`
+
+Here is a simple example for connecting to a Cloud SQL for PostgreSQL database.
+
+```yaml
+sources:
+  my-postgres-db:
+    kind: cloud-sql-postgres
+    project: <your-gcp-project-id>
+    region: <your-gcp-region>
+    instance: <your-instance-name>
+    database: <your-database-name>
+    user: <your-database-user>
+    password: <your-database-password>
+tools:
+  list_pg_schemas_tool:
+    kind: postgres-list-tables
+    source: my-postgres-db
+    description: Use this tool to list all tables and their schemas in the PostgreSQL database.
+```
 
 ## Usage
 

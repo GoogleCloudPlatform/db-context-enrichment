@@ -139,7 +139,8 @@ def generate_bulk_templates() -> str:
             - Ask the user to choose one for template generation. **Remember the database name.**
 
         3.  **Schema Analysis:**
-            - Fetch the schema for the selected database and present a summary of tables to the user.
+            - Fetch the schema for the selected database. To get the detailed schema, do not specify the `output_format` parameter.
+            - Present a summary of tables to the user.
 
         4.  **Scope Definition:**
             - Ask the user to specify tables for generation (or all tables).

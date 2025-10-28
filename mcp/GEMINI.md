@@ -41,4 +41,4 @@ sources:
 When using Toolbox tools to fetch a database schema, adhere to the following:
 
 -   **Fetching All Tables**: If the user requests "all tables," **do not** pass the `table_name` parameter. This will ensure all tables are fetched.
--   **Schema Detail**: To get the detailed schema, **do not** pass `simple` as the output format.
+-   **Schema Detail**: To get the detailed schema, **do not** specify the `output_format` parameter. This will ensure the detailed schema is used by default.

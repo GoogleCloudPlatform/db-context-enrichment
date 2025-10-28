@@ -36,11 +36,22 @@ async def generate_sql_pairs(
 
 
 @mcp.tool
-async def generate_templates(approved_pairs_json: str) -> str:
+async def generate_templates(
+    approved_pairs_json: str, db_engine: Optional[str] = "postgresql"
+) -> str:
     """
     Generates final templates from a list of user-approved question/SQL pairs.
+
+    Args:
+        approved_pairs_json: A JSON string of the question/SQL pairs.
+        db_engine: The SQL dialect to use for parameterization. Accepted
+                   values are 'postgresql', 'mysql', or 'googlesql'.
     """
-    return await template_generator.generate_templates_from_pairs(approved_pairs_json)
+    # Ensure we pass a string, defaulting to 'postgresql' if None is provided.
+    dialect = db_engine if db_engine is not None else "postgresql"
+    return await template_generator.generate_templates_from_pairs(
+        approved_pairs_json, dialect
+    )
 
 
 @mcp.tool

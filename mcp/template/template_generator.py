@@ -1,8 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List
-import textwrap
-from google import genai
-from google.genai import types
+import json
+from . import parameterizer
 
 
 class Parameterized(BaseModel):
@@ -36,46 +35,63 @@ class TemplateList(BaseModel):
     templates: List[Template]
 
 
-async def generate_templates_from_pairs(approved_pairs_json: str) -> str:
+async def generate_templates_from_pairs(
+    approved_pairs_json: str, db_dialect_str: str = "postgresql"
+) -> str:
+    print("!!! generate_templates_from_pairs !!!")
     """
     Generates the final, detailed templates based on user-approved question/SQL pairs.
     """
-    prompt = textwrap.dedent(
-        f"""
-        Based on the following list of user-approved Question/SQL pairs, generate a final, detailed template for each one.
-
-        For each pair, you must generate:
-        1.  `nl_query`: The original natural language question.
-        2.  `sql`: The original SQL query.
-        3.  `intent`: The original user intent.
-        4.  `manifest`: A general, one-sentence description of what the template does (e.g., "Lists all athletes from a given country").
-        5.  `parameterized`:
-            - `parameterized_sql`: The SQL query with values replaced by placeholders (e.g., `$1`, `$2`).
-            - `parameterized_intent`: The intent with values replaced by placeholders.
-
-        Here is the list of approved pairs:
-        {approved_pairs_json}
-        """
-    )
-
-    client = genai.Client()
     try:
-        response = await client.aio.models.generate_content(
-            model="gemini-2.5-pro",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=TemplateList,
+        # Convert the string to the Enum member
+        db_dialect = parameterizer.SQLDialect(db_dialect_str)
+    except ValueError:
+        return f'{{"error": "Invalid database dialect specified: {db_dialect_str}"}}'
+
+    try:
+        approved_pairs = json.loads(approved_pairs_json)
+    except json.JSONDecodeError:
+        return '{"error": "Invalid JSON format for approved pairs."}'
+
+    final_templates = []
+
+    for pair in approved_pairs.get("pairs", []):
+        question = pair["question"]
+        sql = pair["sql"]
+        intent = question  # The intent starts as the original question
+
+        # 1. Extract value phrases from the question
+        phrases = await parameterizer.extract_value_phrases(question)
+
+        print(f"Question: {question}")
+        print(f"Extracted Phrases: {phrases}")
+
+        # 2. Generate the manifest
+        manifest = question
+        # Sort keys by length descending to replace longer phrases first
+        sorted_phrases = sorted(phrases.keys(), key=len, reverse=True)
+        for phrase in sorted_phrases:
+            # Use the first identified type for the manifest
+            phrase_type = phrases[phrase][0] if phrases[phrase] else "value"
+            manifest = manifest.replace(phrase, f"a given {phrase_type}")
+
+        # 3. Parameterize the SQL and Intent
+        parameterized_result = parameterizer.parameterize_sql_and_intent(
+            phrases, sql, intent, db_dialect=db_dialect
+        )
+
+        # 4. Assemble the final template object
+        template = Template(
+            nl_query=question,
+            sql=sql,
+            intent=intent,
+            manifest=manifest,
+            parameterized=Parameterized(
+                parameterized_sql=parameterized_result["sql"],
+                parameterized_intent=parameterized_result["intent"],
             ),
         )
-        if response.text:
-            final_templates = TemplateList.model_validate_json(response.text)
-            return final_templates.model_dump_json(indent=2)
-        else:
-            return '{"error": "The model did not return any text content for the final templates."}'
+        final_templates.append(template)
 
-    except Exception as e:
-        return f'{{"error": "An error occurred while generating the final templates: {str(e)}"}}'
-    finally:
-        client.close()
-        await client.aio.aclose()
+    template_list = TemplateList(templates=final_templates)
+    return template_list.model_dump_json(indent=2)

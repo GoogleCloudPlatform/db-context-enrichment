@@ -1,7 +1,7 @@
 [project]
 name = "db-context-enrichment"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.1.1"
+description = "A FastMCP server for generating natural language to SQL templates from database schemas."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -12,3 +12,7 @@ dependencies = [
 
 [project.scripts]
 db-context-enrichment = "main:mcp.run"
+
+[tool.setuptools]
+py-modules = ["main"]
+packages = ["template"]

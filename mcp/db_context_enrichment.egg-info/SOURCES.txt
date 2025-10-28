@@ -8,5 +8,6 @@ db_context_enrichment.egg-info/entry_points.txt
 db_context_enrichment.egg-info/requires.txt
 db_context_enrichment.egg-info/top_level.txt
 template/__init__.py
+template/parameterizer.py
 template/question_generator.py
 template/template_generator.py

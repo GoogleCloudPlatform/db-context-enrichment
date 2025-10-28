@@ -184,5 +184,59 @@ def generate_bulk_templates() -> str:
     )
 
 
+@mcp.prompt
+def generate_targeted_templates() -> str:
+    """Initiates a guided workflow to generate specific Question/SQL pair templates."""
+    return textwrap.dedent(
+        """
+        **Workflow for Generating Targeted Question/SQL Pair Templates**
+
+        1.  **User Input Loop:**
+            - Ask the user to provide a natural language question and its corresponding SQL query.
+            - After capturing the pair, ask the user if they would like to add another one.
+            - Continue this loop until the user indicates they have no more pairs to add.
+
+        2.  **Review and Confirmation:**
+            - Present the complete list of user-provided Question/SQL pairs for confirmation.
+              - **Use the following format for each pair:**
+                **Pair [Number]**
+                **Question:** [The natural language question]
+                **SQL:**
+                ```sql
+                [The SQL query, properly formatted]
+                ```
+            - Ask if any modifications are needed. If so, work with the user to refine the pairs.
+
+        3.  **Final Template Generation:**
+            - Once approved, call the `generate_templates` tool with the approved pairs.
+            - The tool will return the final JSON content as a string.
+
+        4.  **Save Templates:**
+            - Ask the user to choose one of the following options:
+              1. Create a new template file.
+              2. Append to an existing template file.
+
+            - **If creating a new file:**
+              - You will need to ask the user for the database instance and database name to create the filename.
+              - Call the `save_templates` tool. You will need to provide the database instance, database name, the JSON content from the previous step, and the root directory where the Gemini CLI is running.
+
+            - **If appending to an existing file:**
+              - Ask the user to provide the path to the existing template file.
+              - Use client-side tools to read the existing file, merge the new templates with the existing ones, and write the combined list back to the file.
+
+        5.  **Generate Upload URL (Optional):**
+            - After the file is saved, ask the user if they want to generate a URL to upload the template file.
+            - If the user confirms, you must collect the necessary database context from them. This includes:
+              - **Database Type:** 'alloydb', 'cloudsql', or 'spanner'.
+              - **Project ID:** The Google Cloud project ID.
+              - **And depending on the database type:**
+                - For 'alloydb': Location and Cluster ID.
+                - For 'cloudsql': Instance ID.
+                - For 'spanner': Instance ID and Database ID.
+            - Once you have the required information, call the `generate_upload_url` tool to provide the upload URL to the user.
+        """
+    )
+
+
 if __name__ == "__main__":
     mcp.run()  # Uses STDIO transport by default

@@ -48,17 +48,12 @@ async def generate_templates_from_pairs(
         return f'{{"error": "Invalid database dialect specified: {db_dialect_str}"}}'
 
     try:
-        approved_pairs_data = json.loads(approved_pairs_json)
+        # The input is now expected to be a direct list of pairs
+        pair_list = json.loads(approved_pairs_json)
+        if not isinstance(pair_list, list):
+            raise json.JSONDecodeError("Input is not a list.", approved_pairs_json, 0)
     except json.JSONDecodeError:
-        return '{"error": "Invalid JSON format for approved pairs."}'
-
-    # Handle both a raw list of pairs and an object with a "pairs" key
-    if isinstance(approved_pairs_data, dict):
-        pair_list = approved_pairs_data.get("pairs", [])
-    elif isinstance(approved_pairs_data, list):
-        pair_list = approved_pairs_data
-    else:
-        return '{"error": "JSON input must be a list of pairs or an object with a \'pairs\' key."}'
+        return '{"error": "Invalid JSON format for approved pairs. Expected a JSON array."}'
 
     final_templates = []
 

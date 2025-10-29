@@ -28,7 +28,9 @@ async def generate_sql_pairs(
         db_engine: Optional name of the database engine for SQL dialect.
 
     Returns:
-        A JSON string containing a list of question/SQL pairs.
+        A JSON string representing a list of dictionaries, where each dictionary
+        has a "question" and a "sql" key.
+        Example: '[{"question": "...", "sql": "..."}]'
     """
     return await question_generator.generate_sql_pairs_from_schema(
         db_schema, context, table_names, db_engine
@@ -43,7 +45,9 @@ async def generate_templates(
     Generates final templates from a list of user-approved question/SQL pairs.
 
     Args:
-        approved_pairs_json: A JSON string of the question/SQL pairs.
+        approved_pairs_json: A JSON string representing a list of dictionaries,
+                             where each dictionary has a "question" and a "sql" key.
+                             Example: '[{"question": "...", "sql": "..."}]'
         db_engine: The SQL dialect to use for parameterization. Accepted
                    values are 'postgresql', 'mysql', or 'googlesql'.
     """
@@ -174,6 +178,7 @@ def generate_bulk_templates() -> str:
 
         7.  **Final Template Generation:**
             - Once approved, call the `generate_templates` tool with the approved pairs.
+            - **Note:** If the number of approved pairs is very large (e.g., over 50), break the list into smaller chunks and call the `generate_templates` tool for each chunk.
             - The tool will return the final JSON content as a string.
 
         8.  **Save Templates:**
@@ -220,6 +225,7 @@ def generate_targeted_templates() -> str:
 
         3.  **Final Template Generation:**
             - Once approved, call the `generate_templates` tool with the approved pairs.
+            - **Note:** If the number of approved pairs is very large (e.g., over 50), break the list into smaller chunks and call the `generate_templates` tool for each chunk.
             - The tool will return the final JSON content as a string.
 
         4.  **Save Templates:**

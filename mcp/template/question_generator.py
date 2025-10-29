@@ -4,6 +4,7 @@ import textwrap
 from google import genai
 from google.genai import types
 from google.genai.types import HttpOptions
+import json
 
 
 class QuestionSQLPair(BaseModel):
@@ -74,13 +75,19 @@ async def generate_sql_pairs_from_schema(
             },
         )
         if response.text:
-            pair_list = QuestionSQLPairs.model_validate_json(response.text)
-            return pair_list.model_dump_json(indent=2)
+            pair_list_obj = QuestionSQLPairs.model_validate_json(response.text)
+            # Convert the list of Pydantic objects to a list of dicts
+            pairs_as_dicts = [pair.model_dump() for pair in pair_list_obj.pairs]
+            # Return the simplified JSON array string
+            return json.dumps(pairs_as_dicts, indent=2)
         else:
-            return '{"error": "The model did not return any text content."}'
+            return "[]"
 
     except Exception as e:
-        return f'{{"error": "An error occurred while calling the generative model: {str(e)}"}}'
+        # Re-raise the exception to be handled by the MCP server
+        raise Exception(
+            f"An error occurred while calling the generative model: {e}"
+        ) from e
     finally:
         client.close()
         await client.aio.aclose()

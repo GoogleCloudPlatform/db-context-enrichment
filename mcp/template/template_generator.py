@@ -38,7 +38,6 @@ class TemplateList(BaseModel):
 async def generate_templates_from_pairs(
     approved_pairs_json: str, db_dialect_str: str = "postgresql"
 ) -> str:
-    print("!!! generate_templates_from_pairs !!!")
     """
     Generates the final, detailed templates based on user-approved question/SQL pairs.
     """
@@ -49,22 +48,27 @@ async def generate_templates_from_pairs(
         return f'{{"error": "Invalid database dialect specified: {db_dialect_str}"}}'
 
     try:
-        approved_pairs = json.loads(approved_pairs_json)
+        approved_pairs_data = json.loads(approved_pairs_json)
     except json.JSONDecodeError:
         return '{"error": "Invalid JSON format for approved pairs."}'
 
+    # Handle both a raw list of pairs and an object with a "pairs" key
+    if isinstance(approved_pairs_data, dict):
+        pair_list = approved_pairs_data.get("pairs", [])
+    elif isinstance(approved_pairs_data, list):
+        pair_list = approved_pairs_data
+    else:
+        return '{"error": "JSON input must be a list of pairs or an object with a \'pairs\' key."}'
+
     final_templates = []
 
-    for pair in approved_pairs.get("pairs", []):
+    for pair in pair_list:
         question = pair["question"]
         sql = pair["sql"]
         intent = question  # The intent starts as the original question
 
         # 1. Extract value phrases from the question
         phrases = await parameterizer.extract_value_phrases(question)
-
-        print(f"Question: {question}")
-        print(f"Extracted Phrases: {phrases}")
 
         # 2. Generate the manifest
         manifest = question

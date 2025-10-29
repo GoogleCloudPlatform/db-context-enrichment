@@ -4,26 +4,32 @@ This MCP server provides a guided, interactive workflow to generate structured N
 
 ## Prerequisites
 
-Before you begin, you need to install `uv`, a fast Python package installer.
+Before you begin, you need to have the Gemini CLI and `uv` installed.
 
+### 1. Gemini CLI
+- **Installation:** Follow the official instructions for your OS (see option #2 [here](https://cloud.google.com/vertex-ai/docs/generative-ai/gemini/gemini-cli)).
+- **Configuration:** Ensure your Gemini API key is correctly configured.
+- **Verification:** Run a simple command to verify the installation:
+  ```sh
+  gemini
+  > What is the capital of France?
+  ```
+
+### 2. uv (Python Package Installer)
 **macOS (Homebrew):**
-
 ```sh
 brew install uv
 ```
 
 **Linux and macOS (Shell):**
-
 ```sh
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 Verify the installation by checking the version:
-
 ```sh
 uv --version
 ```
-
 For other installation methods, please refer to the [official `uv` documentation](https://docs.astral.sh/uv/getting-started/installation/).
 
 ## Installation
@@ -31,20 +37,19 @@ For other installation methods, please refer to the [official `uv` documentation
 The installation process involves adding two Gemini CLI extensions.
 
 ### 1. Install the MCP Toolbox
-
 This extension provides the necessary tools to connect to your databases and fetch schemas.
-
 ```sh
 gemini extensions install https://github.com/gemini-cli-extensions/mcp-toolbox
 ```
 
 ### 2. Install the DB Context Enrichment Server
-
 This is the main MCP server that contains the template generation workflow.
-
 ```sh
 gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enrichment --ref=juexinw/gemini-cli-extension
 ```
+
+> **Tip:** If you have installed these extensions previously, you can update them all by running:
+> `gemini extensions update --all`
 
 ## Configuration
 
@@ -78,11 +83,10 @@ tools:
 ## Usage
 
 1. **Start Gemini CLI:**
-    Open your terminal, navigate (`cd`) into the folder containing your `tools.yaml` file, and run the `gemini` command:
+    Open your terminal, navigate (`cd`) into the folder containing your `tools.yaml` file, and run the `gemini` command.
 
-    ```sh
-    gemini
-    ```
+    > **Tip:** For debugging, start the CLI with the `--debug` flag to see detailed logs (e.g., for connection or configuration errors):
+    > `gemini --debug`
 
 2. **Verify Integration:**
     Once the Gemini CLI has started, verify that both MCP servers are correctly integrated by listing them:
@@ -90,8 +94,9 @@ tools:
     ```sh
     /mcp list
     ```
-
     You should see both `mcp-toolbox` and `DB Context Enrichment MCP` in the list of available servers.
+
+    > **Tip:** You can also check the VSCode extension status with `/ide status`.
 
 3. **Start the Workflow:**
     To begin the guided template generation process, run the following command:

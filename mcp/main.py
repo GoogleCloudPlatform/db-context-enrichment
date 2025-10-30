@@ -143,27 +143,24 @@ def generate_bulk_templates() -> str:
         """
         **Workflow for Generating Question/SQL Pair Templates**
 
-        1.  **Verify Integration & Discover Databases:**
-            - Check for available schema tools on the MCP Toolbox server and look for a `tools.yaml` file.
-            - Combine this information to deduce a list of available, connected databases.
+        1.  **Discover and Select Database:**
+            - Find all connected databases from the MCP Toolbox and `tools.yaml`.
+            - If only one database is found, present it and ask for confirmation.
+            - If multiple databases are found, present the list and ask the user to choose one.
+            - Use the format: `Connection: <name> | Instance: <instance> | DB: <db>`
+            - Remember the selected database name.
 
-        2.  **Database Selection:**
-            - Present the list of discovered databases to the user in a compact, single-line format. 
-              - **Use the following format for each database:**
-                - Connection: my-prod-db | Instance: sql-server-123 | DB: customer_data
-            - Ask the user to choose one for template generation. **Remember the database name.**
-
-        3.  **Schema Analysis:**
+        2.  **Schema Analysis:**
             - Fetch the schema for the selected database. To get the detailed schema, do not specify the `output_format` parameter.
             - Present a summary of tables to the user.
 
-        4.  **Scope Definition:**
+        3.  **Scope Definition:**
             - Ask the user to specify tables for generation (or all tables).
 
-        5.  **Initial Pair Generation:**
+        4.  **Initial Pair Generation:**
             - Call the `generate_sql_pairs` tool with the collected information.
 
-        6.  **Iterative User Review & Refinement:**
+        5.  **Iterative User Review & Refinement:**
             - Parse the JSON from the tool and present the Question/SQL pairs to the user. 
               - **Use the following format for each pair:**
                 **Pair [Number]**
@@ -176,12 +173,12 @@ def generate_bulk_templates() -> str:
             - If feedback is given, handle minor edits or major regenerations by calling `generate_sql_pairs` again with the feedback as context.
             - Repeat until the user approves the list.
 
-        7.  **Final Template Generation:**
+        6.  **Final Template Generation:**
             - Once approved, call the `generate_templates` tool with the approved pairs.
             - **Note:** If the number of approved pairs is very large (e.g., over 50), break the list into smaller chunks and call the `generate_templates` tool for each chunk.
             - The tool will return the final JSON content as a string.
 
-        8.  **Save Templates:**
+        7.  **Save Templates:**
             - Ask the user to choose one of the following options:
               1. Create a new template file.
               2. Append to an existing template file.
@@ -193,9 +190,11 @@ def generate_bulk_templates() -> str:
               - Ask the user to provide the path to the existing template file.
               - Use client-side tools to read the existing file, merge the new templates with the existing ones, and write the combined list back to the file.
 
-        9.  **Review and Upload:**
+        8.  **Review and Upload:**
             - After the file is saved, ask the user for review.
             - Upon confirmation, call the `generate_upload_url` tool to provide a URL for uploading the template file.
+
+        Start the workflow.
         """
     )
 
@@ -251,6 +250,8 @@ def generate_targeted_templates() -> str:
                 - For 'cloudsql': Instance ID.
                 - For 'spanner': Instance ID and Database ID.
             - Once you have the required information, call the `generate_upload_url` tool to provide the upload URL to the user.
+
+        Start the workflow.
         """
     )
 

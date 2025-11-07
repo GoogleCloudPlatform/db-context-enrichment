@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: db-context-enrichment
-Version: 0.1.2
+Version: 0.1.3
 Summary: A FastMCP server for generating natural language to SQL templates from database schemas.
 Requires-Python: >=3.12
 Description-Content-Type: text/markdown

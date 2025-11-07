@@ -1,12 +1,3 @@
-"""
-This module provides functionality to parameterize SQL queries and natural language intents.
-
-The core logic is designed to replicate the behavior of the
-`alloydb_ai_nl.choose_parameterize` PostgreSQL function from the `choose.sql`
-file. It takes a SQL statement and an intent string and replaces specific
-value phrases with positional placeholders (e.g., $1, $2).
-"""
-
 import re
 from typing import Dict, Any, List
 from pydantic import BaseModel, Field

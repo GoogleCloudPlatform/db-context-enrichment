@@ -9,7 +9,7 @@
         "tool",
         "run",
         "--from",
-        "${extensionPath}${/}mcp${/}dist${/}db_context_enrichment-0.1.2-py3-none-any.whl",
+        "${extensionPath}${/}mcp${/}dist${/}db_context_enrichment-0.1.3-py3-none-any.whl",
         "db-context-enrichment"
       ]
     }

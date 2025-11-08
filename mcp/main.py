@@ -145,7 +145,7 @@ def generate_bulk_templates() -> str:
 
         1.  **Discover and Select Database:**
             - Find all connected databases from the MCP Toolbox and `tools.yaml`.
-            - If only one database is found, present it and ask for confirmation.
+            - If only one database is found, present it and ask for confirmation. Do not proceed without user confirmation.
             - If multiple databases are found, present the list and ask the user to choose one.
             - Use the format: `Connection: <name> | Instance: <instance> | DB: <db>`
             - Remember the selected database name.
@@ -161,7 +161,7 @@ def generate_bulk_templates() -> str:
             - Call the `generate_sql_pairs` tool with the collected information.
 
         5.  **Iterative User Review & Refinement:**
-            - Parse the JSON from the tool and present the Question/SQL pairs to the user. 
+            - Parse the JSON from the tool and present the Question/SQL pairs to the user.
               - **Use the following format for each pair:**
                 **Pair [Number]**
                 **Question:** [The natural language question]
@@ -170,15 +170,35 @@ def generate_bulk_templates() -> str:
                 [The SQL query, properly formatted]
                 ```
             - Ask for approval to proceed or for feedback.
-            - If feedback is given, handle minor edits or major regenerations by calling `generate_sql_pairs` again with the feedback as context.
+            - If feedback is given, the Gemini CLI will assess the scope of the
+              changes. If the feedback affects a few pairs, it will edit the
+              *in-memory list* of SQL queries directly. If it impacts most pairs,
+              it will call `generate_sql_pairs` again with the feedback as context
+              to regenerate the list.
             - Repeat until the user approves the list.
 
-        6.  **Final Template Generation:**
+        6.  **Optional SQL Verification and Self-Correction:**
+            - After the user approves the list of pairs, ask if they would like to
+              validate the SQL queries.
+            - If the user agrees:
+              - Identify the appropriate `execute-sql` tool from the MCP Toolbox
+                (`tools.yaml`) by matching the `source` field with the database
+                connection used for schema fetching and ensuring the `kind` is an
+                `execute-sql` type (e.g., `postgres-execute-sql`).
+              - If a suitable `execute-sql` tool cannot be found, inform the user
+                with details and skip the validation step.
+              - Otherwise, execute each SQL statement using the identified tool.
+            - If a query fails, the Gemini CLI will attempt to self-correct it using
+              the error message as context (up to 2 retries).
+            - Present the final, validated list to the user, noting any
+              corrections or persistent failures.
+
+        7.  **Final Template Generation:**
             - Once approved, call the `generate_templates` tool with the approved pairs.
             - **Note:** If the number of approved pairs is very large (e.g., over 50), break the list into smaller chunks and call the `generate_templates` tool for each chunk.
             - The tool will return the final JSON content as a string.
 
-        7.  **Save Templates:**
+        8.  **Save Templates:**
             - Ask the user to choose one of the following options:
               1. Create a new template file.
               2. Append to an existing template file.
@@ -190,7 +210,7 @@ def generate_bulk_templates() -> str:
               - Ask the user to provide the path to the existing template file.
               - Use client-side tools to read the existing file, merge the new templates with the existing ones, and write the combined list back to the file.
 
-        8.  **Review and Upload:**
+        9.  **Review and Upload:**
             - After the file is saved, ask the user for review.
             - Upon confirmation, call the `generate_upload_url` tool to provide a URL for uploading the template file.
 

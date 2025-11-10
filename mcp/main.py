@@ -92,6 +92,57 @@ def save_templates(
 
 
 @mcp.tool
+def attach_templates(
+    templates_json: str,
+    file_path: str,
+) -> str:
+    """
+    Attaches templates to an existing JSON file.
+
+    This tool reads an existing JSON file containing a dictionary with a 'templates'
+    key, appends new templates to the list, and writes the updated dictionary
+    back to the file. Exceptions are propagated to the caller.
+
+    Args:
+        templates_json: The JSON string output from the `generate_templates` tool (expected to be a JSON dictionary with a 'templates' key).
+        file_path: The **absolute path** to the existing template file.
+
+    Returns:
+        A confirmation message with the path to the updated file.
+    """
+
+    existing_content = {"templates": []}
+    if os.path.getsize(file_path) > 0:
+        with open(file_path, "r") as f:
+            existing_content = json.load(f)
+
+    if not isinstance(existing_content, dict) or "templates" not in existing_content:
+        raise ValueError(
+            "Error: Existing file content is not a dictionary with a 'templates' key."
+        )
+
+    if not isinstance(existing_content["templates"], list):
+        raise ValueError("Error: 'templates' key in existing file is not a JSON list.")
+
+    new_templates = json.loads(templates_json)
+
+    if not isinstance(new_templates, dict) or "templates" not in new_templates:
+        raise ValueError(
+            "Error: Existing file content is not a dictionary with a 'templates' key."
+        )
+
+    if not isinstance(new_templates["templates"], list):
+        raise ValueError("Error: 'templates' key in existing file is not a JSON list.")
+
+    existing_content["templates"].extend(new_templates["templates"])
+
+    with open(file_path, "w") as f:
+        json.dump(existing_content, f, indent=2)
+
+    return f"Successfully attached templates to {file_path}"
+
+
+@mcp.tool
 def generate_upload_url(
     db_type: str,
     project_id: str,
@@ -187,9 +238,11 @@ def generate_bulk_templates() -> str:
                 `execute-sql` type (e.g., `postgres-execute-sql`).
               - If a suitable `execute-sql` tool cannot be found, inform the user
                 with details and skip the validation step.
-              - Otherwise, execute each SQL statement using the identified tool.
+              - Otherwise, execute each SQL statement using the identified tool, and only report success or failure, without displaying the full query results.
             - If a query fails, the Gemini CLI will attempt to self-correct it using
               the error message as context (up to 2 retries).
+            - **Crucially, ensure all pairs are validated before presenting the
+              final results.**
             - Present the final, validated list to the user, noting any
               corrections or persistent failures.
 
@@ -208,7 +261,7 @@ def generate_bulk_templates() -> str:
 
             - **If appending to an existing file:**
               - Ask the user to provide the path to the existing template file.
-              - Use client-side tools to read the existing file, merge the new templates with the existing ones, and write the combined list back to the file.
+              - Call the `attach_templates` tool with the JSON content and the absolute file path.
 
         9.  **Review and Upload:**
             - After the file is saved, ask the user for review.
@@ -258,7 +311,7 @@ def generate_targeted_templates() -> str:
 
             - **If appending to an existing file:**
               - Ask the user to provide the path to the existing template file.
-              - Use client-side tools to read the existing file, merge the new templates with the existing ones, and write the combined list back to the file.
+              - Call the `attach_templates` tool with the JSON content and the absolute file path.
 
         5.  **Generate Upload URL (Optional):**
             - After the file is saved, ask the user if they want to generate a URL to upload the template file.

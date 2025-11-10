@@ -33,3 +33,11 @@ When using Toolbox tools to fetch a database schema, adhere to the following:
 
 -   **Fetching All Tables**: If the user requests "all tables," **do not** pass the `table_name` parameter. This will ensure all tables are fetched.
 -   **Schema Detail**: To get the detailed schema, **do not** specify the `output_format` parameter. This will ensure the detailed schema is used by default.
+
+## SQL Validation Behavior
+
+During the SQL validation step, the Gemini CLI will execute SQL queries using the appropriate `execute-sql` tool. It will **only report success or failure** to the user. The full query results will **not** be displayed to the user but will be used internally by the Gemini CLI for self-correction in case of query failures.
+
+## Template Management Tools
+
+When using the `attach_templates` tool, the Gemini CLI should **not** read the content of the existing template file directly before calling the tool. The `attach_templates` tool is designed to handle all necessary file I/O operations (reading, merging, and writing) internally, making direct file reading by the CLI redundant and potentially inefficient for large files.

@@ -60,4 +60,4 @@ async def generate_fragments_from_pairs(
         final_fragments.append(fragment)
 
     context_set = context.ContextSet(templates=None, fragments=final_fragments)
-    return context_set.model_dump_json(indent=2)
+    return context_set.model_dump_json(indent=2, exclude_none=True)

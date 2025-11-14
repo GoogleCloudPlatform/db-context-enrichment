@@ -15,4 +15,4 @@ db-context-enrichment = "main:mcp.run"
 
 [tool.setuptools]
 py-modules = ["main"]
-packages = ["template"]
+packages = ["template", "fragment", "common", "model"]

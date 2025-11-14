@@ -1,6 +1,6 @@
 # Project Overview
 
-This project is a FastMCP server for "DB Context Enrichment." It provides a guided workflow to generate structured, natural language-to-SQL templates from a user's database schema.
+This project is a FastMCP server for "DB Context Enrichment." It provides a guided workflow to generate structured, natural language-to-SQL templates and SQL fragments from a user's database schema.
 
 **Crucially, this server depends on a running MCP Toolbox server to provide the underlying tools for database connection and schema fetching.**
 
@@ -38,6 +38,40 @@ When using Toolbox tools to fetch a database schema, adhere to the following:
 
 During the SQL validation step, the Gemini CLI will execute SQL queries using the appropriate `execute-sql` tool. It will **only report success or failure** to the user. The full query results will **not** be displayed to the user but will be used internally by the Gemini CLI for self-correction in case of query failures.
 
-## Template Management Tools
+## ContextSet Management Tools
 
-When using the `attach_templates` tool, the Gemini CLI should **not** read the content of the existing template file directly before calling the tool. The `attach_templates` tool is designed to handle all necessary file I/O operations (reading, merging, and writing) internally, making direct file reading by the CLI redundant and potentially inefficient for large files.
+When using the `attach_context_set` tool, the Gemini CLI should **not** read the content of the existing file directly before calling the tool. The `attach_context_set` tool is designed to handle all necessary file I/O operations (reading, merging, and writing) internally, making direct file reading by the CLI redundant and potentially inefficient for large files. Similarly, when using `save_context_set`, the CLI should pass the `ContextSet` JSON directly to the tool without prior file operations.
+
+## ContextSet Structure
+
+The `ContextSet` object is a JSON structure that can contain both `templates` and `fragments`. It is the standardized output format for `generate_templates` and `generate_fragments` tools, and the expected input for `save_context_set` and `attach_context_set`.
+
+**Example ContextSet JSON:**
+
+```json
+{
+  "templates": [
+    {
+      "nl_query": "How many accounts are there in total?",
+      "sql": "SELECT count(*) FROM account",
+      "intent": "How many accounts are there in total?",
+      "manifest": "How many accounts are there in total?",
+      "parameterized": {
+        "parameterized_sql": "SELECT count(*) FROM account",
+        "parameterized_intent": "How many accounts are there in total?"
+      }
+    }
+  ],
+  "fragments": [
+    {
+      "fragment": "description LIKE '%luxury%' OR description LIKE '%premium%'",
+      "intent": "luxury product",
+      "manifest": "luxury product",
+      "parameterized": {
+        "parameterized_fragment": "description LIKE '%luxury%' OR description LIKE '%premium%'",
+        "parameterized_intent": "luxury product"
+      }
+    }
+  ]
+}
+```

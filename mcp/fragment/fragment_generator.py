@@ -31,7 +31,7 @@ async def generate_fragments_from_pairs(
         intent = question  # The intent starts as the original question
 
         # 1. Extract value phrases from the question
-        phrases = await parameterizer.extract_value_phrases(question)
+        phrases = await parameterizer.extract_value_phrases(nl_query=question)
 
         # 2. Generate the manifest
         manifest = question

@@ -1,0 +1,23 @@
+name: MCP Tests
+
+on:
+  pull_request:
+    paths:
+      - 'mcp/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'uv'
+      - name: Install dependencies
+        run: uv pip install .
+        working-directory: ./mcp
+      - name: Run tests
+        run: pytest
+        working-directory: ./mcp

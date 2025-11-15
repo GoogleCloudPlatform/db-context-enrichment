@@ -34,5 +34,5 @@ jobs:
         run: uv pip install .
         working-directory: ./mcp
       - name: Run tests
-        run: pytest
+        run: uv run pytest
         working-directory: ./mcp

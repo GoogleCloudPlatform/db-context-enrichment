@@ -26,6 +26,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-uv-
 
+      - name: Create uv virtual environment
+        run: uv venv
+        working-directory: ./mcp
+
       - name: Install dependencies
         run: uv pip install .
         working-directory: ./mcp

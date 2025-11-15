@@ -15,6 +15,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install uv
+        run: pipx install uv
+
       - name: Cache uv dependencies
         uses: actions/cache@v4
         with:

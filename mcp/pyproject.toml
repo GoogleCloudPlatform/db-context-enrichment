@@ -1,0 +1,18 @@
+[project]
+name = "db-context-enrichment"
+version = "0.1.3"
+description = "A FastMCP server for generating natural language to SQL templates from database schemas."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=2.12.5",
+    "google-genai>=1.46.0",
+    "toolbox-core>=0.5.2",
+]
+
+[project.scripts]
+db-context-enrichment = "main:mcp.run"
+
+[tool.setuptools]
+py-modules = ["main"]
+packages = ["template"]

@@ -1,0 +1,96 @@
+from pydantic import BaseModel, Field
+from typing import List
+import json
+from . import parameterizer
+
+
+class Parameterized(BaseModel):
+    """Defines the parameterized version of a SQL query and intent."""
+
+    parameterized_sql: str = Field(
+        ..., description="The SQL query with placeholders (eg., $1)."
+    )
+    parameterized_intent: str = Field(
+        ..., description="The natural language intent with placeholders."
+    )
+
+
+class Template(BaseModel):
+    """Represents a single, complete template."""
+
+    nl_query: str = Field(
+        ..., description="A natural language question about the data."
+    )
+    sql: str = Field(..., description="The corresponding, complete SQL query.")
+    intent: str = Field(..., description="The user's specific intent.")
+    manifest: str = Field(
+        ..., description="A general description of what the template does."
+    )
+    parameterized: Parameterized
+
+
+class TemplateList(BaseModel):
+    """A list of final Template objects."""
+
+    templates: List[Template]
+
+
+async def generate_templates_from_pairs(
+    approved_pairs_json: str, db_dialect_str: str = "postgresql"
+) -> str:
+    """
+    Generates the final, detailed templates based on user-approved question/SQL pairs.
+    """
+    try:
+        # Convert the string to the Enum member
+        db_dialect = parameterizer.SQLDialect(db_dialect_str)
+    except ValueError:
+        return f'{{"error": "Invalid database dialect specified: {db_dialect_str}"}}'
+
+    try:
+        # The input is now expected to be a direct list of pairs
+        pair_list = json.loads(approved_pairs_json)
+        if not isinstance(pair_list, list):
+            raise json.JSONDecodeError("Input is not a list.", approved_pairs_json, 0)
+    except json.JSONDecodeError:
+        return '{"error": "Invalid JSON format for approved pairs. Expected a JSON array."}'
+
+    final_templates = []
+
+    for pair in pair_list:
+        question = pair["question"]
+        sql = pair["sql"]
+        intent = question  # The intent starts as the original question
+
+        # 1. Extract value phrases from the question
+        phrases = await parameterizer.extract_value_phrases(question)
+
+        # 2. Generate the manifest
+        manifest = question
+        # Sort keys by length descending to replace longer phrases first
+        sorted_phrases = sorted(phrases.keys(), key=len, reverse=True)
+        for phrase in sorted_phrases:
+            # Use the first identified type for the manifest
+            phrase_type = phrases[phrase][0] if phrases[phrase] else "value"
+            manifest = manifest.replace(phrase, f"a given {phrase_type}")
+
+        # 3. Parameterize the SQL and Intent
+        parameterized_result = parameterizer.parameterize_sql_and_intent(
+            phrases, sql, intent, db_dialect=db_dialect
+        )
+
+        # 4. Assemble the final template object
+        template = Template(
+            nl_query=question,
+            sql=sql,
+            intent=intent,
+            manifest=manifest,
+            parameterized=Parameterized(
+                parameterized_sql=parameterized_result["sql"],
+                parameterized_intent=parameterized_result["intent"],
+            ),
+        )
+        final_templates.append(template)
+
+    template_list = TemplateList(templates=final_templates)
+    return template_list.model_dump_json(indent=2)

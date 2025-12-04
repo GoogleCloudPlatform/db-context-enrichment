@@ -2,6 +2,8 @@ from fastmcp import FastMCP
 from typing import Optional, List
 import textwrap
 from template import question_generator, template_generator
+from fragment import fragment_generator
+from model import context
 import datetime
 import os
 import json
@@ -50,6 +52,9 @@ async def generate_templates(
                              Example: '[{"question": "...", "sql": "..."}]'
         db_engine: The SQL dialect to use for parameterization. Accepted
                    values are 'postgresql', 'mysql', or 'googlesql'.
+
+    Returns:
+        A JSON string representing a ContextSet object.
     """
     # Ensure we pass a string, defaulting to 'postgresql' if None is provided.
     dialect = db_engine if db_engine is not None else "postgresql"
@@ -59,17 +64,41 @@ async def generate_templates(
 
 
 @mcp.tool
-def save_templates(
-    templates_json: str,
+async def generate_fragments(
+    approved_pairs_json: str, db_engine: Optional[str] = "postgresql"
+) -> str:
+    """
+    Generates final fragments from a list of user-approved question/SQL fragment pairs.
+
+    Args:
+        approved_pairs_json: A JSON string representing a list of dictionaries,
+                             where each dictionary has a "question" and a "fragment" key.
+                             Example: '[{"question": "...", "fragment": "..."}]'
+        db_engine: The SQL dialect to use for parameterization. Accepted
+                   values are 'postgresql', 'mysql', or 'googlesql'.
+
+    Returns:
+        A JSON string representing a ContextSet object.
+    """
+    # Ensure we pass a string, defaulting to 'postgresql' if None is provided.
+    dialect = db_engine if db_engine is not None else "postgresql"
+    return await fragment_generator.generate_fragments_from_pairs(
+        approved_pairs_json, dialect
+    )
+
+
+@mcp.tool
+def save_context_set(
+    context_set_json: str,
     db_instance: str,
     db_name: str,
     output_dir: str,
 ) -> str:
     """
-    Saves templates to a new JSON file with a generated timestamp.
+    Saves a ContextSet to a new JSON file with a generated timestamp.
 
     Args:
-        templates_json: The JSON string of the templates.
+        context_set_json: The JSON string of the ContextSet.
         db_instance: The database instance name.
         db_name: The database name.
         output_dir: The directory to save the file in. The root of where the
@@ -79,65 +108,59 @@ def save_templates(
         A confirmation message with the path to the newly created file.
     """
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"{db_instance}_{db_name}_templates_{timestamp}.json"
+    filename = f"{db_instance}_{db_name}_context_set_{timestamp}.json"
     filepath = os.path.join(output_dir, filename)
 
     try:
-        data = json.loads(templates_json)
+        data = json.loads(context_set_json)
         with open(filepath, "w") as f:
             json.dump(data, f, indent=2)
-        return f"Successfully saved templates to {filepath}"
+        return f"Successfully saved context set to {filepath}"
     except (json.JSONDecodeError, IOError) as e:
         return f"Error saving file: {e}"
 
 
 @mcp.tool
-def attach_templates(
-    templates_json: str,
+def attach_context_set(
+    context_set_json: str,
     file_path: str,
 ) -> str:
     """
-    Attaches templates to an existing JSON file.
+    Attaches a ContextSet to an existing JSON file.
 
-    This tool reads an existing JSON file containing a dictionary with a 'templates'
-    key, appends new templates to the list, and writes the updated dictionary
+    This tool reads an existing JSON file containing a ContextSet,
+    appends new templates/fragments to it, and writes the updated ContextSet
     back to the file. Exceptions are propagated to the caller.
 
     Args:
-        templates_json: The JSON string output from the `generate_templates` tool (expected to be a JSON dictionary with a 'templates' key).
+        context_set_json: The JSON string output from the `generate_templates` or `generate_fragments` tool.
         file_path: The **absolute path** to the existing template file.
 
     Returns:
         A confirmation message with the path to the updated file.
     """
 
-    existing_content = {"templates": []}
+    existing_content_dict = {"templates": [], "fragments": []}
     if os.path.getsize(file_path) > 0:
         with open(file_path, "r") as f:
-            existing_content = json.load(f)
+            existing_content_dict = json.load(f)
 
-    if not isinstance(existing_content, dict) or "templates" not in existing_content:
-        raise ValueError(
-            "Error: Existing file content is not a dictionary with a 'templates' key."
-        )
+    existing_context = context.ContextSet(**existing_content_dict)
 
-    if not isinstance(existing_content["templates"], list):
-        raise ValueError("Error: 'templates' key in existing file is not a JSON list.")
+    new_context = context.ContextSet(**json.loads(context_set_json))
 
-    new_templates = json.loads(templates_json)
+    if existing_context.templates is None:
+        existing_context.templates = []
+    if new_context.templates:
+        existing_context.templates.extend(new_context.templates)
 
-    if not isinstance(new_templates, dict) or "templates" not in new_templates:
-        raise ValueError(
-            "Error: Existing file content is not a dictionary with a 'templates' key."
-        )
-
-    if not isinstance(new_templates["templates"], list):
-        raise ValueError("Error: 'templates' key in existing file is not a JSON list.")
-
-    existing_content["templates"].extend(new_templates["templates"])
+    if existing_context.fragments is None:
+        existing_context.fragments = []
+    if new_context.fragments:
+        existing_context.fragments.extend(new_context.fragments)
 
     with open(file_path, "w") as f:
-        json.dump(existing_content, f, indent=2)
+        json.dump(existing_context.model_dump(), f, indent=2)
 
     return f"Successfully attached templates to {file_path}"
 
@@ -253,19 +276,19 @@ def generate_bulk_templates() -> str:
 
         8.  **Save Templates:**
             - Ask the user to choose one of the following options:
-              1. Create a new template file.
-              2. Append to an existing template file.
+              1. Create a new context set file.
+              2. Append templates to an existing context set file.
 
             - **If creating a new file:**
-              - Call the `save_templates` tool. You will need to provide the database instance, database name, the JSON content from the previous step, and the root directory where the Gemini CLI is running.
+              - Call the `save_context_set` tool. You will need to provide the database instance, database name, the JSON content from the previous step, and the root directory where the Gemini CLI is running.
 
             - **If appending to an existing file:**
-              - Ask the user to provide the path to the existing template file.
-              - Call the `attach_templates` tool with the JSON content and the absolute file path.
+              - Ask the user to provide the path to the existing context set file.
+              - Call the `attach_context_set` tool with the JSON content and the absolute file path.
 
         9.  **Review and Upload:**
             - After the file is saved, ask the user for review.
-            - Upon confirmation, call the `generate_upload_url` tool to provide a URL for uploading the template file.
+            - Upon confirmation, call the `generate_upload_url` tool to provide a URL for uploading the context set file.
 
         Start the workflow.
         """
@@ -302,19 +325,76 @@ def generate_targeted_templates() -> str:
 
         4.  **Save Templates:**
             - Ask the user to choose one of the following options:
-              1. Create a new template file.
-              2. Append to an existing template file.
+              1. Create a new context set file.
+              2. Append templates to an existing context set file.
 
             - **If creating a new file:**
               - You will need to ask the user for the database instance and database name to create the filename.
-              - Call the `save_templates` tool. You will need to provide the database instance, database name, the JSON content from the previous step, and the root directory where the Gemini CLI is running.
+              - Call the `save_context_set` tool. You will need to provide the database instance, database name, the JSON content from the previous step, and the root directory where the Gemini CLI is running.
 
             - **If appending to an existing file:**
-              - Ask the user to provide the path to the existing template file.
-              - Call the `attach_templates` tool with the JSON content and the absolute file path.
+              - Ask the user to provide the path to the existing context set file.
+              - Call the `attach_context_set` tool with the JSON content and the absolute file path.
 
         5.  **Generate Upload URL (Optional):**
-            - After the file is saved, ask the user if they want to generate a URL to upload the template file.
+            - After the file is saved, ask the user if they want to generate a URL to upload the context set file.
+            - If the user confirms, you must collect the necessary database context from them. This includes:
+              - **Database Type:** 'alloydb', 'cloudsql', or 'spanner'.
+              - **Project ID:** The Google Cloud project ID.
+              - **And depending on the database type:**
+                - For 'alloydb': Location and Cluster ID.
+                - For 'cloudsql': Instance ID.
+                - For 'spanner': Instance ID and Database ID.
+            - Once you have the required information, call the `generate_upload_url` tool to provide the upload URL to the user.
+
+        Start the workflow.
+        """
+    )
+
+
+@mcp.prompt
+def generate_targeted_fragments() -> str:
+    """Initiates a guided workflow to generate specific Phrase/SQL fragment pair templates."""
+    return textwrap.dedent(
+        """
+        **Workflow for Generating Targeted Phrase/SQL Fragment Pair Templates**
+
+        1.  **User Input Loop:**
+            - Ask the user to provide a natural language phrase and its corresponding SQL fragment.
+            - After capturing the pair, ask the user if they would like to add another one.
+            - Continue this loop until the user indicates they have no more pairs to add.
+
+        2.  **Review and Confirmation:**
+            - Present the complete list of user-provided Phrase/SQL fragment pairs for confirmation.
+              - **Use the following format for each pair:**
+                **Pair [Number]**
+                **Phrase:** [The natural language phrase]
+                **Fragment:**
+                ```sql
+                [The SQL fragment, properly formatted]
+                ```
+            - Ask if any modifications are needed. If so, work with the user to refine the pairs.
+
+        3.  **Final Fragment Generation:**
+            - Once approved, call the `generate_fragments` tool with the approved pairs.
+            - **Note:** If the number of approved pairs is very large (e.g., over 50), break the list into smaller chunks and call the `generate_fragments` tool for each chunk.
+            - The tool will return the final JSON content as a string.
+
+        4.  **Save Fragments:**
+            - Ask the user to choose one of the following options:
+              1. Create a new context set file.
+              2. Append fragments to an existing context set file.
+
+            - **If creating a new file:**
+              - You will need to ask the user for the database instance and database name to create the filename.
+              - Call the `save_context_set` tool. You will need to provide the database instance, database name, the JSON content from the previous step, and the root directory where the Gemini CLI is running.
+
+            - **If appending to an existing file:**
+              - Ask the user to provide the path to the existing context set file.
+              - Call the `attach_context_set` tool with the JSON content and the absolute file path.
+
+        5.  **Generate Upload URL (Optional):**
+            - After the file is saved, ask the user if they want to generate a URL to upload the context set file.
             - If the user confirms, you must collect the necessary database context from them. This includes:
               - **Database Type:** 'alloydb', 'cloudsql', or 'spanner'.
               - **Project ID:** The Google Cloud project ID.

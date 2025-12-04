@@ -32,7 +32,7 @@ class ValuePhrasesList(BaseModel):
     )
 
 
-async def extract_value_phrases(nl_question: str) -> Dict[str, List[str]]:
+async def extract_value_phrases(nl_query: str) -> Dict[str, List[str]]:
     """
     Extracts potential value phrases from a natural language question using an LLM.
 
@@ -80,7 +80,7 @@ async def extract_value_phrases(nl_question: str) -> Dict[str, List[str]]:
         identified, return an empty list.
 
         [Query]
-        {nl_question}
+        {nl_query}
     """
     )
 

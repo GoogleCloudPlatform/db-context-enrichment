@@ -1,0 +1,38 @@
+name: MCP Tests
+
+on:
+  pull_request:
+    paths:
+      - 'mcp/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        run: pipx install uv
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Create uv virtual environment
+        run: uv venv
+        working-directory: ./mcp
+
+      - name: Install dependencies
+        run: uv pip install ".[test]"
+        working-directory: ./mcp
+      - name: Run tests
+        run: uv run pytest
+        working-directory: ./mcp

@@ -13,6 +13,12 @@ dependencies = [
 [project.scripts]
 db-context-enrichment = "main:mcp.run"
 
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-asyncio"
+]
+
 [tool.setuptools]
 py-modules = ["main"]
 packages = ["template", "fragment", "common", "model"]

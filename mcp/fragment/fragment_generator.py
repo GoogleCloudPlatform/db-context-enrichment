@@ -3,11 +3,11 @@ from common import parameterizer
 from model import context
 
 
-async def generate_templates_from_pairs(
+async def generate_fragments_from_pairs(
     approved_pairs_json: str, db_dialect_str: str = "postgresql"
 ) -> str:
     """
-    Generates the final, detailed templates based on user-approved question/SQL pairs.
+    Generates the final, detailed fragments based on user-approved question/SQL fragment pairs.
     """
     try:
         # Convert the string to the Enum member
@@ -16,18 +16,18 @@ async def generate_templates_from_pairs(
         return f'{{"error": "Invalid database dialect specified: {db_dialect_str}"}}'
 
     try:
-        # The input is now expected to be a direct list of pairs
+        # The input is expected to be a direct list of pairs
         pair_list = json.loads(approved_pairs_json)
         if not isinstance(pair_list, list):
             raise json.JSONDecodeError("Input is not a list.", approved_pairs_json, 0)
     except json.JSONDecodeError:
         return '{"error": "Invalid JSON format for approved pairs. Expected a JSON array."}'
 
-    final_templates = []
+    final_fragments = []
 
     for pair in pair_list:
         question = pair["question"]
-        sql = pair["sql"]
+        fragment_text = pair["fragment"]
         intent = question  # The intent starts as the original question
 
         # 1. Extract value phrases from the question
@@ -44,21 +44,20 @@ async def generate_templates_from_pairs(
 
         # 3. Parameterize the SQL and Intent
         parameterized_result = parameterizer.parameterize_sql_and_intent(
-            phrases, sql, intent, db_dialect=db_dialect
+            phrases, fragment_text, intent, db_dialect=db_dialect
         )
 
-        # 4. Assemble the final template object
-        template = context.Template(
-            nl_query=question,
-            sql=sql,
+        # 4. Assemble the final fragment object
+        fragment = context.Fragment(
+            fragment=fragment_text,
             intent=intent,
             manifest=manifest,
-            parameterized=context.ParameterizedTemplate(
-                parameterized_sql=parameterized_result["sql"],
+            parameterized=context.ParameterizedFragment(
+                parameterized_fragment=parameterized_result["sql"],
                 parameterized_intent=parameterized_result["intent"],
             ),
         )
-        final_templates.append(template)
+        final_fragments.append(fragment)
 
-    context_set = context.ContextSet(templates=final_templates, fragments=None)
+    context_set = context.ContextSet(templates=None, fragments=final_fragments)
     return context_set.model_dump_json(indent=2, exclude_none=True)

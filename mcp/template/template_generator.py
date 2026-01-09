@@ -60,5 +60,5 @@ async def generate_templates_from_pairs(
         )
         final_templates.append(template)
 
-    context_set = context.ContextSet(templates=final_templates, fragments=None)
+    context_set = context.ContextSet(templates=final_templates, facets=None)
     return context_set.model_dump_json(indent=2, exclude_none=True)

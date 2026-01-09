@@ -2,7 +2,7 @@ from fastmcp import FastMCP
 from typing import Optional, List
 import textwrap
 from template import question_generator, template_generator
-from fragment import fragment_generator
+from facet import facet_generator
 from model import context
 import datetime
 import os
@@ -64,16 +64,16 @@ async def generate_templates(
 
 
 @mcp.tool
-async def generate_fragments(
+async def generate_facets(
     approved_pairs_json: str, db_engine: Optional[str] = "postgresql"
 ) -> str:
     """
-    Generates final fragments from a list of user-approved question/SQL fragment pairs.
+    Generates final facets from a list of user-approved question/SQL facet pairs.
 
     Args:
         approved_pairs_json: A JSON string representing a list of dictionaries,
-                             where each dictionary has a "question" and a "fragment" key.
-                             Example: '[{"question": "...", "fragment": "..."}]'
+                             where each dictionary has a "question" and a "facet" key.
+                             Example: '[{"question": "...", "facet": "..."}]'
         db_engine: The SQL dialect to use for parameterization. Accepted
                    values are 'postgresql', 'mysql', or 'googlesql'.
 
@@ -82,7 +82,7 @@ async def generate_fragments(
     """
     # Ensure we pass a string, defaulting to 'postgresql' if None is provided.
     dialect = db_engine if db_engine is not None else "postgresql"
-    return await fragment_generator.generate_fragments_from_pairs(
+    return await facet_generator.generate_facets_from_pairs(
         approved_pairs_json, dialect
     )
 
@@ -129,18 +129,18 @@ def attach_context_set(
     Attaches a ContextSet to an existing JSON file.
 
     This tool reads an existing JSON file containing a ContextSet,
-    appends new templates/fragments to it, and writes the updated ContextSet
+    appends new templates/facets to it, and writes the updated ContextSet
     back to the file. Exceptions are propagated to the caller.
 
     Args:
-        context_set_json: The JSON string output from the `generate_templates` or `generate_fragments` tool.
+        context_set_json: The JSON string output from the `generate_templates` or `generate_facets` tool.
         file_path: The **absolute path** to the existing template file.
 
     Returns:
         A confirmation message with the path to the updated file.
     """
 
-    existing_content_dict = {"templates": [], "fragments": []}
+    existing_content_dict = {"templates": [], "facets": []}
     if os.path.getsize(file_path) > 0:
         with open(file_path, "r") as f:
             existing_content_dict = json.load(f)
@@ -154,10 +154,10 @@ def attach_context_set(
     if new_context.templates:
         existing_context.templates.extend(new_context.templates)
 
-    if existing_context.fragments is None:
-        existing_context.fragments = []
-    if new_context.fragments:
-        existing_context.fragments.extend(new_context.fragments)
+    if existing_context.facets is None:
+        existing_context.facets = []
+    if new_context.facets:
+        existing_context.facets.extend(new_context.facets)
 
     with open(file_path, "w") as f:
         json.dump(existing_context.model_dump(), f, indent=2)
@@ -353,37 +353,37 @@ def generate_targeted_templates() -> str:
 
 
 @mcp.prompt
-def generate_targeted_fragments() -> str:
-    """Initiates a guided workflow to generate specific Phrase/SQL fragment pair templates."""
+def generate_targeted_facets() -> str:
+    """Initiates a guided workflow to generate specific Phrase/SQL facet pair templates."""
     return textwrap.dedent(
         """
-        **Workflow for Generating Targeted Phrase/SQL Fragment Pair Templates**
+        **Workflow for Generating Targeted Phrase/SQL Facet Pair Templates**
 
         1.  **User Input Loop:**
-            - Ask the user to provide a natural language phrase and its corresponding SQL fragment.
+            - Ask the user to provide a natural language phrase and its corresponding SQL facet.
             - After capturing the pair, ask the user if they would like to add another one.
             - Continue this loop until the user indicates they have no more pairs to add.
 
         2.  **Review and Confirmation:**
-            - Present the complete list of user-provided Phrase/SQL fragment pairs for confirmation.
+            - Present the complete list of user-provided Phrase/SQL facet pairs for confirmation.
               - **Use the following format for each pair:**
                 **Pair [Number]**
                 **Phrase:** [The natural language phrase]
-                **Fragment:**
+                **Facet:**
                 ```sql
-                [The SQL fragment, properly formatted]
+                [The SQL facet, properly formatted]
                 ```
             - Ask if any modifications are needed. If so, work with the user to refine the pairs.
 
-        3.  **Final Fragment Generation:**
-            - Once approved, call the `generate_fragments` tool with the approved pairs.
-            - **Note:** If the number of approved pairs is very large (e.g., over 50), break the list into smaller chunks and call the `generate_fragments` tool for each chunk.
+        3.  **Final Facet Generation:**
+            - Once approved, call the `generate_facets` tool with the approved pairs.
+            - **Note:** If the number of approved pairs is very large (e.g., over 50), break the list into smaller chunks and call the `generate_facets` tool for each chunk.
             - The tool will return the final JSON content as a string.
 
-        4.  **Save Fragments:**
+        4.  **Save Facets:**
             - Ask the user to choose one of the following options:
               1. Create a new context set file.
-              2. Append fragments to an existing context set file.
+              2. Append facets to an existing context set file.
 
             - **If creating a new file:**
               - You will need to ask the user for the database instance and database name to create the filename.

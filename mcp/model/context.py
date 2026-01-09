@@ -27,31 +27,31 @@ class Template(BaseModel):
     parameterized: ParameterizedTemplate
 
 
-class ParameterizedFragment(BaseModel):
-    """Defines the parameterized version of a SQL fragment and intent."""
+class ParameterizedFacet(BaseModel):
+    """Defines the parameterized version of a SQL facet and intent."""
 
-    parameterized_fragment: str = Field(
-        ..., description="The SQL fragment with placeholders (eg., )."
+    parameterized_facet: str = Field(
+        ..., description="The SQL facet with placeholders (eg., )."
     )
     parameterized_intent: str = Field(
         ..., description="The natural language intent with placeholders."
     )
 
 
-class Fragment(BaseModel):
-    """Represents a single, complete fragment."""
+class Facet(BaseModel):
+    """Represents a single, complete facet."""
 
-    fragment: str = Field(..., description="The corresponding, complete SQL fragment.")
+    facet: str = Field(..., description="The corresponding, complete SQL facet.")
     intent: str = Field(..., description="The user's specific intent.")
     manifest: str = Field(
-        ..., description="A general description of what the fragment does."
+        ..., description="A general description of what the facet does."
     )
-    parameterized: ParameterizedFragment
+    parameterized: ParameterizedFacet
 
 
 class ContextSet(BaseModel):
-    """A set of templates and fragments."""
+    """A set of templates and facets."""
 
     templates: Optional[List[Template]] = Field(None, description="A list of complete templates.")
-    fragments: Optional[List[Fragment]] = Field(None, description="A list of SQL fragments.")
+    facets: Optional[List[Facet]] = Field(None, description="A list of SQL facets.")
 

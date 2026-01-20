@@ -49,11 +49,11 @@ async def generate_facets_from_pairs(
 
         # 4. Assemble the final facet object
         facet = context.Facet(
-            facet=facet_text,
+            sql_snippet=facet_text,
             intent=intent,
             manifest=manifest,
             parameterized=context.ParameterizedFacet(
-                parameterized_facet=parameterized_result["sql"],
+                parameterized_sql_snippet=parameterized_result["sql"],
                 parameterized_intent=parameterized_result["intent"],
             ),
         )

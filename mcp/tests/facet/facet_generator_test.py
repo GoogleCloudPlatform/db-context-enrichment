@@ -31,10 +31,10 @@ async def test_generate_facets_from_pairs_simple():
             assert result_context_set.facets is not None
             assert len(result_context_set.facets) == 1
             facet = result_context_set.facets[0]
-            assert facet.facet == "city = 'New York'"
+            assert facet.sql_snippet == "city = 'New York'"
             assert facet.intent == "Find users in New York"
             assert facet.manifest == "Find users in a given city"
-            assert facet.parameterized.parameterized_facet == "city = $1"
+            assert facet.parameterized.parameterized_sql_snippet == "city = $1"
             assert facet.parameterized.parameterized_intent == "Find users in $1"
 
             mock_extract_value_phrases.assert_called_once_with(
@@ -74,13 +74,13 @@ async def test_generate_facets_from_pairs_multiple_phrases():
             assert result_context_set.facets is not None
             assert len(result_context_set.facets) == 1
             facet = result_context_set.facets[0]
-            assert facet.facet == "name = 'John Doe' AND city = 'New York'"
+            assert facet.sql_snippet == "name = 'John Doe' AND city = 'New York'"
             assert facet.intent == "Find users named John Doe in New York"
             assert (
                 facet.manifest == "Find users named a given person in a given city"
             )
             assert (
-                facet.parameterized.parameterized_facet
+                facet.parameterized.parameterized_sql_snippet
                 == "name = $1 AND city = $2"
             )
             assert (
@@ -120,10 +120,10 @@ async def test_generate_facets_from_pairs_empty_phrases():
             assert result_context_set.facets is not None
             assert len(result_context_set.facets) == 1
             facet = result_context_set.facets[0]
-            assert facet.facet == "TRUE"
+            assert facet.sql_snippet == "TRUE"
             assert facet.intent == "List all users"
             assert facet.manifest == "List all users"
-            assert facet.parameterized.parameterized_facet == "TRUE"
+            assert facet.parameterized.parameterized_sql_snippet == "TRUE"
             assert facet.parameterized.parameterized_intent == "List all users"
 
             mock_extract_value_phrases.assert_called_once_with(

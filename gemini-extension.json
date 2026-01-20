@@ -1,6 +1,6 @@
 {
   "name": "mcp-db-context-enrichment",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "contextFileName": "./mcp/GEMINI.md",
   "mcpServers": {
     "mcp_db_context_enrichment": {
@@ -9,7 +9,7 @@
         "tool",
         "run",
         "--from",
-        "${extensionPath}${/}mcp${/}dist${/}db_context_enrichment-0.1.6-py3-none-any.whl",
+        "${extensionPath}${/}mcp${/}dist${/}db_context_enrichment-0.2.0-py3-none-any.whl",
         "db-context-enrichment"
       ]
     }

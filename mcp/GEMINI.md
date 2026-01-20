@@ -64,11 +64,11 @@ The `ContextSet` object is a JSON structure that can contain both `templates` an
   ],
   "facets": [
     {
-      "facet": "description LIKE '%luxury%' OR description LIKE '%premium%'",
+      "sql_snippet": "description LIKE '%luxury%' OR description LIKE '%premium%'",
       "intent": "luxury product",
       "manifest": "luxury product",
       "parameterized": {
-        "parameterized_facet": "description LIKE '%luxury%' OR description LIKE '%premium%'",
+        "parameterized_sql_snippet": "description LIKE '%luxury%' OR description LIKE '%premium%'",
         "parameterized_intent": "luxury product"
       }
     }

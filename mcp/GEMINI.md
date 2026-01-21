@@ -1,6 +1,6 @@
 # Project Overview
 
-This project is a FastMCP server for "DB Context Enrichment." It provides a guided workflow to generate structured, natural language-to-SQL templates and SQL fragments from a user's database schema.
+This project is a FastMCP server for "DB Context Enrichment." It provides a guided workflow to generate structured, natural language-to-SQL templates and SQL facets from a user's database schema.
 
 **Crucially, this server depends on a running MCP Toolbox server to provide the underlying tools for database connection and schema fetching.**
 
@@ -44,7 +44,7 @@ When using the `attach_context_set` tool, the Gemini CLI should **not** read the
 
 ## ContextSet Structure
 
-The `ContextSet` object is a JSON structure that can contain both `templates` and `fragments`. It is the standardized output format for `generate_templates` and `generate_fragments` tools, and the expected input for `save_context_set` and `attach_context_set`.
+The `ContextSet` object is a JSON structure that can contain both `templates` and `facets`. It is the standardized output format for `generate_templates` and `generate_facets` tools, and the expected input for `save_context_set` and `attach_context_set`.
 
 **Example ContextSet JSON:**
 
@@ -62,13 +62,13 @@ The `ContextSet` object is a JSON structure that can contain both `templates` an
       }
     }
   ],
-  "fragments": [
+  "facets": [
     {
-      "fragment": "description LIKE '%luxury%' OR description LIKE '%premium%'",
+      "sql_snippet": "description LIKE '%luxury%' OR description LIKE '%premium%'",
       "intent": "luxury product",
       "manifest": "luxury product",
       "parameterized": {
-        "parameterized_fragment": "description LIKE '%luxury%' OR description LIKE '%premium%'",
+        "parameterized_sql_snippet": "description LIKE '%luxury%' OR description LIKE '%premium%'",
         "parameterized_intent": "luxury product"
       }
     }

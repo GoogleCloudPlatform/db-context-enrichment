@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 from typing import List, Optional
 
 
@@ -27,31 +27,45 @@ class Template(BaseModel):
     parameterized: ParameterizedTemplate
 
 
-class ParameterizedFragment(BaseModel):
-    """Defines the parameterized version of a SQL fragment and intent."""
+class ParameterizedFacet(BaseModel):
+    """Defines the parameterized version of a SQL facet and intent."""
 
-    parameterized_fragment: str = Field(
-        ..., description="The SQL fragment with placeholders (eg., )."
+    parameterized_sql_snippet: str = Field(
+        ...,
+        description="The SQL facet with placeholders (eg., ).",
+        validation_alias=AliasChoices(
+            "parameterized_sql_snippet", "parameterized_fragment"
+        ),
     )
     parameterized_intent: str = Field(
         ..., description="The natural language intent with placeholders."
     )
 
 
-class Fragment(BaseModel):
-    """Represents a single, complete fragment."""
+class Facet(BaseModel):
+    """Represents a single, complete facet."""
 
-    fragment: str = Field(..., description="The corresponding, complete SQL fragment.")
+    sql_snippet: str = Field(
+        ...,
+        description="The corresponding, complete SQL facet.",
+        validation_alias=AliasChoices("sql_snippet", "fragment"),
+    )
     intent: str = Field(..., description="The user's specific intent.")
     manifest: str = Field(
-        ..., description="A general description of what the fragment does."
+        ..., description="A general description of what the facet does."
     )
-    parameterized: ParameterizedFragment
+    parameterized: ParameterizedFacet
 
 
 class ContextSet(BaseModel):
-    """A set of templates and fragments."""
+    """A set of templates and facets."""
 
-    templates: Optional[List[Template]] = Field(None, description="A list of complete templates.")
-    fragments: Optional[List[Fragment]] = Field(None, description="A list of SQL fragments.")
+    templates: Optional[List[Template]] = Field(
+        None, description="A list of complete templates."
+    )
+    facets: Optional[List[Facet]] = Field(
+        None,
+        description="A list of SQL facets.",
+        validation_alias=AliasChoices("facets", "fragments"),
+    )
 

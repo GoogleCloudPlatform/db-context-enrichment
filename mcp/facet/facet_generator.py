@@ -3,11 +3,11 @@ from common import parameterizer
 from model import context
 
 
-async def generate_fragments_from_pairs(
+async def generate_facets_from_pairs(
     approved_pairs_json: str, db_dialect_str: str = "postgresql"
 ) -> str:
     """
-    Generates the final, detailed fragments based on user-approved question/SQL fragment pairs.
+    Generates the final, detailed facets based on user-approved question/SQL facet pairs.
     """
     try:
         # Convert the string to the Enum member
@@ -23,11 +23,11 @@ async def generate_fragments_from_pairs(
     except json.JSONDecodeError:
         return '{"error": "Invalid JSON format for approved pairs. Expected a JSON array."}'
 
-    final_fragments = []
+    final_facets = []
 
     for pair in pair_list:
         question = pair["question"]
-        fragment_text = pair["fragment"]
+        facet_text = pair["facet"]
         intent = question  # The intent starts as the original question
 
         # 1. Extract value phrases from the question
@@ -44,20 +44,20 @@ async def generate_fragments_from_pairs(
 
         # 3. Parameterize the SQL and Intent
         parameterized_result = parameterizer.parameterize_sql_and_intent(
-            phrases, fragment_text, intent, db_dialect=db_dialect
+            phrases, facet_text, intent, db_dialect=db_dialect
         )
 
-        # 4. Assemble the final fragment object
-        fragment = context.Fragment(
-            fragment=fragment_text,
+        # 4. Assemble the final facet object
+        facet = context.Facet(
+            sql_snippet=facet_text,
             intent=intent,
             manifest=manifest,
-            parameterized=context.ParameterizedFragment(
-                parameterized_fragment=parameterized_result["sql"],
+            parameterized=context.ParameterizedFacet(
+                parameterized_sql_snippet=parameterized_result["sql"],
                 parameterized_intent=parameterized_result["intent"],
             ),
         )
-        final_fragments.append(fragment)
+        final_facets.append(facet)
 
-    context_set = context.ContextSet(templates=None, fragments=final_fragments)
+    context_set = context.ContextSet(templates=None, facets=final_facets)
     return context_set.model_dump_json(indent=2, exclude_none=True)

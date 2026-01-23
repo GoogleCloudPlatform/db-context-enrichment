@@ -1,13 +1,13 @@
 import pytest
 import json
 from unittest.mock import patch, AsyncMock
-from facet.facet_generator import generate_facets_from_pairs
+from facet.facet_generator import generate_facets_from_items
 from model.context import ContextSet, Facet, ParameterizedFacet
 
 
 @pytest.mark.asyncio
-async def test_generate_facets_from_pairs_simple():
-    approved_pairs_json = json.dumps(
+async def test_generate_facets_from_items_simple():
+    facet_inputs_json = json.dumps(
         [{"question": "Find users in New York", "facet": "city = 'New York'"}]
     )
     mock_phrases = {"New York": ["city"]}
@@ -25,7 +25,7 @@ async def test_generate_facets_from_pairs_simple():
                 "intent": "Find users in $1",
             }
 
-            result_json = await generate_facets_from_pairs(approved_pairs_json)
+            result_json = await generate_facets_from_items(facet_inputs_json)
             result_context_set = ContextSet.model_validate_json(result_json)
 
             assert result_context_set.facets is not None
@@ -44,8 +44,8 @@ async def test_generate_facets_from_pairs_simple():
 
 
 @pytest.mark.asyncio
-async def test_generate_facets_from_pairs_multiple_phrases():
-    approved_pairs_json = json.dumps(
+async def test_generate_facets_from_items_multiple_phrases():
+    facet_inputs_json = json.dumps(
         [
             {
                 "question": "Find users named John Doe in New York",
@@ -68,7 +68,7 @@ async def test_generate_facets_from_pairs_multiple_phrases():
                 "intent": "Find users named $1 in $2",
             }
 
-            result_json = await generate_facets_from_pairs(approved_pairs_json)
+            result_json = await generate_facets_from_items(facet_inputs_json)
             result_context_set = ContextSet.model_validate_json(result_json)
 
             assert result_context_set.facets is not None
@@ -95,8 +95,8 @@ async def test_generate_facets_from_pairs_multiple_phrases():
 
 
 @pytest.mark.asyncio
-async def test_generate_facets_from_pairs_empty_phrases():
-    approved_pairs_json = json.dumps(
+async def test_generate_facets_from_items_empty_phrases():
+    facet_inputs_json = json.dumps(
         [{"question": "List all users", "facet": "TRUE"}]
     )
     mock_phrases = {}
@@ -114,7 +114,7 @@ async def test_generate_facets_from_pairs_empty_phrases():
                 "intent": "List all users",
             }
 
-            result_json = await generate_facets_from_pairs(approved_pairs_json)
+            result_json = await generate_facets_from_items(facet_inputs_json)
             result_context_set = ContextSet.model_validate_json(result_json)
 
             assert result_context_set.facets is not None
@@ -133,18 +133,95 @@ async def test_generate_facets_from_pairs_empty_phrases():
 
 
 @pytest.mark.asyncio
-async def test_generate_facets_from_pairs_invalid_json():
-    approved_pairs_json = "invalid json"
-    result_json = await generate_facets_from_pairs(approved_pairs_json)
+async def test_generate_facets_from_items_invalid_json():
+    facet_inputs_json = "invalid json"
+    result_json = await generate_facets_from_items(facet_inputs_json)
     assert "error" in result_json
     assert "Invalid JSON format" in result_json
 
 
 @pytest.mark.asyncio
-async def test_generate_facets_from_pairs_invalid_dialect():
-    approved_pairs_json = json.dumps([{"question": "Find users", "facet": "id = 1"}])
-    result_json = await generate_facets_from_pairs(
-        approved_pairs_json, db_dialect_str="invalid_dialect"
+async def test_generate_facets_from_items_invalid_dialect():
+    facet_inputs_json = json.dumps([{"question": "Find users", "facet": "id = 1"}])
+    result_json = await generate_facets_from_items(
+        facet_inputs_json, sql_dialect="invalid_dialect"
     )
     assert "error" in result_json
     assert "Invalid database dialect specified" in result_json
+
+
+@pytest.mark.asyncio
+async def test_generate_facets_from_items_with_explicit_intent():
+    facet_inputs_json = json.dumps(
+        [
+            {
+                "question": "luxury items",
+                "facet": "description LIKE '%luxury%'",
+                "intent": "Filter by luxury description"
+            }
+        ]
+    )
+    mock_phrases = {}
+
+    with patch(
+        "common.parameterizer.extract_value_phrases", new_callable=AsyncMock
+    ) as mock_extract_value_phrases:
+        with patch(
+            "common.parameterizer.parameterize_sql_and_intent"
+        ) as mock_parameterize_sql_and_intent:
+
+            mock_extract_value_phrases.return_value = mock_phrases
+            mock_parameterize_sql_and_intent.return_value = {
+                "sql": "description LIKE '%luxury%'",
+                "intent": "Filter by luxury description",
+            }
+
+            result_json = await generate_facets_from_items(facet_inputs_json)
+            result_context_set = ContextSet.model_validate_json(result_json)
+
+            assert result_context_set.facets is not None
+            assert len(result_context_set.facets) == 1
+            facet = result_context_set.facets[0]
+            assert facet.intent == "Filter by luxury description"
+            
+            # Verify parameterizer was called with explicit intent
+            # args match: phrases, facet_text, intent, db_dialect
+            args, _ = mock_parameterize_sql_and_intent.call_args
+            assert args[2] == "Filter by luxury description"
+
+
+@pytest.mark.asyncio
+async def test_generate_facets_from_items_with_sql_snippet_key():
+    # Test that 'sql_snippet' key works as expected (replacing 'facet')
+    facet_inputs_json = json.dumps(
+        [
+            {
+                "question": "expensive items",
+                "sql_snippet": "price > 1000",
+                "intent": "Filter by expensive items"
+            }
+        ]
+    )
+    mock_phrases = {}
+
+    with patch(
+        "common.parameterizer.extract_value_phrases", new_callable=AsyncMock
+    ) as mock_extract_value_phrases:
+        with patch(
+            "common.parameterizer.parameterize_sql_and_intent"
+        ) as mock_parameterize_sql_and_intent:
+
+            mock_extract_value_phrases.return_value = mock_phrases
+            mock_parameterize_sql_and_intent.return_value = {
+                "sql": "price > 1000",
+                "intent": "Filter by expensive items",
+            }
+
+            result_json = await generate_facets_from_items(facet_inputs_json)
+            result_context_set = ContextSet.model_validate_json(result_json)
+
+            assert result_context_set.facets is not None
+            assert len(result_context_set.facets) == 1
+            facet = result_context_set.facets[0]
+            assert facet.sql_snippet == "price > 1000"
+            assert facet.intent == "Filter by expensive items"

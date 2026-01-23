@@ -34,3 +34,6 @@ vendor/
 
 # Gemini CLI extension files
 mcp/node_modules/
+
+# Python build artifacts
+*.egg-info/

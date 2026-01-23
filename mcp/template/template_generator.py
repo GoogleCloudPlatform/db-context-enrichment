@@ -3,32 +3,32 @@ from common import parameterizer
 from model import context
 
 
-async def generate_templates_from_pairs(
-    approved_pairs_json: str, db_dialect_str: str = "postgresql"
+async def generate_templates_from_items(
+    template_inputs_json: str, sql_dialect: str = "postgresql"
 ) -> str:
     """
-    Generates the final, detailed templates based on user-approved question/SQL pairs.
+    Generates the final, detailed templates based on user-approved items.
     """
     try:
         # Convert the string to the Enum member
-        db_dialect = parameterizer.SQLDialect(db_dialect_str)
+        db_dialect = parameterizer.SQLDialect(sql_dialect)
     except ValueError:
-        return f'{{"error": "Invalid database dialect specified: {db_dialect_str}"}}'
+        return f'{{"error": "Invalid database dialect specified: {sql_dialect}"}}'
 
     try:
-        # The input is now expected to be a direct list of pairs
-        pair_list = json.loads(approved_pairs_json)
-        if not isinstance(pair_list, list):
-            raise json.JSONDecodeError("Input is not a list.", approved_pairs_json, 0)
+        # The input is now expected to be a direct list of items
+        item_list = json.loads(template_inputs_json)
+        if not isinstance(item_list, list):
+            raise json.JSONDecodeError("Input is not a list.", template_inputs_json, 0)
     except json.JSONDecodeError:
-        return '{"error": "Invalid JSON format for approved pairs. Expected a JSON array."}'
+        return '{"error": "Invalid JSON format for approved items. Expected a JSON array."}'
 
     final_templates = []
 
-    for pair in pair_list:
-        question = pair["question"]
-        sql = pair["sql"]
-        intent = question  # The intent starts as the original question
+    for item in item_list:
+        question = item["question"]
+        sql = item["sql"]
+        intent = item.get("intent", question)  # Use provided intent or fallback to question
 
         # 1. Extract value phrases from the question
         phrases = await parameterizer.extract_value_phrases(nl_query=question)

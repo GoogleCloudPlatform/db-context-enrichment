@@ -1,5 +1,5 @@
 from pydantic import AliasChoices, BaseModel, Field
-from typing import List, Optional
+from typing import List
 
 
 class ParameterizedTemplate(BaseModel):
@@ -60,10 +60,10 @@ class Facet(BaseModel):
 class ContextSet(BaseModel):
     """A set of templates and facets."""
 
-    templates: Optional[List[Template]] = Field(
+    templates: List[Template] | None = Field(
         None, description="A list of complete templates."
     )
-    facets: Optional[List[Facet]] = Field(
+    facets: List[Facet] | None = Field(
         None,
         description="A list of SQL facets.",
         validation_alias=AliasChoices("facets", "fragments"),

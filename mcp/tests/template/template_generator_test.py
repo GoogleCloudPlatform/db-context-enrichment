@@ -17,12 +17,14 @@ async def test_generate_templates_from_items_simple():
     )
     mock_phrases = {"New York": ["city"]}
 
-    with patch(
-        "common.parameterizer.extract_value_phrases", new_callable=AsyncMock
-    ) as mock_extract_value_phrases, patch(
-        "common.parameterizer.parameterize_sql_and_intent"
-    ) as mock_parameterize_sql_and_intent:
-
+    with (
+        patch(
+            "common.parameterizer.extract_value_phrases", new_callable=AsyncMock
+        ) as mock_extract_value_phrases,
+        patch(
+            "common.parameterizer.parameterize_sql_and_intent"
+        ) as mock_parameterize_sql_and_intent,
+    ):
         mock_extract_value_phrases.return_value = mock_phrases
         mock_parameterize_sql_and_intent.return_value = {
             "sql": "SELECT count(*) FROM users WHERE city = $1",
@@ -70,6 +72,8 @@ async def test_generate_templates_from_items_invalid_dialect():
     )
     assert "error" in result_json
     assert "Invalid database dialect specified" in result_json
+
+
 @pytest.mark.asyncio
 async def test_generate_templates_from_items_with_explicit_intent():
     template_inputs_json = json.dumps(
@@ -77,18 +81,20 @@ async def test_generate_templates_from_items_with_explicit_intent():
             {
                 "question": "How many users?",
                 "sql": "SELECT count(*) FROM users",
-                "intent": "Count all users"
+                "intent": "Count all users",
             }
         ]
     )
     mock_phrases = {}
 
-    with patch(
-        "common.parameterizer.extract_value_phrases", new_callable=AsyncMock
-    ) as mock_extract_value_phrases, patch(
-        "common.parameterizer.parameterize_sql_and_intent"
-    ) as mock_parameterize_sql_and_intent:
-
+    with (
+        patch(
+            "common.parameterizer.extract_value_phrases", new_callable=AsyncMock
+        ) as mock_extract_value_phrases,
+        patch(
+            "common.parameterizer.parameterize_sql_and_intent"
+        ) as mock_parameterize_sql_and_intent,
+    ):
         mock_extract_value_phrases.return_value = mock_phrases
         mock_parameterize_sql_and_intent.return_value = {
             "sql": "SELECT count(*) FROM users",
@@ -102,7 +108,7 @@ async def test_generate_templates_from_items_with_explicit_intent():
         assert len(result_context_set.templates) == 1
         template = result_context_set.templates[0]
         assert template.intent == "Count all users"
-        
+
         # Verify parameterizer was called with explicit intent
         # args match: phrases, sql, intent, db_dialect
         args, _ = mock_parameterize_sql_and_intent.call_args

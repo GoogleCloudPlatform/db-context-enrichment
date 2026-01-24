@@ -31,12 +31,14 @@ async def generate_facets_from_items(
         facet_text = item.get("sql_snippet", item.get("facet"))
         if not facet_text:
             # Skip malformed items or raise error? For now, we might want to be robust
-            # But if both are missing, we might have an issue. 
+            # But if both are missing, we might have an issue.
             # Let's assume validation happened or we just let it fail later if None.
             # Actually, to be safe and avoid KeyError if strict logic elsewhere:
             raise KeyError("Each item must have a 'sql_snippet' or 'facet' key.")
 
-        intent = item.get("intent", question)  # Use provided intent or fallback to question
+        intent = item.get(
+            "intent", question
+        )  # Use provided intent or fallback to question
 
         # 1. Extract value phrases from the question
         phrases = await parameterizer.extract_value_phrases(nl_query=question)

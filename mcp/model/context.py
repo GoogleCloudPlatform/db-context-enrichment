@@ -68,4 +68,3 @@ class ContextSet(BaseModel):
         description="A list of SQL facets.",
         validation_alias=AliasChoices("facets", "fragments"),
     )
-

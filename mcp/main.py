@@ -48,9 +48,10 @@ async def generate_templates(
     Generates final templates from a list of user-approved question, SQL statement, and optional intent.
 
     Args:
-        template_inputs_json: A JSON string representing a list of dictionaries,
+        template_inputs_json: A JSON string representing a list of dictionaries (template inputs),
                              where each dictionary has "question", "sql", and optional "intent" keys.
-                             Example: '[{"question": "...", "sql": "...", "intent": "..."}]'
+                             Example (with intent): '[{"question": "How many users?", "sql": "SELECT count(*) FROM users", "intent": "Count total users"}]'
+                             Example (default intent): '[{"question": "List all items", "sql": "SELECT * FROM items"}]'
         sql_dialect: The SQL dialect to use for parameterization. Accepted
                    values are 'postgresql', 'mysql', or 'googlesql'.
 
@@ -70,9 +71,10 @@ async def generate_facets(
     Generates final facets from a list of user-approved question, SQL snippet, and optional intent.
 
     Args:
-        facet_inputs_json: A JSON string representing a list of dictionaries,
+        facet_inputs_json: A JSON string representing a list of dictionaries (facet inputs),
                              where each dictionary has "question", "sql_snippet", and optional "intent".
-                             Example: '[{"question": "...", "sql_snippet": "...", "intent": "..."}]'
+                             Example (with intent): '[{"question": "expensive items", "sql_snippet": "price > 1000", "intent": "Filter by high price"}]'
+                             Example (default intent): '[{"question": "active users", "sql_snippet": "status = 'active'"}]'
         sql_dialect: The SQL dialect to use for parameterization. Accepted
                    values are 'postgresql', 'mysql', or 'googlesql'.
 

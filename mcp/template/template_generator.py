@@ -28,7 +28,9 @@ async def generate_templates_from_items(
     for item in item_list:
         question = item["question"]
         sql = item["sql"]
-        intent = item.get("intent", question)  # Use provided intent or fallback to question
+        intent = item.get(
+            "intent", question
+        )  # Use provided intent or fallback to question
 
         # 1. Extract value phrases from the question
         phrases = await parameterizer.extract_value_phrases(nl_query=question)

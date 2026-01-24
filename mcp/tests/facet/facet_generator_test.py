@@ -18,7 +18,6 @@ async def test_generate_facets_from_items_simple():
         with patch(
             "common.parameterizer.parameterize_sql_and_intent"
         ) as mock_parameterize_sql_and_intent:
-
             mock_extract_value_phrases.return_value = mock_phrases
             mock_parameterize_sql_and_intent.return_value = {
                 "sql": "city = $1",
@@ -61,7 +60,6 @@ async def test_generate_facets_from_items_multiple_phrases():
         with patch(
             "common.parameterizer.parameterize_sql_and_intent"
         ) as mock_parameterize_sql_and_intent:
-
             mock_extract_value_phrases.return_value = mock_phrases
             mock_parameterize_sql_and_intent.return_value = {
                 "sql": "name = $1 AND city = $2",
@@ -76,16 +74,13 @@ async def test_generate_facets_from_items_multiple_phrases():
             facet = result_context_set.facets[0]
             assert facet.sql_snippet == "name = 'John Doe' AND city = 'New York'"
             assert facet.intent == "Find users named John Doe in New York"
-            assert (
-                facet.manifest == "Find users named a given person in a given city"
-            )
+            assert facet.manifest == "Find users named a given person in a given city"
             assert (
                 facet.parameterized.parameterized_sql_snippet
                 == "name = $1 AND city = $2"
             )
             assert (
-                facet.parameterized.parameterized_intent
-                == "Find users named $1 in $2"
+                facet.parameterized.parameterized_intent == "Find users named $1 in $2"
             )
 
             mock_extract_value_phrases.assert_called_once_with(
@@ -96,9 +91,7 @@ async def test_generate_facets_from_items_multiple_phrases():
 
 @pytest.mark.asyncio
 async def test_generate_facets_from_items_empty_phrases():
-    facet_inputs_json = json.dumps(
-        [{"question": "List all users", "facet": "TRUE"}]
-    )
+    facet_inputs_json = json.dumps([{"question": "List all users", "facet": "TRUE"}])
     mock_phrases = {}
 
     with patch(
@@ -107,7 +100,6 @@ async def test_generate_facets_from_items_empty_phrases():
         with patch(
             "common.parameterizer.parameterize_sql_and_intent"
         ) as mock_parameterize_sql_and_intent:
-
             mock_extract_value_phrases.return_value = mock_phrases
             mock_parameterize_sql_and_intent.return_value = {
                 "sql": "TRUE",
@@ -157,7 +149,7 @@ async def test_generate_facets_from_items_with_explicit_intent():
             {
                 "question": "luxury items",
                 "facet": "description LIKE '%luxury%'",
-                "intent": "Filter by luxury description"
+                "intent": "Filter by luxury description",
             }
         ]
     )
@@ -169,7 +161,6 @@ async def test_generate_facets_from_items_with_explicit_intent():
         with patch(
             "common.parameterizer.parameterize_sql_and_intent"
         ) as mock_parameterize_sql_and_intent:
-
             mock_extract_value_phrases.return_value = mock_phrases
             mock_parameterize_sql_and_intent.return_value = {
                 "sql": "description LIKE '%luxury%'",
@@ -183,7 +174,7 @@ async def test_generate_facets_from_items_with_explicit_intent():
             assert len(result_context_set.facets) == 1
             facet = result_context_set.facets[0]
             assert facet.intent == "Filter by luxury description"
-            
+
             # Verify parameterizer was called with explicit intent
             # args match: phrases, facet_text, intent, db_dialect
             args, _ = mock_parameterize_sql_and_intent.call_args
@@ -198,7 +189,7 @@ async def test_generate_facets_from_items_with_sql_snippet_key():
             {
                 "question": "expensive items",
                 "sql_snippet": "price > 1000",
-                "intent": "Filter by expensive items"
+                "intent": "Filter by expensive items",
             }
         ]
     )
@@ -210,7 +201,6 @@ async def test_generate_facets_from_items_with_sql_snippet_key():
         with patch(
             "common.parameterizer.parameterize_sql_and_intent"
         ) as mock_parameterize_sql_and_intent:
-
             mock_extract_value_phrases.return_value = mock_phrases
             mock_parameterize_sql_and_intent.return_value = {
                 "sql": "price > 1000",

@@ -20,7 +20,7 @@ GENERATE_TARGETED_TEMPLATES_PROMPT = textwrap.dedent(
             ```sql
             [The SQL query, properly formatted]
             ```
-            **Intent:** [The intent, if provided. Otherwise "Same as Question"]
+            **Intent:** [The intent, if provided.]
         - Ask if any modifications are needed. If so, work with the user to refine the pairs.
 
     3.  **Final Template Generation:**

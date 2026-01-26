@@ -2,18 +2,19 @@ import textwrap
 
 GENERATE_TARGETED_TEMPLATES_PROMPT = textwrap.dedent(
     """
-    **Workflow for Generating Targeted Question/SQL Pair Templates**
+    **Workflow for Generating Targeted Templates**
 
     1.  **User Input Loop:**
         - Ask the user to provide a natural language question and its corresponding SQL query.
         - **Optionally**, ask if they want to provide a specific "intent" for this pair. If not provided, the question will be used as the intent.
-        - After capturing the pair, ask the user if they would like to add another one.
-        - Continue this loop until the user indicates they have no more pairs to add.
+        - **Important:** Do not infer the question or SQL query. Wait for the user to provide them.
+        - After capturing the inputs for a template, ask the user if they would like to add another one.
+        - Continue this loop until the user indicates they have no more to add.
 
     2.  **Review and Confirmation:**
         - Present the complete list of user-provided Question/SQL pairs for confirmation.
           - **Use the following format for each pair:**
-            **Pair [Number]**
+            **Template [Number]**
             **Question:** [The natural language question]
             **SQL:**
             ```sql

@@ -3,7 +3,7 @@ from common import parameterizer
 from model import context
 
 
-async def generate_templates_from_items(
+async def generate_templates(
     template_inputs_json: str, sql_dialect: str = "postgresql"
 ) -> str:
     """

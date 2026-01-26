@@ -22,7 +22,7 @@ class QuestionSQLPairs(BaseModel):
     pairs: List[QuestionSQLPair]
 
 
-async def generate_sql_pairs_from_schema(
+async def generate_sql_pairs(
     db_schema: str,
     context: str | None = None,
     table_names: List[str] | None = None,

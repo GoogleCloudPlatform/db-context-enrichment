@@ -3,7 +3,7 @@ from common import parameterizer
 from model import context
 
 
-async def generate_facets_from_items(
+async def generate_facets(
     facet_inputs_json: str, sql_dialect: str = "postgresql"
 ) -> str:
     """
@@ -26,25 +26,20 @@ async def generate_facets_from_items(
     final_facets = []
 
     for item in item_list:
-        question = item["question"]
-        # Support both 'sql_snippet' (preferred) and 'facet' (legacy) keys
-        facet_text = item.get("sql_snippet", item.get("facet"))
-        if not facet_text:
-            # Skip malformed items or raise error? For now, we might want to be robust
-            # But if both are missing, we might have an issue.
-            # Let's assume validation happened or we just let it fail later if None.
-            # Actually, to be safe and avoid KeyError if strict logic elsewhere:
-            raise KeyError("Each item must have a 'sql_snippet' or 'facet' key.")
 
-        intent = item.get(
-            "intent", question
-        )  # Use provided intent or fallback to question
+        sql_snippet = item.get("sql_snippet")
+        if not sql_snippet:
+            return '{"error": "Each item must have a \'sql_snippet\' key."}'
 
-        # 1. Extract value phrases from the question
-        phrases = await parameterizer.extract_value_phrases(nl_query=question)
+        intent = item.get("intent")
+        if not intent:
+             return '{"error": "Each item must have an \'intent\' key."}'
+
+        # 1. Extract value phrases from the intent (used as nl_query)
+        phrases = await parameterizer.extract_value_phrases(nl_query=intent)
 
         # 2. Generate the manifest
-        manifest = question
+        manifest = intent
         # Sort keys by length descending to replace longer phrases first
         sorted_phrases = sorted(phrases.keys(), key=len, reverse=True)
         for phrase in sorted_phrases:
@@ -54,12 +49,12 @@ async def generate_facets_from_items(
 
         # 3. Parameterize the SQL and Intent
         parameterized_result = parameterizer.parameterize_sql_and_intent(
-            phrases, facet_text, intent, db_dialect=db_dialect
+            phrases, sql_snippet, intent, db_dialect=db_dialect
         )
 
         # 4. Assemble the final facet object
         facet = context.Facet(
-            sql_snippet=facet_text,
+            sql_snippet=sql_snippet,
             intent=intent,
             manifest=manifest,
             parameterized=context.ParameterizedFacet(

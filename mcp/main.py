@@ -35,7 +35,7 @@ async def generate_sql_pairs(
         has a "question" and a "sql" key.
         Example: '[{"question": "...", "sql": "..."}]'
     """
-    return await question_generator.generate_sql_pairs_from_schema(
+    return await question_generator.generate_sql_pairs(
         db_schema, context, table_names, sql_dialect
     )
 
@@ -45,7 +45,7 @@ async def generate_templates(
     template_inputs_json: str, sql_dialect: str = "postgresql"
 ) -> str:
     """
-    Generates final templates from a list of user-approved question, SQL statement, and optional intent.
+    Generates final templates from a list of user-approved template question, template SQL statement, and optional template intent.
 
     Args:
         template_inputs_json: A JSON string representing a list of dictionaries (template inputs),
@@ -53,12 +53,12 @@ async def generate_templates(
                              Example (with intent): '[{"question": "How many users?", "sql": "SELECT count(*) FROM users", "intent": "Count total users"}]'
                              Example (default intent): '[{"question": "List all items", "sql": "SELECT * FROM items"}]'
         sql_dialect: The SQL dialect to use for parameterization. Accepted
-                   values are 'postgresql', 'mysql', or 'googlesql'.
+                   values are 'postgresql' (default), 'mysql', or 'googlesql'.
 
     Returns:
         A JSON string representing a ContextSet object.
     """
-    return await template_generator.generate_templates_from_items(
+    return await template_generator.generate_templates(
         template_inputs_json, sql_dialect
     )
 
@@ -68,20 +68,19 @@ async def generate_facets(
     facet_inputs_json: str, sql_dialect: str = "postgresql"
 ) -> str:
     """
-    Generates final facets from a list of user-approved question, SQL snippet, and optional intent.
+    Generates final facets from a list of user-approved facet intent and facet SQL snippet.
 
     Args:
         facet_inputs_json: A JSON string representing a list of dictionaries (facet inputs),
-                             where each dictionary has "question", "sql_snippet", and optional "intent".
-                             Example (with intent): '[{"question": "expensive items", "sql_snippet": "price > 1000", "intent": "Filter by high price"}]'
-                             Example (default intent): '[{"question": "active users", "sql_snippet": "status = 'active'"}]'
+                             where each dictionary has "intent" and "sql_snippet".
+                             Example: '[{"intent": "high price", "sql_snippet": "price > 1000"}]'
         sql_dialect: The SQL dialect to use for parameterization. Accepted
-                   values are 'postgresql', 'mysql', or 'googlesql'.
+                   values are 'postgresql' (default), 'mysql', or 'googlesql'.
 
     Returns:
         A JSON string representing a ContextSet object.
     """
-    return await facet_generator.generate_facets_from_items(
+    return await facet_generator.generate_facets(
         facet_inputs_json, sql_dialect
     )
 
@@ -211,19 +210,19 @@ def generate_upload_url(
 
 @mcp.prompt
 def generate_bulk_templates() -> str:
-    """Initiates a guided workflow to generate Question/SQL pair templates."""
+    """Initiates a guided workflow to automatically generate templates based on the database schema."""
     return prompts.GENERATE_BULK_TEMPLATES_PROMPT
 
 
 @mcp.prompt
 def generate_targeted_templates() -> str:
-    """Initiates a guided workflow to generate specific Question/SQL pair templates."""
+    """Initiates a guided workflow to generate specific templates based on the user's input."""
     return prompts.GENERATE_TARGETED_TEMPLATES_PROMPT
 
 
 @mcp.prompt
 def generate_targeted_facets() -> str:
-    """Initiates a guided workflow to generate specific Phrase/SQL facet pair templates."""
+    """Initiates a guided workflow to generate specific facets based on the user's input."""
     return prompts.GENERATE_TARGETED_FACETS_PROMPT
 
 

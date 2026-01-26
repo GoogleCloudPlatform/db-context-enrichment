@@ -2,24 +2,23 @@ import textwrap
 
 GENERATE_TARGETED_FACETS_PROMPT = textwrap.dedent(
     """
-    **Workflow for Generating Targeted Phrase/SQL Facet Pair Templates**
+    **Workflow for Generating Targeted Facets**
 
     1.  **User Input Loop:**
-        - Ask the user to provide a natural language phrase and its corresponding SQL facet.
-        - **Optionally**, ask if they want to provide a specific "intent" for this pair. If not provided, the phrase will be used as the intent.
-        - After capturing the pair, ask the user if they would like to add another one.
+        - Ask the user to provide an intent and its corresponding SQL snippet.
+        - **Important:** Do not infer the intent or SQL snippet. Wait for the user to provide them.
+        - After capturing the intent and SQL snippet pair, ask the user if they would like to add another one.
         - Continue this loop until the user indicates they have no more pairs to add.
 
     2.  **Review and Confirmation:**
-        - Present the complete list of user-provided Phrase/SQL facet pairs for confirmation.
-          - **Use the following format for each pair:**
-            **Pair [Number]**
-            **Phrase:** [The natural language phrase]
-            **Facet:**
+        - Present the complete list of user-provided Intent/SQL snippet pairs for confirmation.
+          - **Use the following format for each facet:**
+            **Facet [Number]**
+            **Intent:** [The intent]
+            **SQL snippet:**
             ```sql
-            [The SQL facet, properly formatted]
+            [The SQL snippet, properly formatted]
             ```
-            **Intent:** [The intent, if provided. Otherwise "Same as Phrase"]
         - Ask if any modifications are needed. If so, work with the user to refine the pairs.
 
     3.  **Final Facet Generation:**

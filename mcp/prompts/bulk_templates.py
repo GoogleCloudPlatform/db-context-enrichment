@@ -2,7 +2,7 @@ import textwrap
 
 GENERATE_BULK_TEMPLATES_PROMPT = textwrap.dedent(
     """
-    **Workflow for Generating Question/SQL Pair Templates**
+    **Workflow for Automatically Generating Templates**
 
     1.  **Discover and Select Database:**
         - Find all connected databases from the MCP Toolbox and `tools.yaml`.

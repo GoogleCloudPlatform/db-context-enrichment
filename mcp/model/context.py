@@ -33,6 +33,7 @@ class ParameterizedFacet(BaseModel):
     parameterized_sql_snippet: str = Field(
         ...,
         description="The SQL facet with placeholders (eg., ).",
+        # "fragment" is deprecated, keep alias for backward compatibility
         validation_alias=AliasChoices(
             "parameterized_sql_snippet", "parameterized_fragment"
         ),
@@ -48,7 +49,10 @@ class Facet(BaseModel):
     sql_snippet: str = Field(
         ...,
         description="The corresponding, complete SQL facet.",
-        validation_alias=AliasChoices("sql_snippet", "fragment"),
+        # "fragment" is deprecated, keep alias for backward compatibility
+        validation_alias=AliasChoices(
+            "sql_snippet", "fragment"
+        ),  
     )
     intent: str = Field(..., description="The user's specific intent.")
     manifest: str = Field(
@@ -66,5 +70,8 @@ class ContextSet(BaseModel):
     facets: List[Facet] | None = Field(
         None,
         description="A list of SQL facets.",
-        validation_alias=AliasChoices("facets", "fragments"),
+        # "fragments" is deprecated, keep alias for backward compatibility
+        validation_alias=AliasChoices(
+            "facets", "fragments"
+        ),  
     )

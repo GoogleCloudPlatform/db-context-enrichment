@@ -3,6 +3,7 @@ from typing import Optional, List
 import textwrap
 from template import question_generator, template_generator
 from facet import facet_generator
+from value_index import generator as vi_generator
 from model import context
 import datetime
 import os
@@ -88,6 +89,39 @@ async def generate_facets(
 
 
 @mcp.tool
+async def generate_value_indices(
+    table_name: str,
+    column_name: str,
+    concept_type: str,
+    match_function: str,
+    db_engine: str,
+    db_version: Optional[str] = None,
+    description: Optional[str] = None,
+) -> str:
+    """
+    Generates a single Value Index configuration.
+
+    Args:
+        table_name: The name of the table.
+        column_name: The name of the column.
+        concept_type: The semantic type (e.g., 'City').
+        match_function: The match function to use (e.g., 'EXACT_MATCH_STRINGS').
+        db_engine: The database engine (postgresql, mysql, etc.).
+        db_version: The database version (optional).
+    Returns:
+        A JSON string representing a ContextSet object with the new value index.
+    """
+    if db_version and not db_version.strip():
+        db_version = None
+    
+    # Ensure we pass a string, defaulting to 'postgresql' if None is provided.
+    dialect = db_engine if db_engine is not None else "postgresql"
+    return vi_generator.generate_value_index(
+        table_name, column_name, concept_type, match_function, dialect, db_version, description
+    )
+
+
+@mcp.tool
 def save_context_set(
     context_set_json: str,
     db_instance: str,
@@ -129,18 +163,18 @@ def attach_context_set(
     Attaches a ContextSet to an existing JSON file.
 
     This tool reads an existing JSON file containing a ContextSet,
-    appends new templates/facets to it, and writes the updated ContextSet
+    appends new templates/facets/value_indices to it, and writes the updated ContextSet
     back to the file. Exceptions are propagated to the caller.
 
     Args:
-        context_set_json: The JSON string output from the `generate_templates` or `generate_facets` tool.
+        context_set_json: The JSON string output from the generation tools.
         file_path: The **absolute path** to the existing template file.
 
     Returns:
         A confirmation message with the path to the updated file.
     """
 
-    existing_content_dict = {"templates": [], "facets": []}
+    existing_content_dict = {"templates": [], "facets": [], "value_indices": []}
     if os.path.getsize(file_path) > 0:
         with open(file_path, "r") as f:
             existing_content_dict = json.load(f)
@@ -159,10 +193,15 @@ def attach_context_set(
     if new_context.facets:
         existing_context.facets.extend(new_context.facets)
 
+    if existing_context.value_indices is None:
+        existing_context.value_indices = []
+    if new_context.value_indices:
+        existing_context.value_indices.extend(new_context.value_indices)
+
     with open(file_path, "w") as f:
         json.dump(existing_context.model_dump(), f, indent=2)
 
-    return f"Successfully attached templates to {file_path}"
+    return f"Successfully attached context to {file_path}"
 
 
 @mcp.tool
@@ -394,6 +433,72 @@ def generate_targeted_facets() -> str:
               - Call the `attach_context_set` tool with the JSON content and the absolute file path.
 
         5.  **Generate Upload URL (Optional):**
+            - After the file is saved, ask the user if they want to generate a URL to upload the context set file.
+            - If the user confirms, you must collect the necessary database context from them. This includes:
+              - **Database Type:** 'alloydb', 'cloudsql', or 'spanner'.
+              - **Project ID:** The Google Cloud project ID.
+              - **And depending on the database type:**
+                - For 'alloydb': Location and Cluster ID.
+                - For 'cloudsql': Instance ID.
+                - For 'spanner': Instance ID and Database ID.
+            - Once you have the required information, call the `generate_upload_url` tool to provide the upload URL to the user.
+
+        Start the workflow.
+        """
+    )
+
+@mcp.prompt
+def generate_targeted_value_indices() -> str:
+    """Initiates a guided workflow to generate specific Value Index configurations."""
+    return textwrap.dedent(
+        """
+        **Workflow for Generating Targeted Value Indices**
+
+        1.  **Database Configuration:**
+            - Ask the user for the **Database Engine** (e.g., `postgresql`, `mysql`, `spanner`)..
+            - Ask the user for the **Database Version**.
+              - Tell them they can enter default to use the default version.
+
+        2.  **User Input Loop:**
+            - Ask the user to provide the following details for a value index:
+              - **Table Name**
+              - **Column Name**
+              - **Concept Type** (e.g., "City", "Product ID")
+              - **Match Function** (e.g., `EXACT_MATCH_STRINGS`, `FUZZY_MATCH_STRINGS`)
+              - **Description** (optional): A description of the value index.
+            - After capturing the details, ask the user if they would like to add another one.
+            - Continue this loop until the user indicates they have no more indices to add.
+
+        3.  **Review and Confirmation:**
+            - Present the complete list of user-provided index definitions for confirmation.
+              - **Use the following format for each index:**
+                **Index [Number]**
+                **Table:** [Table Name]
+                **Column:** [Column Name]
+                **Concept:** [Concept Type]
+                **Function:** [Match Function]
+                **Description:** [Description]
+            - Ask if any modifications are needed. If so, work with the user to refine the list.
+
+        4.  **Final Generation:**
+            - Once approved, call the `generate_value_indices` tool for each index defined.
+            - **Important:** Pass the `db_engine` and `db_version` collected in Step 1 to the tool.
+            - Combine all generated Value Index configurations into a single JSON structure (ContextSet).
+
+        5.  **Save Value Indices:**
+            - Ask the user to choose one of the following options:
+              1. Create a new context set file.
+              2. Append value indices to an existing context set file.
+
+            - **If creating a new file:**
+              - You will need to ask the user for the database instance and database name to create the filename.
+              - Call the `save_context_set` tool. You will need to provide the database instance, database name, the JSON content from the previous step, and the root directory where the Gemini CLI is running.
+
+            - **If appending to an existing file:**
+              - Ask the user to provide the path to the existing context set file.
+              - Call the `attach_context_set` tool with the JSON content and the absolute file path.
+
+        6.  **Generate Upload URL (Optional):**
             - After the file is saved, ask the user if they want to generate a URL to upload the context set file.
             - If the user confirms, you must collect the necessary database context from them. This includes:
               - **Database Type:** 'alloydb', 'cloudsql', or 'spanner'.

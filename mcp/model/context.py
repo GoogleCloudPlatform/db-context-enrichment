@@ -56,9 +56,17 @@ class Facet(BaseModel):
     )
     parameterized: ParameterizedFacet
 
+class ValueIndex(BaseModel):
+    """Represents a single, complete value index."""
+
+    query: str = Field(..., description="The parameterized SQL query (using $value).")
+    concept_type: str = Field(
+        ..., description="The semantic type (e.g., 'City', 'Product ID')."
+    )
+    description: Optional[str] = Field(None, description="Optional description.")
 
 class ContextSet(BaseModel):
-    """A set of templates and facets."""
+    """A set of templates, facets and value indexes."""
 
     templates: Optional[List[Template]] = Field(
         None, description="A list of complete templates."
@@ -67,5 +75,9 @@ class ContextSet(BaseModel):
         None,
         description="A list of SQL facets.",
         validation_alias=AliasChoices("facets", "fragments"),
+    )
+    value_indices: Optional[List[ValueIndex]] = Field(
+        None,
+        description="A list of value index.",
     )
 

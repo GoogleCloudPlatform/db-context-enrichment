@@ -1,13 +1,17 @@
 from typing import Dict, Any, Optional
+from enum import Enum
 
-# If a user does not specify a version, we default to these versions.
-DEFAULT_VERSIONS: Dict[str, str] = {
-    "postgresql": "16"
+
+class Dialect(str, Enum):
+    """Supported database dialects."""
+    POSTGRESQL = "postgresql"
+
+DEFAULT_VERSIONS: Dict[Dialect, str] = {
+    Dialect.POSTGRESQL: "16",
 }
 
-# Structure: Dialect -> Version -> Function Name -> Template Data
-MATCH_TEMPLATES: Dict[str, Dict[str, Dict[str, Any]]] = {
-    "postgresql": {
+MATCH_TEMPLATES: Dict[Dialect, Dict[str, Dict[str, Any]]] = {
+    Dialect.POSTGRESQL: {
         "16": {
             "EXACT_MATCH_STRINGS": {
                 "description": "Exact match (Standard SQL)",
@@ -37,7 +41,7 @@ def get_match_template(
     Retrieves a specific match template using a strict version lookup strategy.
 
     Args:
-        dialect: The database dialect (e.g., 'postgresql').
+        dialect: The database dialect string (e.g., 'postgresql').
         function_name: The name of the match function (e.g., 'EXACT_MATCH_STRINGS').
         version: The specific database version. If None/Empty, uses 'default'.
 
@@ -47,17 +51,25 @@ def get_match_template(
     Raises:
         ValueError: If dialect, version, or function is not found.
     """
-    dialect_key = dialect.lower()
-    engine_config = MATCH_TEMPLATES.get(dialect_key)
+    try:
+        dialect_enum = Dialect(dialect.lower())
+    except ValueError:
+        supported = [d.value for d in Dialect]
+        raise ValueError(
+            f"Dialect '{dialect}' not supported. Supported dialects: {supported}"
+        )
+
+    engine_config = MATCH_TEMPLATES.get(dialect_enum)
 
     if not engine_config:
-        raise ValueError(f"Dialect '{dialect}' not supported.")
-
+        raise ValueError(f"Dialect '{dialect}' has no templates registered.")
+    
+    # If version is None or empty string, treat as "default"
     if not version:
         version = "default"
-    
+
     if version.lower() == "default":
-        target_version_key = DEFAULT_VERSIONS.get(dialect_key)
+        target_version_key = DEFAULT_VERSIONS.get(dialect_enum)
         if not target_version_key:
             raise ValueError(
                 f"Configuration Error: No default version defined for dialect '{dialect}'."

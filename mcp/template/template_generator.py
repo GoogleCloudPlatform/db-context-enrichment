@@ -32,11 +32,11 @@ async def generate_templates(
             "intent", question
         )  # Use provided intent or fallback to question
 
-        # 1. Extract value phrases from the question
-        phrases = await parameterizer.extract_value_phrases(nl_query=question)
+        # 1. Extract value phrases from the intent
+        phrases = await parameterizer.extract_value_phrases(nl_query=intent)
 
         # 2. Generate the manifest
-        manifest = question
+        manifest = intent
         # Sort keys by length descending to replace longer phrases first
         sorted_phrases = sorted(phrases.keys(), key=len, reverse=True)
         for phrase in sorted_phrases:

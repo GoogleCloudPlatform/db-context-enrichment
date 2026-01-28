@@ -113,3 +113,8 @@ async def test_generate_templates_from_items_with_explicit_intent():
         # args match: phrases, sql, intent, db_dialect
         args, _ = mock_parameterize_sql_and_intent.call_args
         assert args[2] == "Count all users"
+
+        # Verify extract_value_phrases was called with intent, NOT question
+        mock_extract_value_phrases.assert_called_once_with(
+            nl_query="Count all users"
+        )

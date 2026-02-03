@@ -3,7 +3,7 @@ from typing import Optional, List
 import textwrap
 from template import question_generator, template_generator
 from facet import facet_generator
-from value_index import generator as vi_generator
+from value_search import generator as vi_generator
 from model import context
 import datetime
 import os
@@ -99,7 +99,7 @@ async def generate_value_indices(
     description: Optional[str] = None,
 ) -> str:
     """
-    Generates a single Value Index configuration.
+    Generates a single Value Search configuration.
 
     Args:
         table_name: The name of the table.
@@ -109,14 +109,14 @@ async def generate_value_indices(
         db_engine: The database engine (postgresql, mysql, etc.).
         db_version: The database version (optional).
     Returns:
-        A JSON string representing a ContextSet object with the new value index.
+        A JSON string representing a ContextSet object with the new value search.
     """
     if db_version and not db_version.strip():
         db_version = None
     
     # Ensure we pass a string, defaulting to 'postgresql' if None is provided.
     dialect = db_engine if db_engine is not None else "postgresql"
-    return vi_generator.generate_value_index(
+    return vi_generator.generate_value_search(
         table_name, column_name, concept_type, match_function, dialect, db_version, description
     )
 
@@ -449,10 +449,10 @@ def generate_targeted_facets() -> str:
 
 @mcp.prompt
 def generate_targeted_value_indices() -> str:
-    """Initiates a guided workflow to generate specific Value Index configurations."""
+    """Initiates a guided workflow to generate specific Value Search configurations."""
     return textwrap.dedent(
         """
-        **Workflow for Generating Targeted Value Indices**
+        **Workflow for Generating Targeted Value Search**
 
         1.  **Database Configuration:**
             - Ask the user for the **Database Engine** (e.g., `postgresql`, `mysql`, `spanner`)..
@@ -460,18 +460,18 @@ def generate_targeted_value_indices() -> str:
               - Tell them they can enter default to use the default version.
 
         2.  **User Input Loop:**
-            - Ask the user to provide the following details for a value index:
+            - Ask the user to provide the following details for a value search:
               - **Table Name**
               - **Column Name**
               - **Concept Type** (e.g., "City", "Product ID")
               - **Match Function** (e.g., `EXACT_MATCH_STRINGS`, `FUZZY_MATCH_STRINGS`)
-              - **Description** (optional): A description of the value index.
+              - **Description** (optional): A description of the value search.
             - After capturing the details, ask the user if they would like to add another one.
             - Continue this loop until the user indicates they have no more indices to add.
 
         3.  **Review and Confirmation:**
-            - Present the complete list of user-provided index definitions for confirmation.
-              - **Use the following format for each index:**
+            - Present the complete list of user-provided value search definitions for confirmation.
+              - **Use the following format for each value search:**
                 **Index [Number]**
                 **Table:** [Table Name]
                 **Column:** [Column Name]
@@ -481,11 +481,11 @@ def generate_targeted_value_indices() -> str:
             - Ask if any modifications are needed. If so, work with the user to refine the list.
 
         4.  **Final Generation:**
-            - Once approved, call the `generate_value_indices` tool for each index defined.
+            - Once approved, call the `generate_value_search` tool for each value search defined.
             - **Important:** Pass the `db_engine` and `db_version` collected in Step 1 to the tool.
-            - Combine all generated Value Index configurations into a single JSON structure (ContextSet).
+            - Combine all generated Value Search configurations into a single JSON structure (ContextSet).
 
-        5.  **Save Value Indices:**
+        5.  **Save Value Search:**
             - Ask the user to choose one of the following options:
               1. Create a new context set file.
               2. Append value indices to an existing context set file.

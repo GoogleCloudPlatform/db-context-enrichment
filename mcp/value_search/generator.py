@@ -1,9 +1,9 @@
 from typing import Optional
 from model import context
-from value_index import match_templates
+from value_search import match_templates
 
 
-def generate_value_index(
+def generate_value_search(
     table_name: str,
     column_name: str,
     concept_type: str,
@@ -13,7 +13,7 @@ def generate_value_index(
     description: Optional[str] = None,
 ) -> str:
     """
-    Generates a single Value Index configuration based on specific inputs.
+    Generates a single Value Search configuration based on specific inputs.
 
     Args:
         table_name: The name of the table.
@@ -24,7 +24,7 @@ def generate_value_index(
         db_version: The specific database version (optional).
 
     Returns:
-        A JSON string representation of a ContextSet containing the generated index.
+        A JSON string representation of a ContextSet containing the generated value search.
     """
     template_def = match_templates.get_match_template(
         dialect=db_engine,
@@ -35,20 +35,20 @@ def generate_value_index(
 
     # Replace {table}, {column}, {concept_type} with the user's inputs.
     # $value remains as a placeholder.
-    value_index_query = raw_sql.format(
+    value_search_query = raw_sql.format(
         table=table_name,
         column=column_name,
         concept_type=concept_type,
     )
 
-    # Wrap this single index in a list because ContextSet expects a list.
-    vi = context.ValueIndex(
+    # Wrap this single value search in a list because ContextSet expects a list.
+    vs = context.ValueSearch(
         concept_type=concept_type,
-        query=value_index_query,
+        query=value_search_query,
         description=description,
     )
 
     # Return as ContextSet JSON
-    return context.ContextSet(value_indices=[vi]).model_dump_json(
+    return context.ContextSet(value_searches=[vs]).model_dump_json(
         indent=2, exclude_none=True
     )

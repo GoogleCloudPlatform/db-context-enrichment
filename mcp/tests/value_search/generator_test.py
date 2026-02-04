@@ -3,11 +3,13 @@ import json
 from unittest.mock import patch
 from value_search.generator import generate_value_search
 from value_search import match_templates
+from value_search.match_templates import Dialect
 from model.context import ContextSet
 
-
 def test_generate_value_search_postgres_default():
-    # Test generating a standard Postgres exact match (uses default version)
+    """
+    Test generating a standard Postgres exact match using real defaults.
+    """
     result_json = generate_value_search(
         table_name="users",
         column_name="country_code",
@@ -35,7 +37,9 @@ def test_generate_value_search_postgres_default():
 
 
 def test_generate_value_search_invalid_dialect():
-    # Test error handling for unknown database engine
+    """
+    Test error handling for unknown database engine.
+    """
     with pytest.raises(ValueError, match="Dialect 'invalid_db' not supported"):
         generate_value_search(
             table_name="t", 
@@ -47,7 +51,9 @@ def test_generate_value_search_invalid_dialect():
 
 
 def test_generate_value_search_invalid_function():
-    # Test error handling for unknown match function
+    """
+    Test error handling for unknown match function.
+    """
     with pytest.raises(ValueError, match="Match function 'BAD_FUNC' not found"):
         generate_value_search(
             table_name="t", 
@@ -59,20 +65,31 @@ def test_generate_value_search_invalid_function():
 
 
 def test_generate_value_search_specific_version_success():
-    # Mock the registry to test specific version logic without relying on real data
-    fake_registry = {
-        "postgresql": {
-            "99.0": {
+    """
+    Mock the registry to test specific version override logic.
+    We must mock the _MATCH_CONFIG structure exactly.
+    """
+    fake_config = {
+        Dialect.POSTGRESQL: {
+            "supported_versions": ["99.0"],
+            "defaults": {
                 "TEST_FUNC": {
-                    "sql_template": "SELECT {table}.{column} FROM {table} WHERE version=99",
-                    "description": "Test Description"
+                     "sql_template": "SELECT DEFAULT",
+                     "description": "Default"
+                }
+            },
+            "overrides": {
+                "99.0": {
+                    "TEST_FUNC": {
+                        "sql_template": "SELECT {table}.{column} FROM {table} WHERE version=99",
+                        "description": "Test Description"
+                    }
                 }
             }
         }
     }
 
-    # Inject the fake registry into the module
-    with patch.dict(match_templates.MATCH_TEMPLATES, fake_registry, clear=True):
+    with patch.dict(match_templates._MATCH_CONFIG, fake_config, clear=True):
         result_json = generate_value_search(
             table_name="users", 
             column_name="age", 
@@ -84,13 +101,17 @@ def test_generate_value_search_specific_version_success():
 
         context_set = ContextSet.model_validate_json(result_json)
         vs = context_set.value_searches[0]
+        
+        # Ensure we got the override template, not the default
         assert "WHERE version=99" in vs.query
         assert "users.age" in vs.query
 
 
-def test_generate_value_search_specific_version_not_found():
-    # Verify strict version checking: Should raise Error, NOT fallback to default
-    with pytest.raises(ValueError, match="Version '999.0' not found"):
+def test_generate_value_search_specific_version_not_supported():
+    """
+    Verify strict version checking raises an error if version is not in supported_versions.
+    """
+    with pytest.raises(ValueError, match="Version '999.0' is not supported"):
         generate_value_search(
             table_name="t", 
             column_name="c", 
@@ -99,3 +120,38 @@ def test_generate_value_search_specific_version_not_found():
             db_engine="postgresql",
             db_version="999.0"
         )
+
+def test_generate_value_search_fallback_to_default():
+    """
+    Test that if a version is supported, but has no specific override for a function,
+    it falls back to the 'defaults' definition.
+    """
+    fake_config = {
+        Dialect.POSTGRESQL: {
+            "supported_versions": ["15"],
+            "defaults": {
+                "FALLBACK_FUNC": {
+                    "sql_template": "SELECT DEFAULT FROM {table}",
+                    "description": "Default"
+                }
+            },
+            # No override for FALLBACK_FUNC in version 15
+            "overrides": {
+                "15": {} 
+            }
+        }
+    }
+
+    with patch.dict(match_templates._MATCH_CONFIG, fake_config, clear=True):
+        result_json = generate_value_search(
+            table_name="users", 
+            column_name="name", 
+            concept_type="Name",
+            match_function="FALLBACK_FUNC",
+            db_engine="postgresql",
+            db_version="15"
+        )
+        
+        context_set = ContextSet.model_validate_json(result_json)
+        vs = context_set.value_searches[0]
+        assert "SELECT DEFAULT FROM users" in vs.query

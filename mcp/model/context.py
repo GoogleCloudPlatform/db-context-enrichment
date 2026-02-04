@@ -1,5 +1,5 @@
 from pydantic import AliasChoices, BaseModel, Field
-from typing import List
+from typing import List, Optional
 
 
 class ParameterizedTemplate(BaseModel):

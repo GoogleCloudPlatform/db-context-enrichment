@@ -7,7 +7,7 @@ class Dialect(str, Enum):
     POSTGRESQL = "postgresql"
 
 
-MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
+_MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
     Dialect.POSTGRESQL: {
         "supported_versions": ["13", "14", "15", "16"],
         
@@ -71,7 +71,7 @@ def get_match_template(
             f"Dialect '{dialect}' not supported. Supported dialects: {supported}"
         )
 
-    engine_config = MATCH_CONFIG.get(dialect_enum)
+    engine_config = _MATCH_CONFIG.get(dialect_enum)
     if not engine_config:
         raise ValueError(f"Dialect '{dialect}' has no configuration registered.")
 
@@ -114,7 +114,7 @@ def get_available_functions(dialect: str) -> List[str]:
     except ValueError:
         return []
 
-    engine_config = MATCH_CONFIG.get(dialect_enum, {})
+    engine_config = _MATCH_CONFIG.get(dialect_enum, {})
     defaults = engine_config.get("defaults", {})
     
     # Return list of keys (function names)

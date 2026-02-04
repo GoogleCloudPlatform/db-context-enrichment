@@ -34,7 +34,7 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
             - Ask if any modifications are needed. If so, work with the user to refine the list.
 
         5.  **Final Generation:**
-            - Once approved, call the `generate_value_search` tool for each value search defined.
+            - Once approved, call the `generate_value_searches` tool with the list of value search definitions.
             - **Important:** Pass the `db_engine` and `db_version` collected in Step 1 to the tool.
             - Combine all generated Value Search configurations into a single JSON structure (ContextSet).
 

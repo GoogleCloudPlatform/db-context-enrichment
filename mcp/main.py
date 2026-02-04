@@ -90,34 +90,39 @@ async def generate_facets(
 
 @mcp.tool
 async def generate_value_searches(
-    table_name: str,
-    column_name: str,
-    concept_type: str,
-    match_function: str,
+    value_search_inputs_json: str,
     db_engine: str,
     db_version: Optional[str] = None,
-    description: Optional[str] = None,
 ) -> str:
     """
-    Generates a single Value Search configuration.
+    Generates final value searches from a list of user-approved value search definitions.
 
     Args:
-        table_name: The name of the table.
-        column_name: The name of the column.
-        concept_type: The semantic type (e.g., 'City').
-        match_function: The match function to use (e.g., 'EXACT_MATCH_STRINGS').
+        value_search_inputs_json: A JSON string representing a list of value search definitions.
+            Each item in the list should be a dictionary with keys:
+            - "table_name": The name of the table.
+            - "column_name": The name of the column.
+            - "concept_type": The semantic type (e.g., 'City').
+            - "match_function": The match function to use (e.g., 'EXACT_MATCH_STRINGS').
+            - "description": (Optional) A description of the value search.
+            
+            Example:
+            '[
+                {"table_name": "users", "column_name": "city", "concept_type": "City", "match_function": "EXACT_MATCH_STRINGS"},
+                {"table_name": "products", "column_name": "name", "concept_type": "Product", "match_function": "FUZZY_MATCH_STRINGS"}
+            ]'
+            
         db_engine: The database engine (postgresql, mysql, etc.).
         db_version: The database version (optional).
+        
     Returns:
-        A JSON string representing a ContextSet object with the new value search.
+        A JSON string representing a ContextSet object containing all the new value searches.
     """
     if db_version and not db_version.strip():
         db_version = None
     
-    # Ensure we pass a string, defaulting to 'postgresql' if None is provided.
-    dialect = db_engine if db_engine is not None else "postgresql"
-    return vi_generator.generate_value_search(
-        table_name, column_name, concept_type, match_function, dialect, db_version, description
+    return vi_generator.generate_value_searches(
+        value_search_inputs_json, db_engine, db_version
     )
 
 @mcp.tool

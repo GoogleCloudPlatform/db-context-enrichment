@@ -21,7 +21,8 @@ test = [
 
 [tool.setuptools]
 py-modules = ["main"]
-packages = ["template", "facet", "value_search", "common", "model"]
+packages = ["template", "facet", "value_search", "common", "model", "prompts"]
+
 
 [[tool.uv.index]]
 url = "https://pypi.org/simple"

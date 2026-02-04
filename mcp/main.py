@@ -4,6 +4,7 @@ import textwrap
 from template import question_generator, template_generator
 from facet import facet_generator
 from value_search import generator as vi_generator
+from value_search import match_templates
 from model import context
 import prompts
 import datetime

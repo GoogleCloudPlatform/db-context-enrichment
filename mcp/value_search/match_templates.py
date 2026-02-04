@@ -104,3 +104,18 @@ def get_match_template(
         )
 
     return template
+
+def get_available_functions(dialect: str) -> List[str]:
+    """
+    Returns a list of available match function names for a given dialect.
+    """
+    try:
+        dialect_enum = Dialect(dialect.lower())
+    except ValueError:
+        return []
+
+    engine_config = MATCH_CONFIG.get(dialect_enum, {})
+    defaults = engine_config.get("defaults", {})
+    
+    # Return list of keys (function names)
+    return list(defaults.keys())

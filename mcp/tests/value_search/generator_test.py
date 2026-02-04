@@ -83,9 +83,9 @@ def test_generate_value_search_specific_version_success():
         )
 
         context_set = ContextSet.model_validate_json(result_json)
-        vi = context_set.value_indices[0]
-        assert "WHERE version=99" in vi.query
-        assert "users.age" in vi.query
+        vs = context_set.value_searches[0]
+        assert "WHERE version=99" in vs.query
+        assert "users.age" in vs.query
 
 
 def test_generate_value_search_specific_version_not_found():

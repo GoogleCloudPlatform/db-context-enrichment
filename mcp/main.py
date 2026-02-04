@@ -89,7 +89,7 @@ async def generate_facets(
 
 
 @mcp.tool
-async def generate_value_indices(
+async def generate_value_searches(
     table_name: str,
     column_name: str,
     concept_type: str,
@@ -120,6 +120,22 @@ async def generate_value_indices(
         table_name, column_name, concept_type, match_function, dialect, db_version, description
     )
 
+@mcp.tool
+def list_match_functions(db_engine: str) -> str:
+    """
+    Lists the valid match template function names for a specific database engine.
+    Use this to show the user what 'match_function' options are available.
+
+    Args:
+        db_engine: The database engine (e.g., 'postgresql').
+    
+    Returns:
+        A JSON string containing the list of available function names.
+    """
+    functions = match_templates.get_available_functions(db_engine)
+    if not functions:
+        return f"No match functions found for dialect: {db_engine}"
+    return json.dumps(functions)
 
 @mcp.tool
 def save_context_set(
@@ -163,7 +179,7 @@ def attach_context_set(
     Attaches a ContextSet to an existing JSON file.
 
     This tool reads an existing JSON file containing a ContextSet,
-    appends new templates/facets/value_indices to it, and writes the updated ContextSet
+    appends new templates/facets/value_searches to it, and writes the updated ContextSet
     back to the file. Exceptions are propagated to the caller.
 
     Args:
@@ -174,7 +190,7 @@ def attach_context_set(
         A confirmation message with the path to the updated file.
     """
 
-    existing_content_dict = {"templates": [], "facets": [], "value_indices": []}
+    existing_content_dict = {"templates": [], "facets": [], "value_searches": []}
     if os.path.getsize(file_path) > 0:
         with open(file_path, "r") as f:
             existing_content_dict = json.load(f)
@@ -193,10 +209,10 @@ def attach_context_set(
     if new_context.facets:
         existing_context.facets.extend(new_context.facets)
 
-    if existing_context.value_indices is None:
-        existing_context.value_indices = []
-    if new_context.value_indices:
-        existing_context.value_indices.extend(new_context.value_indices)
+    if existing_context.value_searches is None:
+        existing_context.value_searches = []
+    if new_context.value_searches:
+        existing_context.value_searches.extend(new_context.value_searches)
 
     with open(file_path, "w") as f:
         json.dump(existing_context.model_dump(), f, indent=2)
@@ -448,7 +464,7 @@ def generate_targeted_facets() -> str:
     )
 
 @mcp.prompt
-def generate_targeted_value_indices() -> str:
+def generate_targeted_value_search() -> str:
     """Initiates a guided workflow to generate specific Value Search configurations."""
     return textwrap.dedent(
         """
@@ -458,18 +474,22 @@ def generate_targeted_value_indices() -> str:
             - Ask the user for the **Database Engine** (e.g., `postgresql`, `mysql`, `spanner`)..
             - Ask the user for the **Database Version**.
               - Tell them they can enter default to use the default version.
+        
+        2.  **Fetch Capabilities:**
+            - **Immediately after** receiving the Database Engine from the user, call the `list_match_functions` tool using that engine.
+            - Present the returned list of available match functions to the user so they know what options they have for the next step.
 
-        2.  **User Input Loop:**
+        3.  **User Input Loop:**
             - Ask the user to provide the following details for a value search:
               - **Table Name**
               - **Column Name**
               - **Concept Type** (e.g., "City", "Product ID")
-              - **Match Function** (e.g., `EXACT_MATCH_STRINGS`, `FUZZY_MATCH_STRINGS`)
+              - **Match Function** (Must be one of the functions retrieved in Step 2)
               - **Description** (optional): A description of the value search.
             - After capturing the details, ask the user if they would like to add another one.
-            - Continue this loop until the user indicates they have no more indices to add.
+            - Continue this loop until the user indicates they have no more value searches to add.
 
-        3.  **Review and Confirmation:**
+        4.  **Review and Confirmation:**
             - Present the complete list of user-provided value search definitions for confirmation.
               - **Use the following format for each value search:**
                 **Index [Number]**
@@ -480,15 +500,15 @@ def generate_targeted_value_indices() -> str:
                 **Description:** [Description]
             - Ask if any modifications are needed. If so, work with the user to refine the list.
 
-        4.  **Final Generation:**
+        5.  **Final Generation:**
             - Once approved, call the `generate_value_search` tool for each value search defined.
             - **Important:** Pass the `db_engine` and `db_version` collected in Step 1 to the tool.
             - Combine all generated Value Search configurations into a single JSON structure (ContextSet).
 
-        5.  **Save Value Search:**
+        6.  **Save Value Search:**
             - Ask the user to choose one of the following options:
               1. Create a new context set file.
-              2. Append value indices to an existing context set file.
+              2. Append value search to an existing context set file.
 
             - **If creating a new file:**
               - You will need to ask the user for the database instance and database name to create the filename.
@@ -498,7 +518,7 @@ def generate_targeted_value_indices() -> str:
               - Ask the user to provide the path to the existing context set file.
               - Call the `attach_context_set` tool with the JSON content and the absolute file path.
 
-        6.  **Generate Upload URL (Optional):**
+        7.  **Generate Upload URL (Optional):**
             - After the file is saved, ask the user if they want to generate a URL to upload the context set file.
             - If the user confirms, you must collect the necessary database context from them. This includes:
               - **Database Type:** 'alloydb', 'cloudsql', or 'spanner'.

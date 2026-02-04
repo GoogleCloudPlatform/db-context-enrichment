@@ -87,14 +87,11 @@ def get_match_template(
                 f"Supported versions: {supported_versions}"
             )
 
-    template = None
+    # Identify specific overrides for this version (if any)
+    version_overrides = overrides.get(version, {}) if version else {}
 
-    if version and version in overrides:
-        template = overrides[version].get(function_name)
-
-    # Fallback to default if no override was found
-    if not template:
-        template = defaults.get(function_name)
+    available_templates = defaults | version_overrides
+    template = available_templates.get(function_name)
 
     if not template:
         supported_templates = list(defaults.keys())

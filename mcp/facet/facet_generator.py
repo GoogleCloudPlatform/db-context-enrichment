@@ -3,38 +3,43 @@ from common import parameterizer
 from model import context
 
 
-async def generate_facets_from_pairs(
-    approved_pairs_json: str, db_dialect_str: str = "postgresql"
+async def generate_facets(
+    facet_inputs_json: str, sql_dialect: str = "postgresql"
 ) -> str:
     """
-    Generates the final, detailed facets based on user-approved question/SQL facet pairs.
+    Generates the final, detailed facets based on user-approved items.
     """
     try:
         # Convert the string to the Enum member
-        db_dialect = parameterizer.SQLDialect(db_dialect_str)
+        db_dialect = parameterizer.SQLDialect(sql_dialect)
     except ValueError:
-        return f'{{"error": "Invalid database dialect specified: {db_dialect_str}"}}'
+        return f'{{"error": "Invalid database dialect specified: {sql_dialect}"}}'
 
     try:
-        # The input is expected to be a direct list of pairs
-        pair_list = json.loads(approved_pairs_json)
-        if not isinstance(pair_list, list):
-            raise json.JSONDecodeError("Input is not a list.", approved_pairs_json, 0)
+        # The input is expected to be a direct list of items
+        item_list = json.loads(facet_inputs_json)
+        if not isinstance(item_list, list):
+            raise json.JSONDecodeError("Input is not a list.", facet_inputs_json, 0)
     except json.JSONDecodeError:
-        return '{"error": "Invalid JSON format for approved pairs. Expected a JSON array."}'
+        return '{"error": "Invalid JSON format for approved items. Expected a JSON array."}'
 
     final_facets = []
 
-    for pair in pair_list:
-        question = pair["question"]
-        facet_text = pair["facet"]
-        intent = question  # The intent starts as the original question
+    for item in item_list:
 
-        # 1. Extract value phrases from the question
-        phrases = await parameterizer.extract_value_phrases(nl_query=question)
+        sql_snippet = item.get("sql_snippet")
+        if not sql_snippet:
+            return '{"error": "Each item must have a \'sql_snippet\' key."}'
+
+        intent = item.get("intent")
+        if not intent:
+             return '{"error": "Each item must have an \'intent\' key."}'
+
+        # 1. Extract value phrases from the intent (used as nl_query)
+        phrases = await parameterizer.extract_value_phrases(nl_query=intent)
 
         # 2. Generate the manifest
-        manifest = question
+        manifest = intent
         # Sort keys by length descending to replace longer phrases first
         sorted_phrases = sorted(phrases.keys(), key=len, reverse=True)
         for phrase in sorted_phrases:
@@ -44,12 +49,12 @@ async def generate_facets_from_pairs(
 
         # 3. Parameterize the SQL and Intent
         parameterized_result = parameterizer.parameterize_sql_and_intent(
-            phrases, facet_text, intent, db_dialect=db_dialect
+            phrases, sql_snippet, intent, db_dialect=db_dialect
         )
 
         # 4. Assemble the final facet object
         facet = context.Facet(
-            sql_snippet=facet_text,
+            sql_snippet=sql_snippet,
             intent=intent,
             manifest=manifest,
             parameterized=context.ParameterizedFacet(

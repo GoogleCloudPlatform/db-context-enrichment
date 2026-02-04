@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
 import textwrap
 from google import genai
 from google.genai import types
@@ -22,11 +22,11 @@ class QuestionSQLPairs(BaseModel):
     pairs: List[QuestionSQLPair]
 
 
-async def generate_sql_pairs_from_schema(
+async def generate_sql_pairs(
     db_schema: str,
-    context: Optional[str] = None,
-    table_names: Optional[List[str]] = None,
-    db_engine: Optional[str] = None,
+    context: str | None = None,
+    table_names: List[str] | None = None,
+    sql_dialect: str | None = None,
 ) -> str:
     """
     Generates a list of question/SQL pairs based on a database schema.
@@ -35,7 +35,7 @@ async def generate_sql_pairs_from_schema(
         db_schema: A string containing the database schema.
         context: Optional user feedback or context to guide generation.
         table_names: Optional list of table names to focus on.
-        db_engine: Optional name of the database engine for SQL dialect.
+        sql_dialect: Optional name of the database engine for SQL dialect.
 
     Returns:
         A JSON string containing a list of question/SQL pairs.
@@ -52,8 +52,8 @@ async def generate_sql_pairs_from_schema(
     else:
         prompt += "\nGenerate pairs for all tables in the schema."
 
-    if db_engine:
-        prompt += f"\nThe SQL dialect should be for '{db_engine}'."
+    if sql_dialect:
+        prompt += f"\nThe SQL dialect should be for '{sql_dialect}'."
     else:
         prompt += "\nInfer the SQL dialect from the provided database schema."
 

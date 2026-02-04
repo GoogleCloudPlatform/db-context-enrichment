@@ -9,6 +9,7 @@ import prompts
 import datetime
 import os
 import json
+from typing import Optional
 
 mcp = FastMCP("DB Context Enrichment MCP")
 

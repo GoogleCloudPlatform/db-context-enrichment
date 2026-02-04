@@ -121,21 +121,27 @@ async def generate_value_searches(
     )
 
 @mcp.tool
-def list_match_functions(db_engine: str) -> str:
+def list_match_functions(db_engine: str, db_version: Optional[str] = None) -> str:
     """
     Lists the valid match template function names for a specific database engine.
     Use this to show the user what 'match_function' options are available.
+    
+    If the engine or version is not supported, this will return an error message
+    listing the valid options.
 
     Args:
         db_engine: The database engine (e.g., 'postgresql').
+        db_version: The specific database version (optional).
     
     Returns:
-        A JSON string containing the list of available function names.
+        A JSON string containing the list of available function names, 
+        or an error message if validation fails.
     """
-    functions = match_templates.get_available_functions(db_engine)
-    if not functions:
-        return f"No match functions found for dialect: {db_engine}"
-    return json.dumps(functions)
+    try:
+        functions = match_templates.get_available_functions(db_engine, db_version)
+        return json.dumps(functions)
+    except ValueError as e:
+        return f"Error: {str(e)}"
 
 @mcp.tool
 def save_context_set(

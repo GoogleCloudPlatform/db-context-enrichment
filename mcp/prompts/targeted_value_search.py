@@ -5,13 +5,12 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
         **Workflow for Generating Targeted Value Search**
 
         1.  **Database Configuration:**
-            - Ask the user for the **Database Engine**.
-            - **Supported Engines:** Inform the user that the currently supported engine is: `postgresql`.
-            - Ask the user for the **Database Version** (optional, default is usually fine).
+            - Ask the user for the **Database Engine and optionally version**.
         
         2.  **Fetch Capabilities:**
-            - **Immediately after** receiving the Database Engine from the user, call the `list_match_functions` tool using that engine.
-            - Present the returned list of available match functions to the user so they know what options they have for the next step.
+            - **Immediately after** receiving the Database Engine (and Version if provided), call the `list_match_functions` tool.
+            - If the tool returns an error (e.g., unsupported version), present the error to the user (which includes the list of supported versions) and end the workflow.
+            - Otherwise, use the returned list of available match functions in the next step to specify what all functions are supported.
 
         3.  **User Input Loop:**
             - Ask the user to provide the following details for a value search:

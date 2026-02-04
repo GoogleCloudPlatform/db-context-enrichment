@@ -102,17 +102,29 @@ def get_match_template(
 
     return template
 
-def get_available_functions(dialect: str) -> List[str]:
+def get_available_functions(dialect: str, version: Optional[str] = None) -> List[str]:
     """
     Returns a list of available match function names for a given dialect.
+    Validates both the dialect and the version (if provided).
     """
     try:
         dialect_enum = Dialect(dialect.lower())
     except ValueError:
-        return []
+        supported = [d.value for d in Dialect]
+        raise ValueError(
+            f"Dialect '{dialect}' not supported. Supported engine: {supported}"
+        )
 
     engine_config = _MATCH_CONFIG.get(dialect_enum, {})
-    defaults = engine_config.get("defaults", {})
     
-    # Return list of keys (function names)
+    if version:
+        supported_versions = engine_config.get("supported_versions", [])
+        version = str(version)
+        if version not in supported_versions:
+            raise ValueError(
+                f"Version '{version}' is not supported for dialect '{dialect}'. "
+                f"Supported versions: {supported_versions}"
+            )
+
+    defaults = engine_config.get("defaults", {})
     return list(defaults.keys())

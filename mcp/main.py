@@ -471,9 +471,9 @@ def generate_targeted_value_search() -> str:
         **Workflow for Generating Targeted Value Search**
 
         1.  **Database Configuration:**
-            - Ask the user for the **Database Engine** (e.g., `postgresql`, `mysql`, `spanner`)..
-            - Ask the user for the **Database Version**.
-              - Tell them they can enter default to use the default version.
+            - Ask the user for the **Database Engine**.
+            - **Supported Engines:** Inform the user that the currently supported engine is: `postgresql`.
+            - Ask the user for the **Database Version** (optional, default is usually fine).
         
         2.  **Fetch Capabilities:**
             - **Immediately after** receiving the Database Engine from the user, call the `list_match_functions` tool using that engine.
@@ -520,13 +520,12 @@ def generate_targeted_value_search() -> str:
 
         7.  **Generate Upload URL (Optional):**
             - After the file is saved, ask the user if they want to generate a URL to upload the context set file.
-            - If the user confirms, you must collect the necessary database context from them. This includes:
-              - **Database Type:** 'alloydb', 'cloudsql', or 'spanner'.
+            - If the user confirms, you must collect the necessary database context from them.
+            - **Supported Database Types:** Inform the user that currently only `alloydb` is supported.
+            - **Collect:**
               - **Project ID:** The Google Cloud project ID.
-              - **And depending on the database type:**
-                - For 'alloydb': Location and Cluster ID.
-                - For 'cloudsql': Instance ID.
-                - For 'spanner': Instance ID and Database ID.
+              - **Location:** The AlloyDB location.
+              - **Cluster ID:** The AlloyDB cluster ID.
             - Once you have the required information, call the `generate_upload_url` tool to provide the upload URL to the user.
 
         Start the workflow.

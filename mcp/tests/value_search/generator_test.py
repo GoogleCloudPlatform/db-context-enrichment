@@ -43,7 +43,6 @@ def test_generate_value_searches_postgres_single():
 def test_generate_value_searches_batch_mixed():
     """
     Test generating MULTIPLE searches at once.
-    Also tests that invalid items (missing fields) are skipped without crashing.
     """
     input_data = [
         # Valid Item 1
@@ -53,7 +52,7 @@ def test_generate_value_searches_batch_mixed():
             "concept_type": "City",
             "match_function": "EXACT_MATCH_STRINGS"
         },
-        # Invalid Item (missing column_name) -> Should be skipped
+        # Invalid Item (missing column_name) -> Should return error
         {
             "table_name": "products",
             "concept_type": "Product",
@@ -73,19 +72,15 @@ def test_generate_value_searches_batch_mixed():
         db_engine="postgresql"
     )
 
-    context_set = ContextSet.model_validate_json(result_json)
-    
-    # We expect 2 valid items (the middle invalid one is skipped)
-    assert len(context_set.value_searches) == 2
-    assert context_set.value_searches[0].concept_type == "City"
-    assert context_set.value_searches[1].concept_type == "ProductName"
+    result = json.loads(result_json)
+    assert "error" in result
+    assert "Field 'column_name' is missing at index 1" in result["error"]
 
 
 def test_generate_value_searches_invalid_dialect():
     """
     Test invalid database engine.
-    Old behavior: Raised ValueError.
-    New behavior: Catches error inside loop, skips item, returns empty list.
+    Expected: Returns an error JSON.
     """
     input_data = [{
         "table_name": "t", "column_name": "c", "concept_type": "C", 
@@ -97,15 +92,15 @@ def test_generate_value_searches_invalid_dialect():
         db_engine="invalid_db"
     )
     
-    context_set = ContextSet.model_validate_json(result_json)
-    # Since dialect is invalid, the template lookup fails, and the item is skipped.
-    assert len(context_set.value_searches) == 0
+    result = json.loads(result_json)
+    assert "error" in result
+    assert "Dialect 'invalid_db' not supported" in result["error"]
 
 
 def test_generate_value_searches_invalid_function():
     """
     Test unknown match function.
-    New behavior: Returns empty list (item skipped).
+    Expected: Returns an error JSON.
     """
     input_data = [{
         "table_name": "t", "column_name": "c", "concept_type": "C", 
@@ -117,8 +112,9 @@ def test_generate_value_searches_invalid_function():
         db_engine="postgresql"
     )
     
-    context_set = ContextSet.model_validate_json(result_json)
-    assert len(context_set.value_searches) == 0
+    result = json.loads(result_json)
+    assert "error" in result
+    assert "not found" in result["error"]
 
 
 def test_generate_value_searches_malformed_json():
@@ -190,5 +186,6 @@ def test_generate_value_searches_specific_version_not_supported():
         db_version="999.0"
     )
     
-    context_set = ContextSet.model_validate_json(result_json)
-    assert len(context_set.value_searches) == 0
+    result = json.loads(result_json)
+    assert "error" in result
+    assert "Version '999.0' is not supported" in result["error"]

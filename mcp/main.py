@@ -294,8 +294,13 @@ def generate_targeted_facets() -> str:
 
 @mcp.prompt
 def generate_targeted_value_search() -> str:
+    _SUPPORTED_DB_ENGINES = ['postgresql']
+    _SUPPORTED_DB_TYPE = ['alloydb']
     """Initiates a guided workflow to generate specific Value Search configurations."""
-    return prompts.GENERATE_TARGETED_VALUE_SEARCH_PROMPT
+    return prompts.GENERATE_TARGETED_VALUE_SEARCH_PROMPT.format(
+        supported_db_engines=_SUPPORTED_DB_ENGINES,
+        supported_db_types=_SUPPORTED_DB_TYPE,
+    )
 
 
 if __name__ == "__main__":

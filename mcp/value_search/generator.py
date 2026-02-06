@@ -33,15 +33,17 @@ def generate_value_searches(
 
     value_searches = []
 
-    for item in inputs:
+    for index, item in enumerate(inputs):
+        required_fields = ["table_name", "column_name", "concept_type", "match_function"]
+        for field in required_fields:
+            if not item.get(field):
+                return json.dumps({"error": f"Field '{field}' is missing at index {index}"})
+
         table_name = item.get("table_name")
         column_name = item.get("column_name")
         concept_type = item.get("concept_type")
         match_function = item.get("match_function")
         description = item.get("description")
-
-        if not all([table_name, column_name, concept_type, match_function]):
-            continue
 
         try:
             template_def = match_templates.get_match_template(
@@ -65,7 +67,7 @@ def generate_value_searches(
             value_searches.append(vs)
 
         except ValueError as e:
-            continue
+            return json.dumps({"error": f"Error while processing value search at index {index}: {str(e)}"})
 
     return context.ContextSet(value_searches=value_searches).model_dump_json(
         indent=2, exclude_none=True

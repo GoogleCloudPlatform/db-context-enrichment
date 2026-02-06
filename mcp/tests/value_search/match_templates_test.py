@@ -34,7 +34,7 @@ def test_get_match_template_invalid_dialect_real():
 def mock_config():
     return {
         Dialect.POSTGRESQL: {
-            "supported_versions": ["14", "15"],
+            "min_version": "14",
             "defaults": {
                 "TEST_FUNC": {"sql_template": "DEFAULT_SQL", "desc": "default"},
                 "ONLY_DEFAULT": {"sql_template": "DEFAULT_ONLY", "desc": "default"}
@@ -64,6 +64,15 @@ def test_logic_version_override(mock_config):
         template = get_match_template("postgresql", "TEST_FUNC", version="15")
         assert template["sql_template"] == "OVERRIDE_SQL_15"
 
+def test_logic_version_higher_than_min(mock_config):
+    """
+    If a version is provided (16) which is > min (14), it should still work and
+    fall back to defaults if no override exists.
+    """
+    with patch.dict(match_templates._MATCH_CONFIG, mock_config, clear=True):
+        template = get_match_template("postgresql", "TEST_FUNC", version="16")
+        assert template["sql_template"] == "DEFAULT_SQL"
+
 def test_logic_partial_override(mock_config):
     """
     If version 15 is requested, but we ask for a function that isn't overridden
@@ -75,12 +84,12 @@ def test_logic_partial_override(mock_config):
 
 def test_logic_unsupported_version(mock_config):
     """
-    If a version is not in 'supported_versions', it should raise a ValueError
-    before even checking templates.
+    If a version is below 'min_version', it should raise a ValueError
+    with the correct error message.
     """
     with patch.dict(match_templates._MATCH_CONFIG, mock_config, clear=True):
-        with pytest.raises(ValueError, match="Version '99' is not supported"):
-            get_match_template("postgresql", "TEST_FUNC", version="99")
+        with pytest.raises(ValueError, match="Minimum required version: 14"):
+            get_match_template("postgresql", "TEST_FUNC", version="13")
 
 def test_logic_missing_function(mock_config):
     """

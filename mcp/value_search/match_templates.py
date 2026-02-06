@@ -9,7 +9,7 @@ class Dialect(str, Enum):
 
 _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
     Dialect.POSTGRESQL: {
-        "supported_versions": ["13", "14", "15", "16"],
+        "min_version": "13",
         
         # Default templates
         "defaults": {
@@ -41,6 +41,17 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
         }
     },
 }
+
+
+def _is_version_supported(version: str, min_version: str) -> bool:
+    """Helper to compare version strings (e.g. '13.2' >= '13')."""
+    def parse(v: str):
+        return tuple(map(int, v.split('.')))
+    
+    try:
+        return parse(version) >= parse(min_version)
+    except ValueError:
+        return False
 
 
 def get_match_template(
@@ -76,22 +87,23 @@ def get_match_template(
         raise ValueError(f"Dialect '{dialect}' has no configuration registered.")
 
     defaults = engine_config.get("defaults", {})
-    supported_versions = engine_config.get("supported_versions", [])
+    min_version = engine_config.get("min_version")
     overrides = engine_config.get("overrides", {})
 
-    if version:
+    if version and min_version:
         version = str(version)
-        if version not in supported_versions:
+        if not _is_version_supported(version, min_version):
             raise ValueError(
                 f"Version '{version}' is not supported for dialect '{dialect}'. "
-                f"Supported versions: {supported_versions}"
+                f"Minimum required version: {min_version}"
             )
 
     # Identify specific overrides for this version (if any)
+    # Note: Overrides currently use exact version matches in the keys
     version_overrides = overrides.get(version, {}) if version else {}
 
-    available_templates = defaults | version_overrides
-    template = available_templates.get(function_name)
+    effective_templates = defaults | version_overrides
+    template = effective_templates.get(function_name)
 
     if not template:
         supported_templates = list(defaults.keys())
@@ -118,12 +130,12 @@ def get_available_functions(dialect: str, version: str | None = None) -> List[st
     engine_config = _MATCH_CONFIG.get(dialect_enum, {})
     
     if version:
-        supported_versions = engine_config.get("supported_versions", [])
+        min_version = engine_config.get("min_version")
         version = str(version)
-        if version not in supported_versions:
+        if min_version and not _is_version_supported(version, min_version):
             raise ValueError(
                 f"Version '{version}' is not supported for dialect '{dialect}'. "
-                f"Supported versions: {supported_versions}"
+                f"Minimum required version: {min_version}"
             )
 
     defaults = engine_config.get("defaults", {})

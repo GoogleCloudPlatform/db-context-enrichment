@@ -172,20 +172,20 @@ def test_generate_value_searches_specific_version_success():
 def test_generate_value_searches_specific_version_not_supported():
     """
     Verify strict version checking. 
-    New behavior: Version error -> catches ValueError -> returns empty list.
+    New behavior: Version error -> Returns error JSON.
     """
     input_data = [{
         "table_name": "t", "column_name": "c", "concept_type": "C", 
         "match_function": "EXACT_MATCH_STRINGS"
     }]
 
-    # 999.0 is not in the real supported_versions list for postgres
+    # 12.0 is below the min_version (13) for postgres
     result_json = generate_value_searches(
         value_search_inputs_json=json.dumps(input_data),
         db_engine="postgresql",
-        db_version="999.0"
+        db_version="12.0"
     )
     
     result = json.loads(result_json)
     assert "error" in result
-    assert "Version '999.0' is not supported" in result["error"]
+    assert "Minimum required version: 13" in result["error"]

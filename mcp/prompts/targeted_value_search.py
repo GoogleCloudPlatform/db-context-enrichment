@@ -5,7 +5,9 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
         **Workflow for Generating Targeted Value Search**
 
         1.  **Database Configuration:**
-            - Ask the user for the **Database Engine and optionally version**.
+            - Notify user currently only engine type: {supported_db_engines} and database type: {supported_db_types} are supported for generating value search.
+            - Ask the user for the **Database Engine and optionally version**. Specify supported database engines: {supported_db_engines}
+            - Confirm db engine provided is one of the supported engines. If not, notify the user this engine is not supported yet and end the workflow.
         
         2.  **Fetch Capabilities:**
             - **Immediately after** receiving the Database Engine (and Version if provided), call the `list_match_functions` tool.
@@ -19,7 +21,7 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
               - **Concept Type** (e.g., "City", "Product ID")
               - **Match Function** (Must be one of the functions retrieved in Step 2)
               - **Description** (optional): A description of the value search.
-            - After capturing the details, ask the user if they would like to add another one.
+            - After capturing the details, check if the input is valid, especially whether Match Function is from the returned values from list_match_functions, if not ask ask the user to do a correction, if valid, ask the user if they would like to add another one.
             - Continue this loop until the user indicates they have no more value searches to add.
 
         4.  **Review and Confirmation:**
@@ -54,8 +56,8 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
         7.  **Generate Upload URL (Optional):**
             - After the file is saved, ask the user if they want to generate a URL to upload the context set file.
             - If the user confirms, you must collect the necessary database context from them.
-            - **Supported Database Types:** Inform the user that currently only `alloydb` is supported.
             - **Collect:**
+              - **Supported Database Types:** Specify supported database types should be from {supported_db_types}.
               - **Project ID:** The Google Cloud project ID.
               - **Location:** The AlloyDB location.
               - **Cluster ID:** The AlloyDB cluster ID.

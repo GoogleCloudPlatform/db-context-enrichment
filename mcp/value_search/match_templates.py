@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 from enum import Enum
 
 
@@ -44,7 +44,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
 
 
 def get_match_template(
-    dialect: str, function_name: str, version: Optional[str] = None
+    dialect: str, function_name: str, version: str | None = None
 ) -> dict:
     """
     Retrieves a match template with a default-fallback strategy.
@@ -102,7 +102,7 @@ def get_match_template(
 
     return template
 
-def get_available_functions(dialect: str, version: Optional[str] = None) -> List[str]:
+def get_available_functions(dialect: str, version: str | None = None) -> List[str]:
     """
     Returns a list of available match function names for a given dialect.
     Validates both the dialect and the version (if provided).

@@ -10,7 +10,6 @@ import prompts
 import datetime
 import os
 import json
-from typing import Optional
 
 mcp = FastMCP("DB Context Enrichment MCP")
 
@@ -92,7 +91,7 @@ async def generate_facets(
 async def generate_value_searches(
     value_search_inputs_json: str,
     db_engine: str,
-    db_version: Optional[str] = None,
+    db_version: str | None = None,
 ) -> str:
     """
     Generates final value searches from a list of user-approved value search definitions.
@@ -126,7 +125,7 @@ async def generate_value_searches(
     )
 
 @mcp.tool
-def list_match_functions(db_engine: str, db_version: Optional[str] = None) -> str:
+def list_match_functions(db_engine: str, db_version: str | None = None) -> str:
     """
     Lists the valid match template function names for a specific database engine.
     Use this to show the user what 'match_function' options are available.

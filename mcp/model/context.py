@@ -1,5 +1,5 @@
 from pydantic import AliasChoices, BaseModel, Field
-from typing import List, Optional
+from typing import List
 
 
 class ParameterizedTemplate(BaseModel):
@@ -67,7 +67,7 @@ class ValueSearch(BaseModel):
     concept_type: str = Field(
         ..., description="The semantic type (e.g., 'City', 'Product ID')."
     )
-    description: Optional[str] = Field(None, description="Optional description.")
+    description: str | None = Field(None, description="Optional description.")
 
 class ContextSet(BaseModel):
     """A set of templates, facets and value searches."""
@@ -83,7 +83,7 @@ class ContextSet(BaseModel):
             "facets", "fragments"
         ),  
     )
-    value_searches: Optional[List[ValueSearch]] = Field(
+    value_searches: List[ValueSearch] | None = Field(
         None,
         description="A list of value searches.",
     )

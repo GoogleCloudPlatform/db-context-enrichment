@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 from model import context
 from value_search import match_templates
 import json
@@ -8,7 +7,7 @@ from typing import List, Dict, Any
 def generate_value_searches(
     value_search_inputs_json: str,
     db_engine: str,
-    db_version: Optional[str] = None,
+    db_version: str | None = None,
 ) -> str:
     """
     Generates a list of Value Search configurations based on a JSON input list.

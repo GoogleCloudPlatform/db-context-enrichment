@@ -1,5 +1,8 @@
 import textwrap
 
+_SUPPORTED_DB_ENGINES = ['postgresql']
+_SUPPORTED_DB_TYPE = ['alloydb']
+
 GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
         """
         **Workflow for Generating Targeted Value Search**
@@ -65,4 +68,7 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
 
         Start the workflow.
         """
+    ).format(
+        supported_db_engines=_SUPPORTED_DB_ENGINES,
+        supported_db_types=_SUPPORTED_DB_TYPE,
     )

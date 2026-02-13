@@ -293,7 +293,7 @@ def generate_targeted_facets() -> str:
     return prompts.GENERATE_TARGETED_FACETS_PROMPT
 
 @mcp.prompt
-def generate_targeted_value_search() -> str:
+def generate_targeted_value_searches() -> str:
     """Initiates a guided workflow to generate specific Value Search configurations."""
     return prompts.GENERATE_TARGETED_VALUE_SEARCH_PROMPT
 

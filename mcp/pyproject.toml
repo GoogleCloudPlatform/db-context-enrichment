@@ -1,6 +1,6 @@
 [project]
 name = "db-context-enrichment"
-version = "0.3.0"
+version = "0.3.1"
 description = "A FastMCP server for generating natural language to SQL templates from database schemas."
 readme = "README.md"
 requires-python = ">=3.12"

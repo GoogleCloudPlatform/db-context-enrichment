@@ -18,29 +18,31 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "sql_template": (
                     "SELECT $value as value, '{table}.{column}' as columns, "
                     "'{concept_type}' as concept_type, 0 as distance, "
-                    "'' as context FROM {table} T WHERE T.{column} = $value LIMIT 1"
+                    "'' as context FROM {table} T WHERE T.{column} = $value"
                 ),
             },
             "TRIGRAM_STRING_MATCH": {
                 "description": "Fuzzy match using standard levenshtein",
                 "sql_template": (
-                    "(WITH TrigramMetrics AS ("
-                    "    SELECT T.{column} AS original_value, T.PK AS original_pk, "
-                    "    (T.{column} <-> $value) AS normalized_dist "
-                    "    FROM {table} T WHERE T.{column} % $value"
+                    "/* Requires extension: pg_trgm */ "
+                    "WITH TrigramMetrics AS ("
+                    "    SELECT T.{column} AS original_value, "
+                    "    (T.{column} <-> $value::text) AS normalized_dist "
+                    "    FROM {table} T "
+                    "    WHERE T.{column} % $value::text"
                     ") "
                     "SELECT original_value AS value, '{table}.{column}' AS columns, "
                     "'{concept_type}' AS concept_type, normalized_dist AS distance, "
-                    "''::text AS context, original_pk AS primary_key "
-                    "FROM TrigramMetrics)"
+                    "''::text AS context FROM TrigramMetrics"
                 ),
             },
             "SEMANTIC_SIMILARITY_GEMINI": {
                 "description": "Semantic search on string values",
                 "sql_template": (
+                    "/* Requires extensions: vector, google_ml_integration */ "
                     "WITH SemanticMetrics AS ("
-                    "    SELECT T.{column} AS original_value, T.PK AS original_pk, ("
-                    "        (google_ml.embedding('gemini-embedding-001', $value)::vector <=>"
+                    "    SELECT T.{column} AS original_value, ("
+                    "        (google_ml.embedding('gemini-embedding-001', $value)::vector <=> "
                     "         google_ml.embedding('gemini-embedding-001', T.{column})::vector) / 2.0"
                     "    ) AS normalized_dist "
                     "    FROM {table} T "
@@ -48,8 +50,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     ") "
                     "SELECT original_value AS value, '{table}.{column}' AS columns, "
                     "'{concept_type}' AS concept_type, normalized_dist AS distance, "
-                    "''::text AS context, original_pk AS primary_key "
-                    "FROM SemanticMetrics"
+                    "''::text AS context FROM SemanticMetrics"
                 ),
             }
         },
@@ -64,7 +65,6 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
         }
     },
 }
-
 
 def _is_version_supported(version: str, min_version: str) -> bool:
     """Helper to compare version strings (e.g. '13.2' >= '13')."""

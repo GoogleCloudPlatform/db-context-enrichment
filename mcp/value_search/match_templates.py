@@ -21,14 +21,37 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     "'' as context FROM {table} T WHERE T.{column} = $value LIMIT 1"
                 ),
             },
-            "FUZZY_MATCH_STRINGS": {
+            "TRIGRAM_STRING_MATCH": {
                 "description": "Fuzzy match using standard levenshtein",
                 "sql_template": (
-                    "SELECT T.{column} as value, '{table}.{column}' as columns, "
-                    "'{concept_type}' as concept_type, levenshtein(T.{column}, $value) as distance, "
-                    "'' as context FROM {table} T ORDER BY distance LIMIT 10"
+                    "(WITH TrigramMetrics AS ("
+                    "    SELECT T.{column} AS original_value, T.PK AS original_pk, "
+                    "    (T.{column} <-> $value) AS normalized_dist "
+                    "    FROM {table} T WHERE T.{column} % $value"
+                    ") "
+                    "SELECT original_value AS value, '{table}.{column}' AS columns, "
+                    "'{concept_type}' AS concept_type, normalized_dist AS distance, "
+                    "''::text AS context, original_pk AS primary_key "
+                    "FROM TrigramMetrics)"
                 ),
             },
+            "SEMANTIC_SIMILARITY_GEMINI": {
+                "description": "Semantic search on string values",
+                "sql_template": (
+                    "WITH SemanticMetrics AS ("
+                    "    SELECT T.{column} AS original_value, T.PK AS original_pk, ("
+                    "        (google_ml.embedding('gemini-embedding-001', $value)::vector <=>"
+                    "         google_ml.embedding('gemini-embedding-001', T.{column})::vector) / 2.0"
+                    "    ) AS normalized_dist "
+                    "    FROM {table} T "
+                    "    WHERE T.{column} IS NOT NULL"
+                    ") "
+                    "SELECT original_value AS value, '{table}.{column}' AS columns, "
+                    "'{concept_type}' AS concept_type, normalized_dist AS distance, "
+                    "''::text AS context, original_pk AS primary_key "
+                    "FROM SemanticMetrics"
+                ),
+            }
         },
         
         # Specific overrides per version

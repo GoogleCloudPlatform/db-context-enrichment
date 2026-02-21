@@ -1,6 +1,6 @@
 {
   "name": "mcp-db-context-enrichment",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "contextFileName": "./mcp/GEMINI.md",
   "mcpServers": {
     "mcp_db_context_enrichment": {

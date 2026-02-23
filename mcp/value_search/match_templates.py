@@ -18,7 +18,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "sql_template": (
                     "SELECT $value as value, '{table}.{column}' as columns, "
                     "'{concept_type}' as concept_type, 0 as distance, "
-                    "'' as context FROM {table} T WHERE T.{column} = $value"
+                    "'' as context FROM \"{table}\" T WHERE T.\"{column}\" = $value"
                 ),
             },
             "TRIGRAM_STRING_MATCH": {
@@ -26,10 +26,10 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "sql_template": (
                     "/* Requires extension: pg_trgm */ "
                     "WITH TrigramMetrics AS ("
-                    "    SELECT T.{column} AS original_value, "
-                    "    (T.{column} <-> $value::text) AS normalized_dist "
-                    "    FROM {table} T "
-                    "    WHERE T.{column} % $value::text"
+                    "    SELECT T.\"{column}\" AS original_value, "
+                    "    (T.\"{column}\" <-> $value::text) AS normalized_dist "
+                    "    FROM \"{table}\" T "
+                    "    WHERE T.\"{column}\" % $value::text"
                     ") "
                     "SELECT original_value AS value, '{table}.{column}' AS columns, "
                     "'{concept_type}' AS concept_type, normalized_dist AS distance, "
@@ -41,12 +41,12 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "sql_template": (
                     "/* Requires extensions: vector, google_ml_integration */ "
                     "WITH SemanticMetrics AS ("
-                    "    SELECT T.{column} AS original_value, ("
+                    "    SELECT T.\"{column}\" AS original_value, ("
                     "        (google_ml.embedding('gemini-embedding-001', $value)::vector <=> "
-                    "         google_ml.embedding('gemini-embedding-001', T.{column})::vector) / 2.0"
+                    "         google_ml.embedding('gemini-embedding-001', T.\"{column}\")::vector) / 2.0"
                     "    ) AS normalized_dist "
-                    "    FROM {table} T "
-                    "    WHERE T.{column} IS NOT NULL"
+                    "    FROM \"{table}\" T "
+                    "    WHERE T.\"{column}\" IS NOT NULL"
                     ") "
                     "SELECT original_value AS value, '{table}.{column}' AS columns, "
                     "'{concept_type}' AS concept_type, normalized_dist AS distance, "

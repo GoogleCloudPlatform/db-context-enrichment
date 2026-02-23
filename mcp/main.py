@@ -3,6 +3,8 @@ from typing import List
 import textwrap
 from template import question_generator, template_generator
 from facet import facet_generator
+from value_search import generator as vi_generator
+from value_search import match_templates
 from model import context
 import prompts
 import datetime
@@ -86,6 +88,66 @@ async def generate_facets(
 
 
 @mcp.tool
+async def generate_value_searches(
+    value_search_inputs_json: str,
+    db_engine: str,
+    db_version: str | None = None,
+) -> str:
+    """
+    Generates final value searches from a list of user-approved value search definitions.
+
+    Args:
+        value_search_inputs_json: A JSON string representing a list of value search definitions.
+            Each item in the list should be a dictionary with keys:
+            - "table_name": The name of the table.
+            - "column_name": The name of the column.
+            - "concept_type": The semantic type (e.g., 'City').
+            - "match_function": The match function to use (e.g., 'EXACT_MATCH_STRINGS').
+            - "description": (Optional) A description of the value search.
+            
+            Example:
+            '[
+                {"table_name": "users", "column_name": "city", "concept_type": "City", "match_function": "EXACT_MATCH_STRINGS"},
+                {"table_name": "products", "column_name": "name", "concept_type": "Product", "match_function": "FUZZY_MATCH_STRINGS"}
+            ]'
+            
+        db_engine: The database engine (postgresql, mysql, etc.).
+        db_version: The database version (optional).
+        
+    Returns:
+        A JSON string representing a ContextSet object containing all the new value searches.
+    """
+    if db_version and not db_version.strip():
+        db_version = None
+    
+    return vi_generator.generate_value_searches(
+        value_search_inputs_json, db_engine, db_version
+    )
+
+@mcp.tool
+def list_match_functions(db_engine: str, db_version: str | None = None) -> str:
+    """
+    Lists the valid match template function names for a specific database engine.
+    Use this to show the user what 'match_function' options are available.
+    
+    If the engine or version is not supported, this will return an error message
+    listing the valid options.
+
+    Args:
+        db_engine: The database engine (e.g., 'postgresql').
+        db_version: The specific database version (optional).
+    
+    Returns:
+        A JSON string containing the list of available function names, 
+        or an error message if validation fails.
+    """
+    try:
+        functions = match_templates.get_available_functions(db_engine, db_version)
+        return json.dumps(functions)
+    except ValueError as e:
+        return f"Error: {str(e)}"
+
+@mcp.tool
 def save_context_set(
     context_set_json: str,
     db_instance: str,
@@ -127,18 +189,18 @@ def attach_context_set(
     Attaches a ContextSet to an existing JSON file.
 
     This tool reads an existing JSON file containing a ContextSet,
-    appends new templates/facets to it, and writes the updated ContextSet
+    appends new templates/facets/value_searches to it, and writes the updated ContextSet
     back to the file. Exceptions are propagated to the caller.
 
     Args:
-        context_set_json: The JSON string output from the `generate_templates` or `generate_facets` tool.
+        context_set_json: The JSON string output from the generation tools.
         file_path: The **absolute path** to the existing template file.
 
     Returns:
         A confirmation message with the path to the updated file.
     """
 
-    existing_content_dict = {"templates": [], "facets": []}
+    existing_content_dict = {"templates": [], "facets": [], "value_searches": []}
     if os.path.getsize(file_path) > 0:
         with open(file_path, "r") as f:
             existing_content_dict = json.load(f)
@@ -157,10 +219,15 @@ def attach_context_set(
     if new_context.facets:
         existing_context.facets.extend(new_context.facets)
 
+    if existing_context.value_searches is None:
+        existing_context.value_searches = []
+    if new_context.value_searches:
+        existing_context.value_searches.extend(new_context.value_searches)
+
     with open(file_path, "w") as f:
         json.dump(existing_context.model_dump(), f, indent=2)
 
-    return f"Successfully attached templates to {file_path}"
+    return f"Successfully attached context to {file_path}"
 
 
 @mcp.tool
@@ -224,6 +291,11 @@ def generate_targeted_templates() -> str:
 def generate_targeted_facets() -> str:
     """Initiates a guided workflow to generate specific facets based on the user's input."""
     return prompts.GENERATE_TARGETED_FACETS_PROMPT
+
+@mcp.prompt
+def generate_targeted_value_searches() -> str:
+    """Initiates a guided workflow to generate specific Value Search configurations."""
+    return prompts.GENERATE_TARGETED_VALUE_SEARCH_PROMPT
 
 
 if __name__ == "__main__":

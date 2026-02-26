@@ -4,6 +4,7 @@ import textwrap
 from template import question_generator, template_generator
 from facet import facet_generator
 from model import context
+from bootstrap import context_generator
 import prompts
 import datetime
 import os
@@ -164,6 +165,55 @@ def attach_context_set(
 
 
 @mcp.tool
+async def bootstrap_context(
+    db_schema: str,
+    output_dir: str,
+    sql_dialect: str = "postgresql",
+) -> str:
+    """
+    Bootstraps a complete ContextSet from a database schema and saves it to the specified directory.
+
+    Example input:
+    {
+      "db_schema": "CREATE TABLE account (id INT, balance DECIMAL);",
+      "output_dir": "/Users/user/Workspace/project/context",
+      "sql_dialect": "postgresql"
+    }
+
+    Args:
+        db_schema: The primary database schema.
+        output_dir: The directory where the Gemini CLI is running (absolute path).
+        sql_dialect: The SQL dialect to use.
+
+    Returns:
+        A JSON string containing a success message, the file path, and the generated ContextSet.
+    """
+    # 1. Generate Context
+    context_set_json = await context_generator.bootstrap_context(
+        db_schema, sql_dialect
+    )
+
+    # 2. Prepare Path and Save
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    filepath = os.path.join(output_dir, f"context_bootstrap_{timestamp}.json")
+
+    data = json.loads(context_set_json)
+    with open(filepath, "w") as f:
+        json.dump(data, f, indent=2)
+
+    # Return summary for the agent/user
+    result = {
+        "message": f"Successfully bootstrapped context to {filepath}",
+        "path": filepath,
+        "context_set": data,
+    }
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool
 def generate_upload_url(
     db_type: str,
     project_id: str,
@@ -224,6 +274,12 @@ def generate_targeted_templates() -> str:
 def generate_targeted_facets() -> str:
     """Initiates a guided workflow to generate specific facets based on the user's input."""
     return prompts.GENERATE_TARGETED_FACETS_PROMPT
+
+
+@mcp.prompt
+def context_bootstrap() -> str:
+    """Initiates a comprehensive workflow to bootstrap database context from various sources."""
+    return prompts.CONTEXT_BOOTSTRAP_PROMPT
 
 
 if __name__ == "__main__":

@@ -12,16 +12,16 @@ async def generate_facets(
     try:
         # Convert the string to the Enum member
         db_dialect = parameterizer.SQLDialect(sql_dialect)
-    except ValueError:
-        return f'{{"error": "Invalid database dialect specified: {sql_dialect}"}}'
+    except ValueError as e:
+        raise ValueError(f"Invalid database dialect specified: {sql_dialect}") from e
 
     try:
         # The input is expected to be a direct list of items
         item_list = json.loads(facet_inputs_json)
         if not isinstance(item_list, list):
             raise json.JSONDecodeError("Input is not a list.", facet_inputs_json, 0)
-    except json.JSONDecodeError:
-        return '{"error": "Invalid JSON format for approved items. Expected a JSON array."}'
+    except json.JSONDecodeError as e:
+        raise ValueError("Invalid JSON format for approved items. Expected a JSON array.") from e
 
     final_facets = []
 
@@ -29,11 +29,11 @@ async def generate_facets(
 
         sql_snippet = item.get("sql_snippet")
         if not sql_snippet:
-            return '{"error": "Each item must have a \'sql_snippet\' key."}'
+            raise ValueError("Each item must have a 'sql_snippet' key.")
 
         intent = item.get("intent")
         if not intent:
-             return '{"error": "Each item must have an \'intent\' key."}'
+             raise ValueError("Each item must have an 'intent' key.")
 
         # 1. Extract value phrases from the intent (used as nl_query)
         phrases = await parameterizer.extract_value_phrases(nl_query=intent)

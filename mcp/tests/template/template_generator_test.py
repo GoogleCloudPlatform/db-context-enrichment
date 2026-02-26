@@ -57,9 +57,8 @@ async def test_generate_templates_from_items_simple():
 @pytest.mark.asyncio
 async def test_generate_templates_from_items_invalid_json():
     template_inputs_json = "invalid json"
-    result_json = await generate_templates(template_inputs_json)
-    assert "error" in result_json
-    assert "Invalid JSON format" in result_json
+    with pytest.raises(ValueError, match="Invalid JSON format"):
+        await generate_templates(template_inputs_json)
 
 
 @pytest.mark.asyncio
@@ -67,11 +66,10 @@ async def test_generate_templates_from_items_invalid_dialect():
     template_inputs_json = json.dumps(
         [{"question": "Find users", "sql": "SELECT * FROM users"}]
     )
-    result_json = await generate_templates(
-        template_inputs_json, sql_dialect="invalid_dialect"
-    )
-    assert "error" in result_json
-    assert "Invalid database dialect specified" in result_json
+    with pytest.raises(ValueError, match="Invalid database dialect specified"):
+        await generate_templates(
+            template_inputs_json, sql_dialect="invalid_dialect"
+        )
 
 
 @pytest.mark.asyncio

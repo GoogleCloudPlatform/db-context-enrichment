@@ -85,5 +85,4 @@ async def bootstrap_context(
         return merged_context.model_dump_json(indent=2, exclude_none=True)
 
     finally:
-        client.close()
         await client.aio.aclose()

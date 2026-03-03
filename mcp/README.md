@@ -4,28 +4,20 @@ This MCP server provides a guided, interactive workflow to generate structured N
 
 ## Prerequisites
 
-Before you begin, you need to have the Gemini CLI, `uv`, and the Google Cloud CLI installed and configured.
+Before you begin, you need to have the Gemini CLI and the Google Cloud CLI installed and configured.
 
 ### 1. Gemini CLI
 - **Installation:** The Gemini CLI binary should be pre-installed on Google Cloud Shell and Cloud Workstations. For other environments, follow the [official installation instructions](https://cloud.google.com/vertex-ai/docs/generative-ai/gemini/gemini-cli).
 - **Verification:** Run `gemini --version` to ensure it's installed correctly.
 - **Trusted Folder:** The first time you run `gemini` in a new directory, it will prompt you to trust the folder. Choose "Yes" to enable extensions.
 
-### 2. uv (Python Package Installer)
-`uv` is a fast Python package installer used to run this MCP server.
-- **Installation (Linux & macOS):**
-  ```sh
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  ```
-- **Verification:** Run `uv --version`. If the command is not found, you may need to source your shell's configuration file (e.g., `source ~/.bashrc`) or restart your terminal.
-- For other installation methods, see the [official `uv` documentation](https://docs.astral.sh/uv/getting-started/installation/).
-
-### 3. Google Cloud Authentication
-To access GCP database instances, you must configure Application Default Credentials (ADC).
+### 2. Google Cloud Authentication
+To access GCP database instances and the Gemini API, you must configure Application Default Credentials (ADC) and set a quota project.
 - **Installation:** If you don't have `gcloud` installed, follow the [Google Cloud CLI installation guide](https://cloud.google.com/sdk/docs/install).
-- **Login:** Run the following command and follow the prompts to authenticate:
+- **Login:** Run the following commands and follow the prompts to authenticate and select your quota project:
   ```sh
   gcloud auth application-default login
+  gcloud auth application-default set-quota-project <YOUR_QUOTA_PROJECT_ID>
   ```
 
 ## Installation
@@ -49,14 +41,7 @@ The installation process involves adding two Gemini CLI extensions.
 
 ## Configuration
 
-### 1. Gemini API Key
-The server uses the Gemini API for generation. Export your API key as an environment variable.
-```sh
-export GEMINI_API_KEY="YOUR_API_KEY"
-```
-You can get your key from [Google AI Studio](https://aistudio.google.com/apikey).
-
-### 2. Database Connections (`tools.yaml`)
+### Database Connections (`tools.yaml`)
 The MCP Toolbox requires a `tools.yaml` file to configure your database connections.
 
 1.  Create a new, empty folder on your local machine. This will be your workspace.
@@ -100,15 +85,9 @@ tools:
     > - Your machine's IP is authorized to connect to the database instance.
 
 3.  **Run the Workflows:**
-    - To generate a broad set of templates from your database schema:
-      ```sh
-      /generate_bulk_templates
-      ```
-    - To generate a specific template for a question you have in mind:
-      ```sh
-      /generate_targeted_templates
-      ```
-    The agent will guide you through the rest of the process.
+    Once initialized, the extension provides several pre-built workflows for you to use. You can discover all available workflows by typing `/` in the Gemini CLI interface to prompt autocomplete.
+    
+    Select a command such as `/generate_bulk_templates` or `/generate_targeted_templates`, and the agent will guide you through the rest of the interactive process!
 
 ## Development with VSCode (Optional)
 

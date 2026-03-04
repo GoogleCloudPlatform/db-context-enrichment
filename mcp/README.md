@@ -99,3 +99,46 @@ Using VSCode with the Gemini CLI Companion extension provides an enhanced editin
     - Open your workspace folder (containing `tools.yaml`) in VSCode.
     - Open the integrated terminal (`Ctrl + \` or `Cmd + \``) and run `gemini`.
     - Verify the IDE extension is active by running `/ide status`.
+
+## Development Process
+
+### 1. Release Pipeline
+- Releases are versioned and prepared automatically by the Release Please GitHub App.
+- When functional PRs are merged, Release Please opens/updates a pending Release PR (bumping the extension version and updating the changelog).
+- **Merging the Release PR** signals Release Please to tag the commit and create an official GitHub Release.
+- **The creation of the GitHub Release** triggers the `.github/workflows/release.yml` pipeline.
+- The pipeline uses PyInstaller to build standalone binary executables for Linux (x64), macOS (arm64), and Windows (x64).
+- The pipeline packages the binary, `LICENSE`, `GEMINI.md`, and dynamically updates `gemini-extension.json` into `.tar.gz` and `.zip` archives.
+- These archives are automatically attached back to the GitHub release as downloadable assets.
+- Users receive the update the next time they install or upgrade the extension via Gemini CLI (`gemini extensions update --all`).
+
+### 2. Local Development
+For local testing and contributions, you can run the extension directly from the source code without waiting for a binary release. There are two primary methods:
+
+**Method A: Direct Installation via Gemini CLI**
+This method creates a symlink to your local source code, so any changes you make are immediately reflected in the CLI.
+1. Install [`uv`](https://docs.astral.sh/uv/), the fast Python package installer.
+2. From the root directory of this repository, run:
+   ```sh
+   gemini extension link .
+   ```
+
+**Method B: Local FastMCP Server Configuration**
+This method allows you to run the Python server manually and connect over a local port, which is ideal for active debugging.
+1. Start the FastMCP server in SSE (Server-Sent Events) mode using `uv` from the `mcp/` directory:
+   ```sh
+   cd mcp
+   uv run fastmcp run -t sse main.py
+   ```
+   *(This will start the server and print a localhost URL, typically `http://localhost:8000/sse/`)*
+
+2. Configure a local testing MCP server by adding its connection details to your Gemini CLI `settings.json` file. If you already have an `"mcpServers"` configuration, add the `"local_db_enrichment"` object inside it. Otherwise, add the following complete JSON block:
+   ```json
+   {
+     "mcpServers": {
+       "local_db_enrichment": {
+         "url": "http://localhost:8000/sse/"
+       }
+     }
+   }
+   ```

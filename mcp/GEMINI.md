@@ -12,18 +12,17 @@ The `generate_bulk_templates` workflow requires presenting a list of databases t
 This information is derived from the `tools.yaml` file used by the MCP Toolbox server. Here's how the fields map from an example `tools.yaml`:
 
 ```yaml
-sources:
-  # This is the <connection_name>
-  eval-pg-alloydb-db:
-    ...
-    # This is the <instance_name>
-    instance: sqlgen-magic-primary
-    # This is the <database_name>
-    database: financial
-    ...
+kind: sources
+# This is the <connection_name>
+name: eval-pg-alloydb-db
+...
+# This is the <instance_name>
+instance: <instance_id>
+# This is the <database_name>
+database: <database_name>
 ```
 
--   **Connection**: The top-level key under `sources` (e.g., `eval-pg-alloydb-db`).
+-   **Connection**: The value for the `name` key.
 -   **Instance**: The value of the `instance` key.
 -   **DB**: The value of the `database` key.
 

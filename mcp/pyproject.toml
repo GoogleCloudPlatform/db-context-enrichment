@@ -31,3 +31,6 @@ default = true
 dev = [
     "pyinstaller>=6.18.0",
 ]
+
+[tool.db-context-enrichment]
+toolbox_version = "0.28.0"

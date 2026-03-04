@@ -22,19 +22,13 @@ To access GCP database instances and the Gemini API, you must configure Applicat
 
 ## Installation
 
-The installation process involves adding two Gemini CLI extensions.
+The installation process is straightforward via the Gemini CLI:
 
-1.  **Install the MCP Toolbox:**
-    This extension provides the necessary tools to connect to your databases.
-    ```sh
-    gemini extensions install https://github.com/gemini-cli-extensions/mcp-toolbox
-    ```
+```sh
+gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enrichment
+```
 
-2.  **Install the DB Context Enrichment Server:**
-    This is the main MCP server for the template generation workflow.
-    ```sh
-    gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enrichment
-    ```
+*(Note: The [`toolbox`](https://github.com/googleapis/genai-toolbox) dependency for database connection is bundled automatically within this extension.)*
 
 > **Tip:** To update all extensions to their latest versions, run:
 > `gemini extensions update --all`
@@ -113,32 +107,14 @@ Using VSCode with the Gemini CLI Companion extension provides an enhanced editin
 - Users receive the update the next time they install or upgrade the extension via Gemini CLI (`gemini extensions update --all`).
 
 ### 2. Local Development
-For local testing and contributions, you can run the extension directly from the source code without waiting for a binary release. There are two primary methods:
+For local testing and contributions, you can run the extension directly from the source code. This method creates a symlink to your local source code, so any changes you make are immediately reflected in the CLI.
 
-**Method A: Direct Installation via Gemini CLI**
-This method creates a symlink to your local source code, so any changes you make are immediately reflected in the CLI.
 1. Install [`uv`](https://docs.astral.sh/uv/), the fast Python package installer.
-2. From the root directory of this repository, run:
+2. Install the companion `mcp-toolbox` extension (which is normally bundled into production distributions) manually to supply database connections:
+   ```sh
+   gemini extensions install https://github.com/gemini-cli-extensions/mcp-toolbox
+   ```
+3. Link the `db-context-enrichment` extension locally (from the repository root):
    ```sh
    gemini extension link .
-   ```
-
-**Method B: Local FastMCP Server Configuration**
-This method allows you to run the Python server manually and connect over a local port, which is ideal for active debugging.
-1. Start the FastMCP server in SSE (Server-Sent Events) mode using `uv` from the `mcp/` directory:
-   ```sh
-   cd mcp
-   uv run fastmcp run -t sse main.py
-   ```
-   *(This will start the server and print a localhost URL, typically `http://localhost:8000/sse/`)*
-
-2. Configure a local testing MCP server by adding its connection details to your Gemini CLI `settings.json` file. If you already have an `"mcpServers"` configuration, add the `"local_db_enrichment"` object inside it. Otherwise, add the following complete JSON block:
-   ```json
-   {
-     "mcpServers": {
-       "local_db_enrichment": {
-         "url": "http://localhost:8000/sse/"
-       }
-     }
-   }
    ```

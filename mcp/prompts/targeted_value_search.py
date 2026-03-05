@@ -15,16 +15,16 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
         2.  **Fetch Capabilities:**
             - **Immediately after** receiving the Database Engine (and Version if provided), call the `list_match_functions` tool.
             - If the tool returns an error (e.g., unsupported version), present the error to the user (which includes the list of supported versions) and end the workflow.
-            - Otherwise, use the returned list of available match functions in the next step to specify what all functions are supported.
+            - Otherwise, present the available match functions to the user, strictly including the function name, its Description, and an Example of when it should be used, using the information returned by the tool.
 
         3.  **User Input Loop:**
             - Ask the user to provide the following details for a value search:
               - **Table Name**
               - **Column Name**
               - **Concept Type** (e.g., "City", "Product ID")
-              - **Match Function** (Must be one of the functions retrieved in Step 2)
+              - **Match Function** (Must be one of the function names retrieved in Step 2)
               - **Description** (optional): A description of the value search.
-            - After capturing the details, check if the input is valid, especially whether Match Function is from the returned values from list_match_functions, if not ask ask the user to do a correction, if valid, ask the user if they would like to add another one.
+            - After capturing the details, check if the input is valid, especially whether Match Function is a valid string from the returned values from list_match_functions, if not ask the user to do a correction, if valid, ask the user if they would like to add another one.
             - Continue this loop until the user indicates they have no more value searches to add.
 
         4.  **Review and Confirmation:**

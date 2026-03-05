@@ -14,7 +14,8 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
         # Default templates
         "defaults": {
             "EXACT_MATCH_STRINGS": {
-                "description": "Exact match (Standard SQL)",
+                "description": "Exact match for strings (Standard SQL).",
+                "example": "Use when finding a specific state code (e.g., 'CA'), order ID, or exact product name where precise spelling is required.",
                 "sql_template": (
                     "SELECT $value as value, '{table}.{column}' as columns, "
                     "'{concept_type}' as concept_type, 0 as distance, "
@@ -22,7 +23,8 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 ),
             },
             "TRIGRAM_STRING_MATCH": {
-                "description": "Fuzzy match using standard levenshtein",
+                "description": "Fuzzy text match using trigram similarity (requires pg_trgm extension).",
+                "example": "Use when searching for names, addresses, or plain text where users might have typos, misspellings, or partial matches.",
                 "sql_template": (
                     "/* Requires extension: pg_trgm */ "
                     "WITH TrigramMetrics AS ("
@@ -37,7 +39,8 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 ),
             },
             "SEMANTIC_SIMILARITY_GEMINI": {
-                "description": "Semantic search on string values",
+                "description": "Semantic similarity search using Gemini text embeddings.",
+                "example": "Use when searching for concepts, descriptions, themes, or abstract text where the exact words might differ but the underlying meaning is similar.",
                 "sql_template": (
                     "/* Requires extensions: vector, google_ml_integration */ "
                     "WITH SemanticMetrics AS ("
@@ -137,9 +140,9 @@ def get_match_template(
 
     return template
 
-def get_available_functions(dialect: str, version: str | None = None) -> List[str]:
+def get_available_functions(dialect: str, version: str | None = None) -> Dict[str, Dict[str, str]]:
     """
-    Returns a list of available match function names for a given dialect.
+    Returns a dictionary of available match function names with their descriptions and examples for a given dialect.
     Validates both the dialect and the version (if provided).
     """
     try:
@@ -162,4 +165,13 @@ def get_available_functions(dialect: str, version: str | None = None) -> List[st
             )
 
     defaults = engine_config.get("defaults", {})
-    return list(defaults.keys())
+    version_overrides = engine_config.get("overrides", {}).get(version, {}) if version else {}
+    effective_templates = defaults | version_overrides
+    
+    return {
+        k: {
+            "description": v.get("description", ""),
+            "example": v.get("example", "")
+        }
+        for k, v in effective_templates.items()
+    }

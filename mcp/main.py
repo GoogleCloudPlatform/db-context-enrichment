@@ -127,8 +127,8 @@ async def generate_value_searches(
 @mcp.tool
 def list_match_functions(db_engine: str, db_version: str | None = None) -> str:
     """
-    Lists the valid match template function names for a specific database engine.
-    Use this to show the user what 'match_function' options are available.
+    Lists the valid match template functions with their descriptions and examples for a specific database engine.
+    Use this to show the user what 'match_function' options are available, along with their details.
     
     If the engine or version is not supported, this will return an error message
     listing the valid options.
@@ -138,7 +138,7 @@ def list_match_functions(db_engine: str, db_version: str | None = None) -> str:
         db_version: The specific database version (optional).
     
     Returns:
-        A JSON string containing the list of available function names, 
+        A JSON string containing a dictionary of available function names mapped to their descriptions and examples,
         or an error message if validation fails.
     """
     try:

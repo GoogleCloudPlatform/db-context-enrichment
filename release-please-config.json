@@ -13,8 +13,7 @@
           "path": "mcp/pyproject.toml",
           "jsonpath": "$.project.version"
         }
-      ],
-      "component": "gemini-extension"
+      ]
     }
   },
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"

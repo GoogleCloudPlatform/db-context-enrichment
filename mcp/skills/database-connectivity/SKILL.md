@@ -7,10 +7,18 @@ description: Helper for creating or updating `tools.yaml` configuration files fo
 
 This skill assists users in creating and managing a valid `tools.yaml` file for the GenAI Toolbox. It supports creating a new file from scratch, adding new database connections to an existing file, and listing currently configured connections.
 
+## Environment Variable Support
+
+The `tools.yaml` file supports environment variable substitution using the `${VARIABLE_NAME}` syntax. This is recommended for sensitive information such as database users and passwords.
+
+When collecting information from the user, you should offer the option to use environment variables for sensitive fields. For example:
+-   Instead of a hardcoded password, the user can provide `${DB_PASSWORD}`.
+-   Ensure the user understands they must set the corresponding environment variable in their shell or environment before running the tools.
+
 ## Primary Workflows
 
 ### 1. Create a New `tools.yaml`
-This workflow should be used when no `tools.yaml` file exists in the extension directory.
+This workflow should be used when no `tools.yaml` file exists in the current directory.
 
 1.  **Identify Database Type**: Ask the user which database they want to configure. The supported types are:
     - Cloud SQL Postgres

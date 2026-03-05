@@ -126,32 +126,28 @@ async def test_generate_facets_from_items_empty_phrases():
 @pytest.mark.asyncio
 async def test_generate_facets_from_items_invalid_json():
     facet_inputs_json = "invalid json"
-    result_json = await generate_facets(facet_inputs_json)
-    assert "error" in result_json
-    assert "Invalid JSON format" in result_json
+    with pytest.raises(ValueError, match="Invalid JSON format"):
+        await generate_facets(facet_inputs_json)
 
 
 @pytest.mark.asyncio
 async def test_generate_facets_missing_intent():
     facet_inputs_json = json.dumps([{"sql_snippet": "price > 100"}])
-    result_json = await generate_facets(facet_inputs_json)
-    assert "error" in result_json
-    assert "Each item must have an 'intent' key" in result_json
+    with pytest.raises(ValueError, match="Each item must have an 'intent' key"):
+        await generate_facets(facet_inputs_json)
 
 
 @pytest.mark.asyncio
 async def test_generate_facets_missing_sql_snippet():
     facet_inputs_json = json.dumps([{"intent": "Some intent"}])
-    result_json = await generate_facets(facet_inputs_json)
-    assert "error" in result_json
-    assert "Each item must have a 'sql_snippet' key" in result_json
+    with pytest.raises(ValueError, match="Each item must have a 'sql_snippet' key"):
+        await generate_facets(facet_inputs_json)
 
 
 @pytest.mark.asyncio
 async def test_generate_facets_from_items_invalid_dialect():
     facet_inputs_json = json.dumps([{"intent": "Find users", "sql_snippet": "id = 1"}])
-    result_json = await generate_facets(
-        facet_inputs_json, sql_dialect="invalid_dialect"
-    )
-    assert "error" in result_json
-    assert "Invalid database dialect specified" in result_json
+    with pytest.raises(ValueError, match="Invalid database dialect specified"):
+        await generate_facets(
+            facet_inputs_json, sql_dialect="invalid_dialect"
+        )

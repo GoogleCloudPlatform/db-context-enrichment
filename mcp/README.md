@@ -91,7 +91,7 @@ Using VSCode with the Gemini CLI Companion extension provides an enhanced editin
 2.  **Install the Gemini CLI Companion Extension:** Search for "Gemini CLI Companion" in the VSCode Marketplace and install it.
 3.  **Usage:**
     - Open your workspace folder (containing `tools.yaml`) in VSCode.
-    - Open the integrated terminal (`Ctrl + \` or `Cmd + \``) and run `gemini`.
+    - Open the integrated terminal (`Ctrl + \` or `Cmd + \`) and run `gemini`.
     - Verify the IDE extension is active by running `/ide status`.
 
 ## Development Process

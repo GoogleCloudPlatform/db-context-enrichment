@@ -1,0 +1,22 @@
+# Changelog
+
+## [0.4.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.3.0...v0.4.0) (2026-03-06)
+
+
+### Features
+
+* bundle genai-toolbox binary to streamline extension installation ([#27](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/27)) ([5090d68](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/5090d68e3937b3e2d303626145c2d205162f735d))
+* **skill:** skill for authoring tools.yaml ([#28](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/28)) ([f69ca39](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/f69ca397d7d6649a363576da4214fc12e80bb8b6))
+
+
+### Bug Fixes
+
+* **ci:** add required github app config to trigger release please ([#35](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/35)) ([f641fbd](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/f641fbd2c9862fd5f77032571bce1a50efa96654))
+* **ci:** remove component from release please config to use root tag ([#30](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/30)) ([9cc7205](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/9cc7205652b52552dd3ee25f34c2a6dfdc23124e))
+* **ci:** remove unsupported toml config from release please ([#33](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/33)) ([edc30a5](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/edc30a57f7bfbcba4ee2beaeeb1035cdb3d75035))
+* **ci:** strictly align release-please config with mcp-toolbox and add debug workflow ([#34](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/34)) ([27bbbf0](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/27bbbf08767e37d18c8a27c776dded600e3bdd64))
+
+
+### Miscellaneous Chores
+
+* force 0.4.0 release via footer ([#32](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/32)) ([c133b9b](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/c133b9b7347c23a74126054f73b2895714948c85))

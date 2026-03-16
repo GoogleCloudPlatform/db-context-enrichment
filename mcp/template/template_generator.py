@@ -12,16 +12,16 @@ async def generate_templates(
     try:
         # Convert the string to the Enum member
         db_dialect = parameterizer.SQLDialect(sql_dialect)
-    except ValueError:
-        return f'{{"error": "Invalid database dialect specified: {sql_dialect}"}}'
+    except ValueError as e:
+        raise ValueError(f"Invalid database dialect specified: {sql_dialect}") from e
 
     try:
         # The input is now expected to be a direct list of items
         item_list = json.loads(template_inputs_json)
         if not isinstance(item_list, list):
             raise json.JSONDecodeError("Input is not a list.", template_inputs_json, 0)
-    except json.JSONDecodeError:
-        return '{"error": "Invalid JSON format for approved items. Expected a JSON array."}'
+    except json.JSONDecodeError as e:
+        raise ValueError("Invalid JSON format for approved items. Expected a JSON array.") from e
 
     final_templates = []
 

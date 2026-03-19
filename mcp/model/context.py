@@ -60,9 +60,17 @@ class Facet(BaseModel):
     )
     parameterized: ParameterizedFacet
 
+class ValueSearch(BaseModel):
+    """Represents a single, complete value search."""
+
+    query: str = Field(..., description="The parameterized SQL query (using $value).")
+    concept_type: str = Field(
+        ..., description="The semantic type (e.g., 'City', 'Product ID')."
+    )
+    description: str | None = Field(None, description="Optional description.")
 
 class ContextSet(BaseModel):
-    """A set of templates and facets."""
+    """A set of templates, facets and value searches."""
 
     templates: List[Template] | None = Field(
         None, description="A list of complete templates."
@@ -75,3 +83,8 @@ class ContextSet(BaseModel):
             "facets", "fragments"
         ),  
     )
+    value_searches: List[ValueSearch] | None = Field(
+        None,
+        description="A list of value searches.",
+    )
+

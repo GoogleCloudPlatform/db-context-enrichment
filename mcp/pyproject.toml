@@ -1,6 +1,6 @@
 [project]
 name = "db-context-enrichment"
-version = "0.3.1"
+version = "0.3.0"
 description = "A FastMCP server for generating natural language to SQL templates from database schemas."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -27,3 +27,11 @@ packages = ["template", "facet", "value_search", "common", "model", "prompts"]
 [[tool.uv.index]]
 url = "https://pypi.org/simple"
 default = true
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.18.0",
+]
+
+[tool.db-context-enrichment]
+toolbox_version = "0.28.0"

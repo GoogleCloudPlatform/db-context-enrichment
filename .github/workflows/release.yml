@@ -92,6 +92,8 @@ jobs:
           cp -r skills/ staging/skills/
           mkdir -p staging/skills/database-connectivity/scripts/
 
+          cp -r commands/ staging/commands/
+
           if [ "${{ runner.os }}" == "Windows" ]; then
             mv dist/db-context-enrichment.exe staging/
             mv toolbox.exe staging/skills/database-connectivity/scripts/

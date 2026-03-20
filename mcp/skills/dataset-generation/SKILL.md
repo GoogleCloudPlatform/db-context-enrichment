@@ -1,5 +1,5 @@
 ---
-name: ctx-dataset-generator
+name: skill-dataset-generation
 description: "Rapidly create and scale a small baseline of questions that covers more diverse examples to ensure robust evaluations."
 ---
 

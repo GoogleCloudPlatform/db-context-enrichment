@@ -1,0 +1,4 @@
+# Invoked via: /ctx-generate-dataset
+
+description = "Enable dataset generation skill"
+prompt = "Enable dataset generation skill"

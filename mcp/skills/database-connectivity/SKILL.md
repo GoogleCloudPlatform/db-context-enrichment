@@ -1,5 +1,5 @@
 ---
-name: database-connectivity
+name: skill-database-connectivity
 description: Helper for creating or updating `tools.yaml` configuration files for the GenAI Toolbox setting up database connections (AlloyDB, Cloud SQL, Spanner).
 ---
 

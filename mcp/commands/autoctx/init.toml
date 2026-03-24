@@ -1,0 +1,5 @@
+description = "Initializes the auto context generation for DB Data Agent."
+prompt = """
+Your task is to initialize the auto context generation workspace for the DB Data Agent.
+Please use the `activate_skill` tool to activate the `autoctx-init` skill, and then follow its exact workflow to guide the user through the initialization process.
+"""

@@ -90,20 +90,19 @@ jobs:
           mkdir -p staging
           
           cp -r skills/ staging/skills/
-          mkdir -p staging/skills/database-connectivity/scripts/
-
           cp -r commands/ staging/commands/
+          mkdir -p staging/skills/autoctx-init/scripts/
 
           if [ "${{ runner.os }}" == "Windows" ]; then
             mv dist/db-context-enrichment.exe staging/
-            mv toolbox.exe staging/skills/database-connectivity/scripts/
+            mv toolbox.exe staging/skills/autoctx-init/scripts/
             BINARY_NAME="\${extensionPath}/db-context-enrichment.exe"
-            TOOLBOX_NAME="\${extensionPath}/skills/database-connectivity/scripts/toolbox.exe"
+            TOOLBOX_NAME="\${extensionPath}/skills/autoctx-init/scripts/toolbox.exe"
           else
             mv dist/db-context-enrichment staging/
-            mv toolbox staging/skills/database-connectivity/scripts/
+            mv toolbox staging/skills/autoctx-init/scripts/
             BINARY_NAME="\${extensionPath}/db-context-enrichment"
-            TOOLBOX_NAME="\${extensionPath}/skills/database-connectivity/scripts/toolbox"
+            TOOLBOX_NAME="\${extensionPath}/skills/autoctx-init/scripts/toolbox"
           fi
           
           jq ".contextFileName = \"GEMINI.md\" | .mcpServers.mcp_db_context_enrichment.command = \"$BINARY_NAME\" | .mcpServers.mcp_db_context_enrichment.args = [] | .mcpServers.mcp_toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\"]}" ../gemini-extension.json > staging/gemini-extension.json

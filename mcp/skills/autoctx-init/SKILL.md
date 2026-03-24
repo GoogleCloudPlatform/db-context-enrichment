@@ -1,0 +1,86 @@
+---
+name: autoctx-init
+description: Orchestrates the initialization workflow for auto context generation, and provides helper workflows for creating or updating `tools.yaml` configurations.
+---
+
+# Auto Context Generation Initialization
+
+This skill guides the user through scaffolding a new environment for the DB Data Agent auto context generation. It handles creating tracking files, output directories, and configuring database connections.
+
+## Initialization Workflow
+
+Follow these steps when the user asks to initialize the environment:
+
+1.  **Confirm Working Directory:** Explicitly state the current working directory to the user. Explain that the initialization (creating `tools.yaml`, `state.md`, `reporting_output/`) will occur in this directory. Ask them to confirm if this is the correct location before proceeding.
+2.  **Check Existing Infrastructure:** Check if `tools.yaml`, `state.md`, AND the `reporting_output/` directory already exist.
+    - If **all** of them exist: Inform the user that the environment is already fully initialized. Skip directly to the **Final Summary**.
+    - If **any** are missing: Only proceed to create the missing items in the subsequent steps.
+3.  **Setup Toolbox Configuration:** If `tools.yaml` is missing, follow the primary "1. Create a New tools.yaml" workflow documented below in the **Toolbox Config Helper** section.
+4.  **Create State Tracker:** If `state.md` is missing, create it. Include a brief header explaining it tracks dynamic experiment state.
+5.  **Initialize Reporting Directory:** If `reporting_output/` is missing, create an empty `reporting_output/` directory.
+
+## Output
+
+Upon successful completion, the workspace must contain:
+- `tools.yaml`: A structurally sound configuration file for the Toolbox MCP Server.
+- `state.md`: The external state tracker for hill-climbing iterations.
+- `reporting_output/`: The base directory prepared for evaluation runs.
+
+## Final Summary
+
+Conclude by providing a succinct summary to the user:
+- State whether the workspace was initialized newly or if existing files were preserved.
+- Instruct the user to run `/mcp refresh` to apply any new database changes to the toolbox.
+- Inform them they are now ready to proceed to the next phase (e.g., the Bootstrap workflow).
+
+---
+
+# Toolbox Config Helper
+
+This section contains standalone instructions for managing the `tools.yaml` file for the GenAI Toolbox. You can execute these if the user explicitly asks to add or list database connections.
+
+## Environment Variable Support
+
+The `tools.yaml` file supports environment variable substitution using the `${VARIABLE_NAME}` syntax. This is recommended for sensitive information such as database users and passwords.
+
+When collecting information from the user, offer the option to use environment variables for sensitive fields. For example:
+-   Instead of a hardcoded password, the user can provide `${DB_PASSWORD}`.
+-   Ensure the user understands they must set the corresponding environment variable in their shell or environment before running the tools.
+
+## Primary Workflows
+
+### 1. Create a New `tools.yaml`
+
+1.  **Identify Database Type:** Ask the user which database they want to configure:
+    - Cloud SQL Postgres
+    - Cloud SQL MySQL
+    - AlloyDB Postgres
+    - Spanner
+2.  **Collect Information:** Request all **Required Information** based on the templates inside the `references/` folder.
+3.  **Generate Configuration:** Replace all placeholders with the user's provided values and generate the complete `tools.yaml` content. Save it to the current root directory.
+4.  **Validate:** After saving, validate the new connection using the toolbox script:
+    `<skill_dir>/scripts/toolbox --tools-file tools.yaml invoke <data_source_name>-list-schemas`
+
+### 2. Add a Database to an Existing `tools.yaml`
+
+1.  **Identify Database Type:** Ask the user for the type of the new database connection they wish to add.
+2.  **Collect Information:** Request the required information for the new connection, including a new, unique `<data_source_name>`.
+3.  **Read Existing File:** Read the content of the existing `tools.yaml`.
+4.  **Generate and Append:** Generate the YAML snippets for the new `sources` and `tools` sections. Append these new entries to the respective sections in the existing file content.
+5.  **Save Configuration:** Save the updated content back to the `tools.yaml` file.
+6.  **Validate:** Validate only the newly added connection:
+    `<skill_dir>/scripts/toolbox --tools-file tools.yaml invoke <data_source_name>-list-schemas`
+
+### 3. List Existing Database Connections
+
+1.  **Check and Read `tools.yaml`:** Check for the `tools.yaml` file. If it doesn't exist, inform the user.
+2.  **Parse and List:** Parse the YAML content and list the names of all configured data sources found under the `sources:` key limit.
+
+## Validation
+
+To verify that a specific database connection is configured correctly at any time, run the validation script with the target data source name:
+`<skill_dir>/scripts/toolbox --tools-file tools.yaml invoke <data_source_name>-list-schemas`
+
+## Templates & Reference
+
+For the specific fields required for each database type and the exact YAML structure to use, refer to the `references/` directory.

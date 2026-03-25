@@ -13,11 +13,19 @@ def collect_dynamic_resources():
     datas.append(('../README.md', '.'))
 
     # 2. Dependency Metadata / Complex Packages
-    # Google Auth often requires deep inspection
-    tmp_ret = collect_all('google.auth')
-    datas += tmp_ret[0]
-    binaries += tmp_ret[1]
-    hiddenimports += tmp_ret[2]
+    # These packages require full collection (datas, binaries, hiddenimports)
+    # because they use dynamic loading or C extensions.
+    packages_to_collect = [
+        'google.auth',
+        'lupa',      # Used by fakeredis for Lua scripting
+        'fakeredis', # Requires data files like commands.json
+    ]
+
+    for pkg in packages_to_collect:
+        tmp_ret = collect_all(pkg)
+        datas += tmp_ret[0]
+        binaries += tmp_ret[1]
+        hiddenimports += tmp_ret[2]
     
     # Copy metadata for packages that use entry points or version checks
     packages_needing_metadata = [

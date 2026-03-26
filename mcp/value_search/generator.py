@@ -53,11 +53,16 @@ def generate_value_searches(
             )
             raw_sql = template_def["sql_template"]
 
-            value_search_query = raw_sql.format(
-                table=table_name,
-                column=column_name,
-                concept_type=concept_type,
-            )
+            # Prepare formatting arguments with defaults for optional fields
+            format_args = {
+                "table": table_name,
+                "column": column_name,
+                "concept_type": concept_type,
+                "column_tokens": item.get("column_tokens", ""),
+                "column_embedding": item.get("column_embedding", ""),
+            }
+
+            value_search_query = raw_sql.format(**format_args)
 
             vs = context.ValueSearch(
                 concept_type=concept_type,

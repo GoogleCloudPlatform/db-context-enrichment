@@ -28,8 +28,8 @@ def test_get_match_template_invalid_dialect_real():
     """
     Ensure the Enum conversion raises the correct error for bad inputs.
     """
-    with pytest.raises(ValueError, match="Dialect 'mysql' not supported"):
-        get_match_template("mysql", "EXACT_MATCH_STRINGS")
+    with pytest.raises(ValueError, match="Dialect 'mysql1' not supported"):
+        get_match_template("mysql1", "EXACT_MATCH_STRINGS")
 
 @pytest.fixture
 def mock_config():

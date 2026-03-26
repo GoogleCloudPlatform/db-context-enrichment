@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.2](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.4.1...v0.4.2) (2026-03-25)
+
+
+### Bug Fixes
+
+* **build:** bundle lupa and fakeredis in PyInstaller executable ([#45](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/45)) ([b4202d0](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/b4202d076066bbb2cce4c8972c6c2d8447a13ef2))
+
+## [0.4.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.4.0...v0.4.1) (2026-03-25)
+
+
+### Features
+
+* add value index generation functionality ([#42](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/42)) ([e3784ae](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/e3784ae3bbe4da8c24c4735568b6bc983f3b120d))
+
 ## [0.4.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.3.0...v0.4.0) (2026-03-06)
 
 

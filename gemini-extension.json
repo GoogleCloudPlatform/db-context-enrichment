@@ -1,6 +1,6 @@
 {
   "name": "mcp-db-context-enrichment",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "contextFileName": "./mcp/GEMINI.md",
   "mcpServers": {
     "mcp_db_context_enrichment": {
@@ -12,5 +12,12 @@
         "main.py"
       ]
     }
-  }
+  },
+  "settings": [
+    {
+      "name": "Gemini API Key",
+      "description": "Your Gemini API key",
+      "envVar": "GEMINI_API_KEY"
+    }
+  ]
 }

@@ -36,3 +36,15 @@ jobs:
       - name: Run tests
         run: uv run pytest
         working-directory: ./mcp
+
+      - name: Install PyInstaller
+        run: uv pip install pyinstaller
+        working-directory: ./mcp
+
+      - name: Build binary
+        run: uv run pyinstaller pyinstaller.spec
+        working-directory: ./mcp
+
+      - name: Validate binary
+        run: ./dist/db-context-enrichment --help
+        working-directory: ./mcp

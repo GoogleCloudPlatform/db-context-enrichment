@@ -82,6 +82,17 @@ jobs:
         working-directory: mcp
         run: uv run pyinstaller pyinstaller.spec
 
+      # Validate the built binary starts successfully before packaging
+      - name: Validate binary
+        working-directory: mcp
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            ./dist/db-context-enrichment.exe --help
+          else
+            ./dist/db-context-enrichment --help
+          fi
+
       # Prepare the final distribution folder containing the binary, config, and docs
       - name: Prepare distribution
         working-directory: mcp

@@ -1,6 +1,6 @@
 ---
-name: autoctx-init
-description: Orchestrates the initialization workflow for auto context generation, and provides helper workflows for creating or updating `tools.yaml` configurations.
+name: skill-autoctx-init
+description: Orchestrates the initialization workflow for auto context generation, and provides helper workflow for setting up dataset connection by creating or updating tools.yaml configurations.
 ---
 
 # Auto Context Generation Initialization
@@ -16,7 +16,7 @@ Follow these steps when the user asks to initialize the environment:
     - If **all** of them exist: Inform the user that the environment is already fully initialized. Skip directly to the **Final Summary**.
     - If **any** are missing: Only proceed to create the missing items in the subsequent steps.
 3.  **Setup Toolbox Configuration:** If `tools.yaml` is missing, follow the primary "1. Create a New tools.yaml" workflow documented below in the **Toolbox Config Helper** section.
-4.  **Create State Tracker:** If `state.md` is missing, create it. Include a brief header explaining it tracks dynamic experiment state.
+4.  **Create State Tracker:** If `state.md` is missing, create it. Include a brief header “context authoring experiment state tracking”.
 5.  **Initialize Reporting Directory:** If `reporting_output/` is missing, create an empty `reporting_output/` directory.
 
 ## Output

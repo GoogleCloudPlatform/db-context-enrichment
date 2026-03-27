@@ -11,20 +11,20 @@ This skill guides the user through scaffolding a new environment for the DB Data
 
 Follow these steps when the user asks to initialize the environment:
 
-1.  **Confirm Working Directory:** Explicitly state the current working directory to the user. Explain that the initialization (creating `tools.yaml`, `state.md`, `reporting_output/`) will occur in this directory. Ask them to confirm if this is the correct location before proceeding.
-2.  **Check Existing Infrastructure:** Check if `tools.yaml`, `state.md`, AND the `reporting_output/` directory already exist.
+1.  **Confirm Working Directory:** Explicitly state the current working directory to the user. Explain that the initialization (creating `tools.yaml`, `state.md`, `experiments/`) will occur in this directory. Ask them to confirm if this is the correct location before proceeding.
+2.  **Check Existing Infrastructure:** Check if `tools.yaml`, `state.md`, AND the `experiments/` directory already exist.
     - If **all** of them exist: Inform the user that the environment is already fully initialized. Skip directly to the **Final Summary**.
     - If **any** are missing: Only proceed to create the missing items in the subsequent steps.
 3.  **Setup Toolbox Configuration:** If `tools.yaml` is missing, follow the primary "1. Create a New tools.yaml" workflow documented below in the **Toolbox Config Helper** section.
 4.  **Create State Tracker:** If `state.md` is missing, create it. Include a brief header “context authoring experiment state tracking”.
-5.  **Initialize Reporting Directory:** If `reporting_output/` is missing, create an empty `reporting_output/` directory.
+5.  **Initialize Experiments Directory:** If `experiments/` is missing, create an empty `experiments/` directory.
 
 ## Output
 
 Upon successful completion, the workspace must contain:
 - `tools.yaml`: A structurally sound configuration file for the Toolbox MCP Server.
 - `state.md`: The external state tracker for hill-climbing iterations.
-- `reporting_output/`: The base directory prepared for evaluation runs.
+- `experiments/`: The base directory prepared to store all hill-climbing run artifacts (e.g. baseline contexts, evaluation reports).
 
 ## Final Summary
 

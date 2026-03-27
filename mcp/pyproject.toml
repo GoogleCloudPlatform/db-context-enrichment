@@ -21,8 +21,10 @@ test = [
 
 [tool.setuptools]
 py-modules = ["main"]
-packages = ["template", "facet", "value_search", "common", "model", "prompts"]
+packages = ["template", "facet", "value_search", "common", "model", "prompts", "bootstrap"]
 
+[tool.pytest.ini_options]
+pythonpath = "."
 
 [[tool.uv.index]]
 url = "https://pypi.org/simple"

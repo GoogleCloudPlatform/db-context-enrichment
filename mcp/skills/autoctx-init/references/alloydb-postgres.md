@@ -13,7 +13,7 @@
 **Template:**
 
 ```yaml
-kind: sources
+kind: source
 name: <data_source_name>
 type: alloydb-postgres
 project: <project_id>
@@ -24,13 +24,13 @@ database: <database_name>
 user: <user>
 password: <password>
 ---
-kind: tools
+kind: tool
 name: <data_source_name>-list-schemas
 type: postgres-list-tables
 source: <data_source_name>
 description: Use this tool to list all tables and their schemas in the <data_source_name> database.
 ---
-kind: tools
+kind: tool
 name: <data_source_name>-execute-sql
 type: postgres-execute-sql
 source: <data_source_name>

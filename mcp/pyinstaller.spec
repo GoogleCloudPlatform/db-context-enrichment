@@ -70,8 +70,9 @@ exe = EXE(
     name='db-context-enrichment',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=True,
-    upx=True,
+    # Disable strip/upx to prevent Windows DLL corruption
+    strip=False,
+    upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=True,

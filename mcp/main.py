@@ -10,6 +10,7 @@ import prompts
 import datetime
 import os
 import json
+from bootstrap import bootstrap_generator
 
 mcp = FastMCP("DB Context Enrichment MCP")
 
@@ -84,6 +85,44 @@ async def generate_facets(
     """
     return await facet_generator.generate_facets(
         facet_inputs_json, sql_dialect
+    )
+
+
+@mcp.tool
+async def generate_bootstrap_context(
+    output_file_path: str,
+    template_inputs_json: str | None = None,
+    facet_inputs_json: str | None = None,
+    sql_dialect: str = "postgresql"
+) -> str:
+    """
+    Generates a single unified ContextSet from key information and saves it to a file.
+
+    Args:
+        output_file_path: The absolute path where the JSON ContextSet file should be saved.
+        template_inputs_json: A JSON string representing a list of extracted seed information used to generate full templates.
+            Each item in the list should be a dictionary with keys:
+            - "question": The natural language question.
+            - "sql": The corresponding SQL query to answer the question.
+            - "intent": (Optional) A brief description of the intent.
+            
+            Example: 
+            '[{"question": "How many users?", "sql": "SELECT COUNT(*) FROM users", "intent": "Count total users"}]'
+            
+        facet_inputs_json: A JSON string representing a list of extracted seed information used to generate full facets.
+            Each item in the list should be a dictionary with keys:
+            - "intent": A brief description of the facet intent.
+            - "sql_snippet": A specific SQL fragment (such as a filter condition) representing the intent.
+            
+            Example: 
+            '[{"intent": "high price", "sql_snippet": "price > 1000"}]'
+        sql_dialect: SQL engine dialect.
+        
+    Returns:
+        The absolute file path pointing to the generated and saved ContextSet JSON.
+    """
+    return await bootstrap_generator.generate_context(
+        output_file_path, sql_dialect, template_inputs_json, facet_inputs_json
     )
 
 

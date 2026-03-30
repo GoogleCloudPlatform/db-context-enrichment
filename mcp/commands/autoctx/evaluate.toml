@@ -1,0 +1,5 @@
+description = "Automates the evaluation of a generating ContextSet workflow against a golden QA dataset using the Evalbench engine."
+prompt = """
+Your task is to evaluate the quality of a previously generated ContextSet against a golden dataset using Evalbench.
+Please use the `activate_skill` tool to activate the `skill-autoctx-evaluate` skill, and strictly follow its workflow.
+"""

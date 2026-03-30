@@ -11,6 +11,7 @@ import datetime
 import os
 import json
 from bootstrap import bootstrap_generator
+from evaluate import evaluate_generator
 
 mcp = FastMCP("DB Context Enrichment MCP")
 
@@ -124,6 +125,32 @@ async def generate_bootstrap_context(
     return await bootstrap_generator.generate_context(
         output_file_path, sql_dialect, template_inputs_json, facet_inputs_json
     )
+
+
+@mcp.tool
+def generate_evalbench_configs(
+    experiment_name: str,
+    dataset_path: str,
+    context_set_id: str,
+    toolbox_db_info: str
+) -> str:
+    """
+    Generates Evalbench-compatible YAML configuration dictionaries required for evaluations.
+
+    Args:
+        experiment_name: The name of the target experiment folder.
+        dataset_path: The absolute path to the golden dataset file.
+        context_set_id: The specific context_set_id inside the experiment.
+        toolbox_db_info: The stringified JSON dictionary payload extracted from tools.yaml containing 
+                         target database connection parameters (e.g., project_id, location, db name).
+
+    Returns:
+        A JSON string containing a mapping of generated file names to their full YAML string contents.
+    """
+    configs = evaluate_generator.generate_evalbench_configs(
+        experiment_name, dataset_path, context_set_id, toolbox_db_info
+    )
+    return json.dumps(configs)
 
 
 @mcp.tool

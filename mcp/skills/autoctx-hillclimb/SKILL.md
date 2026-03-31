@@ -87,6 +87,10 @@ Follow these steps exactly in order:
 5.  **Save Report**: Write the report to `experiments/<experiment_name>/hillclimb/gap_analysis_vN.md`.
 6.  **Log in State Tracking**:
     -   Update `state.md` to record the mapping for Loop `vN` (Base Context <-> Eval Report <-> Gap Analysis).
+7.  **Human-in-the-Loop Review**:
+    -   Present the saved Gap Analysis report to the user.
+    -   Ask the user if they want to make any corrections or edits to the file before proceeding to Phase 2 (Context Mutation).
+    -   Wait for user confirmation or apply requested changes to the report before starting Phase 2.
 
 ---
 

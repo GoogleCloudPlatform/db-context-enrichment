@@ -13,8 +13,11 @@ import json
 from bootstrap import bootstrap_generator
 from evaluate import evaluate_generator
 from dataset import dataset_generator
+from common import context_mutator
+
 
 mcp = FastMCP("DB Context Enrichment MCP")
+
 
 
 @mcp.tool
@@ -383,5 +386,38 @@ def generate_targeted_value_searches() -> str:
     return prompts.GENERATE_TARGETED_VALUE_SEARCH_PROMPT
 
 
+@mcp.tool
+def mutate_context_set(
+    file_path: str,
+    mutations_json: str,
+) -> str:
+    """
+    Apply structural mutations to an existing ContextSet JSON file.
+
+    Parameters:
+    - file_path (str): The absolute path to the ContextSet file.
+    - mutations_json (str): A JSON string representing a list of mutations.
+      Each mutation must contain:
+      - 'operation': "add", "delete", or "update"
+      - 'type': "template", "facet", or "value_search"
+      - 'identifier' (dict): Required for "delete" and "update" to find the target item (e.g., {"nl_query": "What are all users?"}).
+      - 'value' (dict): Required for "add" and "update" (the full item body if template or facet).
+
+    Example 'mutations_json':
+    '[
+      {"operation": "add", "type": "template", "value": {"nl_query": "How many users?", "sql": "SELECT count(*) FROM users"}},
+      {"operation": "delete", "type": "facet", "identifier": {"intent": "high price"}}
+    ]'
+    """
+    try:
+        mutations_data = json.loads(mutations_json)
+        mutations = [context_mutator.Mutation(**mut) for mut in mutations_data]
+        context_mutator.mutate_context_set(file_path, mutations)
+        return f"Successfully applied {len(mutations)} mutations to {file_path}"
+    except Exception as e:
+        return f"Error applying mutations: {str(e)}"
+
+
 if __name__ == "__main__":
+
     mcp.run()  # Uses STDIO transport by default

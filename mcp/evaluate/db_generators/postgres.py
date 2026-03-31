@@ -3,7 +3,7 @@ import textwrap
 import google.cloud.geminidataanalytics_v1beta as gda
 from .base import BaseDBConfigGenerator
 
-class PostgresGenerator(BaseDBConfigGenerator):
+class PostgresConfigGenerator(BaseDBConfigGenerator):
     """
     Dedicated generator mapping properties to explicit Cloud SQL Postgres configuration
     topologies utilized by both EvalBench binaries and GDA Context objects.

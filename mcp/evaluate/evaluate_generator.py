@@ -3,10 +3,10 @@ import textwrap
 from typing import Dict, Any
 
 from .db_generators.base import BaseDBConfigGenerator
-from .db_generators.alloydb import AlloyDBGenerator
-from .db_generators.spanner import SpannerGenerator
-from .db_generators.postgres import PostgresGenerator
-from .db_generators.mysql import MySQLGenerator
+from .db_generators.alloydb import AlloyDBConfigGenerator
+from .db_generators.spanner import SpannerConfigGenerator
+from .db_generators.postgres import PostgresConfigGenerator
+from .db_generators.mysql import MySQLConfigGenerator
 
 # Dependencies resolved externally
 
@@ -54,10 +54,10 @@ def _get_db_generator(params: Dict[str, Any]) -> BaseDBConfigGenerator:
     source_type = params.get("type", "").lower()
     
     generators = {
-        AlloyDBGenerator.SOURCE_TYPE: AlloyDBGenerator,
-        PostgresGenerator.SOURCE_TYPE: PostgresGenerator,
-        MySQLGenerator.SOURCE_TYPE: MySQLGenerator,
-        SpannerGenerator.SOURCE_TYPE: SpannerGenerator,
+        AlloyDBConfigGenerator.SOURCE_TYPE: AlloyDBConfigGenerator,
+        PostgresConfigGenerator.SOURCE_TYPE: PostgresConfigGenerator,
+        MySQLConfigGenerator.SOURCE_TYPE: MySQLConfigGenerator,
+        SpannerConfigGenerator.SOURCE_TYPE: SpannerConfigGenerator,
     }
     
     if source_type not in generators:

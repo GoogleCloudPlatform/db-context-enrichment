@@ -1,6 +1,6 @@
 import pytest
 import yaml
-from evaluate.db_generators.spanner import SpannerGenerator
+from evaluate.db_generators.spanner import SpannerConfigGenerator
 
 @pytest.fixture
 def mock_params():
@@ -11,7 +11,7 @@ def mock_params():
     }
 
 def test_generate_db_config(mock_params):
-    gen = SpannerGenerator(mock_params)
+    gen = SpannerConfigGenerator(mock_params)
     db_config_yaml = gen.generate_db_config()
     
     assert gen.DIALECT == "spanner_gsql"
@@ -28,7 +28,7 @@ def test_generate_db_config(mock_params):
     }
 
 def test_generate_model_config(mock_params):
-    gen = SpannerGenerator(mock_params)
+    gen = SpannerConfigGenerator(mock_params)
     model_config_yaml = gen.generate_model_config("projects/test-project/locations/us-west1/contextSets/my-context")
     m_config = yaml.safe_load(model_config_yaml)
     

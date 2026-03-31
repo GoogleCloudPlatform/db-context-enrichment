@@ -3,7 +3,7 @@ import pytest
 import textwrap
 
 from evaluate.evaluate_generator import generate_evalbench_configs
-from evaluate.db_generators.postgres import PostgresGenerator
+from evaluate.db_generators.postgres import PostgresConfigGenerator
 
 @pytest.fixture
 def valid_postgres_params():

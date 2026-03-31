@@ -1,6 +1,6 @@
 import pytest
 import yaml
-from evaluate.db_generators.mysql import MySQLGenerator
+from evaluate.db_generators.mysql import MySQLConfigGenerator
 
 @pytest.fixture
 def mock_params():
@@ -14,7 +14,7 @@ def mock_params():
     }
 
 def test_generate_db_config(mock_params):
-    gen = MySQLGenerator(mock_params)
+    gen = MySQLConfigGenerator(mock_params)
     db_config_yaml = gen.generate_db_config()
     
     assert gen.DIALECT == "mysql"
@@ -31,7 +31,7 @@ def test_generate_db_config(mock_params):
     }
 
 def test_generate_model_config(mock_params):
-    gen = MySQLGenerator(mock_params)
+    gen = MySQLConfigGenerator(mock_params)
     model_config_yaml = gen.generate_model_config("projects/test-project/locations/us-west1/contextSets/my-context")
     m_config = yaml.safe_load(model_config_yaml)
     

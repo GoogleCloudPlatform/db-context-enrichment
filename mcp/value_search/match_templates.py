@@ -39,7 +39,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     "''::text AS context FROM TrigramMetrics"
                 ),
             },
-            "SEMANTIC_SIMILARITY_GEMINI": {
+            "SEMANTIC_SIMILARITY_MATCH": {
                 "description": "Semantic similarity search using Gemini text embeddings (Requires extensions: vector, google_ml_integration).",
                 "example": "Use when searching for concepts, descriptions, themes, or abstract text where the exact words might differ but the underlying meaning is similar.",
                 "sql_template": (
@@ -125,7 +125,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     ") AS wrapped_query "
                 ),
             },
-            "SEMANTIC_STRING_MATCH": {
+            "SEMANTIC_SIMILARITY_MATCH": {
                 "description": "Semantic match in MySQL using Vertex AI embedding.",
                 "example": "Use for semantic matching (requires mysql.ml_embedding).",
                 "sql_template": (

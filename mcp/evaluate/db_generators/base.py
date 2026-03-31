@@ -68,4 +68,4 @@ class BaseDBConfigGenerator(ABC):
             "context": query_context_dict
         }
         
-        return yaml.dump(model_config, sort_keys=False, default_flow_style=False).strip()
+        return yaml.safe_dump(model_config, sort_keys=False, default_flow_style=False).strip()

@@ -1,6 +1,9 @@
 from typing import Tuple, Dict, Any
 import textwrap
+
 import google.cloud.geminidataanalytics_v1beta as gda
+import yaml
+
 from .base import BaseDBConfigGenerator
 
 class PostgresConfigGenerator(BaseDBConfigGenerator):
@@ -27,16 +30,16 @@ class PostgresConfigGenerator(BaseDBConfigGenerator):
         db_type = "postgres"
         db_path = f"{self.project}:{self.region}:{self.instance}"
         
-        db_config_yaml = textwrap.dedent(f"""\
-            db_type: {db_type}
-            dialect: {self.DIALECT}
-            database_name: {self.database}
-            database_path: {db_path}
-            max_executions_per_minute: 180
-            user_name: {self.user}
-            password: {self.password}
-        """)
-        return db_config_yaml.strip()
+        db_config = {
+            "db_type": db_type,
+            "dialect": self.DIALECT,
+            "database_name": self.database,
+            "database_path": db_path,
+            "max_executions_per_minute": 180,
+            "user_name": self.user,
+            "password": self.password,
+        }
+        return yaml.safe_dump(db_config, sort_keys=False, default_flow_style=False).strip()
 
     def build_datasource_reference(self, context_set_id: str) -> gda.DatasourceReferences:
         datasource_ref = gda.DatasourceReferences()

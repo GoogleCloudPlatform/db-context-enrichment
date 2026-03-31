@@ -1,4 +1,6 @@
 import json
+import os
+import re
 import textwrap
 import yaml
 from typing import Dict, Any
@@ -41,7 +43,9 @@ def _extract_toolbox_params(toolbox_config_path: str, toolbox_source_name: str) 
     """Deterministically extracts connection parameters for a specific database source from tools.yaml."""
     try:
         with open(toolbox_config_path, "r") as f:
-            docs = yaml.safe_load_all(f)
+            content = f.read()
+            interpolated = _interpolate_env_vars(content)
+            docs = yaml.safe_load_all(interpolated)
             for doc in docs:
                 if not doc:
                     continue
@@ -56,6 +60,24 @@ def _extract_toolbox_params(toolbox_config_path: str, toolbox_source_name: str) 
         raise ValueError(f"Config file not found: {toolbox_config_path}")
     except yaml.YAMLError as e:
         raise ValueError(f"Failed to parse {toolbox_config_path} as YAML: {e}")
+
+
+def _interpolate_env_vars(raw_yaml: str) -> str:
+    """Replaces ${ENV_NAME} or ${ENV_NAME:default_value} with environment variables."""
+    # Matches ${VAR_NAME} or ${VAR_NAME:fallback}
+    pattern = re.compile(r'\$\{(\w+)(?::([^}]*))?\}')
+    
+    def replacer(match):
+        var_name = match.group(1)
+        fallback = match.group(2)
+        
+        if var_name in os.environ:
+            return os.environ[var_name]
+        if fallback is not None:
+            return fallback
+        raise ValueError(f"Environment variable '{var_name}' not found and no default provided.")
+
+    return pattern.sub(replacer, raw_yaml)
 
 
 def _get_db_generator(params: Dict[str, Any]) -> BaseDBConfigGenerator:

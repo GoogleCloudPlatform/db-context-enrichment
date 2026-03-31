@@ -158,3 +158,75 @@ def test_generate_evalbench_configs():
     assert configs["db_config.yaml"] == expected_db_config
     assert configs["model_config.yaml"] == expected_model_config
     assert configs["run_config.yaml"] == expected_run_config
+
+
+def test_generate_evalbench_configs_env_interpolation():
+    mock_yaml = textwrap.dedent("""\
+        kind: source
+        name: test-source
+        type: cloud-sql-postgres
+        project: ${TEST_PROJECT}
+        region: us-central1
+        instance: test-instance
+        database: test-db
+        user: test-user
+        password: test-password
+    """).strip()
+    
+    with patch.dict("os.environ", {"TEST_PROJECT": "env-project"}):
+        with patch("builtins.open", mock_open(read_data=mock_yaml)):
+            configs = generate_evalbench_configs(
+                experiment_name="test-exp",
+                dataset_path="/local/path/data.json",
+                context_set_id="context-123",
+                toolbox_config_path="/fake/tools.yaml",
+                toolbox_source_name="test-source"
+            )
+            
+    # assert the project was interpolated
+    assert "env-project" in configs["db_config.yaml"]
+
+
+def test_generate_evalbench_configs_env_fallback():
+    mock_yaml = textwrap.dedent("""\
+        kind: source
+        name: test-source
+        type: cloud-sql-postgres
+        project: ${TEST_PROJECT:fallback-project}
+        region: us-central1
+        instance: test-instance
+        database: test-db
+        user: test-user
+        password: test-password
+    """).strip()
+    
+    with patch.dict("os.environ", {}):  # Ensure empty
+        with patch("builtins.open", mock_open(read_data=mock_yaml)):
+            configs = generate_evalbench_configs(
+                experiment_name="test-exp",
+                dataset_path="/local/path/data.json",
+                context_set_id="context-123",
+                toolbox_config_path="/fake/tools.yaml",
+                toolbox_source_name="test-source"
+            )
+            
+    assert "fallback-project" in configs["db_config.yaml"]
+
+
+def test_generate_evalbench_configs_env_missing():
+    mock_yaml = textwrap.dedent("""\
+        kind: source
+        name: test-source
+        type: cloud-sql-postgres
+        project: ${MISSING_PROJECT}
+        region: us-central1
+        instance: test-instance
+        database: test-db
+        user: test-user
+        password: test-password
+    """).strip()
+    
+    with patch.dict("os.environ", {}):
+        with patch("builtins.open", mock_open(read_data=mock_yaml)):
+            with pytest.raises(ValueError, match="Environment variable 'MISSING_PROJECT' not found and no default provided."):
+                generate_evalbench_configs("exp", "path", "ctx", "/fake/tools.yaml", "test-source")

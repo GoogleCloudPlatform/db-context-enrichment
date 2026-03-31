@@ -34,9 +34,9 @@ Follow these steps exactly in order:
    - Use the `generate_evalbench_configs` MCP tool. This is the **only** way to generate Evalbench configs. Never invent configs from scratch.
    - If the tool fails, analyze the error and retry with corrected inputs. If it is an internal system error, STOP and inform the user.
    - Provide the selected `experiment_name`, `dataset_path`, `context_set_id`, absolute `toolbox_config_path` (e.g. workspace `tools.yaml`), and selected `toolbox_source_name`.
-   - The tool will output the raw YAML configs mapped by filename (e.g., `run_config.yaml`, `model_config.yaml`, `db_config.yaml`).
+   - The tool will output a JSON dict (keys are the config file names: `run_config.yaml`, `model_config.yaml`, `db_config.yaml`; values are the YAML config contents).
    - Create an `eval_configs/` directory inside their chosen `experiments/<experiment_name>/` folder.
-   - Write these configuration string contents into their respective physical `.yaml` files inside that new `eval_configs/` directory.
+   - For each dictionary entry, write the **value** string (file content) directly to the file specified by the **key** (filename) inside that new `eval_configs/` folder.
 
 4. **Evalbench Run Integration:**
    - Trigger the `run_shell_command` natively to execute the evaluation from the ROOT of the workspace using the following exact command template:

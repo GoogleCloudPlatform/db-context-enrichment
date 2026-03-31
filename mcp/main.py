@@ -146,7 +146,7 @@ def generate_evalbench_configs(
         toolbox_source_name: The name of the database source to use inside tools.yaml. The underlying source block must use a supported 'type' (cloud-sql-postgres, cloud-sql-mysql, spanner, alloydb-postgres).
 
     Returns:
-        A JSON string containing a mapping of generated file names to their full YAML string contents.
+        A JSON string of a dictionary where the keys are file names ("db_config.yaml", "model_config.yaml", "run_config.yaml") and values are purely the clean YAML string contents.
     """
     configs = evaluate_generator.generate_evalbench_configs(
         experiment_name, dataset_path, context_set_id, toolbox_config_path, toolbox_source_name

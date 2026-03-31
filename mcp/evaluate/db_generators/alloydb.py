@@ -36,7 +36,7 @@ class AlloyDBConfigGenerator(BaseDBConfigGenerator):
             max_executions_per_minute: 180
             user_name: {self.user}
             password: {self.password}
-            nl_config: ''
+            nl_config: '' # Required by evalbench schema
         """)
         return db_config_yaml.strip()
 

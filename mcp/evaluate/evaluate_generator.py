@@ -105,11 +105,10 @@ def _generate_run_config(experiment_name: str, dataset_path: str, dialect: str) 
         ### Dataset / Eval Items
         ############################################################
         dataset_config: {dataset_path}
+        dataset_format: evalbench-standard-format
         database_configs:
          - experiments/{experiment_name}/eval_configs/db_config.yaml
-        dialects:
-         - {dialect}
-        dialect: {dialect}
+        dialect: {dialect}    # DB connection mapping
         query_types:
          - dql
 

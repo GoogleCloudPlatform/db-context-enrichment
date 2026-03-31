@@ -126,11 +126,10 @@ def test_generate_evalbench_configs():
         ### Dataset / Eval Items
         ############################################################
         dataset_config: /local/path/data.json
+        dataset_format: evalbench-standard-format
         database_configs:
          - experiments/test-exp/eval_configs/db_config.yaml
-        dialects:
-         - postgres
-        dialect: postgres
+        dialect: postgres    # DB connection mapping
         query_types:
          - dql
 

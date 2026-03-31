@@ -132,7 +132,8 @@ def generate_evalbench_configs(
     experiment_name: str,
     dataset_path: str,
     context_set_id: str,
-    toolbox_db_info: str
+    toolbox_config_path: str,
+    toolbox_source_name: str
 ) -> str:
     """
     Generates Evalbench-compatible YAML configuration dictionaries required for evaluations.
@@ -141,14 +142,14 @@ def generate_evalbench_configs(
         experiment_name: The name of the target experiment folder.
         dataset_path: The absolute path to the golden dataset file.
         context_set_id: The specific context_set_id inside the experiment.
-        toolbox_db_info: The stringified JSON dictionary payload extracted from tools.yaml containing 
-                         target database connection parameters (e.g., project_id, location, db name).
+        toolbox_config_path: The absolute path to the tools.yaml configuration file.
+        toolbox_source_name: The name of the database source to use inside tools.yaml. The underlying source block must use a supported 'type' (cloud-sql-postgres, cloud-sql-mysql, spanner, alloydb-postgres).
 
     Returns:
         A JSON string containing a mapping of generated file names to their full YAML string contents.
     """
     configs = evaluate_generator.generate_evalbench_configs(
-        experiment_name, dataset_path, context_set_id, toolbox_db_info
+        experiment_name, dataset_path, context_set_id, toolbox_config_path, toolbox_source_name
     )
     return json.dumps(configs)
 

@@ -25,16 +25,15 @@ Follow these steps exactly in order:
 
 2. **Parameter Collection:**
    - **User Inputs:** Prompt the user ONLY for the `golden_dataset_path` and the `context_set_id` (if they haven't provided them already). Do NOT ask them to explain or verify database configurations.
-   - **Silent DB Parsing:** Read the `tools.yaml` file from the workspace root silently in the background to build the connection payload:
-     1. Locate the target `kind: source` connection block (explicitly ignoring any `kind: tool` blocks).
-     2. Identify the database `type` within that source block (e.g., `cloud-sql-postgres`, `spanner`).
-     3. Check the corresponding template in the `references/` directory based on that specific `type`.
-     4. Extract precisely the required fields listed in that reference documentation to map to the `toolbox_db_info` tool parameter.
+   - **Interactive DB Selection:** Read the `tools.yaml` file from the workspace root to list available databases to the user:
+     1. Find all `kind: source` blocks with supported evaluation engines (consult the `generate_evalbench_configs` tool description for the exact list of supported types).
+     2. If there is exactly one *supported* source, inform the user and auto-select it.
+     3. If there are multiple *supported* sources, list their `name` and `type` and let the user select which database to evaluate.
 
 3. **Config Generation (Core Execution):**
    - Use the `generate_evalbench_configs` MCP tool. This is the **only** way to generate Evalbench configs. Never invent configs from scratch.
    - If the tool fails, analyze the error and retry with corrected inputs. If it is an internal system error, STOP and inform the user.
-   - Provide the selected `experiment_name`, `dataset_path`, `context_set_id`, and the fully extracted `toolbox_db_info` block as a JSON string.
+   - Provide the selected `experiment_name`, `dataset_path`, `context_set_id`, absolute `toolbox_config_path` (e.g. workspace `tools.yaml`), and selected `toolbox_source_name`.
    - The tool will output the raw YAML configs mapped by filename (e.g., `run_config.yaml`, `model_config.yaml`, `db_config.yaml`).
    - Create an `eval_configs/` directory inside their chosen `experiments/<experiment_name>/` folder.
    - Write these configuration string contents into their respective physical `.yaml` files inside that new `eval_configs/` directory.
@@ -59,6 +58,5 @@ Conclude by providing a succinct summary to the user:
 
 ## Templates & Reference
 
-When extracting information from `tools.yaml` silently, you must understand the structure of the toolbox source connections.
-To know which specific fields exist for different database configurations inside `tools.yaml` and exactly what EvalBench topologies map to, actively inspect the template references located at:
-`references/` (e.g., `cloud-sql-postgres.md`, `alloydb-postgres.md`, `spanner.md`). Utilize these schema examples internally to accurately extract and map database properties into the JSON configuration passed to EvalBench configurations generator.
+When listing sources from `tools.yaml`, ensure you only present `kind: source` records to the user.
+The tool `generate_evalbench_configs` will find the selected block inside the file and validate its connection parameters deterministically using Python code. You do not need to manually parse or map individual properties such as `host`, `port`, or `database` yourself. If the tool indicates a verification failure for a specific database type, refer to the schema examples inside `references/` (e.g., `cloud-sql-postgres.md`) to guide the user on fixing their `tools.yaml` definition.

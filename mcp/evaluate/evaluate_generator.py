@@ -1,5 +1,6 @@
 import json
 import textwrap
+import yaml
 from typing import Dict, Any
 
 from .db_generators.base import BaseDBConfigGenerator
@@ -15,13 +16,14 @@ def generate_evalbench_configs(
     experiment_name: str,
     dataset_path: str,
     context_set_id: str,
-    toolbox_db_info: str
+    toolbox_config_path: str,
+    toolbox_source_name: str
 ) -> Dict[str, str]:
     """
     Main entrypoint: Generates Evalbench-compatible YAML configurations natively using 
     private DB format converters and the google-cloud-geminidataanalytics API validations.
     """
-    params = _extract_toolbox_params(toolbox_db_info)
+    params = _extract_toolbox_params(toolbox_config_path, toolbox_source_name)
     generator = _get_db_generator(params)
     
     db_config_yaml = generator.generate_db_config()
@@ -35,18 +37,25 @@ def generate_evalbench_configs(
     }
 
 
-def _extract_toolbox_params(toolbox_db_info: str) -> Dict[str, Any]:
-    """Safely extracts and parses the stringified JSON payload into a connection dictionary."""
+def _extract_toolbox_params(toolbox_config_path: str, toolbox_source_name: str) -> Dict[str, Any]:
+    """Deterministically extracts connection parameters for a specific database source from tools.yaml."""
     try:
-        params = json.loads(toolbox_db_info)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"toolbox_db_info must be a valid JSON dictionary: {e}") from e
-    
-    source_type = params.get("type", "").lower()
-    if not source_type:
-        raise ValueError("Missing required field 'type' in the parsed tools.yaml")
-
-    return params
+        with open(toolbox_config_path, "r") as f:
+            docs = yaml.safe_load_all(f)
+            for doc in docs:
+                if not doc:
+                    continue
+                if doc.get("kind") == "source" and doc.get("name") == toolbox_source_name:
+                    if not doc.get("type"):
+                        raise ValueError(f"Selected source '{toolbox_source_name}' is missing the 'type' field.")
+                    return doc
+            
+            raise ValueError(f"Could not find a 'kind: source' named '{toolbox_source_name}' in {toolbox_config_path}")
+            
+    except FileNotFoundError:
+        raise ValueError(f"Config file not found: {toolbox_config_path}")
+    except yaml.YAMLError as e:
+        raise ValueError(f"Failed to parse {toolbox_config_path} as YAML: {e}")
 
 
 def _get_db_generator(params: Dict[str, Any]) -> BaseDBConfigGenerator:

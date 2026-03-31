@@ -1,6 +1,7 @@
 import json
 import pytest
 import textwrap
+from unittest.mock import patch, mock_open
 
 from evaluate.evaluate_generator import generate_evalbench_configs
 from evaluate.db_generators.postgres import PostgresConfigGenerator
@@ -17,28 +18,79 @@ def valid_postgres_params():
         "password": "test-password"
     }
 
-def test_generate_evalbench_configs_invalid_json():
-    with pytest.raises(ValueError, match="must be a valid JSON dictionary"):
-        generate_evalbench_configs("exp", "path", "ctx", "{invalid_json: false}")
+def test_generate_evalbench_configs_file_not_found():
+    with pytest.raises(ValueError, match="Config file not found"):
+        generate_evalbench_configs("exp", "path", "ctx", "/nonexistent/tools.yaml", "any-name")
+
+
+def test_generate_evalbench_configs_missing_source():
+    mock_yaml = """
+    kind: source
+    name: other-source
+    type: postgres
+    """
+    with patch("builtins.open", mock_open(read_data=mock_yaml)):
+        with pytest.raises(ValueError, match="Could not find a 'kind: source' named 'test-source'"):
+            generate_evalbench_configs("exp", "path", "ctx", "/fake/tools.yaml", "test-source")
+
 
 def test_generate_evalbench_configs_missing_type():
-    with pytest.raises(ValueError, match="Missing required field 'type'"):
-        generate_evalbench_configs("exp", "path", "ctx", '{"project": "test"}')
+    mock_yaml = """
+    kind: source
+    name: test-source
+    # missing type
+    """
+    with patch("builtins.open", mock_open(read_data=mock_yaml)):
+        with pytest.raises(ValueError, match="is missing the 'type' field"):
+            generate_evalbench_configs("exp", "path", "ctx", "/fake/tools.yaml", "test-source")
+
 
 def test_generate_evalbench_configs_unsupported_type():
-    with pytest.raises(ValueError, match="Unsupported evaluating toolbox source type: 'unknown-db'"):
-        generate_evalbench_configs("exp", "path", "ctx", '{"type": "unknown-db"}')
+    mock_yaml = """
+    kind: source
+    name: test-source
+    type: unknown-db
+    """
+    with patch("builtins.open", mock_open(read_data=mock_yaml)):
+        with pytest.raises(ValueError, match="Unsupported evaluating toolbox source type: 'unknown-db'"):
+            generate_evalbench_configs("exp", "path", "ctx", "/fake/tools.yaml", "test-source")
 
 
-def test_generate_evalbench_configs(valid_postgres_params):
-    json_str = json.dumps(valid_postgres_params)
+def test_generate_evalbench_configs():
+    mock_yaml = textwrap.dedent("""\
+        ---
+        kind: tool
+        name: list_tables
+        ---
+        kind: source
+        name: other-source
+        type: cloud-sql-mysql
+        project: other-project
+        region: us-central1
+        instance: other-instance
+        database: other-db
+        user: other-user
+        password: other-password
+        ---
+        kind: source
+        name: test-source
+        type: cloud-sql-postgres
+        project: test-project
+        region: us-central1
+        instance: test-instance
+        database: test-db
+        user: test-user
+        password: test-password
+    """).strip()
     
-    configs = generate_evalbench_configs(
-        experiment_name="test-exp",
-        dataset_path="/local/path/data.json",
-        context_set_id="context-123",
-        toolbox_db_info=json_str
-    )
+    with patch("builtins.open", mock_open(read_data=mock_yaml)):
+        configs = generate_evalbench_configs(
+            experiment_name="test-exp",
+            dataset_path="/local/path/data.json",
+            context_set_id="context-123",
+            toolbox_config_path="/fake/tools.yaml",
+            toolbox_source_name="test-source"
+        )
     
     assert set(configs.keys()) == {"db_config.yaml", "model_config.yaml", "run_config.yaml"}
     

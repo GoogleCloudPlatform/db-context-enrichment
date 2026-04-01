@@ -22,7 +22,7 @@ def test_get_available_functions_postgres():
     funcs = get_available_functions("postgresql")
     assert "EXACT_MATCH_STRINGS" in funcs
     assert "TRIGRAM_STRING_MATCH" in funcs
-    assert "SEMANTIC_SIMILARITY_GEMINI" in funcs
+    assert "SEMANTIC_SIMILARITY_MATCH" in funcs
 
 def test_get_match_template_invalid_dialect_real():
     """

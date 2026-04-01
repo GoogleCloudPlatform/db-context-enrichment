@@ -59,7 +59,7 @@ The `generate_bulk_templates` workflow requires presenting a list of databases t
 This information is derived from the `tools.yaml` file used by the MCP Toolbox server. Here's how the fields map from an example `tools.yaml`:
 
 ```yaml
-kind: sources
+kind: source
 # This is the <connection_name>
 name: eval-pg-alloydb-db
 ...

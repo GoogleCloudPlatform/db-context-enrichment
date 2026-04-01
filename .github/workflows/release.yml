@@ -67,6 +67,15 @@ jobs:
           echo "Found toolbox version: ${TOOLBOX_VERSION}"
           echo "TOOLBOX_VERSION=${TOOLBOX_VERSION}" >> $GITHUB_ENV
 
+      # Extract evalbench version from pyproject.toml
+      - name: Get Evalbench Version
+        working-directory: mcp
+        shell: bash
+        run: |
+          EVALBENCH_VERSION=$(grep -o '^evalbench_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
+          echo "Found evalbench version: ${EVALBENCH_VERSION}"
+          echo "EVALBENCH_VERSION=${EVALBENCH_VERSION}" >> $GITHUB_ENV
+
       # Download the pre-compiled genai-toolbox binary for the target platform
       - name: Download genai-toolbox binary
         working-directory: mcp
@@ -76,6 +85,29 @@ jobs:
           echo "Downloading toolbox from: ${DOWNLOAD_URL}"
           curl -L --fail -o "toolbox${{ matrix.toolbox_ext }}" "${DOWNLOAD_URL}"
           chmod +x "toolbox${{ matrix.toolbox_ext }}"
+
+      # Download the evalbench binary for the target platform
+      - name: Download evalbench binary
+        working-directory: mcp
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            ARCHIVE="${{ matrix.platform_name }}.${{ matrix.arch_name }}.evalbench.zip"
+          else
+            ARCHIVE="${{ matrix.platform_name }}.${{ matrix.arch_name }}.evalbench.tar.gz"
+          fi
+          DOWNLOAD_URL="https://github.com/GoogleCloudPlatform/evalbench/releases/download/v${{ env.EVALBENCH_VERSION }}/${ARCHIVE}"
+          echo "Downloading evalbench from: ${DOWNLOAD_URL}"
+          curl -L --fail -o "${ARCHIVE}" "${DOWNLOAD_URL}"
+          
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            unzip -o "${ARCHIVE}"
+          else
+            tar -xzf "${ARCHIVE}"
+          fi
+          
+          chmod +x "evalbench${{ matrix.toolbox_ext }}"
+          rm "${ARCHIVE}"
 
       # Package the Python application into a standalone executable using PyInstaller
       - name: Build binary with PyInstaller
@@ -103,15 +135,18 @@ jobs:
           cp -r skills/ staging/skills/
           cp -r commands/ staging/commands/
           mkdir -p staging/skills/autoctx-init/scripts/
+          mkdir -p staging/skills/autoctx-evaluate/scripts/
 
           if [ "${{ runner.os }}" == "Windows" ]; then
             mv dist/db-context-enrichment.exe staging/
             mv toolbox.exe staging/skills/autoctx-init/scripts/
+            mv evalbench.exe staging/skills/autoctx-evaluate/scripts/
             BINARY_NAME="\${extensionPath}/db-context-enrichment.exe"
             TOOLBOX_NAME="\${extensionPath}/skills/autoctx-init/scripts/toolbox.exe"
           else
             mv dist/db-context-enrichment staging/
             mv toolbox staging/skills/autoctx-init/scripts/
+            mv evalbench staging/skills/autoctx-evaluate/scripts/
             BINARY_NAME="\${extensionPath}/db-context-enrichment"
             TOOLBOX_NAME="\${extensionPath}/skills/autoctx-init/scripts/toolbox"
           fi

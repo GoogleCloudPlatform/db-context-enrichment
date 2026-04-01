@@ -11,6 +11,7 @@ import datetime
 import os
 import json
 from bootstrap import bootstrap_generator
+from dataset import dataset_generator
 
 mcp = FastMCP("DB Context Enrichment MCP")
 
@@ -143,28 +144,7 @@ async def generate_dataset(
     Returns:
         The absolute file path where the dataset was saved.
     """
-    try:
-        data = json.loads(dataset_entries_json)
-        if not isinstance(data, list):
-            raise ValueError("Dataset entries must be a list of objects.")
-        
-        # Simple validation of keys
-        for i, entry in enumerate(data):
-            if not isinstance(entry, dict):
-                raise ValueError(f"Entry at index {i} is not an object.")
-            missing_keys = {"id", "database", "nlq", "golden_sql"} - set(entry.keys())
-            if missing_keys:
-                raise ValueError(f"Entry at index {i} is missing required keys: {missing_keys}")
-
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(os.path.abspath(output_file_path)), exist_ok=True)
-        
-        with open(output_file_path, "w") as f:
-            json.dump(data, f, indent=2)
-            
-        return f"Successfully saved dataset to {output_file_path}"
-    except (json.JSONDecodeError, ValueError, OSError) as e:
-        return f"Error saving dataset: {str(e)}"
+    return await dataset_generator.generate_dataset(dataset_entries_json, output_file_path)
 
 
 @mcp.tool

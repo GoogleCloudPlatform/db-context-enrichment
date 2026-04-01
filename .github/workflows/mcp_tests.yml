@@ -2,8 +2,6 @@ name: MCP Tests
 
 on:
   pull_request:
-    paths:
-      - 'mcp/**'
 
 jobs:
   test:

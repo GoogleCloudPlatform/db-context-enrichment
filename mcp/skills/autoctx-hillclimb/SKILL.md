@@ -35,7 +35,7 @@ Follow these steps exactly in order:
     -   Determine the target evaluation run folder under `eval_reports/`. If multiple folders exist, find the most recent one by modified time. **Prefer the latest run by default**, but list other available runs as well (peeking into their `summary.csv` or `configs.csv` to show timestamps/metrics for visual context). Ask the user to confirm the selection.
     -   Verify that the selected `eval_reports/<job_id_folder>/` contains expected files (e.g., `scores.csv`, `summary.csv`). If missing or empty, STOP and inform the user.
 2.  **Read Evaluation Results**: Read the reports in `eval_reports/<job_id_folder>/`.
-3.  **Generate Gap Analysis Report**: Compare queries and results to identify specific errors. Categorize them using the following taxonomy:
+3.  **Generate Gap Analysis Report**: Compare queries and results to identify specific errors for **all failed queries** (do not skip any). Categorize them using the following taxonomy:
     -   `[EntityError]` - Wrong table or entity.
     -   `[ValueLinkingError]` - Wrong literal value.
     -   `[ColumnLinkingError]` - Wrong column chosen.
@@ -45,7 +45,7 @@ Follow these steps exactly in order:
     -   `[DataTypesError]` - Cast/typing issue.
     -   `[CountingError]` - Count/Aggregation logic flawed.
     -   `[FilterError]` - Wrong logical operator or filter.
-    -   `[GoldenDataError]` - Hard errors in expected SQL (e.g., syntax errors, invalid tables/columns, wrong dialect).
+    -   `[GoldenDataError]` - Hard errors in expected SQL of the golden dataset *only* (e.g., syntax errors, invalid tables/columns, wrong dialect). Do NOT use for errors in generated SQL.
     -   `[OtherError]` - Miscellaneous.
 
 4.  **Formalized Report Format & Example**:
@@ -56,9 +56,9 @@ Follow these steps exactly in order:
 
     ## Summary
     - **Total Queries**: 10
-    - **Passed**: 8
-    - **Failed**: 2
-    - **Pass Rate**: 80%
+    - **Passed**: 7
+    - **Failed**: 3
+    - **Pass Rate**: 70%
 
     ## Failed Queries Detail
 
@@ -97,10 +97,14 @@ Follow these steps exactly in order:
 ### 3. Phase 2: Context Mutation
 
 1.  **Validation**: Verify that `gap_analysis_vN.md` exists and contains findings. Verify the base ContextSet file exists. If missing, STOP and inform the user.
-2.  **Analyze Gap Report**: Read the `gap_analysis_vN.md` to determine what templates or facets need to be added/updated/deleted.
+2.  **Analyze Gap Report & Determine Fixing Strategy**:
+    -   Read `gap_analysis_vN.md` to identify what needs to be fixed.
+    -   **Fixing Strategy Guidelines**:
+        -   **Conciseness**: Try to use *less context* to cover *more scenarios*. Avoid adding redundant or hyper-specific templates for every single edge case.
+        -   **Generalizability**: Prefer solutions that generalize well (e.g., use a `facet` for a column definition rather than a specific `template` for every query using that column).
 3.  **Apply Mutations**:
     -   **Copy the Base Context**: Copy the base ContextSet file to the new destination: `experiments/<experiment_name>/hillclimb/improved_context_vN.json`.
-    -   **Apply Mutations**: Call the `mutate_context_set` MCP tool passing the **new** file path as `file_path`.
+    -   **Apply Mutations**: Call the specialized `mutate_context_set` MCP tool passing the **new** file path as `file_path` and mutations as `mutations_json` to mutate the context set.
 3.  **Log in State Tracking**:
     -   Update `state.md` to include the output path of `improved_context_vN.json` for Loop `vN`.
 

@@ -12,6 +12,7 @@ import os
 import json
 from bootstrap import bootstrap_generator
 from evaluate import evaluate_generator
+from dataset import dataset_generator
 
 mcp = FastMCP("DB Context Enrichment MCP")
 
@@ -128,6 +129,23 @@ async def generate_bootstrap_context(
 
 
 @mcp.tool
+async def generate_dataset(
+    dataset_entries_json: str,
+    output_file_path: str,
+) -> str:
+    """
+    Validates a list of evaluation dataset entries and saves them to a JSON file.
+
+    Args:
+        dataset_entries_json: A JSON string representing a list of dataset items.
+                             Each item should have "id", "database", "nlq", and "golden_sql" keys.
+                             Example: '[{"id": "eval_001", "database": "my_db", "nlq": "Count users", "golden_sql": "SELECT COUNT(*) FROM users"}]'
+        output_file_path: The absolute path where the dataset JSON file should be saved.
+
+    Returns:
+        The absolute file path where the dataset was saved.
+    """
+    return await dataset_generator.generate_dataset(dataset_entries_json, output_file_path)
 def generate_evalbench_configs(
     experiment_name: str,
     dataset_path: str,

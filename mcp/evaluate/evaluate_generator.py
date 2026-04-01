@@ -11,8 +11,6 @@ from .db_generators.spanner import SpannerConfigGenerator
 from .db_generators.postgres import PostgresConfigGenerator
 from .db_generators.mysql import MySQLConfigGenerator
 
-# Dependencies resolved externally
-
 
 def generate_evalbench_configs(
     experiment_name: str,

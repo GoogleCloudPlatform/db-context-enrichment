@@ -9,13 +9,20 @@ class Dialect(str, Enum):
     GOOGLE_SQL = "googlesql"
 
 
+class MatchFunction(str, Enum):
+    """Available match functions."""
+    EXACT_MATCH_STRINGS = "EXACT_MATCH_STRINGS"
+    TRIGRAM_STRING_MATCH = "TRIGRAM_STRING_MATCH"
+    SEMANTIC_SIMILARITY_MATCH = "SEMANTIC_SIMILARITY_MATCH"
+
+
 _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
     Dialect.POSTGRESQL: {
         "min_version": "13",
         
         # Default templates
         "defaults": {
-            "EXACT_MATCH_STRINGS": {
+            MatchFunction.EXACT_MATCH_STRINGS.value: {
                 "description": "Exact match for strings (Standard SQL).",
                 "example": "Use when finding a specific state code (e.g., 'CA'), order ID, or exact product name where precise spelling is required.",
                 "sql_template": (
@@ -24,7 +31,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     "'' as context FROM \"{table}\" T WHERE T.\"{column}\" = $value"
                 ),
             },
-            "TRIGRAM_STRING_MATCH": {
+            MatchFunction.TRIGRAM_STRING_MATCH.value: {
                 "description": "Fuzzy text match using trigram similarity (Requires extension: pg_trgm).",
                 "example": "Use when searching for names, addresses, or plain text where users might have typos, misspellings, or partial matches.",
                 "sql_template": (
@@ -39,7 +46,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     "''::text AS context FROM TrigramMetrics"
                 ),
             },
-            "SEMANTIC_SIMILARITY_MATCH": {
+            MatchFunction.SEMANTIC_SIMILARITY_MATCH.value: {
                 "description": "Semantic similarity search using Gemini text embeddings (Requires extensions: vector, google_ml_integration).",
                 "example": "Use when searching for concepts, descriptions, themes, or abstract text where the exact words might differ but the underlying meaning is similar.",
                 "sql_template": (
@@ -62,7 +69,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
     Dialect.GOOGLE_SQL: {
         "min_version": "1",
         "defaults": {
-            "EXACT_MATCH_STRINGS": {
+            MatchFunction.EXACT_MATCH_STRINGS.value: {
                 "description": "Exact match for strings in Spanner.",
                 "example": "Use for exact IDs or state codes in Spanner.",
                 "sql_template": (
@@ -73,7 +80,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     "WHERE CAST(T.`{column}` AS STRING) = CAST($value AS STRING) "
                 )
             },
-            "TRIGRAM_STRING_MATCH": {
+            MatchFunction.TRIGRAM_STRING_MATCH.value: {
                 "description": "String similarity using Spanner Search Indexes.",
                 "example": "Use for typos/misspellings in Spanner using SEARCH_NGRAMS.",
                 "sql_template": (
@@ -91,7 +98,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
     Dialect.MYSQL: {
         "min_version": "8",
         "defaults": {
-            "EXACT_MATCH_STRINGS": {
+            MatchFunction.EXACT_MATCH_STRINGS.value: {
                 "description": "Exact match for strings in MySQL.",
                 "example": "Use for exact matching in MySQL.",
                 "sql_template": (
@@ -101,7 +108,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     "FROM `{table}` AS T WHERE T.`{column}` = $value"
                 ),
             },
-            "TRIGRAM_STRING_MATCH": {
+            MatchFunction.TRIGRAM_STRING_MATCH.value: {
                 "description": "Trigram fuzzy match in MySQL using FULLTEXT index with score normalization.",
                 "example": "Use for fuzzy matching in MySQL (requires FULLTEXT index with ngram).",
                 "sql_template": (
@@ -125,7 +132,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     ") AS wrapped_query "
                 ),
             },
-            "SEMANTIC_SIMILARITY_MATCH": {
+            MatchFunction.SEMANTIC_SIMILARITY_MATCH.value: {
                 "description": "Semantic match in MySQL using Vertex AI embedding.",
                 "example": "Use for semantic matching (requires mysql.ml_embedding).",
                 "sql_template": (

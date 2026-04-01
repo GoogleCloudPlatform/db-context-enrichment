@@ -1,4 +1,5 @@
 import textwrap
+from value_search.match_templates import MatchFunction
 
 _SUPPORTED_DB_TYPE = ['alloydb', 'postgres', 'mysql', 'spanner']
 
@@ -7,7 +8,10 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
         **Workflow for Generating Targeted Value Search**
 
         1.  **Database Configuration:**
-            - Ask the user for the **Database Type and optionally version**. Specify supported database types: {supported_db_types}
+            - Ask the user for the **Database Type (Product name) and optionally version**. Supported database types: {supported_db_types}
+            - **Understand the difference between Database Type and Database Engine:**
+              - **Database Type** is the product name (e.g., `alloydb`, `postgres`, `mysql`, `spanner`). This is what the user provides.
+              - **Database Engine** is the underlying SQL dialect/protocol used by tools (e.g., `postgresql` for `alloydb`/`postgres`, `googlesql` for `spanner`). You MUST infer this engine from the type.
             - Using the database type provided, infer the database engine:
               - **alloydb** or **postgres** -> `postgresql`
               - **mysql** -> `mysql`
@@ -27,8 +31,8 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
               - **Concept Type** (e.g., "City", "Product ID")
               - **Match Function** (Must be one of the function names retrieved in Step 2)
               - **Engine Specific Parameters** (Ask for these if the chosen function and engine require them):
-                - For **Spanner (googlesql)** + `TRIGRAM_STRING_MATCH`: Ask for **Column Tokens** column name.
-                - For **MySQL** + `SEMANTIC_STRING_MATCH`: Ask for **Column Embedding** column name.
+                - For **Spanner (googlesql)** + `{trigram_match}`: Ask for **Column Tokens** column name.
+                - For **MySQL** + `{semantic_match}`: Ask for **Column Embedding** column name.
               - **Description** (optional): A description of the value search.
             - After capturing the details, check if the input is valid, especially whether Match Function is a valid string from the returned values from list_match_functions, if not ask the user to do a correction, if valid, ask the user if they would like to add another one.
             - Continue this loop until the user indicates they have no more value searches to add.
@@ -41,6 +45,7 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
                 **Column:** [Column Name]
                 **Concept:** [Concept Type]
                 **Function:** [Match Function]
+                **Engine Specific Parameters:** [Column Tokens / Column Embedding, if provided]
                 **Description:** [Description]
             - Ask if any modifications are needed. If so, work with the user to refine the list.
 
@@ -67,18 +72,19 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
 
         7.  **Generate Upload URL (Optional):**
             - After the file is saved, ask the user if they want to generate a URL to upload the context set file.
-            - If the user confirms, you must collect the necessary database context from them.
-            - **Collect:**
-              - **Supported Database Types:** Specify supported database types should be from {supported_db_types}.
+            - If the user confirms, you must collect the necessary database context from them. This includes:
+              - **Database Type:** 'alloydb', 'cloudsql', or 'spanner'.
               - **Project ID:** The Google Cloud project ID.
-              - **Location:** The AlloyDB location (if alloydb).
-              - **Cluster ID:** The AlloyDB cluster ID (if alloydb).
-              - **Instance ID:** The Cloud SQL or Spanner instance ID.
-              - **Database ID:** The Spanner database ID (if spanner).
+              - **And depending on the database type:**
+                - For 'alloydb': Location and Cluster ID.
+                - For 'cloudsql': Instance ID.
+                - For 'spanner': Instance ID and Database ID.
             - Once you have the required information, call the `generate_upload_url` tool to provide the upload URL to the user.
 
         Start the workflow.
         """
     ).format(
         supported_db_types=_SUPPORTED_DB_TYPE,
+        trigram_match=MatchFunction.TRIGRAM_STRING_MATCH.value,
+        semantic_match=MatchFunction.SEMANTIC_SIMILARITY_MATCH.value,
     )

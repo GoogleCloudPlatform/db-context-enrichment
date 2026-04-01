@@ -6,6 +6,9 @@ GENERATE_TARGETED_FACETS_PROMPT = textwrap.dedent(
 
     1.  **User Input Loop:**
         - Ask the user to provide an intent and its corresponding SQL snippet.
+        - **Provide a sample to the user to help them understand the expected input.** For example:
+          - **Intent:** Order status is shipped or delivered.
+          - **SQL snippet:** `WHERE status IN ('shipped', 'delivered')`
         - **Important:** Do not infer the intent or SQL snippet. Wait for the user to provide them.
         - After capturing the intent and SQL snippet pair, ask the user if they would like to add another one.
         - Continue this loop until the user indicates they have no more pairs to add.

@@ -7,6 +7,10 @@ GENERATE_TARGETED_TEMPLATES_PROMPT = textwrap.dedent(
     1.  **User Input Loop:**
         - Ask the user to provide a natural language question and its corresponding SQL query.
         - **Optionally**, ask if they want to provide a specific "intent" for this pair. If not provided, the question will be used as the intent.
+        - **Provide a sample to the user to help them understand the expected input.** For example:
+          - **Question:** Find all customers who have made more than 5 purchases.
+          - **SQL:** `SELECT customer_id, COUNT(*) FROM purchases GROUP BY customer_id HAVING COUNT(*) > 5;`
+          - **Intent:** Customers with more than 5 purchases.
         - **Important:** Do not infer the question or SQL query. Wait for the user to provide them.
         - After capturing the inputs for a template, ask the user if they would like to add another one.
         - Continue this loop until the user indicates they have no more to add.

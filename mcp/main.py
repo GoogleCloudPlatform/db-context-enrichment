@@ -13,6 +13,8 @@ import json
 from bootstrap import bootstrap_generator
 from evaluate import evaluate_generator
 from dataset import dataset_generator
+from common import context_mutator
+
 
 mcp = FastMCP("DB Context Enrichment MCP")
 
@@ -146,6 +148,9 @@ async def generate_dataset(
         The absolute file path where the dataset was saved.
     """
     return await dataset_generator.generate_dataset(dataset_entries_json, output_file_path)
+
+
+@mcp.tool
 def generate_evalbench_configs(
     experiment_name: str,
     dataset_path: str,
@@ -209,6 +214,7 @@ async def generate_value_searches(
         value_search_inputs_json, db_engine, db_version
     )
 
+
 @mcp.tool
 def list_match_functions(db_engine: str, db_version: str | None = None) -> str:
     """
@@ -231,6 +237,7 @@ def list_match_functions(db_engine: str, db_version: str | None = None) -> str:
         return json.dumps(functions)
     except ValueError as e:
         return f"Error: {str(e)}"
+
 
 @mcp.tool
 def save_context_set(
@@ -381,6 +388,65 @@ def generate_targeted_facets() -> str:
 def generate_targeted_value_searches() -> str:
     """Initiates a guided workflow to generate specific Value Search configurations."""
     return prompts.GENERATE_TARGETED_VALUE_SEARCH_PROMPT
+
+
+@mcp.tool
+def mutate_context_set(
+    file_path: str,
+    mutations_json: str,
+) -> str:
+    """
+    Apply structural mutations to an existing ContextSet JSON file.
+
+    Parameters:
+    - file_path (str): The absolute path to the ContextSet file.
+    - mutations_json (str): A JSON string representing a list of mutations.
+      Each mutation must contain:
+      - 'operation': "add", "delete", or "update"
+      - 'type': "template", "facet", or "value_search"
+      - 'identifier' (dict): Required for "delete" and "update" to find the target item (e.g., {"nl_query": "What are all users?"}).
+      - 'value' (dict): Required for "add" and "update".
+        - For "add": Must be the FULL item body. Rely on specialized generation tools (like `generate_templates`) to produce this content deterministically.
+        - For "update": Can be a PARTIAL body containing only the fields to change (it will be merged with the existing item).
+
+    Example 'mutations_json':
+    '[
+      {
+        "operation": "add", 
+        "type": "template", 
+        "value": {
+          "nl_query": "How many users registered in 2023?", 
+          "sql": "SELECT count(*) FROM users WHERE year = 2023",
+          "intent": "Count users registered in 2023",
+          "manifest": "Count users registered in a given year",
+          "parameterized": {
+            "parameterized_sql": "SELECT count(*) FROM users WHERE year = $1",
+            "parameterized_intent": "Count users registered in $1"
+          }
+        }
+      },
+      {
+        "operation": "delete", 
+        "type": "facet", 
+        "identifier": {"intent": "high price"}
+      },
+      {
+        "operation": "update", 
+        "type": "facet", 
+        "identifier": {"intent": "high price"}, 
+        "value": {"sql_snippet": "price > 2000", "intent": "very high price"}
+      }
+    ]'
+    """
+    try:
+        mutations_data = json.loads(mutations_json)
+        if not isinstance(mutations_data, list):
+            return "Error applying mutations: mutations_json must be a JSON list."
+        mutations = [context_mutator.Mutation(**mut) for mut in mutations_data]
+        context_mutator.mutate_context_set(file_path, mutations)
+        return f"Successfully applied {len(mutations)} mutations to {file_path}"
+    except Exception as e:
+        return f"Error applying mutations: {str(e)}"
 
 
 if __name__ == "__main__":

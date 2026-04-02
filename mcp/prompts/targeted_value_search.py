@@ -1,26 +1,26 @@
 import textwrap
 from value_search.match_templates import MatchFunction
 
-_SUPPORTED_DB_TYPE = ['alloydb', 'postgres', 'mysql', 'spanner']
+_SUPPORTED_DB_ENGINE = ['alloydb', 'postgres', 'mysql', 'spanner']
 
 GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
         """
         **Workflow for Generating Targeted Value Search**
 
         1.  **Database Configuration:**
-            - Ask the user for the **Database Type (Product name) and optionally version**. Supported database types: {supported_db_types}
-            - **Understand the difference between Database Type and Database Engine:**
-              - **Database Type** is the product name (e.g., `alloydb`, `postgres`, `mysql`, `spanner`). This is what the user provides.
-              - **Database Engine** is the underlying SQL dialect/protocol used by tools (e.g., `postgresql` for `alloydb`/`postgres`, `googlesql` for `spanner`). You MUST infer this engine from the type.
-            - Using the database type provided, infer the database engine:
+            - Ask the user for the **Database Engine (Product name) and optionally version**. Supported database engines: {supported_db_engines}
+            - **Understand the difference between Database Engine and Dialect:**
+              - **Database Engine** is the product name (e.g., `alloydb`, `postgres`, `mysql`, `spanner`). This is what the user provides.
+              - **Dialect** is the underlying SQL dialect/protocol used by tools (e.g., `postgresql` for `alloydb`/`postgres`, `googlesql` for `spanner`). You MUST infer this dialect from the engine.
+            - Using the database engine provided, infer the dialect:
               - **alloydb** or **postgres** -> `postgresql`
               - **mysql** -> `mysql`
               - **spanner** -> `googlesql`
-            - Confirm db type provided is one of the supported types. If not, notify the user this database type is not supported yet and end the workflow.
+            - Confirm the database engine provided is one of the supported engines. If not, notify the user this database engine is not supported yet and end the workflow.
         
         2.  **Fetch Capabilities:**
-            - **Immediately after** receiving the Database Type (and Version if provided), call the `list_match_functions` tool.
-            - **Important:** Pass the **inferred database engine** (as defined in step 1) to the `db_engine` parameter of the tool.
+            - **Immediately after** receiving the Database Engine (and Version if provided), call the `list_match_functions` tool.
+            - **Important:** Pass the **inferred dialect** (as defined in step 1) to the `dialect` parameter of the tool.
             - If the tool returns an error (e.g., unsupported version), present the error to the user (which includes the list of supported versions) and end the workflow.
             - Otherwise, present the available match functions to the user, strictly including the function name, its Description, and an Example of when it should be used, using the information returned by the tool.
 
@@ -30,7 +30,7 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
               - **Column Name**
               - **Concept Type** (e.g., "City", "Product ID")
               - **Match Function** (Must be one of the function names retrieved in Step 2)
-              - **Engine Specific Parameters** (Ask for these if the chosen function and engine require them):
+              - **Dialect Specific Parameters** (Ask for these if the chosen function and dialect require them):
                 - For **Spanner (googlesql)** + `{trigram_match}`: Ask for **Column Tokens** column name.
                 - For **MySQL** + `{semantic_match}`: Ask for **Column Embedding** column name.
               - **Description** (optional): A description of the value search.
@@ -54,7 +54,7 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
             - Mapping for `generate_value_searches` input (JSON):
               - `column_tokens` (for Column Tokens)
               - `column_embedding` (for Column Embedding)
-            - **Important:** Pass the **inferred db_engine** (from step 1) and `db_version` to the tool.
+            - **Important:** Pass the **inferred dialect** (from step 1) and `db_version` to the tool.
             - Combine all generated Value Search configurations into a single JSON structure (ContextSet).
 
         6.  **Save Value Search:**
@@ -84,7 +84,7 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
         Start the workflow.
         """
     ).format(
-        supported_db_types=_SUPPORTED_DB_TYPE,
+        supported_db_engines=_SUPPORTED_DB_ENGINE,
         trigram_match=MatchFunction.TRIGRAM_STRING_MATCH.value,
         semantic_match=MatchFunction.SEMANTIC_SIMILARITY_MATCH.value,
     )

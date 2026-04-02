@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 
 def generate_value_searches(
     value_search_inputs_json: str,
-    db_engine: str,
+    dialect: str,
     db_version: str | None = None,
 ) -> str:
     """
@@ -20,7 +20,7 @@ def generate_value_searches(
             - concept_type (str)
             - match_function (str)
             - description (str, optional)
-        db_engine: The database engine (e.g., 'postgresql').
+        dialect: The database dialect (e.g., 'postgresql').
         db_version: The specific database version (optional).
 
     Returns:
@@ -47,7 +47,7 @@ def generate_value_searches(
 
         try:
             template_def = match_templates.get_match_template(
-                dialect=db_engine,
+                dialect=dialect,
                 function_name=match_function,
                 version=db_version,
             )

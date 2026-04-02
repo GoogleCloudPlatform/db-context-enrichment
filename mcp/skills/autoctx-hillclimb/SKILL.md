@@ -14,7 +14,7 @@ Follow these steps exactly in order:
 ### 1. Setup & Loop Identification
 
 1.  **Validation**: 
-    -   Check if `experiments/` directory and `state.md` exist. If missing, warn the user that the workspace might not be initialized (suggest running `init`).
+    -   Check if `experiments/` directory and `state.md` exist. If missing, warn the user that the workspace might not be initialized (suggest running `/autoctx:init`).
     -   Once an experiment is selected, verify it contains an `eval_reports/` folder. If missing, suggest running the Evaluation workflow first.
 2.  **Identify Experiment**:
     -   Read the local `state.md` to identify the active experiment.
@@ -67,7 +67,7 @@ Follow these steps exactly in order:
     - **Expected SQL**: `SELECT count(*) FROM users WHERE year = 2023`
     - **Actual SQL**: `SELECT count(*) FROM users` (Missing filter)
     - **Root Cause**: The LLM did not know about the `year` column or how to filter by year for this entity.
-    - **Proposed Mutation**: Add a `value_search` or `facet` for "Users by Year".
+    - **Proposed Mutation**: Add a facet for "Users by Year".
 
     ### Query 2: "Show me top selling products"
     - **Error Category**: `[OrderingError]`
@@ -115,7 +115,7 @@ Follow these steps exactly in order:
 1.  **Summarize Improvements**: Tell the user what was changed (e.g., added 2 facets, updated 1 template).
 2.  **Upload Instructions**:
     -   Provide the path to standard JSON (`improved_context_vN.json`).
-    -   Instruct the user to upload it to the GCP consol to test it.
+    -   **Generate Quick Link**: Read connection details from the workspace (e.g., `tools.yaml` or `eval_configs/db_config.yaml`) and call `generate_upload_url` to create a direct link to the database studio in the Google Cloud Console. Present this link to the user.
 3.  **Instruct Next Step Evaluation**:
     -   Instruct the user to run evaluation using the evaluating workflow on this new ContextSet to see if metrics improve. This will start Loop `N+1`.
 

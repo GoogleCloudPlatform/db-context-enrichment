@@ -114,8 +114,8 @@ Follow these steps exactly in order:
 
 1.  **Summarize Improvements**: Tell the user what was changed (e.g., added 2 facets, updated 1 template).
 2.  **Upload Instructions**:
-    -   Provide the path to standard JSON (`improved_context_vN.json`).
-    -   **Generate Quick Link**: Read connection details from the workspace (e.g., `tools.yaml` or `eval_configs/db_config.yaml`) and call `generate_upload_url` to create a direct link to the database studio in the Google Cloud Console. Present this link to the user.
+    -   Call `generate_upload_url` to get the direct link to the database studio (read project/instance details from `tools.yaml` or `db_config.yaml`).
+    -   Present the local file path to `improved_context_vN.json` and the generated console link together in a single clear message.
 3.  **Instruct Next Step Evaluation**:
     -   Instruct the user to run evaluation using the evaluating workflow on this new ContextSet to see if metrics improve. This will start Loop `N+1`.
 

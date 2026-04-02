@@ -25,7 +25,7 @@ def test_generate_value_searches_postgres_single():
 
     result_json = generate_value_searches(
         value_search_inputs_json=input_json,
-        db_engine="postgresql",
+        dialect="postgresql",
     )
 
     # Validate JSON structure and content
@@ -69,7 +69,7 @@ def test_generate_value_searches_batch_mixed():
     
     result_json = generate_value_searches(
         value_search_inputs_json=json.dumps(input_data),
-        db_engine="postgresql"
+        dialect="postgresql"
     )
 
     result = json.loads(result_json)
@@ -79,7 +79,7 @@ def test_generate_value_searches_batch_mixed():
 
 def test_generate_value_searches_invalid_dialect():
     """
-    Test invalid database engine.
+    Test invalid database dialect.
     Expected: Returns an error JSON.
     """
     input_data = [{
@@ -89,7 +89,7 @@ def test_generate_value_searches_invalid_dialect():
     
     result_json = generate_value_searches(
         value_search_inputs_json=json.dumps(input_data),
-        db_engine="invalid_db"
+        dialect="invalid_db"
     )
     
     result = json.loads(result_json)
@@ -109,7 +109,7 @@ def test_generate_value_searches_invalid_function():
 
     result_json = generate_value_searches(
         value_search_inputs_json=json.dumps(input_data),
-        db_engine="postgresql"
+        dialect="postgresql"
     )
     
     result = json.loads(result_json)
@@ -123,7 +123,7 @@ def test_generate_value_searches_malformed_json():
     """
     result_json = generate_value_searches(
         value_search_inputs_json="{ bad json ",
-        db_engine="postgresql"
+        dialect="postgresql"
     )
     
     # result_json should be '{"error": "Invalid JSON format: ..."}'
@@ -159,7 +159,7 @@ def test_generate_value_searches_specific_version_success():
     with patch.dict(match_templates._MATCH_CONFIG, fake_config, clear=True):
         result_json = generate_value_searches(
             value_search_inputs_json=json.dumps(input_data),
-            db_engine="postgresql",
+            dialect="postgresql",
             db_version="99.0"
         )
 
@@ -182,10 +182,35 @@ def test_generate_value_searches_specific_version_not_supported():
     # 12.0 is below the min_version (13) for postgres
     result_json = generate_value_searches(
         value_search_inputs_json=json.dumps(input_data),
-        db_engine="postgresql",
+        dialect="postgresql",
         db_version="12.0"
     )
     
     result = json.loads(result_json)
     assert "error" in result
     assert "Minimum required version: 13" in result["error"]
+
+
+def test_generate_value_searches_optional_parameters_googlesql():
+    """
+    Verify that optional parameters like 'column_tokens' are passed to formatting correctly.
+    """
+    input_data = [{
+        "table_name": "t", 
+        "column_name": "c", 
+        "concept_type": "C", 
+        "match_function": "TRIGRAM_STRING_MATCH",
+        "column_tokens": "c_tokens"
+    }]
+
+    result_json = generate_value_searches(
+        value_search_inputs_json=json.dumps(input_data),
+        dialect="googlesql"
+    )
+
+    context_set = ContextSet.model_validate_json(result_json)
+    assert len(context_set.value_searches) == 1
+    vs = context_set.value_searches[0]
+    
+    # Check that 'c_tokens' replaces '{column_tokens}' in the Spanner template
+    assert "c_tokens" in vs.query

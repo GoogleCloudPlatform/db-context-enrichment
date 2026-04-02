@@ -22,14 +22,14 @@ def test_get_available_functions_postgres():
     funcs = get_available_functions("postgresql")
     assert "EXACT_MATCH_STRINGS" in funcs
     assert "TRIGRAM_STRING_MATCH" in funcs
-    assert "SEMANTIC_SIMILARITY_GEMINI" in funcs
+    assert "SEMANTIC_SIMILARITY_MATCH" in funcs
 
 def test_get_match_template_invalid_dialect_real():
     """
     Ensure the Enum conversion raises the correct error for bad inputs.
     """
-    with pytest.raises(ValueError, match="Dialect 'mysql' not supported"):
-        get_match_template("mysql", "EXACT_MATCH_STRINGS")
+    with pytest.raises(ValueError, match="Dialect 'mysql1' not supported"):
+        get_match_template("mysql1", "EXACT_MATCH_STRINGS")
 
 @pytest.fixture
 def mock_config():

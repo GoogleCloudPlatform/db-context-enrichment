@@ -104,7 +104,10 @@ Follow these steps exactly in order:
         -   **Generalizability**: Prefer solutions that generalize well (e.g., use a `facet` for a column definition rather than a specific `template` for every query using that column).
 3.  **Apply Mutations**:
     -   **Copy the Base Context**: Copy the base ContextSet file to the new destination: `experiments/<experiment_name>/hillclimb/improved_context_vN.json`.
-    -   **Apply Mutations**: Call the specialized `mutate_context_set` MCP tool passing the **new** file path as `file_path` and mutations as `mutations_json` to mutate the context set.
+    -   **Generate New Items**: For any new templates or facets identified in the fixing strategy (for "add" operations):
+        -   Call the specialized generation tools (e.g., `generate_templates` or `generate_facets`) with the identified inputs.
+        -   Parse the returned JSON string (which represents a `ContextSet`) and extract the generated items from the `templates` or `facets` list.
+    -   **Apply Mutations**: Call the specialized `mutate_context_set` MCP tool passing the **new** file path as `file_path` and mutations as `mutations_json` to mutate the context set. Use the extracted item bodies as the `value` for `add` operations.
 3.  **Log in State Tracking**:
     -   Update `state.md` to include the output path of `improved_context_vN.json` for Loop `vN`.
 

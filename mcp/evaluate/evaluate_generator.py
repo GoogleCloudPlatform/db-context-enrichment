@@ -141,6 +141,7 @@ def _generate_llmrater_config() -> str:
     return textwrap.dedent("""\
         generator: gcp_vertex_gemini
         vertex_model: gemini-3.1-pro-preview
+        gcp_region: global
         base_prompt: ""
         execs_per_minute: 5
     """).strip()

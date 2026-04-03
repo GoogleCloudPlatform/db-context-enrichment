@@ -142,5 +142,5 @@ def _generate_llmrater_config() -> str:
         vertex_model: gemini-2.5-flash
         gcp_region: global
         base_prompt: ""
-        execs_per_minute: 5
+        execs_per_minute: 20
     """).strip()

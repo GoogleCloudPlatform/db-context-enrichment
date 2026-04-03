@@ -139,7 +139,7 @@ def _generate_llmrater_config() -> str:
     """Generates a dedicated LLM rater model configuration mimicking standard text models."""
     return textwrap.dedent("""\
         generator: gcp_vertex_gemini
-        vertex_model: gemini-3.1-pro-preview
+        vertex_model: gemini-2.5-flash
         gcp_region: global
         base_prompt: ""
         execs_per_minute: 5

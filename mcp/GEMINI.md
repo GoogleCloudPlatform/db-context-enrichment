@@ -80,7 +80,12 @@ The Autoctx workflows generate and interact with a structured workspace to maint
             - `gap_analysis_vN.md`: Analysis of missing contexts at iteration `N`.
             - `improved_context_vN.json`: The mutated ContextSet at iteration `N`.
 
+> [!NOTE]
+> The **golden evaluation dataset** is a required input for the evaluation workflow. It is not listed in the workspace structure above because it can reside anywhere in the file system and is referenced by its absolute path.
+
+
 ### Workspace Evolution Lifecycle
+
 The workspace folder structure populates progressively as you move through the workflows:
 
 1. **Post-Initialization (Init Workflow `/autoctx:init`)**:

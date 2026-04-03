@@ -92,7 +92,7 @@ def test_generate_evalbench_configs():
             toolbox_source_name="test-source"
         )
     
-    assert set(configs.keys()) == {"db_config.yaml", "model_config.yaml", "run_config.yaml"}
+    assert set(configs.keys()) == {"db_config.yaml", "model_config.yaml", "run_config.yaml", "llmrater_config.yaml"}
     
     expected_db_config = textwrap.dedent("""\
         db_type: postgres
@@ -143,8 +143,8 @@ def test_generate_evalbench_configs():
         ### Scorer Related Configs
         ############################################################
         scorers:
-          exact_match: null
-          executable_sql: null
+          llmrater:
+            model_config: experiments/test-exp/eval_configs/llmrater_config.yaml
 
         ############################################################
         ### Reporting Related Configs

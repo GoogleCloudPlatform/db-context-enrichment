@@ -49,6 +49,21 @@ The `ContextSet` object is a JSON structure that can contain both `templates` an
 
 When using the `attach_context_set` tool, the Gemini CLI should **not** read the content of the existing file directly before calling the tool. The `attach_context_set` tool is designed to handle all necessary file I/O operations (reading, merging, and writing) internally, making direct file reading by the CLI redundant and potentially inefficient for large files. Similarly, when using `save_context_set`, the CLI should pass the `ContextSet` JSON directly to the tool without prior file operations.
 
+## Workspace Folder Structure
+
+The Autoctx workflows generate and interact with a structured workspace to maintain state and trace progress across iterations (e.g., in the hill-climbing loop). 
+
+High-level directory layout:
+- `experiments/`: Root directory for all experiments.
+    - `<experiment_name>/`: Specific experiment directory.
+        - `tools.yaml`: Configuration file for the experiment (defines database connection and tools).
+        - `state.md`: High-level summary of the experiment state, current focus, and history.
+        - `gap_analysis_vN.md`: Analysis of missing contexts at iteration `N`.
+        - `context_set_vN.json`: The generated ContextSet at iteration `N`.
+        - `score_vN.json`: The evaluation score results for iteration `N`.
+
+Detailed specifications of files generated/used by specific workflows (like the exact format of `gap_analysis_vN.md` or scoring JSONs) are documented in the respective workflow's `SKILL.md` file to maintain modularity.
+
 ## MCP Toolbox Integrations
 
 ### Database Connection Formatting (`tools.yaml`)

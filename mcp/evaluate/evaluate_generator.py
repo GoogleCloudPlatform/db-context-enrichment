@@ -123,7 +123,6 @@ def _generate_run_config(experiment_name: str, dataset_path: str, dialect: str) 
         ### Scorer Related Configs
         ############################################################
         scorers:
-          set_match: null
           llmrater:
             model_config: experiments/{experiment_name}/eval_configs/llmrater_config.yaml
 

@@ -143,7 +143,6 @@ def test_generate_evalbench_configs():
         ### Scorer Related Configs
         ############################################################
         scorers:
-          set_match: null
           llmrater:
             model_config: experiments/test-exp/eval_configs/llmrater_config.yaml
 

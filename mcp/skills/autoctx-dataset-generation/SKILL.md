@@ -1,5 +1,5 @@
 ---
-name: skill-dataset-generation
+name: skill-autoctx-dataset-generation
 description: "Generate and expand datasets of Natural Language Questions (NLQ) and SQL pairs for evaluation."
 ---
 

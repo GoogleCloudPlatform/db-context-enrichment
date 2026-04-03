@@ -140,6 +140,13 @@ def test_generate_evalbench_configs():
         prompt_generator: 'NOOPGenerator'
 
         ############################################################
+        ### Evaluator Execution / Parallelism Tuning
+        ############################################################
+        runners:
+          eval_runners: 2
+          sqlgen_runners: 2
+
+        ############################################################
         ### Scorer Related Configs
         ############################################################
         scorers:

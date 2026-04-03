@@ -120,6 +120,13 @@ def _generate_run_config(experiment_name: str, dataset_path: str, dialect: str) 
         prompt_generator: 'NOOPGenerator'
 
         ############################################################
+        ### Evaluator Execution / Parallelism Tuning
+        ############################################################
+        runners:
+          eval_runners: 2
+          sqlgen_runners: 2
+
+        ############################################################
         ### Scorer Related Configs
         ############################################################
         scorers:

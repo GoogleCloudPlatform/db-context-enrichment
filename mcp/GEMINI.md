@@ -1,92 +1,110 @@
-# Project Overview
+# DB Context Enrichment
 
-This project is a FastMCP server for "DB Context Enrichment." It provides a guided workflow to generate structured, natural language-to-SQL templates and SQL facets from a user's database schema.
+This project is a FastMCP server for "DB Context Enrichment." It bridges the gap between Large Language Models (LLMs) and structured databases by generating and managing tailored context. This context helps the LLM understand database schema, business logic, and terminology, enabling more accurate Natural Language to SQL generation.
 
-**Crucially, this server depends on a running MCP Toolbox server to provide the underlying tools for database connection and schema fetching.**
+**Crucially, this server depends on a running MCP Toolbox server for database connection and schema fetching, and relies on Evalbench to execute evaluation workloads.**
+
 
 ## Core Concepts
 
-- **Templates**: An end-to-end mapping linking a natural language query (`question`) to a complete, runnable SQL query (`sql`). Templates teach the system overarching operational logic, table join infrastructures, and broad business rules.
-- **Facets**: Reusable, modular SQL fragments (like a `WHERE price > 100` clause or a specific `INNER JOIN`). Facets are not standalone queries; they act as dynamically injected filters linked to highly specific vocabulary or terminology (`intent`).
+A `ContextSet` is the central artifact, containing structured knowledge in three primary forms:
 
-## ContextSet Architecture
-
-### ContextSet Structure
-
-The `ContextSet` object is a JSON structure that can contain both `templates` and `facets`. It is the standardized output format for `generate_templates` and `generate_facets` tools, and the expected input for `save_context_set` and `attach_context_set`.
-
-**Example ContextSet JSON:**
-
-```json
-{
-  "templates": [
-    {
-      "nl_query": "How many accounts are there in total?",
-      "sql": "SELECT count(*) FROM account",
-      "intent": "How many accounts are there in total?",
-      "manifest": "How many accounts are there in total?",
-      "parameterized": {
-        "parameterized_sql": "SELECT count(*) FROM account",
-        "parameterized_intent": "How many accounts are there in total?"
+- **Templates**: End-to-end mappings linking a natural language query to a complete, runnable SQL query. They teach the system overarching operational logic, table join infrastructures, and broad business rules.
+    - *Generation Logic*: Derived from user-approved question-SQL pairs.
+    - *Example*:
+      ```json
+      {
+        "nl_query": "How many accounts are in London?",
+        "sql": "SELECT count(*) FROM account WHERE city = 'London'",
+        "intent": "How many accounts are in London?",
+        "manifest": "How many accounts are in a given city?",
+        "parameterized": {
+          "parameterized_sql": "SELECT count(*) FROM account WHERE city = $1",
+          "parameterized_intent": "How many accounts are in $1?"
+        }
       }
-    }
-  ],
-  "facets": [
-    {
-      "sql_snippet": "description LIKE '%luxury%' OR description LIKE '%premium%'",
-      "intent": "luxury product",
-      "manifest": "luxury product",
-      "parameterized": {
-        "parameterized_sql_snippet": "description LIKE '%luxury%' OR description LIKE '%premium%'",
-        "parameterized_intent": "luxury product"
+      ```
+
+- **Facets**: Reusable, modular SQL fragments (like a `WHERE` clause or specialized join). They are not standalone queries but dynamically injected filters linked to specific vocabulary or terminology.
+    - *Generation Logic*: Derived from user-approved intents and SQL snippets.
+    - *Example*:
+      ```json
+      {
+        "sql_snippet": "rating > 4.5",
+        "intent": "highly rated products (above 4.5)",
+        "manifest": "highly rated products (above a given number)",
+        "parameterized": {
+          "parameterized_sql_snippet": "rating > $1",
+          "parameterized_intent": "highly rated products (above $1)"
+        }
       }
-    }
-  ]
-}
-```
+      ```
 
-### ContextSet Management Tools
+- **Value Searches**: Specialized queries used when a value in the natural language query (e.g., "Lndn") does not perfectly match the stored value in the database ("London"). They employ mapping functions (like fuzzy trigram matching or semantic similarity) to find candidate values and their distance from the search term.
+    - *Generation Logic*: Generated based on table/column definitions and a chosen match function (e.g., `TRIGRAM_STRING_MATCH`).
+    - *Example* (Conceptual Fuzzy Match):
+      ```json
+      {
+        "concept_type": "City",
+        "query": "SELECT T.\"location\" AS value, 'users.location' AS columns, 'City' AS concept_type, fuzzy_distance(T.\"location\", $value) AS distance FROM \"users\" T WHERE fuzzy_match(T.\"location\", $value)",
+        "description": "Fuzzy match for city in location column"
+      }
 
-When using the `attach_context_set` tool, the Gemini CLI should **not** read the content of the existing file directly before calling the tool. The `attach_context_set` tool is designed to handle all necessary file I/O operations (reading, merging, and writing) internally, making direct file reading by the CLI redundant and potentially inefficient for large files. Similarly, when using `save_context_set`, the CLI should pass the `ContextSet` JSON directly to the tool without prior file operations.
+      ```
+
+## Key Workflows
+
+- **Manual Generation**: Targeted, human-driven creation of context. Implemented via MCP prompts for all 3 key context types: `/generate_targeted_templates`, `/generate_targeted_facets`, and `/generate_targeted_value_searches`.
+
+- **Autoctx**: Automated, iterative generation of context. It follows a loop (`/autoctx:init` -> `/autoctx:bootstrap` -> `/autoctx:eval` -> `/autoctx:hillclimb` -> `/autoctx:eval` ...) to progressively improve context quality based on evaluation scores.
+*Note: Bulk generation workflows are out of scope for pure context enrichment and should typically be ignored.*
+
 
 ## Workspace Folder Structure
 
-The Autoctx workflows generate and interact with a structured workspace to maintain state and trace progress across iterations (e.g., in the hill-climbing loop). 
+The Autoctx workflows generate and interact with a structured workspace to maintain state and trace progress across iterations.
 
-High-level directory layout:
-- `experiments/`: Root directory for all experiments.
+### Directory Layout
+- `tools.yaml`: Configuration file for the Toolbox MCP Server (defining database connections). Located in the current working directory.
+- `state.md`: High-level summary of the experiment state, active experiment, and run history. Located in the current working directory.
+- `experiments/`: Root directory for all experiments. Located in the current working directory.
     - `<experiment_name>/`: Specific experiment directory.
-        - `tools.yaml`: Configuration file for the experiment (defines database connection and tools).
-        - `state.md`: High-level summary of the experiment state, current focus, and history.
-        - `gap_analysis_vN.md`: Analysis of missing contexts at iteration `N`.
-        - `context_set_vN.json`: The generated ContextSet at iteration `N`.
-        - `score_vN.json`: The evaluation score results for iteration `N`.
+        - `bootstrap_context.json`: The baseline ContextSet generated by the Bootstrap workflow.
+        - `eval_configs/`: Directory containing Evalbench configurations.
+            - `run_config.yaml`: Main run configuration.
+            - `db_config.yaml`: Database connection mapping.
+            - `model_config.yaml`: Model and context configuration.
+        - `eval_reports/`: Directory containing evaluation outputs.
+            - `<job_id_folder>/`: Specific evaluation run results (containing `scores.csv`, `summary.csv`, etc.).
+        - `hillclimb/`: Directory containing hill-climbing iteration artifacts.
+            - `gap_analysis_vN.md`: Analysis of missing contexts at iteration `N`.
+            - `improved_context_vN.json`: The mutated ContextSet at iteration `N`.
 
-Detailed specifications of files generated/used by specific workflows (like the exact format of `gap_analysis_vN.md` or scoring JSONs) are documented in the respective workflow's `SKILL.md` file to maintain modularity.
+### Workspace Evolution Lifecycle
+The workspace folder structure populates progressively as you move through the workflows:
+
+1. **Post-Initialization (Init Workflow `/autoctx:init`)**:
+   - `tools.yaml`, `state.md`, and an empty `experiments/` directory appear in the CWD.
+
+2. **Post-Bootstrap (Bootstrap Workflow `/autoctx:bootstrap`)**:
+   - `experiments/<experiment_name>/bootstrap_context.json` is generated.
+
+3. **Post-Evaluation (Evaluation Workflow `/autoctx:eval`)**:
+   - `eval_configs/` and `eval_reports/` appear inside the experiment folder.
+
+4. **Post-Hill-Climbing (Hill-Climbing Workflow `/autoctx:hillclimb`)**:
+   - `hillclimb/` directory appears with `gap_analysis_vN.md` and `improved_context_vN.json`.
+   - `state.md` is updated with loop mappings.
+
+5. **The Iteration Loop (Repeating `/autoctx:eval` -> `/autoctx:hillclimb`)**:
+   - The process now enters a continuous improvement loop:
+     a. **Evaluate**: Run `/autoctx:eval` targeting the latest `improved_context_vN.json`. This generates a new evaluation folder in `eval_reports/`.
+     b. **Hill-Climb**: Run `/autoctx:hillclimb` to analyze the latest report. This generates `gap_analysis_v(N+1).md` and `improved_context_v(N+1).json`.
+   - `state.md` is updated at each step to track the lineage of contexts and scores.
+
+Detailed specifications for files used or generated by a workflow are kept within that specific workflow's `SKILL.md` file.
 
 ## MCP Toolbox Integrations
-
-### Database Connection Formatting (`tools.yaml`)
-
-The `generate_bulk_templates` workflow requires presenting a list of databases to the user in the following format:
-`Connection: <connection_name> | Instance: <instance_name> | DB: <database_name>`
-
-This information is derived from the `tools.yaml` file used by the MCP Toolbox server. Here's how the fields map from an example `tools.yaml`:
-
-```yaml
-kind: source
-# This is the <connection_name>
-name: eval-pg-alloydb-db
-...
-# This is the <instance_name>
-instance: <instance_id>
-# This is the <database_name>
-database: <database_name>
-```
-
--   **Connection**: The value for the `name` key.
--   **Instance**: The value of the `instance` key.
--   **DB**: The value of the `database` key.
 
 ### Toolbox Tool Usage for Schema Fetching
 
@@ -97,4 +115,12 @@ When using Toolbox tools to fetch a database schema, adhere to the following:
 
 ### SQL Validation Behavior
 
-During the SQL validation step, the Gemini CLI will execute SQL queries using the appropriate `execute-sql` tool. It will **only report success or failure** to the user. The full query results will **not** be displayed to the user but will be used internally by the Gemini CLI for self-correction in case of query failures.
+For SQL validation, the Gemini CLI will execute SQL queries using the appropriate `execute-sql` tool. **Only report success or failure** to the user. The full query results will **not** be displayed to the user but will be used internally by the Gemini CLI for self-correction in case of query failures.
+
+## ContextSet Management Tools
+
+> [!IMPORTANT]
+> `attach_context_set` and `save_context_set` are for the **targeted manual generation workflow only**.
+> For all other needs and workflows (including Autoctx), the `mutate_context_set` tool should be used. It is a more flexible tool that supports granular additions, updates, and deletions of ContextSet items without replacing the whole file.
+
+When using the `attach_context_set` tool, the Gemini CLI should **not** read the content of the existing file directly before calling the tool. The `attach_context_set` tool is designed to handle all necessary file I/O operations (reading, merging, and writing) internally, making direct file reading by the CLI redundant and potentially inefficient for large files. Similarly, when using `save_context_set`, the CLI should pass the `ContextSet` JSON directly to the tool without prior file operations.

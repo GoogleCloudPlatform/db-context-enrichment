@@ -29,11 +29,14 @@ def generate_evalbench_configs(
     db_config_yaml = generator.generate_db_config()
     model_config_yaml = generator.generate_model_config(context_set_id)
     run_config_yaml = _generate_run_config(experiment_name, dataset_path, generator.DIALECT)
+    
+    llmrater_config = _generate_llmrater_config()
 
     return {
         "db_config.yaml": db_config_yaml,
         "model_config.yaml": model_config_yaml,
-        "run_config.yaml": run_config_yaml
+        "run_config.yaml": run_config_yaml,
+        "llmrater_config.yaml": llmrater_config
     }
 
 
@@ -120,8 +123,9 @@ def _generate_run_config(experiment_name: str, dataset_path: str, dialect: str) 
         ### Scorer Related Configs
         ############################################################
         scorers:
-          exact_match: null
-          executable_sql: null
+          set_match: null
+          llmrater:
+            model_config: experiments/{experiment_name}/eval_configs/llmrater_config.yaml
 
         ############################################################
         ### Reporting Related Configs
@@ -129,4 +133,14 @@ def _generate_run_config(experiment_name: str, dataset_path: str, dialect: str) 
         reporting:
           csv:
             output_directory: 'experiments/{experiment_name}/eval_reports/'
+    """).strip()
+
+
+def _generate_llmrater_config() -> str:
+    """Generates a dedicated LLM rater model configuration mimicking standard text models."""
+    return textwrap.dedent("""\
+        generator: gcp_vertex_gemini
+        vertex_model: gemini-3.1-pro-preview
+        base_prompt: ""
+        execs_per_minute: 5
     """).strip()

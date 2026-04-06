@@ -120,6 +120,14 @@ def test_generate_evalbench_configs():
               agent_context_reference:
                 context_set_id: context-123
     """).strip()
+
+    expected_llmrater_config = textwrap.dedent("""\
+        generator: gcp_vertex_gemini
+        vertex_model: gemini-2.5-pro
+        gcp_region: global
+        base_prompt: ""
+        execs_per_minute: 20
+    """).strip()
     
     expected_run_config = textwrap.dedent("""\
         ############################################################
@@ -163,6 +171,7 @@ def test_generate_evalbench_configs():
     
     assert configs["db_config.yaml"] == expected_db_config
     assert configs["model_config.yaml"] == expected_model_config
+    assert configs["llmrater_config.yaml"] == expected_llmrater_config
     assert configs["run_config.yaml"] == expected_run_config
 
 

@@ -40,7 +40,7 @@ Follow these steps exactly in order:
 
 4. **Evalbench Run Integration:**
    - Trigger the `run_shell_command` natively to execute the evaluation from the ROOT of the workspace using the following exact command template:
-     `<skill_dir>/scripts/evalbench --experiment_config experiments/<experiment_name>/eval_configs/run_config.yaml`
+     `<skill_dir>/scripts/evalbench --experiment_config=experiments/<experiment_name>/eval_configs/run_config.yaml`
    - Check the command outputs to ensure the evaluation reports materialize in the respective `experiments/<experiment_name>/eval_reports/` directory.
 
 ## Output

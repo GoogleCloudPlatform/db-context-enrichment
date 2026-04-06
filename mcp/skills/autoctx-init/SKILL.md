@@ -30,7 +30,7 @@ Upon successful completion, the workspace must contain:
 
 Conclude by providing a succinct summary to the user:
 - State whether the workspace was initialized newly or if existing files were preserved.
-- Instruct the user to run `/mcp refresh` to apply any new database changes to the toolbox.
+- Instruct the user to run `/mcp reload` to apply any new database changes to the toolbox.
 - Inform them they are now ready to proceed to the next phase (e.g., the Bootstrap workflow).
 
 ---
@@ -56,7 +56,7 @@ When collecting information from the user, offer the option to use environment v
     - Cloud SQL MySQL
     - AlloyDB Postgres
     - Spanner
-2.  **Collect Information:** Request all **Required Information** based on the templates inside the `references/` folder.
+2.  **Collect Information:** Request all **Required Information** based on the templates inside the `references/` folder. Do NOT assume missing fields; ask the user for them explicitly.
 3.  **Generate Configuration:** Replace all placeholders with the user's provided values and generate the complete `tools.yaml` content. Save it to the current root directory.
 4.  **Validate:** After saving, validate the new connection using the toolbox script:
     `<skill_dir>/scripts/toolbox --tools-file tools.yaml invoke <data_source_name>-list-schemas`

@@ -84,13 +84,13 @@ Follow these steps exactly in order:
     - **Proposed Mutation**: None. Flag to user to fix the evaluation dataset.
     ```
 
-5.  **Save Report**: Write the report to `experiments/<experiment_name>/hillclimb/gap_analysis_vN.md`.
+5.  **Save Report**: You **MUST** physically write the report file to `experiments/<experiment_name>/hillclimb/gap_analysis_vN.md`. Do not merely output it in chat; it must exist on the file system.
 6.  **Log in State Tracking**:
     -   Update `state.md` to record the mapping for Loop `vN` (Base Context <-> Eval Report <-> Gap Analysis).
 7.  **Human-in-the-Loop Review**:
-    -   Present the saved Gap Analysis report to the user.
-    -   Ask the user if they want to make any corrections or edits to the file before proceeding to Phase 2 (Context Mutation).
-    -   Wait for user confirmation or apply requested changes to the report before starting Phase 2.
+    -   Inform the user that the Gap Analysis report has been successfully written to disk.
+    -   Ask the user if they want to review, make any corrections, or add manual feedback directly to the file before proceeding to Phase 2 (Context Mutation).
+    -   Wait for user confirmation before starting Phase 2.
 
 ---
 

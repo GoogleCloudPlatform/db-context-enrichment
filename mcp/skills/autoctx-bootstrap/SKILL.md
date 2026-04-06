@@ -20,7 +20,7 @@ Follow these steps exactly in order:
 1. **Condition Check & Schema Retrieval:**
    - You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`). A new dedicated subfolder will be created inside the `experiments/` directory using this name to hold the entire tuning lifecycle and prevent any surprises. Do not proceed until you have their confirmation.
    - Use the available Toolbox MCP tools configured in the active `tools.yaml` to fetch the schemas for the target database.
-   - If the schema is large, ask the user if they want to filter or focus on specific tables before fetching everything. Skip to Final Summary if the user cancels.
+   - Present the retrieved schema summary **structurally and cleanly** to the user. If the schema is large, ask the user if they want to filter or focus on specific schemas or tables.
 
 2. **Deduce Key Info (Core Execution):**
    - **Analyze** the retrieved schema to identify important concepts, relationships, or likely query patterns.

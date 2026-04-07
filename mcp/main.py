@@ -12,6 +12,7 @@ import os
 import json
 from bootstrap import bootstrap_generator
 from evaluate import evaluate_generator
+from evaluate import result_reader
 from dataset import dataset_generator
 from common import context_mutator
 
@@ -454,6 +455,19 @@ def mutate_context_set(
         return f"Successfully applied {len(mutations)} mutations to {file_path}"
     except Exception as e:
         return f"Error applying mutations: {str(e)}"
+
+
+@mcp.tool
+async def read_evaluation_result(run_folder_path: str) -> str:
+    """Reads evaluation results from a folder and produces a markdown summary.
+
+    Args:
+        run_folder_path: The absolute path to the evaluation run folder.
+
+    Returns:
+        A string in markdown format containing the summary and failure cases.
+    """
+    return result_reader.read_eval_results(run_folder_path)
 
 
 if __name__ == "__main__":

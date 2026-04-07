@@ -74,6 +74,8 @@ The Autoctx workflows generate and interact with a structured workspace to maint
             - `run_config.yaml`: Main run configuration.
             - `db_config.yaml`: Database connection mapping.
             - `model_config.yaml`: Model and context configuration.
+            - `llmrater_config.yaml`: LLM rater model configuration.
+            - `golden_queries.json`: Converted golden dataset in EvalBench format.
         - `eval_reports/`: Directory containing evaluation outputs.
             - `<job_id_folder>/`: Specific evaluation run results (containing `scores.csv`, `summary.csv`, etc.).
         - `hillclimb/`: Directory containing hill-climbing iteration artifacts.
@@ -81,7 +83,9 @@ The Autoctx workflows generate and interact with a structured workspace to maint
             - `improved_context_vN.json`: The mutated ContextSet at iteration `N`.
 
 > [!NOTE]
-> The **golden evaluation dataset** is a required input for the evaluation workflow. It is not listed in the workspace structure above because it can reside anywhere in the file system and is referenced by its absolute path.
+> The **simplified golden evaluation dataset** is the **user-facing external format** required as input for the evaluation workflow. It can reside anywhere in the file system. The tool automatically converts this user-facing format into the more complex **EvalBench internal format** and saves it as `golden_queries.json` inside `eval_configs/`.
+> 
+> See `skills/autoctx-evaluate/SKILL.md` for details on the simplified user-facing format.
 
 
 ### Workspace Evolution Lifecycle

@@ -83,16 +83,26 @@ def test_generate_evalbench_configs():
         password: test-password
     """).strip()
     
-    with patch("builtins.open", mock_open(read_data=mock_yaml)):
-        configs = generate_evalbench_configs(
-            experiment_name="test-exp",
-            dataset_path="/local/path/data.json",
-            context_set_id="context-123",
-            toolbox_config_path="/fake/tools.yaml",
-            toolbox_source_name="test-source"
-        )
+    with patch("builtins.open", mock_open(read_data=mock_yaml)) as m:
+        with patch("evaluate.evaluate_generator._convert_dataset", return_value='[{"mock": "data"}]'):
+            with patch("evaluate.evaluate_generator.os.makedirs") as mock_makedirs:
+                configs = generate_evalbench_configs(
+                    experiment_name="test-exp",
+                    dataset_path="/local/path/data.json",
+                    context_set_id="context-123",
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="test-source"
+                )
     
-    assert set(configs.keys()) == {"db_config.yaml", "model_config.yaml", "run_config.yaml", "llmrater_config.yaml"}
+    assert configs is None
+    mock_makedirs.assert_called_once_with("experiments/test-exp/eval_configs", exist_ok=True)
+    
+    # Verify all file writes
+    m.assert_any_call("experiments/test-exp/eval_configs/db_config.yaml", "w")
+    m.assert_any_call("experiments/test-exp/eval_configs/model_config.yaml", "w")
+    m.assert_any_call("experiments/test-exp/eval_configs/run_config.yaml", "w")
+    m.assert_any_call("experiments/test-exp/eval_configs/llmrater_config.yaml", "w")
+    m.assert_any_call("experiments/test-exp/eval_configs/golden_queries.json", "w")
     
     expected_db_config = textwrap.dedent("""\
         db_type: postgres
@@ -133,7 +143,7 @@ def test_generate_evalbench_configs():
         ############################################################
         ### Dataset / Eval Items
         ############################################################
-        dataset_config: /local/path/data.json
+        dataset_config: experiments/test-exp/eval_configs/golden_queries.json
         dataset_format: evalbench-standard-format
         database_configs:
          - experiments/test-exp/eval_configs/db_config.yaml
@@ -169,10 +179,12 @@ def test_generate_evalbench_configs():
             output_directory: 'experiments/test-exp/eval_reports/'
     """).strip()
     
-    assert configs["db_config.yaml"] == expected_db_config
-    assert configs["model_config.yaml"] == expected_model_config
-    assert configs["llmrater_config.yaml"] == expected_llmrater_config
-    assert configs["run_config.yaml"] == expected_run_config
+    # Verify content written
+    m().write.assert_any_call(expected_db_config)
+    m().write.assert_any_call(expected_model_config)
+    m().write.assert_any_call(expected_llmrater_config)
+    m().write.assert_any_call(expected_run_config)
+    m().write.assert_any_call('[{"mock": "data"}]')
 
 
 def test_generate_evalbench_configs_env_interpolation():
@@ -189,17 +201,21 @@ def test_generate_evalbench_configs_env_interpolation():
     """).strip()
     
     with patch.dict("os.environ", {"TEST_PROJECT": "env-project"}):
-        with patch("builtins.open", mock_open(read_data=mock_yaml)):
-            configs = generate_evalbench_configs(
-                experiment_name="test-exp",
-                dataset_path="/local/path/data.json",
-                context_set_id="context-123",
-                toolbox_config_path="/fake/tools.yaml",
-                toolbox_source_name="test-source"
-            )
+        with patch("builtins.open", mock_open(read_data=mock_yaml)) as m:
+            with patch("evaluate.evaluate_generator._convert_dataset", return_value='[{"mock": "data"}]'):
+                with patch("evaluate.evaluate_generator.os.makedirs"):
+                    configs = generate_evalbench_configs(
+                        experiment_name="test-exp",
+                        dataset_path="/local/path/data.json",
+                        context_set_id="context-123",
+                        toolbox_config_path="/fake/tools.yaml",
+                        toolbox_source_name="test-source"
+                    )
             
-    # assert the project was interpolated
-    assert "env-project" in configs["db_config.yaml"]
+    assert configs is None
+    # assert the project was interpolated in file write
+    calls = [call.args[0] for call in m().write.call_args_list]
+    assert any("env-project" in call for call in calls)
 
 
 def test_generate_evalbench_configs_env_fallback():
@@ -216,16 +232,21 @@ def test_generate_evalbench_configs_env_fallback():
     """).strip()
     
     with patch.dict("os.environ", {}):  # Ensure empty
-        with patch("builtins.open", mock_open(read_data=mock_yaml)):
-            configs = generate_evalbench_configs(
-                experiment_name="test-exp",
-                dataset_path="/local/path/data.json",
-                context_set_id="context-123",
-                toolbox_config_path="/fake/tools.yaml",
-                toolbox_source_name="test-source"
-            )
+        with patch("builtins.open", mock_open(read_data=mock_yaml)) as m:
+            with patch("evaluate.evaluate_generator._convert_dataset", return_value='[{"mock": "data"}]'):
+                with patch("evaluate.evaluate_generator.os.makedirs"):
+                    configs = generate_evalbench_configs(
+                        experiment_name="test-exp",
+                        dataset_path="/local/path/data.json",
+                        context_set_id="context-123",
+                        toolbox_config_path="/fake/tools.yaml",
+                        toolbox_source_name="test-source"
+                    )
             
-    assert "fallback-project" in configs["db_config.yaml"]
+    assert configs is None
+    # assert the project was fallbacked in file write
+    calls = [call.args[0] for call in m().write.call_args_list]
+    assert any("fallback-project" in call for call in calls)
 
 
 def test_generate_evalbench_configs_env_missing():
@@ -245,3 +266,76 @@ def test_generate_evalbench_configs_env_missing():
         with patch("builtins.open", mock_open(read_data=mock_yaml)):
             with pytest.raises(ValueError, match="Environment variable 'MISSING_PROJECT' not found and no default provided."):
                 generate_evalbench_configs("exp", "path", "ctx", "/fake/tools.yaml", "test-source")
+
+
+def test_convert_dataset():
+    from evaluate.evaluate_generator import _convert_dataset
+    
+    mock_dataset = textwrap.dedent("""\
+        [
+          {
+            "id": "eval_001",
+            "database": "my_db",
+            "nlq": "Count users",
+            "golden_sql": "SELECT COUNT(*) FROM users"
+          }
+        ]
+    """).strip()
+    
+    with patch("builtins.open", mock_open(read_data=mock_dataset)):
+        result_json = _convert_dataset("/fake/dataset.json", "postgres")
+        
+    data = json.loads(result_json)
+    assert len(data) == 1
+    assert data[0]["id"] == "eval_001"
+    assert data[0]["nl_prompt"] == "Count users"
+    assert data[0]["golden_sql"]["postgres"] == ["SELECT COUNT(*) FROM users"]
+    assert data[0]["query_type"] == "DQL"
+
+
+def test_convert_dataset_not_list():
+    from evaluate.evaluate_generator import _convert_dataset
+    
+    mock_dataset = '{"not": "a list"}'
+    
+    with patch("builtins.open", mock_open(read_data=mock_dataset)):
+        with pytest.raises(ValueError, match="Dataset must be a JSON list."):
+            _convert_dataset("/fake/dataset.json", "postgres")
+
+
+def test_convert_dataset_missing_keys():
+    from evaluate.evaluate_generator import _convert_dataset
+    
+    mock_dataset = textwrap.dedent("""\
+        [
+          {
+            "id": "eval_001",
+            "database": "my_db",
+            "nlq": "Count users"
+          }
+        ]
+    """).strip()
+    
+    with patch("builtins.open", mock_open(read_data=mock_dataset)):
+        with pytest.raises(ValueError, match="is missing required keys"):
+            _convert_dataset("/fake/dataset.json", "postgres")
+
+
+def test_convert_dataset_case_sensitive():
+    from evaluate.evaluate_generator import _convert_dataset
+    
+    # Rigid format requires exact keys. Uppercase should fail.
+    mock_dataset = textwrap.dedent("""\
+        [
+          {
+            "ID": "eval_001",
+            "database": "my_db",
+            "nlq": "Count users",
+            "golden_sql": "SELECT COUNT(*) FROM users"
+          }
+        ]
+    """).strip()
+    
+    with patch("builtins.open", mock_open(read_data=mock_dataset)):
+        with pytest.raises(ValueError, match="is missing required keys"):
+            _convert_dataset("/fake/dataset.json", "postgres")

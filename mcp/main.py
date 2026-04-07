@@ -159,22 +159,29 @@ def generate_evalbench_configs(
     toolbox_source_name: str
 ) -> str:
     """
-    Generates Evalbench-compatible YAML configuration dictionaries required for evaluations.
+    Generates Evalbench YAML configurations and converts the user-facing golden dataset to be compatible for evaluation, saving all files directly to disk.
+    
+    This tool writes the following files inside `experiments/<experiment_name>/eval_configs/`:
+    - `db_config.yaml`
+    - `model_config.yaml`
+    - `run_config.yaml`
+    - `llmrater_config.yaml`
+    - `golden_queries.json` (converted to EvalBench internal format)
 
     Args:
         experiment_name: The name of the target experiment folder.
-        dataset_path: The absolute path to the golden dataset file.
+        dataset_path: The absolute path to the golden dataset file in the simplified user-facing format (JSON list of objects with keys: "id", "database", "nlq", "golden_sql").
         context_set_id: The specific context_set_id inside the experiment.
         toolbox_config_path: The absolute path to the tools.yaml configuration file.
         toolbox_source_name: The name of the database source to use inside tools.yaml. The underlying source block must use a supported 'type' (cloud-sql-postgres, cloud-sql-mysql, spanner, alloydb-postgres).
 
     Returns:
-        A JSON string of a dictionary where the keys are file names ("db_config.yaml", "model_config.yaml", "run_config.yaml") and values are purely the clean YAML string contents.
+        A message indicating that the configuration files were successfully created.
     """
-    configs = evaluate_generator.generate_evalbench_configs(
+    evaluate_generator.generate_evalbench_configs(
         experiment_name, dataset_path, context_set_id, toolbox_config_path, toolbox_source_name
     )
-    return json.dumps(configs)
+    return f"Successfully generated all configs for evaluation in experiments/{experiment_name}/eval_configs/"
 
 
 @mcp.tool

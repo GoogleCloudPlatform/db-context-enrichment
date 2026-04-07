@@ -11,7 +11,26 @@ This skill guides the process of rigorously evaluating an existing ContextSet ag
 
 Before beginning the workflow, you explicitly require:
 - A `tools.yaml` file securely located in the workspace root directory containing the target database connection details.
-- A golden evaluation dataset (`golden_dataset_path`), formatted as an absolute system path (e.g., `/absolute/path/to/golden_dataset.json`).
+- A golden evaluation dataset (`golden_dataset_path`), formatted as an absolute system path. The file must be in the **simplified user-facing format**.
+
+  **Simplified User-Facing Dataset Format**:
+  A JSON list of objects, where each object must have the following keys:
+  - `id`: Unique string identifier (e.g., `eval_001`).
+  - `database`: Target database name.
+  - `nlq`: Natural language question.
+  - `golden_sql`: The correct reference SQL query.
+
+  Example:
+  ```json
+  [
+    {
+      "id": "eval_001",
+      "database": "my_db",
+      "nlq": "Count users",
+      "golden_sql": "SELECT COUNT(*) FROM users"
+    }
+  ]
+  ```
 - The `context_set_id` (the Data Agent's authored context configuration identifier, retrievable by the user directly from the GCP Database Studio console; e.g., `projects/<project_id>/locations/<region>/contextSets/<context_set_name>`).
 
 ## Workflow
@@ -34,9 +53,8 @@ Follow these steps exactly in order:
    - Use the `generate_evalbench_configs` MCP tool. This is the **only** way to generate Evalbench configs. Never invent configs from scratch.
    - If the tool fails, analyze the error and retry with corrected inputs. If it is an internal system error, STOP and inform the user.
    - Provide the selected `experiment_name`, `dataset_path`, `context_set_id`, absolute `toolbox_config_path` (e.g. workspace `tools.yaml`), and selected `toolbox_source_name`.
-   - The tool will output a JSON dict (keys are the config file names: `run_config.yaml`, `model_config.yaml`, `db_config.yaml`; values are the YAML config contents).
-   - Create an `eval_configs/` directory inside their chosen `experiments/<experiment_name>/` folder.
-   - For each dictionary entry, write the **value** string (file content) directly to the file specified by the **key** (filename) inside that new `eval_configs/` folder.
+   - The tool will automatically write all generated configuration files (including `golden_queries.json`) directly to the `eval_configs/` directory inside the chosen `experiments/<experiment_name>/` folder.
+   - You do not need to manually write or extract file contents. Verify that the files have materialized if needed.
 
 4. **Evalbench Run Integration:**
    - Trigger the `run_shell_command` natively to execute the evaluation from the ROOT of the workspace using the following exact command template:

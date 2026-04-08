@@ -7,6 +7,9 @@ description: Guides the agent to perform hill-climbing iterations to improve a C
 
 This skill guides the process of improving a ContextSet iteratively by analyzing evaluation failures (Gap Analysis) and applying automated structural refinements (Mutations).
 
+> [!IMPORTANT]
+> **Constraint**: In this workflow, you are ONLY allowed use context types `templates` and `facets`. Do not attempt to use other context types.
+
 ## Workflow
 
 Follow these steps exactly in order:
@@ -34,22 +37,14 @@ Follow these steps exactly in order:
 1.  **Validation**: 
     -   Determine the target evaluation run folder under `eval_reports/`. If multiple folders exist, find the most recent one by modified time. **Prefer the latest run by default**, but list other available runs as well (peeking into their `summary.csv` or `configs.csv` to show timestamps/metrics for visual context). Ask the user to confirm the selection.
     -   Verify that the selected `eval_reports/<job_id_folder>/` contains expected files (e.g., `scores.csv`, `summary.csv`). If missing or empty, STOP and inform the user.
-2.  **Read Evaluation Results**: Read the reports in `eval_reports/<job_id_folder>/`.
-3.  **Generate Gap Analysis Report**: Compare queries and results to identify specific errors for **all failed queries** (do not skip any). Categorize them using the following taxonomy:
-    -   `[EntityError]` - Wrong table or entity.
-    -   `[ValueLinkingError]` - Wrong literal value.
-    -   `[ColumnLinkingError]` - Wrong column chosen.
-    -   `[OrderingError]` - Sorting issue.
-    -   `[InstructionError]` - Constraint failure.
-    -   `[IntentError]` - Wrong interpretation of request.
-    -   `[DataTypesError]` - Cast/typing issue.
-    -   `[CountingError]` - Count/Aggregation logic flawed.
-    -   `[FilterError]` - Wrong logical operator or filter.
-    -   `[GoldenDataError]` - Hard errors in expected SQL of the golden dataset *only* (e.g., syntax errors, invalid tables/columns, wrong dialect). Do NOT use for errors in generated SQL.
-    -   `[OtherError]` - Miscellaneous.
+2.  **Read Evaluation Results**: Use the `read_evaluation_result` MCP tool passing the path to `eval_reports/<job_id_folder>/`.
+3.  **Generate Gap Analysis Report (Batched)**:
+    -   The tool returns a summary and a batch of failure cases (default limit 10).
+    -   Iterate through the failure cases by calling the tool with increasing `offset` (0, 10, 20, ...) until all failed queries are analyzed.
+    -   **First Batch (offset=0)**: Initialize the report file with the `# Gap Analysis Report - vN` header and `## Summary` section, followed by the analysis of the first batch under `## Failed Queries Detail`.
+    -   **Subsequent Batches**: Call the tool with the next offset, analyze the new failures, and **append** them to the `## Failed Queries Detail` section.
 
-4.  **Formalized Report Format & Example**:
-    Write the report using the following structure:
+    Use the following structure for the report:
 
     ```markdown
     # Gap Analysis Report - vN
@@ -83,11 +78,10 @@ Follow these steps exactly in order:
     - **Root Cause**: Invalid syntax in golden dataset.
     - **Proposed Mutation**: None. Flag to user to fix the evaluation dataset.
     ```
-
-5.  **Save Report**: You **MUST** physically write the report file to `experiments/<experiment_name>/hillclimb/gap_analysis_vN.md`. Do not merely output it in chat; it must exist on the file system.
-6.  **Log in State Tracking**:
+4.  **Save Report**: You **MUST** physically write the report file to `experiments/<experiment_name>/hillclimb/gap_analysis_vN.md`. If you are processing in batches, ensure you append to this file until all failed queries are documented. Do not merely output it in chat; it must exist on the file system.
+5.  **Log in State Tracking**:
     -   Update `state.md` to record the mapping for Loop `vN` (Base Context <-> Eval Report <-> Gap Analysis).
-7.  **Human-in-the-Loop Review**:
+6.  **Human-in-the-Loop Review**:
     -   Inform the user that the Gap Analysis report has been successfully written to disk.
     -   Ask the user if they want to review, make any corrections, or add manual feedback directly to the file before proceeding to Phase 2 (Context Mutation).
     -   Wait for user confirmation before starting Phase 2.
@@ -102,6 +96,7 @@ Follow these steps exactly in order:
     -   **Fixing Strategy Guidelines**:
         -   **Conciseness**: Try to use *less context* to cover *more scenarios*. Avoid adding redundant or hyper-specific templates for every single edge case.
         -   **Generalizability**: Prefer solutions that generalize well (e.g., use a `facet` for a column definition rather than a specific `template` for every query using that column).
+        -   **Constraint**: Limit mutations strictly to `template` and `facet` types only. Do not attempt to generate or apply other types of mutations.
 3.  **Apply Mutations**:
     -   **Copy the Base Context**: Copy the base ContextSet file to the new destination: `experiments/<experiment_name>/hillclimb/improved_context_vN.json`.
     -   **Generate New Items**: For any new templates or facets identified in the fixing strategy (for "add" operations):

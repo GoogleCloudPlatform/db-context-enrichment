@@ -109,7 +109,6 @@ def read_eval_results(run_folder_path: str, offset: int = 0) -> str:
         failures_md += f"## Case ID: {fail_id} (Score: {fail['score']})\n\n"
         failures_md += f"**Prompt**:\n{eval_info['prompt']}\n\n"
         failures_md += f"**Golden SQL**:\n```sql\n{eval_info['golden_sql']}\n```\n\n"
-        failures_md += f"**Additional Output**:\n```\n{eval_info.get('other', 'N/A')}\n```\n\n"
         
         # Check if there was a generator error
         gen_error = eval_info.get("sql_generator_error")
@@ -118,6 +117,7 @@ def read_eval_results(run_folder_path: str, offset: int = 0) -> str:
         else:
             gen_sql = fail.get("generated_sql") or eval_info.get("generated_sql") or "N/A"
             failures_md += f"**Generated SQL**:\n```sql\n{gen_sql}\n```\n\n"        
+            failures_md += f"**Additional Output**:\n```\n{eval_info.get('other', 'N/A')}\n```\n\n"
             failures_md += f"**Evaluation Details**:\n{fail['error_analysis']}\n\n"
             
         failures_md += "---\n\n"

@@ -37,12 +37,12 @@ Follow these steps exactly in order:
 1.  **Validation**: 
     -   Determine the target evaluation run folder under `eval_reports/`. If multiple folders exist, find the most recent one by modified time. **Prefer the latest run by default**, but list other available runs as well (peeking into their `summary.csv` or `configs.csv` to show timestamps/metrics for visual context). Ask the user to confirm the selection.
     -   Verify that the selected `eval_reports/<job_id_folder>/` contains expected files (e.g., `scores.csv`, `summary.csv`). If missing or empty, STOP and inform the user.
-2.  **Read Evaluation Results**: Use the `read_evaluation_result` MCP tool passing the path to `eval_reports/<job_id_folder>/` to get a summary of the experiment result and detailed failure cases.
-3.  **Generate Gap Analysis Report (Batched if necessary)**: Based on the output from the tool, write a gap analysis report for **all failed queries** (do not skip any). Use the following approach for batching if needed:
-    -   **Small Reports (<= 20 failures)**: Process all failures in a single operation.
-    -   **Large Reports (> 20 failures)**: Process failure cases in batches of 10~20.
-        -   **First Batch**: Initialize the report file with the `# Gap Analysis Report - vN` header and `## Summary` section, followed by the analysis of the first batch under `## Failed Queries Detail`.
-        -   **Subsequent Batches**: Read the existing report file, analyze the next batch of failures, and **append** them to the `## Failed Queries Detail` section.
+2.  **Read Evaluation Results**: Use the `read_evaluation_result` MCP tool passing the path to `eval_reports/<job_id_folder>/`.
+3.  **Generate Gap Analysis Report (Batched)**:
+    -   The tool returns a summary and a batch of failure cases (default limit 10).
+    -   Iterate through the failure cases by calling the tool with increasing `offset` (0, 10, 20, ...) until all failed queries are analyzed.
+    -   **First Batch (offset=0)**: Initialize the report file with the `# Gap Analysis Report - vN` header and `## Summary` section, followed by the analysis of the first batch under `## Failed Queries Detail`.
+    -   **Subsequent Batches**: Call the tool with the next offset, analyze the new failures, and **append** them to the `## Failed Queries Detail` section.
 
     Use the following structure for the report:
 
@@ -78,11 +78,10 @@ Follow these steps exactly in order:
     - **Root Cause**: Invalid syntax in golden dataset.
     - **Proposed Mutation**: None. Flag to user to fix the evaluation dataset.
     ```
-4.  **Verify Analysis**: Verify that all failed queries listed in the tool output have been analyzed in the report. If batching was analyzed.
-5.  **Save Report**: You **MUST** physically write the report file to `experiments/<experiment_name>/hillclimb/gap_analysis_vN.md`. If you are processing in batches, ensure you append to this file until all failed queries are documented. Do not merely output it in chat; it must exist on the file system.
-6.  **Log in State Tracking**:
+4.  **Save Report**: You **MUST** physically write the report file to `experiments/<experiment_name>/hillclimb/gap_analysis_vN.md`. If you are processing in batches, ensure you append to this file until all failed queries are documented. Do not merely output it in chat; it must exist on the file system.
+5.  **Log in State Tracking**:
     -   Update `state.md` to record the mapping for Loop `vN` (Base Context <-> Eval Report <-> Gap Analysis).
-7.  **Human-in-the-Loop Review**:
+6.  **Human-in-the-Loop Review**:
     -   Inform the user that the Gap Analysis report has been successfully written to disk.
     -   Ask the user if they want to review, make any corrections, or add manual feedback directly to the file before proceeding to Phase 2 (Context Mutation).
     -   Wait for user confirmation before starting Phase 2.

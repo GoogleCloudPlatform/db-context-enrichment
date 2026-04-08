@@ -21,9 +21,10 @@ Follow these steps exactly in order:
    - You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`). A new dedicated subfolder will be created inside the `experiments/` directory using this name to hold the entire tuning lifecycle and prevent any surprises. Do not proceed until you have their confirmation.
    - Use the available Toolbox MCP tools configured in the active `tools.yaml` to fetch the schemas for the target database.
    - Present the retrieved schema summary **structurally and cleanly** to the user. If the schema is large, ask the user if they want to filter or focus on specific schemas or tables.
+   - **Source Enrichment**: Prompt the user for any existing **Design Docs** or **Application Code** they wish to provide to enrich the context generation.
 
 2. **Deduce Key Info (Core Execution):**
-   - **Analyze** the retrieved schema to identify important concepts, relationships, or likely query patterns.
+   - Perform a **deep analysis** of the retrieved **schema and any provided documentation or code** to identify important concepts, relationships, or likely query patterns.
    - **Templates**: Deduce key information for a set of query templates. For each, you need the natural language question (`question`), the corresponding `sql`, and the overall `intent`.
    - **Facets**: Deduce key information for a set of SQL facets (reusable filters, conditions, expressions). For each, you need the `sql_snippet` and the `intent`.
    - *Review Check:* Briefly display the deduced key info (templates and facets) to the user for approval or modifications before proceeding.

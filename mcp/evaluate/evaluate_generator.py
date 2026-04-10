@@ -149,7 +149,7 @@ def _generate_run_config(experiment_name: str, dialect: str) -> str:
         ############################################################
         runners:
           eval_runners: 2
-          sqlgen_runners: 2
+          sqlgen_runners: 20
 
         ############################################################
         ### Scorer Related Configs

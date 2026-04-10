@@ -5,6 +5,7 @@ from google import genai
 from google.genai import types
 from google.genai.types import HttpOptions
 import json
+from common import config
 
 
 class QuestionSQLPair(BaseModel):
@@ -67,7 +68,7 @@ async def generate_sql_pairs(
     client = genai.Client()
     try:
         response = await client.aio.models.generate_content(
-            model="gemini-2.5-pro",
+            model=config.get_model_name(),
             contents=prompt,
             config={
                 "response_mime_type": "application/json",

@@ -161,8 +161,8 @@ def test_generate_evalbench_configs():
         ### Evaluator Execution / Parallelism Tuning
         ############################################################
         runners:
-          eval_runners: 2
-          sqlgen_runners: 2
+          eval_runners: 4
+          sqlgen_runners: 20
 
         ############################################################
         ### Scorer Related Configs

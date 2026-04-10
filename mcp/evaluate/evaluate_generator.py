@@ -4,6 +4,7 @@ import re
 import textwrap
 import yaml
 from typing import Dict, Any
+from common import config
 
 from .db_generators.base import BaseDBConfigGenerator
 from .db_generators.alloydb import AlloyDBConfigGenerator
@@ -147,8 +148,8 @@ def _generate_run_config(experiment_name: str, dialect: str) -> str:
         ### Evaluator Execution / Parallelism Tuning
         ############################################################
         runners:
-          eval_runners: 2
-          sqlgen_runners: 2
+          eval_runners: 4
+          sqlgen_runners: 20
 
         ############################################################
         ### Scorer Related Configs
@@ -168,9 +169,9 @@ def _generate_run_config(experiment_name: str, dialect: str) -> str:
 
 def _generate_llmrater_config() -> str:
     """Generates a dedicated LLM rater model configuration mimicking standard text models."""
-    return textwrap.dedent("""\
+    return textwrap.dedent(f"""\
         generator: gcp_vertex_gemini
-        vertex_model: gemini-2.5-pro
+        vertex_model: {config.get_model_name()}
         gcp_region: global
         base_prompt: ""
         execs_per_minute: 20

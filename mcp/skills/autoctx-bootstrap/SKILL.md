@@ -40,9 +40,14 @@ Follow these steps exactly in order:
 Upon successful completion, the workspace must contain:
 - A generated `.json` file (`bootstrap_context.json`) representing the baseline `ContextSet`, stored successfully at the requested `output_file_path`.
 
-## Final Summary & Next Steps
+## Upload Advice & Next Steps
 
 Conclude by providing a succinct summary to the user:
-- Confirm that the bootstrap context file has been successfully generated and saved.
-- Mention the final file path.
-- Suggest actionable next steps (e.g., triggering a context offline evaluation or moving to another refinement workflow).
+1. **Summarize Results**:
+   - Confirm that the bootstrap context file has been successfully generated and saved.
+   - Mention the final file path.
+2. **Upload Instructions**:
+   - Call `generate_upload_url` to get the direct link to the database studio (read project/instance details from `tools.yaml`).
+   - Present the local file path to `bootstrap_context.json` and the generated console link together in a single clear message.
+3. **Instruct Next Step Evaluation**:
+   - Instruct the user to upload the file to Database Studio and then run evaluation using the evaluating workflow on this new ContextSet to establish a baseline.

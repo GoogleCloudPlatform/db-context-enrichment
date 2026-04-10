@@ -39,13 +39,14 @@ Conclude by providing a succinct summary to the user:
 
 This section contains standalone instructions for managing the `tools.yaml` file for the GenAI Toolbox. You can execute these if the user explicitly asks to add or list database connections.
 
-## Environment Variable Support
+## Credentials and Environment Variables
 
-The `tools.yaml` file supports environment variable substitution using the `${VARIABLE_NAME}` syntax. This is recommended for sensitive information such as database users and passwords.
+The `tools.yaml` file supports environment variable substitution using the `${VARIABLE_NAME}` syntax. 
 
-When collecting information from the user, offer the option to use environment variables for sensitive fields. For example:
--   Instead of a hardcoded password, the user can provide `${DB_PASSWORD}`.
--   Ensure the user understands they must set the corresponding environment variable in their shell or environment before running the tools.
+When collecting information from the user:
+1. **Recommend ADC for IAM Auth:** For Google Cloud databases (Postgres, MySQL, AlloyDB), explain that they can leave `user` and `password` empty to use Application Default Credentials (ADC) and IAM Authentication. This is the most secure approach.
+2. **Offer Environment Variables for Passwords:** If they prefer to use standard password authentication, strongly recommend using environment variables (e.g., `${DB_PWD}`) instead of hardcoding sensitive values in the file.
+3. **Explain Variable Setup:** Ensure the user understands they must set the corresponding environment variable in their shell before running the tools if they choose to use them.
 
 ## Primary Workflows
 

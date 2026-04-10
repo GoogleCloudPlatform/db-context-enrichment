@@ -14,7 +14,7 @@ class PostgresConfigGenerator(BaseDBConfigGenerator):
     SOURCE_TYPE = "cloud-sql-postgres"
     DIALECT = "postgres"
     REQUIRED_FIELDS = BaseDBConfigGenerator.REQUIRED_FIELDS | {
-        "project", "region", "instance", "database", "user", "password"
+        "project", "region", "instance", "database"
     }
     
     def __init__(self, params: Dict[str, Any]):
@@ -36,9 +36,11 @@ class PostgresConfigGenerator(BaseDBConfigGenerator):
             "database_name": self.database,
             "database_path": db_path,
             "max_executions_per_minute": 180,
-            "user_name": self.user,
-            "password": self.password,
         }
+        if self.user:
+            db_config["user_name"] = self.user
+        if self.password:
+            db_config["password"] = self.password
         return yaml.safe_dump(db_config, sort_keys=False, default_flow_style=False).strip()
 
     def build_datasource_reference(self, context_set_id: str) -> gda.DatasourceReferences:

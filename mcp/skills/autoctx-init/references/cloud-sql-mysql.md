@@ -6,8 +6,8 @@
 - Region
 - Instance Name
 - Database Name
-- Database User
-- Database Password
+- Database User (Optional, omit for ADC / IAM Auth)
+- Database Password (Optional, omit for ADC / IAM Auth)
 
 **Template:**
 
@@ -19,8 +19,8 @@ project: <project_id>
 region: <region>
 instance: <instance_name>
 database: <database_name>
-user: <user>
-password: <password>
+# user: <user>         # Optional (Omit for ADC / IAM Auth)
+# password: <password> # Optional (Omit for ADC / IAM Auth)
 ---
 kind: tool
 name: <data_source_name>-list-schemas
@@ -34,3 +34,7 @@ type: mysql-execute-sql
 source: <data_source_name>
 description: Use this tool to execute SQL statements against the <data_source_name> database.
 ```
+
+> [!NOTE]
+> If `user` and `password` are omitted, the system will attempt to use Application Default Credentials (ADC) and IAM Authentication to connect to the database.
+

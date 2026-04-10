@@ -56,3 +56,25 @@ def test_generate_model_config(mock_params):
             }
         }
     }
+
+def test_generate_db_config_no_credentials():
+    params = {
+        "project": "test-project",
+        "region": "us-west1",
+        "instance": "test-instance",
+        "database": "test-db"
+    }
+    gen = PostgresConfigGenerator(params)
+    db_config_yaml = gen.generate_db_config()
+    
+    config = yaml.safe_load(db_config_yaml)
+    assert config == {
+        "db_type": "postgres",
+        "dialect": "postgres",
+        "database_name": "test-db",
+        "database_path": "test-project:us-west1:test-instance",
+        "max_executions_per_minute": 180,
+    }
+    assert "user_name" not in config
+    assert "password" not in config
+

@@ -58,3 +58,27 @@ def test_generate_model_config(mock_params):
             }
         }
     }
+
+def test_generate_db_config_no_credentials():
+    params = {
+        "project": "test-project",
+        "region": "us-west1",
+        "cluster": "test-cluster",
+        "instance": "test-instance",
+        "database": "test-db"
+    }
+    gen = AlloyDBConfigGenerator(params)
+    db_config_yaml = gen.generate_db_config()
+    
+    config = yaml.safe_load(db_config_yaml)
+    assert config == {
+        "db_type": "alloydb",
+        "dialect": "postgres",
+        "database_name": "test-db",
+        "database_path": "projects/test-project/locations/us-west1/clusters/test-cluster/instances/test-instance",
+        "max_executions_per_minute": 180,
+        "nl_config": ""
+    }
+    assert "user_name" not in config
+    assert "password" not in config
+

@@ -52,12 +52,11 @@ A `ContextSet` is the central artifact, containing structured knowledge in three
 
       ```
 
+
 ## Key Workflows
 
 - **Manual Generation**: Targeted, human-driven creation of context. Implemented via MCP prompts for all 3 key context types: `/generate_targeted_templates`, `/generate_targeted_facets`, and `/generate_targeted_value_searches`.
-
 - **Autoctx**: Automated, iterative generation of context. It follows a loop (`/autoctx:init` -> `/autoctx:bootstrap` -> `/autoctx:eval` -> `/autoctx:hillclimb` -> `/autoctx:eval` ...) to progressively improve context quality based on evaluation scores.
-*Note: Bulk generation workflows are out of scope for pure context enrichment and should typically be ignored.*
 
 
 ## Workspace Folder Structure
@@ -125,6 +124,7 @@ When using Toolbox tools to fetch a database schema, adhere to the following:
 ### SQL Validation Behavior
 
 For SQL validation, the Gemini CLI will execute SQL queries using the appropriate `execute-sql` tool. **Only report success or failure** to the user. The full query results will **not** be displayed to the user but will be used internally by the Gemini CLI for self-correction in case of query failures.
+
 
 ## ContextSet Management Tools
 

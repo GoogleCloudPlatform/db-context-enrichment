@@ -1,7 +1,7 @@
 from fastmcp import FastMCP
 from typing import List
 import textwrap
-from template import question_generator, template_generator
+from template import template_generator
 from facet import facet_generator
 from value_search import generator as vi_generator
 from value_search import match_templates
@@ -18,34 +18,6 @@ from common import context_mutator
 
 
 mcp = FastMCP("DB Context Enrichment MCP")
-
-
-@mcp.tool
-async def generate_sql_pairs(
-    db_schema: str,
-    context: str | None = None,
-    table_names: List[str] | None = None,
-    sql_dialect: str | None = None,
-) -> str:
-    """
-    Generates a list of question/SQL pairs based on a database schema.
-
-    Args:
-        db_schema: A string containing the database schema.
-        context: Optional user feedback or context to guide generation.
-        table_names: Optional list of table names to focus on. If the user
-          mentions all tables, ignore this field. The default behavior is to use
-          all tables for the pair generation.
-        sql_dialect: Optional name of the database engine for SQL dialect.
-
-    Returns:
-        A JSON string representing a list of dictionaries, where each dictionary
-        has a "question" and a "sql" key.
-        Example: '[{"question": "...", "sql": "..."}]'
-    """
-    return await question_generator.generate_sql_pairs(
-        db_schema, context, table_names, sql_dialect
-    )
 
 
 @mcp.tool
@@ -373,12 +345,6 @@ def generate_upload_url(
             return "Error: Missing instance_id, database_id, or project_id for spanner."
     else:
         return "Error: Invalid db_type. Must be one of 'alloydb', 'cloudsql', or 'spanner'."
-
-
-@mcp.prompt
-def generate_bulk_templates() -> str:
-    """Initiates a guided workflow to automatically generate templates based on the database schema."""
-    return prompts.GENERATE_BULK_TEMPLATES_PROMPT
 
 
 @mcp.prompt

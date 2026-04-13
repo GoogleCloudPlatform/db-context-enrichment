@@ -458,17 +458,18 @@ def mutate_context_set(
 
 
 @mcp.tool
-async def read_evaluation_result(run_folder_path: str, offset: int = 0) -> str:
+async def read_evaluation_result(run_folder_path: str, offset: int = 0, batch_size: int = 10) -> str:
     """Reads evaluation results from a folder and produces a markdown summary.
 
     Args:
         run_folder_path: The absolute path to the evaluation run result folder, which ends with the eval run job id.
-        offset: Offset to start reading failure cases from.
+        offset: Offset to start reading failure cases from (default: 0).
+        batch_size: Number of failure cases to show in the report (default: 10).
 
     Returns:
         A string in markdown format containing the summary and failure cases.
     """
-    return result_reader.read_eval_results(run_folder_path, offset)
+    return result_reader.read_eval_results(run_folder_path, offset, batch_size)
 
 
 if __name__ == "__main__":

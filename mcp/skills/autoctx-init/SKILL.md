@@ -41,7 +41,7 @@ This section contains standalone instructions for managing the `tools.yaml` file
 
 ## Credentials
 
-For Google Cloud databases (Postgres, MySQL, AlloyDB), the system uses Application Default Credentials (ADC) and IAM Authentication. Providing a user and password is not supported.
+For Google Cloud databases, the system uses Application Default Credentials (ADC) and IAM Authentication. Providing a user and password is not supported.
 
 When collecting information from the user, inform the user that only Application Default Credentials (ADC) are supported for authentication. They do not need to provide a username or password.
 

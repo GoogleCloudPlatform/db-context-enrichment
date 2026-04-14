@@ -39,14 +39,19 @@ Conclude by providing a succinct summary to the user:
 
 This section contains standalone instructions for managing the `tools.yaml` file for the GenAI Toolbox. You can execute these if the user explicitly asks to add or list database connections.
 
-## Credentials and Environment Variables
+## Credentials
 
-The `tools.yaml` file supports environment variable substitution using the `${VARIABLE_NAME}` syntax. 
+For Google Cloud databases, the system uses Application Default Credentials (ADC) and IAM Authentication. Providing a user and password is not supported.
 
-When collecting information from the user:
-1. **Recommend ADC for IAM Auth:** For Google Cloud databases (Postgres, MySQL, AlloyDB), explain that they can leave `user` and `password` empty to use Application Default Credentials (ADC) and IAM Authentication. This is the most secure approach.
-2. **Offer Environment Variables for Passwords:** If they prefer to use standard password authentication, strongly recommend using environment variables (e.g., `${DB_PWD}`) instead of hardcoding sensitive values in the file.
-3. **Explain Variable Setup:** Ensure the user understands they must set the corresponding environment variable in their shell before running the tools if they choose to use them.
+When collecting information from the user, inform the user that only Application Default Credentials (ADC) are supported for authentication. They do not need to provide a username or password.
+
+**Sample Message:**
+> "I'll help you configure the database connection in `tools.yaml`. Note that the system only supports Application Default Credentials (ADC) for authentication, so you don't need to provide a username or password. Please ensure that the IAM account you are using has the required permissions to access the database.
+> 
+> Could you please provide the following details:
+> - Google Cloud Project ID:
+> - Region:
+> ... (other required fields based on database type)"
 
 ## Primary Workflows
 
@@ -60,7 +65,7 @@ When collecting information from the user:
 2.  **Collect Information:** Request all **Required Information** based on the templates inside the `references/` folder. Do NOT assume missing fields; ask the user for them explicitly.
 3.  **Generate Configuration:** Replace all placeholders with the user's provided values and generate the complete `tools.yaml` content. Save it to the current root directory.
 4.  **Validate:** After saving, validate the new connection using the toolbox script:
-    `<skill_dir>/scripts/toolbox --tools-file tools.yaml invoke <data_source_name>-list-schemas`
+    `<skill_dir>/scripts/toolbox --config tools.yaml invoke <data_source_name>-list-schemas`
 
 ### 2. Add a Database to an Existing `tools.yaml`
 
@@ -70,7 +75,7 @@ When collecting information from the user:
 4.  **Generate and Append:** Generate the YAML snippets for the new `sources` and `tools` sections. Append these new entries to the respective sections in the existing file content.
 5.  **Save Configuration:** Save the updated content back to the `tools.yaml` file.
 6.  **Validate:** Validate only the newly added connection:
-    `<skill_dir>/scripts/toolbox --tools-file tools.yaml invoke <data_source_name>-list-schemas`
+    `<skill_dir>/scripts/toolbox --config tools.yaml invoke <data_source_name>-list-schemas`
 
 ### 3. List Existing Database Connections
 
@@ -80,7 +85,7 @@ When collecting information from the user:
 ## Validation
 
 To verify that a specific database connection is configured correctly at any time, run the validation script with the target data source name:
-`<skill_dir>/scripts/toolbox --tools-file tools.yaml invoke <data_source_name>-list-schemas`
+`<skill_dir>/scripts/toolbox --config tools.yaml invoke <data_source_name>-list-schemas`
 
 ## Templates & Reference
 

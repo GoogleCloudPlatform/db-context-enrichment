@@ -81,7 +81,7 @@ tools:
 3.  **Run the Workflows:**
     Once initialized, the extension provides several pre-built workflows for you to use. You can discover all available workflows by typing `/` in the Gemini CLI interface to prompt autocomplete.
     
-    Select a command such as `/generate_bulk_templates` or `/generate_targeted_templates`, and the agent will guide you through the rest of the interactive process!
+    Select a command such as `/generate_targeted_templates`, and the agent will guide you through the rest of the interactive process!
 
 ## Development with VSCode (Optional)
 

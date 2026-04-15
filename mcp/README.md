@@ -80,9 +80,17 @@ For an enhanced editing and diffing experience when reviewing context changes:
 
 ## Workflows
 
+The extension is designed to support the **Critical User Journeys (CUJs)** for context engineering, following an iterative optimization loop:
+
+1.  **Bootstrap**: Generate an initial baseline context.
+2.  **Evaluate**: Measure context effectiveness against a golden dataset.
+3.  **Hill-Climbing**: Perform gap analysis on failures and generate automated fixes.
+4.  **Iterate**: Apply the improved context and re-run evaluation to continuously improve quality.
+5.  **Final Validation** (Optional): Verify mutations against a separated test set to ensure generalization and prevent overfitting.
+
 ### Automated Iterative Optimization (Autoctx)
 
-The extension automates the creation and optimization of context sets in a continuous improvement loop. Start the Gemini CLI by running `gemini` in your workspace folder, and then use the following commands:
+The extension automates this loop via the following commands. Start the Gemini CLI by running `gemini` in your workspace folder:
 
 1.  **Initialize (`/autoctx:init`)**: Sets up your local workspace. It checks for the presence of a valid `tools.yaml` configuration. If missing, the agent will interactively prompt you for your database connection details and generate the file for you. It also creates the `state.md` file to track experiment progress and an `experiments/` directory.
 2.  **Generate Dataset (`/autoctx:generate-dataset`)**: Rapidly creates or expands a baseline of evaluation questions (golden dataset). It asks you for sample queries or descriptions of what users might ask, and generates a JSON file with Natural Language Queries (NLQs) and Golden SQL statements.

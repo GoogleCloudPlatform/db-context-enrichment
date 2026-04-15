@@ -26,7 +26,8 @@ Follow these steps exactly in order:
 2. **Deduce Key Info (Core Execution):**
    - Perform a **deep analysis** of the retrieved **schema and any provided documentation or code** to identify important concepts, relationships, or likely query patterns.
    - **Templates**: Deduce key information for a set of query templates. For each, you need the natural language question (`question`), the corresponding `sql`, and the overall `intent`.
-   - **Facets**: Deduce key information for a set of SQL facets (reusable filters, conditions, expressions). For each, you need the `sql_snippet` and the `intent`.
+   - **Facets**: Deduce key information for a set of SQL facets (reusable filters, conditions, expressions). For each, you need the `sql_snippet` and the `intent`. 
+     - **Important**: Ensure `sql_snippet` uses table-qualified column names (e.g., `table.column`) to avoid ambiguity.
    - *Review Check:* Briefly display the deduced key info (templates and facets) to the user for approval or modifications before proceeding.
 
 3. **Context Generation (Core Execution):**

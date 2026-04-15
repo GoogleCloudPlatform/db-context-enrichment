@@ -7,6 +7,7 @@ GENERATE_TARGETED_FACETS_PROMPT = textwrap.dedent(
     1.  **User Input Loop:**
         - Ask the user to provide an intent and its corresponding SQL snippet.
         - **Important:** Do not infer the intent or SQL snippet. Wait for the user to provide them.
+        - **Note:** Remind the user to use table-qualified column names (e.g., `table.column`) in the SQL snippet to avoid ambiguity.
         - After capturing the intent and SQL snippet pair, ask the user if they would like to add another one.
         - Continue this loop until the user indicates they have no more pairs to add.
 

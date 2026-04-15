@@ -2,11 +2,41 @@ This is not an officially supported Google product. This project is not
 eligible for the [Google Open Source Software Vulnerability Rewards
 Program](https://bughunters.google.com/open-source-security), [Google Cloud Platform/SecOps Terms of Service](https://cloud.google.com/terms), [How Gemini for Google Cloud uses your data](https://cloud.google.com/gemini/docs/discover/data-governance). This tool is provided "as is" without warranty of any kind. Users are solely responsible for understanding and managing the tool's interaction with their databases. Use of this tool constitutes acceptance of all risks associated with database access, reading, usage, and modifications.
 
-# DB Schema Enricher
+# DB Context Enrichment
 
-A command-line tool to enrich your database schema with metadata (primarily column comments) and easily manage those comments.  It's designed to help you document your database schema directly within the database itself, making it easier to understand and maintain.  It supports multiple database dialects, including PostgreSQL, MySQL, and SQL Server, with specific support for Google Cloud SQL.
+This repository contains tools to help you document and enrich database schemas for better interaction with Large Language Models (LLMs). It features two main components:
 
-## Key Features
+1.  **Context Enrichment Agent**: An MCP server for Gemini CLI to generate and optimize context sets.
+2.  **DB Schema Enricher CLI**: A Go-based command-line tool to enrich schemas with comments directly in the database.
+
+## Context Enrichment Agent (Gemini CLI Extension)
+
+The Context Enrichment Agent is an MCP (Model Context Protocol) server that provides a guided, interactive workflow to generate structured context sets (Templates, Facets, Value Searches) from your database schemas.
+
+### Key Workflows
+
+*   **Automated Iterative Optimization (Autoctx)**: A loop to progressively improve context quality based on evaluation scores.
+    *   **Initialization (`/autoctx:init`)**: Sets up your local workspace.
+    *   **Bootstrap (`/autoctx:bootstrap`)**: Generates an initial context set based on database schema and optional artifacts.
+    *   **Evaluate (`/autoctx:evaluate`)**: Measures context effectiveness against a golden dataset using Evalbench.
+    *   **Hill-Climb (`/autoctx:hillclimb`)**: Performs gap analysis and proposes context updates to improve accuracy.
+*   **Targeted Manual Generation**: Commands like `/generate_targeted_templates`, `/generate_targeted_facets`, and `/generate_targeted_value_searches` give you fine-grained control over creating high-quality context elements.
+
+### Installation
+
+To install the extension via the Gemini CLI:
+
+```bash
+gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enrichment
+```
+
+For detailed documentation, see the [mcp/](file:///Users/juexinw/Workspace/nla/db-context-enrichment/mcp) directory.
+
+## DB Schema Enricher CLI
+
+A command-line tool to enrich your database schema with metadata (primarily column comments) and easily manage those comments. It's designed to help you document your database schema directly within the database itself, making it easier to understand and maintain. It supports multiple database dialects, including PostgreSQL, MySQL, and SQL Server, with specific support for Google Cloud SQL.
+
+### Key Features
 
 *   **Add Comments:** Generates SQL statements to add descriptive comments to your database columns. These comments can be generated automatically (using the tool's logic and optionally, additional context) or customized.
 *   **Get Comments:** Retrieves existing column comments from your database and outputs them to the console or a file.
@@ -18,7 +48,7 @@ A command-line tool to enrich your database schema with metadata (primarily colu
 *   **Customizable Enrichments**: Choose which types of enrichments to include (e.g., examples, distinct values, etc.).
 *   **Contextual Descriptions**: Provide additional knowledge/context files to influence the generation of descriptions for tables and columns. Descriptions are only generated for tables/columns present in the provided context.
 
-## Installation
+### Installation
 
 ### From Source (Recommended)
 
@@ -40,7 +70,7 @@ A command-line tool to enrich your database schema with metadata (primarily colu
     ```
     This will create the `db_schema_enricher` executable in the current directory.
 
-## Google Cloud Authentication
+### Google Cloud Authentication
 
 **Before using `db_schema_enricher` with Cloud SQL, you must authenticate with Google Cloud.**
 
@@ -52,7 +82,7 @@ gcloud auth application-default login
 
 This command obtains credentials and stores them locally, allowing `db_schema_enricher` (and other tools using Application Default Credentials) to access your Cloud SQL instances.
 
-## Usage
+### Usage
 
 The general command structure is:
 
@@ -60,7 +90,7 @@ The general command structure is:
 ./db_schema_enricher <command> [flags]
 ```
 
-### Global Flags
+#### Global Flags
 
 These flags apply to all commands:
 
@@ -86,9 +116,9 @@ These flags apply to all commands:
 *   `cloudsqlmysql`
 *   `cloudsqlsqlserver`
 
-### Commands
+#### Commands
 
-#### `add-comments`
+##### `add-comments`
 
 Generates SQL statements to add comments to database columns. By default, it outputs these statements to a file (e.g., `your_database_comments.sql`). You can then review the generated SQL and apply it using the `apply-comments` command.
 
@@ -134,7 +164,7 @@ Then, apply the changes:
   --in_file=./financial_db_comments.sql
 ```
 
-#### `get-comments`
+##### `get-comments`
 
 Retrieves existing column comments from the database.
 
@@ -156,7 +186,7 @@ db_schema_enricher get-comments \
   --out_file=./inventory_comments.txt
 ```
 
-#### `delete-comments`
+##### `delete-comments`
 
 Generates SQL statements to remove comments added by this tool (specifically, comments within `<gemini>` tags). This allows you to selectively remove the comments added by the enricher without affecting other comments. The generated SQL is written to a file, and you should review it before applying it with `apply-comments`.
 
@@ -180,7 +210,7 @@ db_schema_enricher delete-comments \
   --dry-run=true # recommended for delete comment
 ```
 
-#### `apply-comments`
+##### `apply-comments`
 
 Executes SQL statements from a file to apply comments (or other SQL) to your database. This is typically used to apply the SQL generated by `add-comments` or `delete-comments`.
 

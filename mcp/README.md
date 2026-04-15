@@ -90,7 +90,7 @@ The extension is designed to support the **Critical User Journeys (CUJs)** for c
 
 ### Automated Iterative Optimization (Autoctx)
 
-The extension automates this loop via the following commands. Start the Gemini CLI by running `gemini` in your workspace folder:
+The extension automates the creation and optimization of context sets in a continuous improvement loop. Start the Gemini CLI by running `gemini` in your workspace folder, and then use the following commands:
 
 1.  **Initialize (`/autoctx:init`)**: Sets up your local workspace. It checks for the presence of a valid `tools.yaml` configuration. If missing, the agent will interactively prompt you for your database connection details and generate the file for you. It also creates the `state.md` file to track experiment progress and an `experiments/` directory.
 2.  **Generate Dataset (`/autoctx:generate-dataset`)**: Rapidly creates or expands a baseline of evaluation questions (golden dataset). It asks you for sample queries or descriptions of what users might ask, and generates a JSON file with Natural Language Queries (NLQs) and Golden SQL statements.
@@ -100,14 +100,11 @@ The extension automates this loop via the following commands. Start the Gemini C
 
 ### Targeted Manual Generation
 
-These are more basic workflows for context engineering to manually author specific context elements:
+If you prefer a more customized or granular approach, you can bypass the automated loop and use these commands to manually author specific context elements:
 
 *   **Generate Templates (`/generate_targeted_templates`)**: Initiates a guided workflow where you provide a sample question and SQL, and the agent helps you parameterize and save it as a template.
 *   **Generate Facets (`/generate_targeted_facets`)**: Guides you to define a specific intent and the corresponding SQL snippet (e.g., filter condition) to save as a facet.
 *   **Generate Value Searches (`/generate_targeted_value_searches`)**: Helps you configure how the system searches for and matches specific values within a concept type (e.g., setting up exact match or trigram fuzzy search for product names).
-
-
-
 
 ## Development and Testing
 

@@ -1,6 +1,6 @@
 # DB Context Enrichment
 
-This project is a FastMCP server for "DB Context Enrichment." It bridges the gap between Large Language Models (LLMs) and structured databases by generating and managing tailored context. This context helps the LLM understand database schema, business logic, and terminology, enabling more accurate Natural Language to SQL generation.
+This project is a Gemini CLI extension for "DB Context Enrichment." It bridges the gap between Large Language Models (LLMs) and structured databases by generating and managing tailored context. This context helps the LLM understand database schema, business logic, and terminology, enabling more accurate Natural Language to SQL generation.
 
 **Crucially, this server depends on a running MCP Toolbox server for database connection and schema fetching, and relies on Evalbench to execute evaluation workloads.**
 

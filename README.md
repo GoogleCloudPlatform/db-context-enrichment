@@ -6,12 +6,12 @@ Program](https://bughunters.google.com/open-source-security), [Google Cloud Plat
 
 This repository contains tools to help you document and enrich database schemas for better interaction with Large Language Models (LLMs). It features two main components:
 
-1.  **Context Enrichment Agent**: An MCP server for Gemini CLI to generate and optimize context sets.
+1.  **DB Context Enrichment Extension**: A Gemini CLI extension to generate and optimize context sets.
 2.  **DB Schema Enricher CLI**: A Go-based command-line tool to enrich schemas with comments directly in the database.
 
-## Context Enrichment Agent (Gemini CLI Extension)
+## DB Context Enrichment Extension (Gemini CLI Extension)
 
-The Context Enrichment Agent is an MCP (Model Context Protocol) server that provides a guided, interactive workflow to generate structured context sets (Templates, Facets, Value Searches) from your database schemas.
+The DB Context Enrichment Extension is an MCP (Model Context Protocol) server that provides a guided, interactive workflow to generate structured context sets (Templates, Facets, Value Searches) from your database schemas.
 
 ### Key Workflows
 

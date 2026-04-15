@@ -92,7 +92,7 @@ The extension automates the creation and optimization of context sets in a conti
 
 ### Targeted Manual Generation
 
-If you prefer a more customized or granular approach, you can bypass the automated loop and use these commands to manually author specific context elements:
+These are more basic workflows for context engineering to manually author specific context elements:
 
 *   **Generate Templates (`/generate_targeted_templates`)**: Initiates a guided workflow where you provide a sample question and SQL, and the agent helps you parameterize and save it as a template.
 *   **Generate Facets (`/generate_targeted_facets`)**: Guides you to define a specific intent and the corresponding SQL snippet (e.g., filter condition) to save as a facet.

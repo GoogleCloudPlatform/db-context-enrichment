@@ -30,7 +30,7 @@ To install the extension via the Gemini CLI:
 gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enrichment
 ```
 
-For detailed documentation, see the [mcp/](file:///Users/juexinw/Workspace/nla/db-context-enrichment/mcp) directory.
+For detailed documentation, see the [mcp/](./mcp) directory.
 
 ## DB Schema Enricher CLI
 

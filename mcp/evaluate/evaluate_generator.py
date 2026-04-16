@@ -36,7 +36,7 @@ def generate_evalbench_configs(
     
     db_config_yaml = generator.generate_db_config()
     model_config_yaml = generator.generate_model_config(context_set_id)
-    llmrater_config_yaml = _generate_llmrater_config()
+    llmrater_config_yaml = _generate_llmrater_config(params.get("project"))
     run_config_yaml = _generate_run_config(experiment_name, generator.DIALECT)
     
     # Convert simplified dataset to EvalBench standard format
@@ -167,11 +167,12 @@ def _generate_run_config(experiment_name: str, dialect: str) -> str:
     """).strip()
 
 
-def _generate_llmrater_config() -> str:
+def _generate_llmrater_config(project_id: str) -> str:
     """Generates a dedicated LLM rater model configuration mimicking standard text models."""
     return textwrap.dedent(f"""\
         generator: gcp_vertex_gemini
         vertex_model: {config.get_model_name()}
+        gcp_project_id: {project_id}
         gcp_region: global
         base_prompt: ""
         execs_per_minute: 20

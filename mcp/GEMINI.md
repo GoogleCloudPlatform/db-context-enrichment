@@ -124,4 +124,4 @@ When using the `attach_context_set` tool, the Gemini CLI should **not** read the
 ## Handling API Errors
 
 > [!IMPORTANT]
-> If you encounter a `503` error or an `UNAVAILABLE` status code from any tool (indicating the backend model is experiencing high demand), you **MUST** stop attempting alternative solutions or workarounds. Report the failure directly to the user immediately. Do not try to call other tools or guess results when the model is unavailable.
+> If you encounter a `503` or `429` error, or an `UNAVAILABLE` or `RESOURCE_EXHAUSTED` status code from any tool (indicating the backend model is experiencing high demand or rate limiting), you **MUST** stop attempting alternative solutions or workarounds. Report the failure directly to the user immediately. Do not try to call other tools or guess results when the model is unavailable.

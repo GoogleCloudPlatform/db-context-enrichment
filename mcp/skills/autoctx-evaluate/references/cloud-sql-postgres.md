@@ -1,6 +1,6 @@
 ## Cloud SQL Postgres
 
-**Required properties from the `kind: source` block in `tools.yaml`:**
+**Required properties from the `kind: source` block in `autoctx_config.yaml`:**
 - Source Type (`type: cloud-sql-postgres`)
 - Google Cloud Project ID (`project_id`)
 - Region (`region`)

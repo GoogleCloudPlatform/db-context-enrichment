@@ -63,7 +63,7 @@ def generate_evalbench_configs(
 
 
 def _extract_toolbox_params(toolbox_config_path: str, toolbox_source_name: str) -> Dict[str, Any]:
-    """Deterministically extracts connection parameters for a specific database source from tools.yaml."""
+    """Deterministically extracts connection parameters for a specific database source from autoctx_config.yaml."""
     try:
         with open(toolbox_config_path, "r") as f:
             content = f.read()

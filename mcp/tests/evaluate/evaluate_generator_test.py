@@ -20,7 +20,7 @@ def valid_postgres_params():
 
 def test_generate_evalbench_configs_file_not_found():
     with pytest.raises(ValueError, match="Config file not found"):
-        generate_evalbench_configs("exp", "path", "ctx", "/nonexistent/tools.yaml", "any-name")
+        generate_evalbench_configs("exp", "path", "ctx", "/nonexistent/autoctx_config.yaml", "any-name")
 
 
 def test_generate_evalbench_configs_missing_source():
@@ -31,7 +31,7 @@ def test_generate_evalbench_configs_missing_source():
     """
     with patch("builtins.open", mock_open(read_data=mock_yaml)):
         with pytest.raises(ValueError, match="Could not find a 'kind: source' named 'test-source'"):
-            generate_evalbench_configs("exp", "path", "ctx", "/fake/tools.yaml", "test-source")
+            generate_evalbench_configs("exp", "path", "ctx", "/fake/autoctx_config.yaml", "test-source")
 
 
 def test_generate_evalbench_configs_missing_type():
@@ -42,7 +42,7 @@ def test_generate_evalbench_configs_missing_type():
     """
     with patch("builtins.open", mock_open(read_data=mock_yaml)):
         with pytest.raises(ValueError, match="is missing the 'type' field"):
-            generate_evalbench_configs("exp", "path", "ctx", "/fake/tools.yaml", "test-source")
+            generate_evalbench_configs("exp", "path", "ctx", "/fake/autoctx_config.yaml", "test-source")
 
 
 def test_generate_evalbench_configs_unsupported_type():
@@ -53,7 +53,7 @@ def test_generate_evalbench_configs_unsupported_type():
     """
     with patch("builtins.open", mock_open(read_data=mock_yaml)):
         with pytest.raises(ValueError, match="Unsupported evaluating toolbox source type: 'unknown-db'"):
-            generate_evalbench_configs("exp", "path", "ctx", "/fake/tools.yaml", "test-source")
+            generate_evalbench_configs("exp", "path", "ctx", "/fake/autoctx_config.yaml", "test-source")
 
 
 def test_generate_evalbench_configs():
@@ -90,7 +90,7 @@ def test_generate_evalbench_configs():
                     experiment_name="test-exp",
                     dataset_path="/local/path/data.json",
                     context_set_id="context-123",
-                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_config_path="/fake/autoctx_config.yaml",
                     toolbox_source_name="test-source"
                 )
     
@@ -208,7 +208,7 @@ def test_generate_evalbench_configs_env_interpolation():
                         experiment_name="test-exp",
                         dataset_path="/local/path/data.json",
                         context_set_id="context-123",
-                        toolbox_config_path="/fake/tools.yaml",
+                        toolbox_config_path="/fake/autoctx_config.yaml",
                         toolbox_source_name="test-source"
                     )
             
@@ -239,7 +239,7 @@ def test_generate_evalbench_configs_env_fallback():
                         experiment_name="test-exp",
                         dataset_path="/local/path/data.json",
                         context_set_id="context-123",
-                        toolbox_config_path="/fake/tools.yaml",
+                        toolbox_config_path="/fake/autoctx_config.yaml",
                         toolbox_source_name="test-source"
                     )
             
@@ -265,7 +265,7 @@ def test_generate_evalbench_configs_env_missing():
     with patch.dict("os.environ", {}):
         with patch("builtins.open", mock_open(read_data=mock_yaml)):
             with pytest.raises(ValueError, match="Environment variable 'MISSING_PROJECT' not found and no default provided."):
-                generate_evalbench_configs("exp", "path", "ctx", "/fake/tools.yaml", "test-source")
+                generate_evalbench_configs("exp", "path", "ctx", "/fake/autoctx_config.yaml", "test-source")
 
 
 def test_convert_dataset():

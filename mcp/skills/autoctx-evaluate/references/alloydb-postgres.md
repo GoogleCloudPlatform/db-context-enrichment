@@ -1,6 +1,6 @@
 ## AlloyDB Postgres
 
-**Required properties from the `kind: source` block in `tools.yaml`:**
+**Required properties from the `kind: source` block in `autoctx_config.yaml`:**
 - Source Type (`type: alloydb-postgres`)
 - Google Cloud Project ID (`project_id`)
 - Region (`region`)

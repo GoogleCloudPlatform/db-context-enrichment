@@ -36,13 +36,13 @@ class BaseDBConfigGenerator(ABC):
 
     def validate(self) -> None:
         """
-        Validates that the provided tools.yaml source configuration block contains all 
+        Validates that the provided autoctx_config.yaml source configuration block contains all 
         the mandatory fields required by the specific Evalbench topology.
         """
         missing = [f for f in self.REQUIRED_FIELDS if f not in self.params]
         if missing:
             raise ValueError(
-                f"Missing required fields in tools.yaml config for '{self.SOURCE_TYPE}': "
+                f"Missing required fields in autoctx_config.yaml config for '{self.SOURCE_TYPE}': "
                 f"{', '.join(missing)}"
             )
 

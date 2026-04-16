@@ -10,7 +10,7 @@ This skill guides the process of rigorously evaluating an existing ContextSet ag
 ## Input
 
 Before beginning the workflow, you explicitly require:
-- A `tools.yaml` file securely located in the workspace root directory containing the target database connection details.
+- A `autoctx_config.yaml` file securely located in the workspace root directory containing the target database connection details.
 - A golden evaluation dataset (`golden_dataset_path`), formatted as an absolute system path. The file must be in the **simplified user-facing format**.
 
   **Simplified User-Facing Dataset Format**:
@@ -44,7 +44,7 @@ Follow these steps exactly in order:
 
 2. **Parameter Collection:**
    - **User Inputs:** Prompt the user ONLY for the `golden_dataset_path` and the `context_set_id` (if they haven't provided them already). Do NOT ask them to explain or verify database configurations.
-   - **Interactive DB Selection:** Read the `tools.yaml` file from the workspace root to list available databases to the user:
+   - **Interactive DB Selection:** Read the `autoctx_config.yaml` file from the workspace root to list available databases to the user:
      1. Find all `kind: source` blocks with supported evaluation engines (consult the `generate_evalbench_configs` tool description for the exact list of supported types).
      2. If there is exactly one *supported* source, inform the user and auto-select it.
      3. If there are multiple *supported* sources, list their `name` and `type` and let the user select which database to evaluate.
@@ -52,7 +52,7 @@ Follow these steps exactly in order:
 3. **Config Generation (Core Execution):**
    - Use the `generate_evalbench_configs` MCP tool. This is the **only** way to generate Evalbench configs. Never invent configs from scratch.
    - If the tool fails, analyze the error and retry with corrected inputs. If it is an internal system error, STOP and inform the user.
-   - Provide the selected `experiment_name`, `dataset_path`, `context_set_id`, absolute `toolbox_config_path` (e.g. workspace `tools.yaml`), and selected `toolbox_source_name`.
+   - Provide the selected `experiment_name`, `dataset_path`, `context_set_id`, absolute `toolbox_config_path` (e.g. workspace `autoctx_config.yaml`), and selected `toolbox_source_name`.
    - The tool will automatically write all generated configuration files (including `golden_queries.json`) directly to the `eval_configs/` directory inside the chosen `experiments/<experiment_name>/` folder.
    - You do not need to manually write or extract file contents. Verify that the files have materialized if needed.
 
@@ -76,5 +76,5 @@ Conclude by providing a succinct summary to the user:
 
 ## Templates & Reference
 
-When listing sources from `tools.yaml`, ensure you only present `kind: source` records to the user.
-The tool `generate_evalbench_configs` will find the selected block inside the file and validate its connection parameters deterministically using Python code. You do not need to manually parse or map individual properties such as `host`, `port`, or `database` yourself. If the tool indicates a verification failure for a specific database type, refer to the schema examples inside `references/` (e.g., `cloud-sql-postgres.md`) to guide the user on fixing their `tools.yaml` definition.
+When listing sources from `autoctx_config.yaml`, ensure you only present `kind: source` records to the user.
+The tool `generate_evalbench_configs` will find the selected block inside the file and validate its connection parameters deterministically using Python code. You do not need to manually parse or map individual properties such as `host`, `port`, or `database` yourself. If the tool indicates a verification failure for a specific database type, refer to the schema examples inside `references/` (e.g., `cloud-sql-postgres.md`) to guide the user on fixing their `autoctx_config.yaml` definition.

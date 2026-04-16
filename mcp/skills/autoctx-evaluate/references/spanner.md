@@ -1,6 +1,6 @@
 ## Spanner
 
-**Required properties from the `kind: source` block in `tools.yaml`:**
+**Required properties from the `kind: source` block in `autoctx_config.yaml`:**
 - Source Type (`type: spanner`)
 - Google Cloud Project ID (`project_id`)
 - Instance ID (`instance_id`)

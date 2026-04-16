@@ -64,7 +64,7 @@ A `ContextSet` is the central artifact, containing structured knowledge in three
 The Autoctx workflows generate and interact with a structured workspace to maintain state and trace progress across iterations.
 
 ### Directory Layout
-- `tools.yaml`: Configuration file for the Toolbox MCP Server (defining database connections). Located in the current working directory.
+- `autoctx_config.yaml`: Configuration file for the Toolbox MCP Server (defining database connections). Located in the current working directory.
 - `state.md`: High-level summary of the experiment state, active experiment, and run history. Located in the current working directory.
 - `experiments/`: Root directory for all experiments. Located in the current working directory.
     - `<experiment_name>/`: Specific experiment directory.
@@ -92,7 +92,7 @@ The Autoctx workflows generate and interact with a structured workspace to maint
 The workspace folder structure populates progressively as you move through the workflows:
 
 1. **Post-Initialization (Init Workflow `/autoctx:init`)**:
-   - `tools.yaml`, `state.md`, and an empty `experiments/` directory appear in the CWD.
+   - `autoctx_config.yaml`, `state.md`, and an empty `experiments/` directory appear in the CWD.
 
 2. **Post-Bootstrap (Bootstrap Workflow `/autoctx:bootstrap`)**:
    - `experiments/<experiment_name>/bootstrap_context.json` is generated.

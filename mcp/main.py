@@ -145,8 +145,8 @@ def generate_evalbench_configs(
         experiment_name: The name of the target experiment folder.
         dataset_path: The absolute path to the golden dataset file in the simplified user-facing format (JSON list of objects with keys: "id", "database", "nlq", "golden_sql").
         context_set_id: The specific context_set_id inside the experiment.
-        toolbox_config_path: The absolute path to the tools.yaml configuration file.
-        toolbox_source_name: The name of the database source to use inside tools.yaml. The underlying source block must use a supported 'type' (cloud-sql-postgres, cloud-sql-mysql, spanner, alloydb-postgres).
+        toolbox_config_path: The absolute path to the autoctx_config.yaml configuration file.
+        toolbox_source_name: The name of the database source to use inside autoctx_config.yaml. The underlying source block must use a supported 'type' (cloud-sql-postgres, cloud-sql-mysql, spanner, alloydb-postgres).
 
     Returns:
         A message indicating that the configuration files were successfully created.
@@ -317,7 +317,7 @@ def generate_upload_url(
     Args:
         db_type: The type of the database. Accepted values are 'alloydb',
                  'cloudsql', or 'spanner'. This can be derived from the 'kind'
-                 field in the tools.yaml file. For example, 'alloydb-postgres'
+                 field in the autoctx_config.yaml file. For example, 'alloydb-postgres'
                  becomes 'alloydb', and 'cloud-sql-postgres' becomes 'cloudsql'.
         project_id: The Google Cloud project ID.
         location: The location of the AlloyDB cluster.

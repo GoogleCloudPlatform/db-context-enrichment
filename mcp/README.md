@@ -106,9 +106,6 @@ These are more basic workflows for context engineering to manually author specif
 *   **Generate Facets (`/generate_targeted_facets`)**: Guides you to define a specific intent and the corresponding SQL snippet (e.g., filter condition) to save as a facet.
 *   **Generate Value Searches (`/generate_targeted_value_searches`)**: Helps you configure how the system searches for and matches specific values within a concept type (e.g., setting up exact match or trigram fuzzy search for product names).
 
-
-
-
 ## Development and Testing
 
 To develop a new feature and test it with the correct dependencies and full bundling (including Evalbench and Toolbox binaries), it is recommended to create a custom release in your **fork**.

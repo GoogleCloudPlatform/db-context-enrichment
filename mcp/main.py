@@ -160,7 +160,7 @@ def generate_evalbench_configs(
 @mcp.tool
 async def generate_value_searches(
     value_search_inputs_json: str,
-    db_engine: str,
+    dialect: str,
     db_version: str | None = None,
 ) -> str:
     """
@@ -181,7 +181,7 @@ async def generate_value_searches(
                 {"table_name": "products", "column_name": "name", "concept_type": "Product", "match_function": "FUZZY_MATCH_STRINGS"}
             ]'
             
-        db_engine: The database engine (postgresql, mysql, etc.).
+        dialect: The database dialect (postgresql, mysql, etc.).
         db_version: The database version (optional).
         
     Returns:
@@ -191,21 +191,21 @@ async def generate_value_searches(
         db_version = None
     
     return vi_generator.generate_value_searches(
-        value_search_inputs_json, db_engine, db_version
+        value_search_inputs_json, dialect, db_version
     )
 
 
 @mcp.tool
-def list_match_functions(db_engine: str, db_version: str | None = None) -> str:
+def list_match_functions(dialect: str, db_version: str | None = None) -> str:
     """
-    Lists the valid match template functions with their descriptions and examples for a specific database engine.
+    Lists the valid match template functions with their descriptions and examples for a specific database dialect.
     Use this to show the user what 'match_function' options are available, along with their details.
     
-    If the engine or version is not supported, this will return an error message
+    If the dialect or version is not supported, this will return an error message
     listing the valid options.
 
     Args:
-        db_engine: The database engine (e.g., 'postgresql').
+        dialect: The database dialect (e.g., 'postgresql').
         db_version: The specific database version (optional).
     
     Returns:
@@ -213,7 +213,7 @@ def list_match_functions(db_engine: str, db_version: str | None = None) -> str:
         or an error message if validation fails.
     """
     try:
-        functions = match_templates.get_available_functions(db_engine, db_version)
+        functions = match_templates.get_available_functions(dialect, db_version)
         return json.dumps(functions)
     except ValueError as e:
         return f"Error: {str(e)}"
@@ -304,7 +304,7 @@ def attach_context_set(
 
 @mcp.tool
 def generate_upload_url(
-    db_type: str,
+    db_engine: str,
     project_id: str,
     location: str | None = None,
     cluster_id: str | None = None,
@@ -312,10 +312,10 @@ def generate_upload_url(
     database_id: str | None = None,
 ) -> str:
     """
-    Generates a URL for uploading the template file based on the database type.
+    Generates a URL for uploading the template file based on the database engine.
 
     Args:
-        db_type: The type of the database. Accepted values are 'alloydb',
+        db_engine: The database engine. Accepted values are 'alloydb',
                  'cloudsql', or 'spanner'. This can be derived from the 'kind'
                  field in the tools.yaml file. For example, 'alloydb-postgres'
                  becomes 'alloydb', and 'cloud-sql-postgres' becomes 'cloudsql'.
@@ -328,23 +328,23 @@ def generate_upload_url(
     Returns:
         The generated URL as a string, or an error message if the source kind is invalid.
     """
-    if db_type == "alloydb":
+    if db_engine == "alloydb":
         if location and cluster_id and project_id:
             return f"https://console.cloud.google.com/alloydb/locations/{location}/clusters/{cluster_id}/studio?project={project_id}"
         else:
             return "Error: Missing location, cluster_id, or project_id for alloydb."
-    elif db_type == "cloudsql":
+    elif db_engine == "cloudsql":
         if instance_id and project_id:
             return f"https://console.cloud.google.com/sql/instances/{instance_id}/studio?project={project_id}"
         else:
             return "Error: Missing instance_id or project_id for cloudsql."
-    elif db_type == "spanner":
+    elif db_engine == "spanner":
         if instance_id and database_id and project_id:
             return f"https://console.cloud.google.com/spanner/instances/{instance_id}/databases/{database_id}/details/query?project={project_id}"
         else:
             return "Error: Missing instance_id, database_id, or project_id for spanner."
     else:
-        return "Error: Invalid db_type. Must be one of 'alloydb', 'cloudsql', or 'spanner'."
+        return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', or 'spanner'."
 
 
 @mcp.prompt

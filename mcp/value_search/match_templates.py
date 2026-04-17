@@ -5,6 +5,15 @@ from enum import Enum
 class Dialect(str, Enum):
     """Supported database dialects."""
     POSTGRESQL = "postgresql"
+    MYSQL = "mysql"
+    GOOGLE_SQL = "googlesql"
+
+
+class MatchFunction(str, Enum):
+    """Available match functions."""
+    EXACT_MATCH_STRINGS = "EXACT_MATCH_STRINGS"
+    TRIGRAM_STRING_MATCH = "TRIGRAM_STRING_MATCH"
+    SEMANTIC_SIMILARITY_MATCH = "SEMANTIC_SIMILARITY_MATCH"
 
 
 _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
@@ -13,7 +22,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
         
         # Default templates
         "defaults": {
-            "EXACT_MATCH_STRINGS": {
+            MatchFunction.EXACT_MATCH_STRINGS.value: {
                 "description": "Exact match for strings (Standard SQL).",
                 "example": "Use when finding a specific state code (e.g., 'CA'), order ID, or exact product name where precise spelling is required.",
                 "sql_template": (
@@ -22,11 +31,10 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     "'' as context FROM \"{table}\" T WHERE T.\"{column}\" = $value"
                 ),
             },
-            "TRIGRAM_STRING_MATCH": {
-                "description": "Fuzzy text match using trigram similarity (requires pg_trgm extension).",
+            MatchFunction.TRIGRAM_STRING_MATCH.value: {
+                "description": "Fuzzy text match using trigram similarity (Requires extension: pg_trgm).",
                 "example": "Use when searching for names, addresses, or plain text where users might have typos, misspellings, or partial matches.",
                 "sql_template": (
-                    "/* Requires extension: pg_trgm */ "
                     "WITH TrigramMetrics AS ("
                     "    SELECT T.\"{column}\" AS original_value, "
                     "    (T.\"{column}\" <-> $value::text) AS normalized_dist "
@@ -38,11 +46,10 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     "''::text AS context FROM TrigramMetrics"
                 ),
             },
-            "SEMANTIC_SIMILARITY_GEMINI": {
-                "description": "Semantic similarity search using Gemini text embeddings.",
+            MatchFunction.SEMANTIC_SIMILARITY_MATCH.value: {
+                "description": "Semantic similarity search using Gemini text embeddings (Requires extensions: vector, google_ml_integration).",
                 "example": "Use when searching for concepts, descriptions, themes, or abstract text where the exact words might differ but the underlying meaning is similar.",
                 "sql_template": (
-                    "/* Requires extensions: vector, google_ml_integration */ "
                     "WITH SemanticMetrics AS ("
                     "    SELECT T.\"{column}\" AS original_value, ("
                     "        (google_ml.embedding('gemini-embedding-001', $value)::vector <=> "
@@ -57,16 +64,94 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 ),
             }
         },
-        
-        # Specific overrides per version
-        # Format:
-        #   "version_string": {
-        #       "FUNCTION_NAME": { ... complete template definition ... }
-        #   }
-        "overrides": {
-            # Add override here. 
-        }
+        "overrides": {}
     },
+    Dialect.GOOGLE_SQL: {
+        "min_version": "1",
+        "defaults": {
+            MatchFunction.EXACT_MATCH_STRINGS.value: {
+                "description": "Exact match for strings in Spanner.",
+                "example": "Use for exact IDs or state codes in Spanner.",
+                "sql_template": (
+                    "SELECT CAST($value AS STRING) AS value, '{column}' AS `columns`, "
+                    "'{concept_type}' AS concept_type, 0 AS distance, "
+                    "JSON '{{}}' AS context "
+                    "FROM `{table}` AS T "
+                    "WHERE CAST(T.`{column}` AS STRING) = CAST($value AS STRING) "
+                )
+            },
+            MatchFunction.TRIGRAM_STRING_MATCH.value: {
+                "description": "String similarity using Spanner Search Indexes.",
+                "example": "Use for typos/misspellings in Spanner using SEARCH_NGRAMS.",
+                "sql_template": (
+                    "SELECT CAST(T.`{column}` AS STRING) AS value, '{column}' AS `columns`, "
+                    "'{concept_type}' AS concept_type, "
+                    "1 - SCORE_NGRAMS(T.`{column_tokens}`, CAST($value AS STRING)) AS distance, "
+                    "JSON '{{}}' AS context "
+                    "FROM `{table}` AS T "
+                    "WHERE SEARCH_NGRAMS(T.`{column_tokens}`, CAST($value AS STRING)) "
+                ),
+            },
+        },
+        "overrides": {}
+    },
+    Dialect.MYSQL: {
+        "min_version": "8",
+        "defaults": {
+            MatchFunction.EXACT_MATCH_STRINGS.value: {
+                "description": "Exact match for strings in MySQL.",
+                "example": "Use for exact matching in MySQL.",
+                "sql_template": (
+                    "SELECT $value AS value, '{column}' AS `columns`, "
+                    "'{concept_type}' AS concept_type, 0 AS distance, "
+                    "JSON_OBJECT() AS context "
+                    "FROM `{table}` AS T WHERE T.`{column}` = $value"
+                ),
+            },
+            MatchFunction.TRIGRAM_STRING_MATCH.value: {
+                "description": "Trigram fuzzy match in MySQL using FULLTEXT index with score normalization.",
+                "example": "Use for fuzzy matching in MySQL (requires FULLTEXT index with ngram).",
+                "sql_template": (
+                    "SELECT * FROM ("
+                    "  WITH TrigramMetrics AS ("
+                    "    SELECT T.`{column}` AS original_value, "
+                    "    MATCH(T.`{column}`) AGAINST($value IN NATURAL LANGUAGE MODE) AS raw_score "
+                    "    FROM `{table}` AS T "
+                    "    WHERE MATCH(T.`{column}`) AGAINST($value IN NATURAL LANGUAGE MODE) > 0 "
+                    "    ORDER BY raw_score DESC LIMIT 10"
+                    "  ), "
+                    "  NormalizationParams AS ("
+                    "    SELECT MAX(raw_score) AS max_score "
+                    "    FROM TrigramMetrics"
+                    "  ) "
+                    "  SELECT original_value AS value, '{column}' AS `columns`, "
+                    "  '{concept_type}' AS concept_type, "
+                    "  (CASE WHEN n.max_score > 0 THEN (1 - (m.raw_score / n.max_score)) ELSE 0 END) AS distance, "
+                    "  JSON_OBJECT() AS context "
+                    "  FROM TrigramMetrics m, NormalizationParams n"
+                    ") AS wrapped_query "
+                ),
+            },
+            MatchFunction.SEMANTIC_SIMILARITY_MATCH.value: {
+                "description": "Semantic match in MySQL using Vertex AI embedding.",
+                "example": "Use for semantic matching (requires mysql.ml_embedding).",
+                "sql_template": (
+                    "SELECT * FROM ("
+                    "  WITH search_embedding AS ("
+                    "    SELECT mysql.ml_embedding('text-embedding-005', $value) AS val"
+                    "  ) "
+                    "  SELECT T.`{column}` AS value, '{column}' AS `columns`, "
+                    "  '{concept_type}' AS concept_type, "
+                    "  COSINE_DISTANCE(T.`{column_embedding}`, search_embedding.val) AS distance, "
+                    "  JSON_OBJECT() AS context "
+                    "  FROM `{table}` AS T, search_embedding "
+                    "  WHERE T.`{column_embedding}` IS NOT NULL"
+                    ") AS wrapped_query "
+                ),
+            },
+        },
+        "overrides": {}
+    }
 }
 
 def _is_version_supported(version: str, min_version: str) -> bool:

@@ -95,14 +95,14 @@ def test_generate_evalbench_configs():
                 )
     
     assert configs is None
-    mock_makedirs.assert_called_once_with("experiments/test-exp/eval_configs", exist_ok=True)
+    mock_makedirs.assert_called_once_with("autoctx/experiments/test-exp/eval_configs", exist_ok=True)
     
     # Verify all file writes
-    m.assert_any_call("experiments/test-exp/eval_configs/db_config.yaml", "w")
-    m.assert_any_call("experiments/test-exp/eval_configs/model_config.yaml", "w")
-    m.assert_any_call("experiments/test-exp/eval_configs/run_config.yaml", "w")
-    m.assert_any_call("experiments/test-exp/eval_configs/llmrater_config.yaml", "w")
-    m.assert_any_call("experiments/test-exp/eval_configs/golden_queries.json", "w")
+    m.assert_any_call("autoctx/experiments/test-exp/eval_configs/db_config.yaml", "w")
+    m.assert_any_call("autoctx/experiments/test-exp/eval_configs/model_config.yaml", "w")
+    m.assert_any_call("autoctx/experiments/test-exp/eval_configs/run_config.yaml", "w")
+    m.assert_any_call("autoctx/experiments/test-exp/eval_configs/llmrater_config.yaml", "w")
+    m.assert_any_call("autoctx/experiments/test-exp/eval_configs/golden_queries.json", "w")
     
     expected_db_config = textwrap.dedent("""\
         db_type: postgres
@@ -144,10 +144,10 @@ def test_generate_evalbench_configs():
         ############################################################
         ### Dataset / Eval Items
         ############################################################
-        dataset_config: experiments/test-exp/eval_configs/golden_queries.json
+        dataset_config: autoctx/experiments/test-exp/eval_configs/golden_queries.json
         dataset_format: evalbench-standard-format
         database_configs:
-         - experiments/test-exp/eval_configs/db_config.yaml
+         - autoctx/experiments/test-exp/eval_configs/db_config.yaml
         dialect: postgres    # DB connection mapping
         query_types:
          - dql
@@ -155,7 +155,7 @@ def test_generate_evalbench_configs():
         ############################################################
         ### Prompt and Generation Modules
         ############################################################
-        model_config: experiments/test-exp/eval_configs/model_config.yaml
+        model_config: autoctx/experiments/test-exp/eval_configs/model_config.yaml
         prompt_generator: 'NOOPGenerator'
 
         ############################################################
@@ -170,14 +170,14 @@ def test_generate_evalbench_configs():
         ############################################################
         scorers:
           llmrater:
-            model_config: experiments/test-exp/eval_configs/llmrater_config.yaml
+            model_config: autoctx/experiments/test-exp/eval_configs/llmrater_config.yaml
 
         ############################################################
         ### Reporting Related Configs
         ############################################################
         reporting:
           csv:
-            output_directory: 'experiments/test-exp/eval_reports/'
+            output_directory: 'autoctx/experiments/test-exp/eval_reports/'
     """).strip()
     
     # Verify content written

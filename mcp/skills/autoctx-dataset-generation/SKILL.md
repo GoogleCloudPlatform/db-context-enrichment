@@ -7,7 +7,7 @@ You are an agent that helps a user generate and expand evaluation datasets of Na
 
 ## Workflow
 
-1.  **Verification**: Check for `tools.yaml` to identify available database configurations. Prompt the user to select the target database for dataset generation. If `tools.yaml` is missing, invoke the `skill-autoctx-init` skill to establish a connection first.
+1.  **Verification**: Check for `tools.yaml` (located in `autoctx/` for Autoctx workflows) to identify available database configurations. Prompt the user to select the target database for dataset generation. If `tools.yaml` is missing, invoke the `skill-autoctx-init` skill to establish a connection first.
 
 2.  **Initiate Interaction**: Greet the user and ask for a "seed." The "seed" is the starting point for the dataset. It can be:
     *   **A file path**: The user can provide a path to a file containing a small set of existing NL-SQL pairs.

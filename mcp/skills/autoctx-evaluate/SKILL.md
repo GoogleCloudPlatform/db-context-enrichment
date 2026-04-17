@@ -38,13 +38,13 @@ Before beginning the workflow, you explicitly require:
 Follow these steps exactly in order:
 
 1. **Experiment Selection & Memory:**
-   - Scan the local `experiments/` directory and list the available tuning workflows/subfolders to the user.
+   - Scan the local `autoctx/experiments/` directory and list the available tuning workflows/subfolders to the user.
    - Wait for the user to explicitly select an experiment folder to evaluate.
-   - Once selected, explicitly record their chosen experiment name into the local `state.md` file to act as long-term memory so you don't forget it during subsequent evaluations.
+   - Once selected, explicitly record their chosen experiment name into the local `autoctx/state.md` file to act as long-term memory so you don't forget it during subsequent evaluations.
 
 2. **Parameter Collection:**
    - **User Inputs:** Prompt the user ONLY for the `golden_dataset_path` and the `context_set_id` (if they haven't provided them already). Do NOT ask them to explain or verify database configurations.
-   - **Interactive DB Selection:** Read the `tools.yaml` file from the workspace root to list available databases to the user:
+   - **Interactive DB Selection:** Read the `autoctx/tools.yaml` file to list available databases to the user:
      1. Find all `kind: source` blocks with supported evaluation engines (consult the `generate_evalbench_configs` tool description for the exact list of supported types).
      2. If there is exactly one *supported* source, inform the user and auto-select it.
      3. If there are multiple *supported* sources, list their `name` and `type` and let the user select which database to evaluate.
@@ -52,14 +52,14 @@ Follow these steps exactly in order:
 3. **Config Generation (Core Execution):**
    - Use the `generate_evalbench_configs` MCP tool. This is the **only** way to generate Evalbench configs. Never invent configs from scratch.
    - If the tool fails, analyze the error and retry with corrected inputs. If it is an internal system error, STOP and inform the user.
-   - Provide the selected `experiment_name`, `dataset_path`, `context_set_id`, absolute `toolbox_config_path` (e.g. workspace `tools.yaml`), and selected `toolbox_source_name`.
-   - The tool will automatically write all generated configuration files (including `golden_queries.json`) directly to the `eval_configs/` directory inside the chosen `experiments/<experiment_name>/` folder.
+   - Provide the selected `experiment_name`, `dataset_path`, `context_set_id`, absolute `toolbox_config_path` (e.g. `autoctx/tools.yaml`), and selected `toolbox_source_name`.
+   - The tool will automatically write all generated configuration files (including `golden_queries.json`) directly to the `eval_configs/` directory inside the chosen `autoctx/experiments/<experiment_name>/` folder.
    - You do not need to manually write or extract file contents. Verify that the files have materialized if needed.
 
 4. **Evalbench Run Integration:**
    - Trigger the `run_shell_command` natively to execute the evaluation from the ROOT of the workspace using the following exact command template:
-     `<skill_dir>/scripts/evalbench --experiment_config=experiments/<experiment_name>/eval_configs/run_config.yaml`
-   - Check the command outputs to ensure the evaluation reports materialize in the respective `experiments/<experiment_name>/eval_reports/` directory.
+     `<skill_dir>/scripts/evalbench --experiment_config=autoctx/experiments/<experiment_name>/eval_configs/run_config.yaml`
+   - Check the command outputs to ensure the evaluation reports materialize in the respective `autoctx/experiments/<experiment_name>/eval_reports/` directory.
 
 ## Output
 

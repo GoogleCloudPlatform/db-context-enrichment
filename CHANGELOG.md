@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.3](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.4.2...v0.4.3) (2026-04-02)
+
+
+### Features
+
+* add Spanner and CloudSQL support to value search generation ([#50](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/50)) ([5a56582](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/5a565825292bc0c8ecab82b30a9dbc9f021d6a63))
+* **value-search:** extend support to Spanner, MySQL, and Postgres ([5a56582](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/5a565825292bc0c8ecab82b30a9dbc9f021d6a63))
+
+
+### Bug Fixes
+
+* **build:** disable strip and upx to resolve windows pyinstaller crash ([#52](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/52)) ([e07c52b](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/e07c52bd353c0b1f7c9fe15c4ffd2da1c2dc3a5f))
+
 ## [0.4.2](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.4.1...v0.4.2) (2026-03-25)
 
 

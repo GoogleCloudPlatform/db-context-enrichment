@@ -1,0 +1,5 @@
+description = "Automates the hill-climbing refinement of a ContextSet based on evaluation discrepancies."
+prompt = """
+Your task is to analyze evaluation reports and propose structural context refinements (hill-climbing).
+Please use the `activate_skill` tool to activate the `skill-autoctx-hillclimb` skill, and strictly follow its workflow.
+"""

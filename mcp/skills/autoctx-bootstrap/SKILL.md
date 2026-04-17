@@ -10,7 +10,7 @@ This skill guides the process of bootstrapping an initial ContextSet (baseline c
 ## Input
 
 Before beginning the workflow, you explicitly require:
-- An active `tools.yaml` configuration with database schema fetching tools configured (e.g., `<source>-list-schemas`).
+- An active `tools.yaml` configuration (located in `autoctx/`) with database schema fetching tools configured (e.g., `<source>-list-schemas`).
 - Target database schemas to act upon.
 
 ## Workflow
@@ -18,8 +18,8 @@ Before beginning the workflow, you explicitly require:
 Follow these steps exactly in order:
 
 1. **Condition Check & Schema Retrieval:**
-   - You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`). A new dedicated subfolder will be created inside the `experiments/` directory using this name to hold the entire tuning lifecycle and prevent any surprises. Do not proceed until you have their confirmation.
-   - Use the available Toolbox MCP tools configured in the active `tools.yaml` to fetch the schemas for the target database.
+   - You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`). A new dedicated subfolder will be created inside the `autoctx/experiments/` directory using this name to hold the entire tuning lifecycle and prevent any surprises. Do not proceed until you have their confirmation.
+   - Use the available Toolbox MCP tools configured in the active `autoctx/tools.yaml` to fetch the schemas for the target database.
    - Present the retrieved schema summary **structurally and cleanly** to the user. Ask the user if they want to filter or focus on specific schemas or tables.
    - **Source Enrichment**: Prompt the user for any existing **Design Docs** or **Application Code** (e.g., ORM models, SQL queries) they wish to provide to enrich the context generation. Wait for the user's response before proceeding.
 
@@ -32,7 +32,7 @@ Follow these steps exactly in order:
 
 3. **Context Generation (Core Execution):**
    - Once the user approves the key information, use the `generate_bootstrap_context` tool.
-   - You must provide the exact `output_file_path`. Save the context file inside the approved experiment folder as `bootstrap_context.json` (e.g., `experiments/sales_db_tuning/bootstrap_context.json`).
+   - You must provide the exact `output_file_path`. Save the context file inside the approved experiment folder as `bootstrap_context.json` (e.g., `autoctx/experiments/sales_db_tuning/bootstrap_context.json`).
    - Pass the deduced key info as JSON parameters (`template_inputs_json`, `facet_inputs_json`) matching the tool's expected schema.
    - You must explicitly provide the `sql_dialect` parameter (e.g. `postgresql`, `mysql`, `googlesql`) as it is a required input.
 

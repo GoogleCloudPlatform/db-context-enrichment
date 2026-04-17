@@ -151,7 +151,7 @@ jobs:
             TOOLBOX_NAME="\${extensionPath}/skills/autoctx-init/scripts/toolbox"
           fi
           
-          jq ".contextFileName = \"GEMINI.md\" | .mcpServers.mcp_db_context_enrichment.command = \"$BINARY_NAME\" | .mcpServers.mcp_db_context_enrichment.args = [] | .mcpServers.mcp_toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\"]}" ../gemini-extension.json > staging/gemini-extension.json
+          jq ".contextFileName = \"GEMINI.md\" | .mcpServers.mcp_db_context_enrichment.command = \"$BINARY_NAME\" | .mcpServers.mcp_db_context_enrichment.args = [] | .mcpServers.mcp_toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\", \"--config\", \"autoctx/tools.yaml\"]}" ../gemini-extension.json > staging/gemini-extension.json
           cp GEMINI.md staging/
           cp ../LICENSE staging/
 

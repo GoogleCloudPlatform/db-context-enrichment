@@ -43,7 +43,7 @@ def generate_evalbench_configs(
     golden_queries_json = _convert_dataset(dataset_path, generator.DIALECT)
 
     # Write all files directly
-    eval_configs_dir = f"experiments/{experiment_name}/eval_configs"
+    eval_configs_dir = f"autoctx/experiments/{experiment_name}/eval_configs"
     os.makedirs(eval_configs_dir, exist_ok=True)
     
     with open(os.path.join(eval_configs_dir, DB_CONFIG_NAME), "w") as f:
@@ -123,8 +123,8 @@ def _get_db_generator(params: Dict[str, Any]) -> BaseDBConfigGenerator:
 
 def _generate_run_config(experiment_name: str, dialect: str) -> str:
     """Generates the main EvalBench Run Experiment scaffolding."""
-    configs_dir = f"experiments/{experiment_name}/eval_configs"
-    reports_dir = f"experiments/{experiment_name}/eval_reports"
+    configs_dir = f"autoctx/experiments/{experiment_name}/eval_configs"
+    reports_dir = f"autoctx/experiments/{experiment_name}/eval_reports"
     
     return textwrap.dedent(f"""\
         ############################################################

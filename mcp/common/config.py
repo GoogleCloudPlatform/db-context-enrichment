@@ -1,4 +1,4 @@
-MODEL_NAME = "gemini-2.5-pro"
+MODEL_NAME = "gemini-2.5-flash"
 
 def get_model_name() -> str:
     """Returns the configured model name.

@@ -133,7 +133,7 @@ def test_generate_evalbench_configs():
 
     expected_llmrater_config = textwrap.dedent("""\
         generator: gcp_vertex_gemini
-        vertex_model: gemini-2.5-pro
+        vertex_model: gemini-2.5-flash
         gcp_project_id: test-project
         gcp_region: global
         base_prompt: ""

@@ -44,11 +44,11 @@ Follow these steps exactly in order:
        1. **Bootstrap a basic context**: Guide them to trigger the Bootstrap workflow.
        2. **Use an existing context**:
           - > [!IMPORTANT]
-          - > Inform the user that if they have an existing context, it must be uploaded to GCP Database Studio to obtain a `context_set_id` for evaluation.
+            > Inform the user that if they have an existing context, it must be uploaded to GCP Database Studio to obtain a `context_set_id` for evaluation.
           - Ask the user for a name for this new experiment folder (similar to how Bootstrap does).
           - Create the folder under `autoctx/experiments/`.
           - Ask the user to provide the local file path of their existing context.
-          - Write this mapping (which experiment is for which base context) to `autoctx/state.md` for long-term memory.
+          - Record the local file path as the Base Context for this experiment in `autoctx/state.md` for long-term memory.
           - Continue with the evaluation flow below.
    - Wait for the user to explicitly select an experiment folder to evaluate (or use the newly created one).
    - Once selected, explicitly record their chosen experiment name into the local `autoctx/state.md` file to act as long-term memory so you don't forget it during subsequent evaluations.

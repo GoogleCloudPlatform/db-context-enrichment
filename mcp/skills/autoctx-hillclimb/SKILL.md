@@ -105,6 +105,9 @@ Follow these steps exactly in order:
     -   **Generate New Items**: For any new templates or facets identified in the fixing strategy (for "add" operations):
         -   Call the specialized generation tools (e.g., `generate_templates` or `generate_facets`) with the identified inputs.
         -   Parse the returned JSON string (which represents a `ContextSet`) and extract the generated items from the `templates` or `facets` list.
+    -   **Validate New Items**:
+        -   **Templates**: Run generated SQL examples via `<source>-execute-sql` (use dummy values for placeholders) to verify syntax.
+        -   **Others**: Cross-check table/column references against the schema via `<source>-list-schemas`.
     -   **Apply Mutations**: Call the specialized `mutate_context_set` MCP tool passing the **new** file path as `file_path` and mutations as `mutations_json` to mutate the context set. Use the extracted item bodies as the `value` for `add` operations.
 3.  **Log in State Tracking**:
     -   Update `autoctx/state.md` to include the output path of `improved_context_vN.json` for Loop `vN`.

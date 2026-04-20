@@ -40,7 +40,7 @@ Follow these steps exactly in order:
 1. **Experiment Selection & Memory:**
    - Scan the local `autoctx/experiments/` directory and list the available tuning workflows/subfolders to the user.
    - **If no experiment folders exist** (or the user wants to create a new one without running Bootstrap):
-     - Clarify 2 paths for the user:
+     - **Ask the user to choose** between 2 paths (do not assume):
        1. **Bootstrap a basic context**: Guide them to trigger the Bootstrap workflow.
        2. **Use an existing context**:
           - > [!IMPORTANT]

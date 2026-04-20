@@ -115,7 +115,8 @@ Follow these steps exactly in order:
 
 1.  **Summarize Improvements**: Tell the user what was changed (e.g., added 2 facets, updated 1 template).
 2.  **Upload Instructions**:
-    -   Call `generate_upload_url` to get the direct link to the database studio (read project/instance details from `autoctx/tools.yaml` or `db_config.yaml`).
+    -   **Read Database Details**: Read `autoctx/tools.yaml` (or `db_config.yaml`) to fetch the specific project, location, and instance/cluster details for the active database.
+    -   **Generate URL**: Call the `generate_upload_url` tool passing the extracted values to provide the direct console link to the user.
     -   Present the local file path to `improved_context_vN.json` and the generated console link together in a single clear message.
 3.  **Instruct Next Step Evaluation**:
     -   Instruct the user to run evaluation using the evaluating workflow on this new ContextSet to see if metrics improve. This will start Loop `N+1`.

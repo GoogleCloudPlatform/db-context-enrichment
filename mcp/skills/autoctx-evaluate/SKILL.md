@@ -39,7 +39,18 @@ Follow these steps exactly in order:
 
 1. **Experiment Selection & Memory:**
    - Scan the local `autoctx/experiments/` directory and list the available tuning workflows/subfolders to the user.
-   - Wait for the user to explicitly select an experiment folder to evaluate.
+   - **If no experiment folders exist** (or the user wants to create a new one without running Bootstrap):
+     - Clarify 2 paths for the user:
+       1. **Bootstrap a basic context**: Guide them to trigger the Bootstrap workflow.
+       2. **Use an existing context**:
+          - > [!IMPORTANT]
+            > Inform the user that if they have an existing context, it must be uploaded to GCP Database Studio to obtain a `context_set_id` for evaluation.
+          - Ask the user for a name for this new experiment folder (similar to how Bootstrap does).
+          - Create the folder under `autoctx/experiments/`.
+          - Ask the user to provide the local file path of their existing context.
+          - Record the local file path as the Base Context for this experiment in `autoctx/state.md` for long-term memory.
+          - Continue with the evaluation flow below.
+   - Wait for the user to explicitly select an experiment folder to evaluate (or use the newly created one).
    - Once selected, explicitly record their chosen experiment name into the local `autoctx/state.md` file to act as long-term memory so you don't forget it during subsequent evaluations.
 
 2. **Parameter Collection:**

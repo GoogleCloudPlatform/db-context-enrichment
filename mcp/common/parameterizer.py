@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from google import genai
 import textwrap
 from enum import Enum
+from common import config
 
 
 class SQLDialect(Enum):
@@ -87,7 +88,7 @@ async def extract_value_phrases(nl_query: str) -> Dict[str, List[str]]:
     client = genai.Client()
     try:
         response = await client.aio.models.generate_content(
-            model="gemini-2.5-pro",
+            model=config.get_model_name(),
             contents=prompt,
             config={
                 "response_mime_type": "application/json",

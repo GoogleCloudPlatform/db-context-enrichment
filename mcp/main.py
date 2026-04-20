@@ -1,7 +1,7 @@
 from fastmcp import FastMCP
 from typing import List
 import textwrap
-from template import question_generator, template_generator
+from template import template_generator
 from facet import facet_generator
 from value_search import generator as vi_generator
 from value_search import match_templates
@@ -10,36 +10,14 @@ import prompts
 import datetime
 import os
 import json
+from bootstrap import bootstrap_generator
+from evaluate import evaluate_generator
+from evaluate import result_reader
+from dataset import dataset_generator
+from common import context_mutator
+
 
 mcp = FastMCP("DB Context Enrichment MCP")
-
-
-@mcp.tool
-async def generate_sql_pairs(
-    db_schema: str,
-    context: str | None = None,
-    table_names: List[str] | None = None,
-    sql_dialect: str | None = None,
-) -> str:
-    """
-    Generates a list of question/SQL pairs based on a database schema.
-
-    Args:
-        db_schema: A string containing the database schema.
-        context: Optional user feedback or context to guide generation.
-        table_names: Optional list of table names to focus on. If the user
-          mentions all tables, ignore this field. The default behavior is to use
-          all tables for the pair generation.
-        sql_dialect: Optional name of the database engine for SQL dialect.
-
-    Returns:
-        A JSON string representing a list of dictionaries, where each dictionary
-        has a "question" and a "sql" key.
-        Example: '[{"question": "...", "sql": "..."}]'
-    """
-    return await question_generator.generate_sql_pairs(
-        db_schema, context, table_names, sql_dialect
-    )
 
 
 @mcp.tool
@@ -88,6 +66,98 @@ async def generate_facets(
 
 
 @mcp.tool
+async def generate_bootstrap_context(
+    output_file_path: str,
+    template_inputs_json: str | None = None,
+    facet_inputs_json: str | None = None,
+    sql_dialect: str = "postgresql"
+) -> str:
+    """
+    Generates a single unified ContextSet from key information and saves it to a file.
+
+    Args:
+        output_file_path: The absolute path where the JSON ContextSet file should be saved.
+        template_inputs_json: A JSON string representing a list of extracted seed information used to generate full templates.
+            Each item in the list should be a dictionary with keys:
+            - "question": The natural language question.
+            - "sql": The corresponding SQL query to answer the question.
+            - "intent": (Optional) A brief description of the intent.
+            
+            Example: 
+            '[{"question": "How many users?", "sql": "SELECT COUNT(*) FROM users", "intent": "Count total users"}]'
+            
+        facet_inputs_json: A JSON string representing a list of extracted seed information used to generate full facets.
+            Each item in the list should be a dictionary with keys:
+            - "intent": A brief description of the facet intent.
+            - "sql_snippet": A specific SQL fragment (such as a filter condition) representing the intent.
+            
+            Example: 
+            '[{"intent": "high price", "sql_snippet": "price > 1000"}]'
+        sql_dialect: SQL engine dialect.
+        
+    Returns:
+        The absolute file path pointing to the generated and saved ContextSet JSON.
+    """
+    return await bootstrap_generator.generate_context(
+        output_file_path, sql_dialect, template_inputs_json, facet_inputs_json
+    )
+
+
+@mcp.tool
+async def generate_dataset(
+    dataset_entries_json: str,
+    output_file_path: str,
+) -> str:
+    """
+    Validates a list of evaluation dataset entries and saves them to a JSON file.
+
+    Args:
+        dataset_entries_json: A JSON string representing a list of dataset items.
+                             Each item should have "id", "database", "nlq", and "golden_sql" keys.
+                             Example: '[{"id": "eval_001", "database": "my_db", "nlq": "Count users", "golden_sql": "SELECT COUNT(*) FROM users"}]'
+        output_file_path: The absolute path where the dataset JSON file should be saved.
+
+    Returns:
+        The absolute file path where the dataset was saved.
+    """
+    return await dataset_generator.generate_dataset(dataset_entries_json, output_file_path)
+
+
+@mcp.tool
+def generate_evalbench_configs(
+    experiment_name: str,
+    dataset_path: str,
+    context_set_id: str,
+    toolbox_config_path: str,
+    toolbox_source_name: str
+) -> str:
+    """
+    Generates Evalbench YAML configurations and converts the user-facing golden dataset to be compatible for evaluation, saving all files directly to disk.
+    
+    This tool writes the following files inside `experiments/<experiment_name>/eval_configs/`:
+    - `db_config.yaml`
+    - `model_config.yaml`
+    - `run_config.yaml`
+    - `llmrater_config.yaml`
+    - `golden_queries.json` (converted to EvalBench internal format)
+
+    Args:
+        experiment_name: The name of the target experiment folder.
+        dataset_path: The absolute path to the golden dataset file in the simplified user-facing format (JSON list of objects with keys: "id", "database", "nlq", "golden_sql").
+        context_set_id: The specific context_set_id inside the experiment.
+        toolbox_config_path: The absolute path to the tools.yaml configuration file.
+        toolbox_source_name: The name of the database source to use inside tools.yaml. The underlying source block must use a supported 'type' (cloud-sql-postgres, cloud-sql-mysql, spanner, alloydb-postgres).
+
+    Returns:
+        A message indicating that the configuration files were successfully created.
+    """
+    evaluate_generator.generate_evalbench_configs(
+        experiment_name, dataset_path, context_set_id, toolbox_config_path, toolbox_source_name
+    )
+    return f"Successfully generated all configs for evaluation in experiments/{experiment_name}/eval_configs/"
+
+
+@mcp.tool
 async def generate_value_searches(
     value_search_inputs_json: str,
     dialect: str,
@@ -124,6 +194,7 @@ async def generate_value_searches(
         value_search_inputs_json, dialect, db_version
     )
 
+
 @mcp.tool
 def list_match_functions(dialect: str, db_version: str | None = None) -> str:
     """
@@ -146,6 +217,7 @@ def list_match_functions(dialect: str, db_version: str | None = None) -> str:
         return json.dumps(functions)
     except ValueError as e:
         return f"Error: {str(e)}"
+
 
 @mcp.tool
 def save_context_set(
@@ -276,12 +348,6 @@ def generate_upload_url(
 
 
 @mcp.prompt
-def generate_bulk_templates() -> str:
-    """Initiates a guided workflow to automatically generate templates based on the database schema."""
-    return prompts.GENERATE_BULK_TEMPLATES_PROMPT
-
-
-@mcp.prompt
 def generate_targeted_templates() -> str:
     """Initiates a guided workflow to generate specific templates based on the user's input."""
     return prompts.GENERATE_TARGETED_TEMPLATES_PROMPT
@@ -296,6 +362,80 @@ def generate_targeted_facets() -> str:
 def generate_targeted_value_searches() -> str:
     """Initiates a guided workflow to generate specific Value Search configurations."""
     return prompts.GENERATE_TARGETED_VALUE_SEARCH_PROMPT
+
+
+@mcp.tool
+def mutate_context_set(
+    file_path: str,
+    mutations_json: str,
+) -> str:
+    """
+    Apply structural mutations to an existing ContextSet JSON file.
+
+    Parameters:
+    - file_path (str): The absolute path to the ContextSet file.
+    - mutations_json (str): A JSON string representing a list of mutations.
+      Each mutation must contain:
+      - 'operation': "add", "delete", or "update"
+      - 'type': "template", "facet", or "value_search"
+      - 'identifier' (dict): Required for "delete" and "update" to find the target item (e.g., {"nl_query": "What are all users?"}).
+      - 'value' (dict): Required for "add" and "update".
+        - For "add": Must be the FULL item body. Rely on specialized generation tools (like `generate_templates`) to produce this content deterministically.
+        - For "update": Can be a PARTIAL body containing only the fields to change (it will be merged with the existing item).
+
+    Example 'mutations_json':
+    '[
+      {
+        "operation": "add", 
+        "type": "template", 
+        "value": {
+          "nl_query": "How many users registered in 2023?", 
+          "sql": "SELECT count(*) FROM users WHERE year = 2023",
+          "intent": "Count users registered in 2023",
+          "manifest": "Count users registered in a given year",
+          "parameterized": {
+            "parameterized_sql": "SELECT count(*) FROM users WHERE year = $1",
+            "parameterized_intent": "Count users registered in $1"
+          }
+        }
+      },
+      {
+        "operation": "delete", 
+        "type": "facet", 
+        "identifier": {"intent": "high price"}
+      },
+      {
+        "operation": "update", 
+        "type": "facet", 
+        "identifier": {"intent": "high price"}, 
+        "value": {"sql_snippet": "price > 2000", "intent": "very high price"}
+      }
+    ]'
+    """
+    try:
+        mutations_data = json.loads(mutations_json)
+        if not isinstance(mutations_data, list):
+            return "Error applying mutations: mutations_json must be a JSON list."
+        mutations = [context_mutator.Mutation(**mut) for mut in mutations_data]
+        context_mutator.mutate_context_set(file_path, mutations)
+        return f"Successfully applied {len(mutations)} mutations to {file_path}"
+    except Exception as e:
+        return f"Error applying mutations: {str(e)}"
+
+
+@mcp.tool
+async def read_evaluation_result(run_folder_path: str, offset: int = 0, batch_size: int = 10) -> str:
+    """Reads evaluation results from a folder and produces a markdown summary.
+
+    Args:
+        run_folder_path: The absolute path to the evaluation run result folder, which ends with the eval run job id.
+        offset: Offset to start reading failure cases from (default: 0).
+        batch_size: Number of failure cases to show in the report (default: 10).
+
+    Returns:
+        A string in markdown format containing the summary and failure cases.
+    """
+    return result_reader.read_eval_results(run_folder_path, offset, batch_size)
 
 
 if __name__ == "__main__":

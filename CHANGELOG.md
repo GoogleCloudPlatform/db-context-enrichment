@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.5.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.4.3...v0.5.0) (2026-04-21)
+
+
+### Features
+
+* **autoctx:** introduce automated context generation ([#95](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/95)) ([57f8aa7](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/57f8aa7b4f0d957cbbcd46b5bdd3f5cc8e8a4a82))
+* **bootstrap:** enrich workflow with user-provided docs and code ([#70](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/70)) ([04c8455](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/04c8455ead11cd9abfa93a01bc7fab3b4dbbb157))
+* **bootstrap:** enrich workflow with user-provided docs and code ([#72](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/72)) ([bd04743](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/bd047438adbe21157f53c0ed613ae8e63d5f3ca3))
+* **evaluate:** add custom runner configs to lower evalbench parallelism ([#65](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/65)) ([f0758fa](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/f0758fae4e8fc529f726537551f102894d038d7c))
+* **evaluate:** populate gcp_project_id in llmrater config ([#90](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/90)) ([016af70](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/016af70725ebbea413dfb114513837ab63bdbeb2))
+* **evaluate:** simplify golden dataset format and write configs dire… ([#68](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/68)) ([a76b4bb](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/a76b4bbf16e8ea646af87bba28361e6b4a4686f8))
+* **evaluate:** support llm rater configuration in evalbench generator ([#64](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/64)) ([d181b82](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/d181b82f4582c0d906600581e424cdc0bf4a3d86))
+* **evaluate:** unify failure reporting and add execution errors ([#80](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/80)) ([c11ff47](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/c11ff4787f6229c70f9b5eb4dd8599da75fd0819))
+* **evaluate:** use gemini-2.5-pro for evaluation rater ([#67](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/67)) ([5c8f92d](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/5c8f92d5c41c4c322fc2af71b41f753576837f84))
+* **facet:** enforce qualified table names in prompts ([#85](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/85)) ([b37480f](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/b37480f2a6db32d76f10f04ade46f24a2e55908c))
+* **hillclimb:** support eval result reading tool ([#69](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/69)) ([bb5a249](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/bb5a249afc075eb98826c9ae25711d3a258124aa))
+* **mcp:** add autoctx-hillclimb workflow skill and tools ([#59](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/59)) ([2236964](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/2236964f90198d7ea8ad047449e9c8769405dca1))
+* **mcp:** adopt ADC support for Cloud SQL and AlloyDB ([#78](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/78)) ([f4091fa](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/f4091fa15df50aa055d9efce766cfeacda22ce9b))
+* **mcp:** centralize Gemini model configuration ([#73](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/73)) ([97c5c25](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/97c5c253d71a2a5818eaf466f9d5f196fdc3ba39))
+* **mcp:** migrate autoctx infrastructure to autoctx/ folder ([#92](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/92)) ([0b4f52d](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/0b4f52df743ccfce6037bcb783932f499bb69554))
+* **mcp:** switch default model to gemini-2.5-flash ([#93](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/93)) ([60800e5](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/60800e55ee30f5fa4773de1ace76dd238ea4ca46))
+* **mcp:** update evalbench version to 1.4.0 ([#83](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/83)) ([0b4ffb3](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/0b4ffb322e644b6d38c33ccecf4cef8f2582cfb4))
+* **skills:** update bootstrap skill to include upload URL ([#77](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/77)) ([fd65bff](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/fd65bff761ac65056e4f5a8d3161ec003e0f9378))
+
+
+### Miscellaneous Chores
+
+* force release version 0.5.0 ([da04e7c](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/da04e7c990d6ef7b94a56779d6f1b312bcc3f59d))
+* force release version 0.5.0 ([#97](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/97)) ([82364d6](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/82364d613c2b27d0b105302de8503afeac60a842))
+
 ## [0.4.3](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.4.2...v0.4.3) (2026-04-02)
 
 

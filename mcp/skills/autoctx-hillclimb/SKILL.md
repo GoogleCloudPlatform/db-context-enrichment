@@ -105,6 +105,9 @@ Follow these steps exactly in order:
     -   **Generate New Items**: For any new templates or facets identified in the fixing strategy (for "add" operations):
         -   Call the specialized generation tools (e.g., `generate_templates` or `generate_facets`) with the identified inputs.
         -   Parse the returned JSON string (which represents a `ContextSet`) and extract the generated items from the `templates` or `facets` list.
+    -   **Validate New Items**:
+        -   **Templates**: Run generated SQL examples via `<source>-execute-sql` (use dummy values for placeholders) to verify syntax.
+        -   **Others**: Cross-check table/column references against the schema via `<source>-list-schemas`.
     -   **Apply Mutations**: Call the specialized `mutate_context_set` MCP tool passing the **new** file path as `file_path` and mutations as `mutations_json` to mutate the context set. Use the extracted item bodies as the `value` for `add` operations.
 3.  **Log in State Tracking**:
     -   Update `autoctx/state.md` to include the output path of `improved_context_vN.json` for Loop `vN`.
@@ -115,7 +118,8 @@ Follow these steps exactly in order:
 
 1.  **Summarize Improvements**: Tell the user what was changed (e.g., added 2 facets, updated 1 template).
 2.  **Upload Instructions**:
-    -   Call `generate_upload_url` to get the direct link to the database studio (read project/instance details from `autoctx/tools.yaml` or `db_config.yaml`).
+    -   **Read Database Details**: Read `autoctx/tools.yaml` (or `db_config.yaml`) to fetch the specific project, location, and instance/cluster details for the active database.
+    -   **Generate URL**: Call the `generate_upload_url` tool passing the extracted values to provide the direct console link to the user.
     -   Present the local file path to `improved_context_vN.json` and the generated console link together in a single clear message.
 3.  **Instruct Next Step Evaluation**:
     -   Instruct the user to run evaluation using the evaluating workflow on this new ContextSet to see if metrics improve. This will start Loop `N+1`.

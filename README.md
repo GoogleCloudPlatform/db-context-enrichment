@@ -11,12 +11,17 @@ This repository contains tools to help you document and enrich database schemas 
 
 ## DB Context Enrichment Extension (Gemini CLI Extension)
 
-The DB Context Enrichment Extension is an MCP (Model Context Protocol) server that provides a guided, interactive workflow to generate structured context sets (Templates, Facets, Value Searches) from your database schemas.
+The DB Context Enrichment Extension is an MCP (Model Context Protocol) server that provides a guided, interactive workflow to generate structured context sets from your database schemas. These context sets contain:
+
+*   **Templates**: End-to-end mappings linking a natural language query to a complete, runnable SQL query.
+*   **Facets**: Reusable, modular SQL fragments linked to specific vocabulary or terminology.
+*   **Value Searches**: Specialized queries used to map user input to database values (e.g., fuzzy matching).
 
 ### Key Workflows
 
 *   **Automated Iterative Optimization (Autoctx)**: A loop to progressively improve context quality based on evaluation scores.
     *   **Initialization (`/autoctx:init`)**: Sets up your local workspace.
+    *   **Generate Dataset (`/autoctx:generate-dataset`)**: Rapidly creates or expands a baseline of evaluation questions (golden dataset).
     *   **Bootstrap (`/autoctx:bootstrap`)**: Generates an initial context set based on database schema and optional artifacts.
     *   **Evaluate (`/autoctx:evaluate`)**: Measures context effectiveness against a golden dataset using Evalbench.
     *   **Hill-Climb (`/autoctx:hillclimb`)**: Performs gap analysis and proposes context updates to improve accuracy.

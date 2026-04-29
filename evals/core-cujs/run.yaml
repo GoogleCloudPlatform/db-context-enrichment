@@ -1,0 +1,38 @@
+############################################################
+### Dataset / Eval Items
+############################################################
+dataset_config: core-cujs/dataset.json
+dataset_format: gemini-cli-format
+
+# Orchestrator Configuration
+orchestrator: geminicli
+model_config: core-cujs/model.yaml
+simulated_user_model_config: core-cujs/gemini_2.5_pro_model.yaml
+
+############################################################
+### Scorer Related Configs
+############################################################
+scorers:
+  # Checks if the agent used the expected tools in the correct order.
+  trajectory_matcher: {}
+
+  # Uses an LLM to judge if the user's goal was met.
+  goal_completion:
+    model_config: core-cujs/gemini_2.5_pro_model.yaml
+
+  # Evaluates agent behavior (e.g., hallucination, clarification).
+  behavioral_metrics:
+    model_config: core-cujs/gemini_2.5_pro_model.yaml
+
+  # Metrics for efficiency and performanceyou need. model_config contains
+  turn_count: {}
+  end_to_end_latency: {}
+  tool_call_latency: {}
+  token_consumption: {}
+
+############################################################
+### Reporting Related Configs
+############################################################
+reporting:
+  csv:
+    output_directory: 'results'

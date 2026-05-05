@@ -1,0 +1,44 @@
+{
+  "scenarios": [
+    {
+      "id": "autoctx:init",
+      "starting_prompt": "setup context generation for my alloydb database.",
+      "conversation_plan": "Ask the agent to setup the auto context generation for my alloydb database. Connection information: datasource name as my-alloydb, project id is cloud-db-nl2sql, region us-central1, cluster whaoyu-test, instance whaoyu-test-primary, database financial. Verify the agent generate a valid tools.yaml and performed the validation. Mark the conversation as completed after the agent successfully set up the files and performed the validation. Do not need to perform mcp reload.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:generate-dataset",
+      "starting_prompt": "Generate an evaluation dataset for my alloydb database financial",
+      "conversation_plan": "Ask the agent to generate a dataset named golden.json in the current directory for evaluation, and expand it with 2 additional examples. The 'seed' includes the following two golden NL-SQL pair:\n\nHow many accounts who choose issuance after transaction are staying in East Bohemia region? A3 contains the data of region; 'POPLATEK PO OBRATU' represents for 'issuance after transaction'.\nSELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'east Bohemia' AND \"T1\".\"frequency\" = 'POPLATEK PO OBRATU'\n\nHow many accounts who have region in Prague are eligible for loans? A3 contains the data of region\nSELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'Prague'. Verify the agent leverages the execute_sql tool to validate SQL queries. Mark the conversation as completed after the agent successfully generated the dataset. Do not need to perform evaluation on the generated dataset.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:bootstrap",
+      "starting_prompt": "create initial context set for my alloydb database",
+      "conversation_plan": "Ask the agent to create initial context set for my alloydb database. Need to have at least 2 templates and 2 facets. If prompted for experiment name, use 'my-alloydb-tuning-experiment'. Mark the conversation as completed after the agent successfully created the context set. Do not need to perform evaluation on the generated dataset.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:evaluate",
+      "starting_prompt": "evaluate on the golden dataset",
+      "conversation_plan": "Ask the agent to evaluate the golden dataset, using the current context set with context set id projects/cloud-db-nl2sql/locations/us-east1/contextSets/whaoyu-eval-contextset. If prompted for experiment name, use 'my-alloydb-tuning-experiment'. Mark the conversation as completed after the agent successfully evaluated the dataset. Do not need to perform context improving task.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:hillclimb",
+      "starting_prompt": "improve the context set based on eval failure",
+      "conversation_plan": "Ask the agent to perform the hillclimbing to improve the context set based on eval failure. If prompted for experiment name, use 'my-alloydb-tuning-experiment'. Mark the conversation as completed after the agent successfully performed the hillclimbing task. Do not need to perform evaluation on the improved context set.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "max_turns": 15
+    }
+  ]
+}

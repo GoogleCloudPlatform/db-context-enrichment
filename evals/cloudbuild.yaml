@@ -1,0 +1,38 @@
+steps:
+  # --- Evaluation Step ---
+  - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    entrypoint: 'bash'
+    secretEnv: ['GITHUB_TOKEN']
+    args:
+      - '-c'
+      - |
+        set -e
+
+        ln -s /workspace /workspace/mcp-db-context-enrichment
+        cd /workspace/evals
+
+        # Set environment variables for evalbench
+        export EVAL_GCP_PROJECT_ID=$PROJECT_ID
+        export EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION
+        export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+
+        # Setup Python path and run evalbench
+        export PYTHONPATH=/evalbench:/evalbench/evalproto
+        export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
+        echo "Launching Standalone Evaluation..."
+        python3 /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
+
+  # --- Upload Step ---
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args: ['-m', 'cp', '-r', 'evals/results/*', 'gs://context-engineering-agent-eval-results/evals/$TAG_NAME/']
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/$PROJECT_ID/secrets/GITHUB_TOKEN/versions/latest
+    env: 'GITHUB_TOKEN'
+
+serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/context-engineering-agent-test@cloud-db-nl2sql.iam.gserviceaccount.com'
+
+options:
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

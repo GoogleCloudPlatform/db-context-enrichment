@@ -17,7 +17,7 @@ The evaluation uses the [evalbench](https://github.com/GoogleCloudPlatform/evalb
 
 The suite evaluates the agent across several dimensions using the following scorers:
 
-* **Goal Completion**: An LLM-based judge that determines if the agent successfully fulfilled the 
+* **Goal Completion**: An LLM-based judge that determines if the agent successfully fulfilled the user's goal.
 * **Turn Count**: Number of interactions required to complete the task.
 * **End-to-End Latency**: Total time taken to resolve the user query.
 * **Tool Call Latency**: Time spent executing database context tools.

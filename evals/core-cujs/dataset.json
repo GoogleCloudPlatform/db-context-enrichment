@@ -31,14 +31,6 @@
       "expected_trajectory": [],
       "kind": "agents",
       "max_turns": 15
-    },
-    {
-      "id": "autoctx:hillclimb",
-      "starting_prompt": "improve the context set based on eval failure",
-      "conversation_plan": "Ask the agent to perform the hillclimbing to improve the context set based on eval failure. If prompted for experiment name, use 'my-alloydb-tuning-experiment'. Mark the conversation as completed after the agent successfully performed the hillclimbing task. Do not need to perform evaluation on the improved context set.",
-      "expected_trajectory": [],
-      "kind": "agents",
-      "max_turns": 15
     }
   ]
 }

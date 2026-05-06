@@ -26,6 +26,9 @@ steps:
         echo "Locating autoctx directory..."
         find /workspace -name autoctx
 
+        echo "Running autoctx evaluate..."
+        /workspace/evals/.venv/fake_home/.gemini/extensions/mcp-db-context-enrichment/skills/autoctx-evaluate/scripts/evalbench --experiment_config=autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/run_config.yaml
+
   # --- Upload Eval Results ---
   - name: 'gcr.io/cloud-builders/gsutil'
     args: ['-m', 'cp', '-r', 'evals/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/']

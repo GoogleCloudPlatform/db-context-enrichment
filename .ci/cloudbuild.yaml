@@ -29,9 +29,9 @@ steps:
   # --- Upload Eval Results ---
   - name: 'gcr.io/cloud-builders/gsutil'
     args: ['-m', 'cp', '-r', 'evals/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/']
-  # # --- Upload Autoctx workspace ---
-  # - name: 'gcr.io/cloud-builders/gsutil'
-  #   args: ['-m', 'cp', '-r', 'evals/autoctx/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/autoctx/']
+  # --- Upload Autoctx workspace ---
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args: ['-m', 'cp', '-r', 'evals/.venv/fake_home/autoctx/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/autoctx/']
 
 
 

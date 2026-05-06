@@ -1,0 +1,29 @@
+name: Run Evaluations on PR Label
+
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  trigger-eval:
+    if: github.event.label.name == 'eval'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Submit Cloud Build
+        run: |
+          TAG_NAME="pr-${{ github.event.pull_request.number }}-${{ github.sha }}"
+          gcloud builds submit \
+            --config evals/cloudbuild.yaml \
+            --substitutions TAG_NAME=$TAG_NAME,_PROJECT_LOCATION=us-central1 \
+            .

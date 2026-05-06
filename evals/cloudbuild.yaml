@@ -2,32 +2,13 @@ steps:
   # --- Evaluation Step ---
   - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
-    secretEnv: ['GITHUB_TOKEN']
+
     args:
       - '-c'
       - |
         set -e
 
-        echo "Fetching PR data from GitHub API..."
 
-        # Fetch PR data and status code
-        HTTP_STATUS=$(curl -s -o pr_data.json -w "%{http_code}" -H "Authorization: token $$GITHUB_TOKEN" \
-          "https://api.github.com/repos/$REPO_FULL_NAME/pulls/$_PR_NUMBER")
-
-        if [ "$$HTTP_STATUS" -ne 200 ]; then
-          echo "Error fetching PR data: HTTP $$HTTP_STATUS"
-          cat pr_data.json
-          exit 1
-        fi
-
-        PR_DATA=$(cat pr_data.json)
-
-        # Check if execution labels are present
-        if ! jq -e '.labels | any(.name == "eval")' pr_data.json > /dev/null; then
-          echo "PR does not have 'eval' label. Skipping execution."
-          exit 0
-        fi
-        echo "Execution label detected. Processing release version context..."
 
         ln -s /workspace /workspace/mcp-db-context-enrichment
         cd /workspace/evals
@@ -48,10 +29,7 @@ steps:
   - name: 'gcr.io/cloud-builders/gsutil'
     args: ['-m', 'cp', '-r', 'evals/results/*', 'gs://context-engineering-agent-eval-results/evals/$TAG_NAME/']
 
-availableSecrets:
-  secretManager:
-  - versionName: projects/$PROJECT_ID/secrets/context-engineering-agent-pat/versions/latest
-    env: 'GITHUB_TOKEN'
+
 
 serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/context-engineering-agent-test@cloud-db-nl2sql.iam.gserviceaccount.com'
 

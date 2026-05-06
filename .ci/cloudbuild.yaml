@@ -1,0 +1,48 @@
+steps:
+  # --- Evaluation Step ---
+  - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    args:
+      - '-c'
+      - |
+        set -e
+
+        # Write secret to file for ADC
+        echo "$$ADC_KEY" > /tmp/adc.json
+        export GOOGLE_APPLICATION_CREDENTIALS=/tmp/adc.json
+
+        ln -s /workspace /workspace/mcp-db-context-enrichment
+        cd /workspace/evals
+
+        # Set environment variables for evalbench
+        export EVAL_GCP_PROJECT_ID=$PROJECT_ID
+        export EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION
+        export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+
+        # Setup Python path and run evalbench
+        export PYTHONPATH=/evalbench:/evalbench/evalproto
+        export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
+        echo "Launching Standalone Evaluation..."
+        python3 /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
+
+  # --- Upload Eval Results ---
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args: ['-m', 'cp', '-r', 'evals/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/']
+  # -- Upload Autoctx workspace ---
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args: ['-m', 'cp', '-r', 'evals/.venv/fake_home/autoctx/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/autoctx/']
+  # -- Upload Gemini workspace ---
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args: ['-m', 'cp', '-r', 'evals/.venv/fake_home/.gemini/tmp/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/gemini/']
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-adc-credentials/versions/latest
+    env: 'ADC_KEY'
+
+serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/crema-eval@cloud-db-nl2sql.iam.gserviceaccount.com'
+
+options:
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

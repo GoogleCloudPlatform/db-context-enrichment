@@ -20,14 +20,17 @@ steps:
         export PYTHONPATH=/evalbench:/evalbench/evalproto
         export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
-        echo "Launching Standalone Evaluation..."
-        python3 /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
+        # echo "Launching Standalone Evaluation..."
+        # python3 /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
 
-        echo "Locating autoctx directory..."
-        find /workspace -name autoctx
+        # echo "Locating autoctx directory..."
+        # find /workspace -name autoctx
 
         echo "Running autoctx evaluate..."
-        /workspace/evals/.venv/fake_home/.gemini/extensions/mcp-db-context-enrichment/skills/autoctx-evaluate/scripts/evalbench --experiment_config=autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/run_config.yaml
+        curl -L https://github.com/helloeve/evalbench/releases/download/debug/linux.x64.evalbench.tar.gz -o /tmp/evalbench.tar.gz
+        tar -xzf /tmp/evalbench.tar.gz -C /workspace/evals
+        rm /tmp/evalbench.tar.gz
+        ./evalbench --experiment_config=autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/run_config.yaml
 
   # --- Upload Eval Results ---
   - name: 'gcr.io/cloud-builders/gsutil'

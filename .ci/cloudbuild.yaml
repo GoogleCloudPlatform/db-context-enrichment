@@ -32,6 +32,9 @@ steps:
   # --- Upload Autoctx workspace ---
   - name: 'gcr.io/cloud-builders/gsutil'
     args: ['-m', 'cp', '-r', 'evals/.venv/fake_home/autoctx/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/autoctx/']
+  # --- Upload Gemini workspace ---
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args: ['-m', 'cp', '-r', 'evals/.venv/fake_home/.gemini/tmp/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/gemini/']
 
 
 

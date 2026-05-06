@@ -2,11 +2,15 @@ steps:
   # --- Evaluation Step ---
   - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
-
+    secretEnv: ['ADC_KEY']
     args:
       - '-c'
       - |
         set -e
+
+        # Write secret to file for ADC
+        echo "$$ADC_KEY" > /tmp/adc.json
+        export GOOGLE_APPLICATION_CREDENTIALS=/tmp/adc.json
 
         ln -s /workspace /workspace/mcp-db-context-enrichment
         cd /workspace/evals
@@ -42,7 +46,10 @@ steps:
   - name: 'gcr.io/cloud-builders/gsutil'
     args: ['-m', 'cp', '-r', 'evals/.venv/fake_home/.gemini/tmp/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/gemini/']
 
-
+availableSecrets:
+  secretManager:
+  - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-adc-credentials/versions/latest
+    env: 'ADC_KEY'
 
 serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/context-engineering-agent-test@cloud-db-nl2sql.iam.gserviceaccount.com'
 

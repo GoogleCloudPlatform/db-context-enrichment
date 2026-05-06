@@ -22,7 +22,7 @@ jobs:
 
       - name: Submit Cloud Build
         run: |
-          TAG_NAME="pr-${{ github.event.pull_request.number }}-${GITHUB_SHA:0:7}"
+          TAG_NAME="context-engineering-agent-pr-${{ github.event.pull_request.number }}-${GITHUB_SHA:0:7}"
           gcloud builds submit \
             --config .ci/cloudbuild.yaml \
             --substitutions TAG_NAME=$TAG_NAME,_PROJECT_LOCATION=us-central1 \

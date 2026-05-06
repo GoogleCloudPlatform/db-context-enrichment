@@ -1,4 +1,4 @@
-name: Run Evaluations on PR Label
+name: evaluation
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   trigger-eval:
-    if: github.event.label.name == 'eval'
+    if: github.event.label.name == 'ci:eval'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -22,8 +22,8 @@ jobs:
 
       - name: Submit Cloud Build
         run: |
-          TAG_NAME="pr-${{ github.event.pull_request.number }}-${{ github.sha }}"
+          TAG_NAME="pr-${{ github.event.pull_request.number }}-${GITHUB_SHA:0:7}"
           gcloud builds submit \
-            --config evals/cloudbuild.yaml \
+            --config .ci/cloudbuild.yaml \
             --substitutions TAG_NAME=$TAG_NAME,_PROJECT_LOCATION=us-central1 \
             .

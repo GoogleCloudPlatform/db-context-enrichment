@@ -8,8 +8,6 @@ steps:
       - |
         set -e
 
-
-
         ln -s /workspace /workspace/mcp-db-context-enrichment
         cd /workspace/evals
 

@@ -23,9 +23,12 @@ steps:
         echo "Launching Standalone Evaluation..."
         python3 /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
 
-  # --- Upload Step ---
+  # --- Upload Eval Results ---
   - name: 'gcr.io/cloud-builders/gsutil'
     args: ['-m', 'cp', '-r', 'evals/results/*', 'gs://context-engineering-agent-eval-results/evals/$TAG_NAME/']
+  # --- Upload Autoctx workspace ---
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args: ['-m', 'cp', '-r', 'autoctx/*', 'gs://context-engineering-agent-eval-results/evals/$TAG_NAME/autoctx/']
 
 
 

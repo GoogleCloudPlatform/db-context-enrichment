@@ -23,12 +23,15 @@ steps:
         echo "Launching Standalone Evaluation..."
         python3 /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
 
+        echo "Locating autoctx directory..."
+        find /workspace -name autoctx
+
   # --- Upload Eval Results ---
   - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['-m', 'cp', '-r', 'evals/results/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/']
-  # --- Upload Autoctx workspace ---
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['-m', 'cp', '-r', 'evals/autoctx/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/autoctx/']
+    args: ['-m', 'cp', '-r', 'evals/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/']
+  # # --- Upload Autoctx workspace ---
+  # - name: 'gcr.io/cloud-builders/gsutil'
+  #   args: ['-m', 'cp', '-r', 'evals/autoctx/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/autoctx/']
 
 
 

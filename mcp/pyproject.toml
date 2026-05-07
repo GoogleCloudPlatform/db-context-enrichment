@@ -22,7 +22,10 @@ test = [
 
 [tool.setuptools]
 py-modules = ["main"]
-packages = ["template", "facet", "value_search", "common", "model", "prompts", "bootstrap", "evaluate", "dataset"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["template*", "facet*", "value_search*", "common*", "model*", "prompts*", "bootstrap*", "evaluate*", "dataset*"]
 
 [tool.pytest.ini_options]
 pythonpath = "."

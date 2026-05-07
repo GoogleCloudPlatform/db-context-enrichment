@@ -18,9 +18,16 @@ def valid_postgres_params():
         "password": "test-password"
     }
 
-def test_generate_evalbench_configs_file_not_found():
+def test_generate_evalbench_configs_file_not_found(tmp_path):
+    missing_file = str(tmp_path / "missing_tools.yaml")
     with pytest.raises(ValueError, match="Config file not found"):
-        generate_evalbench_configs("exp", "path", "ctx", "/nonexistent/tools.yaml", "any-name")
+        generate_evalbench_configs("exp", "path", "ctx", missing_file, "any-name")
+
+
+def test_generate_evalbench_configs_permission_error():
+    with patch("builtins.open", side_effect=PermissionError("Mocked Permission Denied")):
+        with pytest.raises(ValueError, match="Permission denied reading config file"):
+            generate_evalbench_configs("exp", "path", "ctx", "fake_tools.yaml", "any-name")
 
 
 def test_generate_evalbench_configs_missing_source():

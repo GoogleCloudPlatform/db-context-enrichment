@@ -2,11 +2,36 @@ steps:
   # --- Evaluation Step ---
   - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY']
+    secretEnv: ['ADC_KEY', 'GITHUB_TOKEN']
     args:
       - '-c'
       - |
         set -e
+
+        if [ -z "$_PR_NUMBER" ]; then
+          echo "No PR number provided. Skipping PR check (assuming local/manual run)."
+        else
+        echo "Fetching PR data from GitHub API..."
+
+        # Fetch PR data and status code
+        HTTP_STATUS=$(curl -s -o pr_data.json -w "%{http_code}" -H "Authorization: token $$GITHUB_TOKEN" \
+          "https://api.github.com/repos/$REPO_FULL_NAME/pulls/$_PR_NUMBER")
+
+        if [ "$$HTTP_STATUS" -ne 200 ]; then
+          echo "Error fetching PR data: HTTP $$HTTP_STATUS"
+          cat pr_data.json
+          exit 1
+        fi
+
+        PR_DATA=$(cat pr_data.json)
+
+        # Check if execution labels are present
+        if ! jq -e '.labels | any(.name == "ci:eval")' pr_data.json > /dev/null; then
+            echo "PR does not have 'ci:eval' label. Skipping execution."
+          exit 0
+        fi
+        echo "Execution label detected. Processing release version context..."
+        fi
 
         # Write secret to file for ADC
         echo "$$ADC_KEY" > /tmp/adc.json
@@ -27,18 +52,28 @@ steps:
         echo "Launching Standalone Evaluation..."
         python3 /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
 
-  # --- Upload Eval Results ---
+  # --- Upload Results and Workspaces ---
   - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['-m', 'cp', '-r', 'evals/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/']
-  # -- Upload Autoctx workspace ---
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['-m', 'cp', '-r', 'evals/.venv/fake_home/autoctx/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/autoctx/']
-  # -- Upload Gemini workspace ---
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['-m', 'cp', '-r', 'evals/.venv/fake_home/.gemini/tmp/*', 'gs://context-engineering-agent-eval-results/evals/$BUILD_ID/gemini/']
-
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ -f /workspace/EVAL_RAN ]; then
+          echo "Uploading results..."
+          gsutil -m cp -r evals/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/
+          
+          echo "Uploading Autoctx workspace..."
+          gsutil -m cp -r evals/.venv/fake_home/autoctx/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/autoctx/
+          
+          echo "Uploading Gemini workspace..."
+          gsutil -m cp -r evals/.venv/fake_home/.gemini/tmp/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/gemini/
+        else
+          echo "Evaluation did not run. Skipping upload."
+        fi
 availableSecrets:
   secretManager:
+  - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-pat/versions/latest
+    env: 'GITHUB_TOKEN'
   - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-adc-credentials/versions/latest
     env: 'ADC_KEY'
 

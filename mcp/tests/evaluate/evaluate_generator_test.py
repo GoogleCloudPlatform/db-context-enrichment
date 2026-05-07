@@ -23,9 +23,10 @@ def test_generate_evalbench_configs_file_not_found(tmp_path):
     with pytest.raises(ValueError, match="Config file not found"):
         generate_evalbench_configs("exp", "path", "ctx", missing_file, "any-name")
 
+
 def test_generate_evalbench_configs_permission_error():
     with patch("builtins.open", side_effect=PermissionError("Mocked Permission Denied")):
-        with pytest.raises(ValueError, match="Config file not found"):
+        with pytest.raises(ValueError, match="Permission denied reading config file"):
             generate_evalbench_configs("exp", "path", "ctx", "fake_tools.yaml", "any-name")
 
 

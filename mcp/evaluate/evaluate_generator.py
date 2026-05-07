@@ -79,8 +79,10 @@ def _extract_toolbox_params(toolbox_config_path: str, toolbox_source_name: str) 
             
             raise ValueError(f"Could not find a 'kind: source' named '{toolbox_source_name}' in {toolbox_config_path}")
             
-    except (FileNotFoundError, PermissionError):
+    except FileNotFoundError:
         raise ValueError(f"Config file not found: {toolbox_config_path}")
+    except PermissionError:
+        raise ValueError(f"Permission denied reading config file: {toolbox_config_path}")
     except yaml.YAMLError as e:
         raise ValueError(f"Failed to parse {toolbox_config_path} as YAML: {e}")
 

@@ -1,39 +1,37 @@
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-db_schema_enricher
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Test binary, built with `go test -c`
-*.test
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
 
-# Output of the go coverage tool
-*.out
-
-# Dependency directories
-vendor/
-
-# IDE-specific files
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Environment files
+# Environment variables / Secrets
 .env
-.env.local
+*.env
 
-# OS-specific files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-
-# Gemini CLI extension files
-mcp/node_modules/
-
-# Python build artifacts
+# Python packaging & distribution
 *.egg-info/
+*.egg
+build/
+dist/
+
+# Testing / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE and Editor configurations
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS metadata
+.DS_Store
+Thumbs.db
+

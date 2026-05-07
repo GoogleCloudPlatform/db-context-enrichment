@@ -47,7 +47,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: "mcp/uv.lock"
+          cache-dependency-glob: "uv.lock"
 
       # Setup the correct Python version defined by uv
       - name: Set up Python
@@ -55,12 +55,10 @@ jobs:
 
       # Install all project dependencies defined in pyproject.toml / uv.lock
       - name: Install dependencies
-        working-directory: mcp
         run: uv sync --frozen
 
       # Extract the targeted genai-toolbox version from pyproject.toml
       - name: Get Toolbox Version
-        working-directory: mcp
         shell: bash
         run: |
           TOOLBOX_VERSION=$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
@@ -69,7 +67,6 @@ jobs:
 
       # Extract evalbench version from pyproject.toml
       - name: Get Evalbench Version
-        working-directory: mcp
         shell: bash
         run: |
           EVALBENCH_VERSION=$(grep -o '^evalbench_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
@@ -78,7 +75,6 @@ jobs:
 
       # Download the pre-compiled genai-toolbox binary for the target platform
       - name: Download genai-toolbox binary
-        working-directory: mcp
         shell: bash
         run: |
           DOWNLOAD_URL="https://storage.googleapis.com/genai-toolbox/v${{ env.TOOLBOX_VERSION }}/${{ matrix.toolbox_os }}/${{ matrix.toolbox_arch }}/toolbox${{ matrix.toolbox_ext }}"
@@ -88,7 +84,6 @@ jobs:
 
       # Download the evalbench binary for the target platform
       - name: Download evalbench binary
-        working-directory: mcp
         shell: bash
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then
@@ -111,12 +106,10 @@ jobs:
 
       # Package the Python application into a standalone executable using PyInstaller
       - name: Build binary with PyInstaller
-        working-directory: mcp
         run: uv run pyinstaller pyinstaller.spec
 
       # Validate the built binary starts successfully before packaging
       - name: Validate binary
-        working-directory: mcp
         shell: bash
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then
@@ -127,7 +120,6 @@ jobs:
 
       # Prepare the final distribution folder containing the binary, config, and docs
       - name: Prepare distribution
-        working-directory: mcp
         shell: bash
         run: |
           mkdir -p staging
@@ -151,23 +143,23 @@ jobs:
             TOOLBOX_NAME="\${extensionPath}/skills/autoctx-init/scripts/toolbox"
           fi
           
-          jq ".contextFileName = \"GEMINI.md\" | .mcpServers.mcp_db_context_enrichment.command = \"$BINARY_NAME\" | .mcpServers.mcp_db_context_enrichment.args = [] | .mcpServers.mcp_toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\", \"--config\", \"autoctx/tools.yaml\"]}" ../gemini-extension.json > staging/gemini-extension.json
+          jq ".contextFileName = \"GEMINI.md\" | .mcpServers.mcp_db_context_enrichment.command = \"$BINARY_NAME\" | .mcpServers.mcp_db_context_enrichment.args = [] | .mcpServers.mcp_toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\", \"--config\", \"autoctx/tools.yaml\"]}" gemini-extension.json > staging/gemini-extension.json
           cp GEMINI.md staging/
-          cp ../LICENSE staging/
+          cp LICENSE staging/
 
       # Create a compressed tarball archive for Linux and macOS distributions
       - name: Archive artifacts (Unix)
         if: runner.os != 'Windows'
-        working-directory: mcp/staging
+        working-directory: staging
         run: |
-          tar -czf ../../${{ matrix.platform_name }}.${{ matrix.arch_name }}.db-context-enrichment.tar.gz *
+          tar -czf ../${{ matrix.platform_name }}.${{ matrix.arch_name }}.db-context-enrichment.tar.gz *
 
       # Create a zip archive for Windows distributions
       - name: Archive artifacts (Windows)
         if: runner.os == 'Windows'
-        working-directory: mcp/staging
+        working-directory: staging
         run: |
-          Compress-Archive -Path * -DestinationPath ../../${{ matrix.platform_name }}.${{ matrix.arch_name }}.db-context-enrichment.zip
+          Compress-Archive -Path * -DestinationPath ../${{ matrix.platform_name }}.${{ matrix.arch_name }}.db-context-enrichment.zip
 
       # Upload the archives to GitHub Actions artifacts so the publish job can access them
       - name: Upload Build Artifacts

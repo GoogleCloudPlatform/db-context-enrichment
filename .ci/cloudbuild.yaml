@@ -1,0 +1,96 @@
+steps:
+  # --- Build Extension Step ---
+  - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        apt-get update && apt-get install -y binutils
+        chmod +x .ci/build.sh
+        .ci/build.sh
+
+  # --- Evaluation Step ---
+  - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY', 'GITHUB_TOKEN']
+    args:
+      - '-c'
+      - |
+        set -e
+
+        if [ -z "$_PR_NUMBER" ]; then
+          echo "No PR number provided. Skipping PR check (assuming local/manual run)."
+        else
+          echo "Fetching PR data from GitHub API..."
+
+          # Fetch PR data and status code
+          HTTP_STATUS=$(curl -s -o pr_data.json -w "%{http_code}" -H "Authorization: token $$GITHUB_TOKEN" \
+            "https://api.github.com/repos/$_REPO_FULL_NAME/pulls/$_PR_NUMBER")
+
+          if [ "$$HTTP_STATUS" -ne 200 ]; then
+            echo "Error fetching PR data: HTTP $$HTTP_STATUS"
+            cat pr_data.json
+            exit 1
+          fi
+
+          # Check if execution labels are present
+          if ! jq -e '.labels | any(.name == "ci:eval")' pr_data.json > /dev/null; then
+            echo "PR does not have 'ci:eval' label. Skipping execution."
+            exit 0
+          fi
+          echo "Execution label detected. Processing release version context..."
+        fi
+
+        # Write secret to file for ADC
+        echo "$$ADC_KEY" > /tmp/adc.json
+        chmod 600 /tmp/adc.json
+        export GOOGLE_APPLICATION_CREDENTIALS=/tmp/adc.json
+
+        cd /workspace/evals
+
+        # Override model.yaml to use the locally built extension instead of GitHub
+        sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' core-cujs/model.yaml
+
+        # Set environment variables for evalbench
+        export EVAL_GCP_PROJECT_ID=$PROJECT_ID
+        export EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION
+        export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+
+        # Setup Python path and run evalbench
+        export PYTHONPATH=/evalbench:/evalbench/evalproto
+        export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
+        echo "Launching Standalone Evaluation..."
+        python3 /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
+        
+        # Mark that evaluation ran
+        touch /workspace/EVAL_RAN
+
+  # --- Upload Results and Workspaces ---
+  - name: 'gcr.io/cloud-builders/gsutil'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [ -f /workspace/EVAL_RAN ]; then
+          echo "Uploading results..."
+          gsutil -m cp -r evals/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/
+          
+          echo "Uploading Gemini workspace..."
+          gsutil -m cp -r evals/.venv/fake_home/.gemini/tmp/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/gemini/
+        else
+          echo "Evaluation did not run. Skipping upload."
+        fi
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-pat/versions/latest
+    env: 'GITHUB_TOKEN'
+  - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-adc-credentials/versions/latest
+    env: 'ADC_KEY'
+
+serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/crema-eval@cloud-db-nl2sql.iam.gserviceaccount.com'
+
+options:
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

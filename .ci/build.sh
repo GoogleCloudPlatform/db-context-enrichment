@@ -4,7 +4,7 @@ set -e
 # This script builds the standalone executable for Linux, replicating release.yml logic.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-cd "$SCRIPT_DIR/../mcp"
+cd "$SCRIPT_DIR/.."
 
 # 1. Install uv (if not present)
 if ! command -v uv &> /dev/null; then
@@ -59,14 +59,14 @@ mv evalbench staging/skills/autoctx-evaluate/scripts/
 BINARY_NAME="\${extensionPath}/db-context-enrichment"
 TOOLBOX_NAME="\${extensionPath}/skills/autoctx-init/scripts/toolbox"
 
-jq ".contextFileName = \"GEMINI.md\" | .mcpServers.mcp_db_context_enrichment.command = \"$BINARY_NAME\" | .mcpServers.mcp_db_context_enrichment.args = [] | .mcpServers.mcp_toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\", \"--config\", \"autoctx/tools.yaml\"]}" ../gemini-extension.json > staging/gemini-extension.json
+jq ".contextFileName = \"GEMINI.md\" | .mcpServers.mcp_db_context_enrichment.command = \"$BINARY_NAME\" | .mcpServers.mcp_db_context_enrichment.args = [] | .mcpServers.mcp_toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\", \"--config\", \"autoctx/tools.yaml\"]}" gemini-extension.json > staging/gemini-extension.json
 
 cp GEMINI.md staging/
-cp ../LICENSE staging/
+cp LICENSE staging/
 
 # Create tarball
 cd staging
-tar -czf ../../linux.x64.db-context-enrichment.tar.gz *
+tar -czf ../linux.x64.db-context-enrichment.tar.gz *
 cd ..
 
 echo "Build completed successfully! Artifact at linux.x64.db-context-enrichment.tar.gz"

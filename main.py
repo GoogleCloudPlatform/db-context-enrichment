@@ -1,21 +1,19 @@
+import datetime
+import json
+import os
+
 from fastmcp import FastMCP
-from typing import List
-import textwrap
-from template import template_generator
+
+import prompts
+from bootstrap import bootstrap_generator
+from common import context_mutator
+from dataset import dataset_generator
+from evaluate import evaluate_generator, result_reader
 from facet import facet_generator
+from model import context
+from template import template_generator
 from value_search import generator as vi_generator
 from value_search import match_templates
-from model import context
-import prompts
-import datetime
-import os
-import json
-from bootstrap import bootstrap_generator
-from evaluate import evaluate_generator
-from evaluate import result_reader
-from dataset import dataset_generator
-from common import context_mutator
-
 
 mcp = FastMCP("Context Engineering Agent MCP")
 
@@ -60,9 +58,7 @@ async def generate_facets(
     Returns:
         A JSON string representing a ContextSet object.
     """
-    return await facet_generator.generate_facets(
-        facet_inputs_json, sql_dialect
-    )
+    return await facet_generator.generate_facets(facet_inputs_json, sql_dialect)
 
 
 @mcp.tool
@@ -70,7 +66,7 @@ async def generate_bootstrap_context(
     output_file_path: str,
     template_inputs_json: str | None = None,
     facet_inputs_json: str | None = None,
-    sql_dialect: str = "postgresql"
+    sql_dialect: str = "postgresql",
 ) -> str:
     """
     Generates a single unified ContextSet from key information and saves it to a file.
@@ -82,19 +78,19 @@ async def generate_bootstrap_context(
             - "question": The natural language question.
             - "sql": The corresponding SQL query to answer the question.
             - "intent": (Optional) A brief description of the intent.
-            
-            Example: 
+
+            Example:
             '[{"question": "How many users?", "sql": "SELECT COUNT(*) FROM users", "intent": "Count total users"}]'
-            
+
         facet_inputs_json: A JSON string representing a list of extracted seed information used to generate full facets.
             Each item in the list should be a dictionary with keys:
             - "intent": A brief description of the facet intent.
             - "sql_snippet": A specific SQL fragment (such as a filter condition) representing the intent.
-            
-            Example: 
+
+            Example:
             '[{"intent": "high price", "sql_snippet": "price > 1000"}]'
         sql_dialect: SQL engine dialect.
-        
+
     Returns:
         The absolute file path pointing to the generated and saved ContextSet JSON.
     """
@@ -120,7 +116,9 @@ async def generate_dataset(
     Returns:
         The absolute file path where the dataset was saved.
     """
-    return await dataset_generator.generate_dataset(dataset_entries_json, output_file_path)
+    return await dataset_generator.generate_dataset(
+        dataset_entries_json, output_file_path
+    )
 
 
 @mcp.tool
@@ -129,11 +127,11 @@ def generate_evalbench_configs(
     dataset_path: str,
     context_set_id: str,
     toolbox_config_path: str,
-    toolbox_source_name: str
+    toolbox_source_name: str,
 ) -> str:
     """
     Generates Evalbench YAML configurations and converts the user-facing golden dataset to be compatible for evaluation, saving all files directly to disk.
-    
+
     This tool writes the following files inside `experiments/<experiment_name>/eval_configs/`:
     - `db_config.yaml`
     - `model_config.yaml`
@@ -152,7 +150,11 @@ def generate_evalbench_configs(
         A message indicating that the configuration files were successfully created.
     """
     evaluate_generator.generate_evalbench_configs(
-        experiment_name, dataset_path, context_set_id, toolbox_config_path, toolbox_source_name
+        experiment_name,
+        dataset_path,
+        context_set_id,
+        toolbox_config_path,
+        toolbox_source_name,
     )
     return f"Successfully generated all configs for evaluation in experiments/{experiment_name}/eval_configs/"
 
@@ -174,22 +176,22 @@ async def generate_value_searches(
             - "concept_type": The semantic type (e.g., 'City').
             - "match_function": The match function to use (e.g., 'EXACT_MATCH_STRINGS').
             - "description": (Optional) A description of the value search.
-            
+
             Example:
             '[
                 {"table_name": "users", "column_name": "city", "concept_type": "City", "match_function": "EXACT_MATCH_STRINGS"},
                 {"table_name": "products", "column_name": "name", "concept_type": "Product", "match_function": "FUZZY_MATCH_STRINGS"}
             ]'
-            
+
         dialect: The database dialect (postgresql, mysql, etc.).
         db_version: The database version (optional).
-        
+
     Returns:
         A JSON string representing a ContextSet object containing all the new value searches.
     """
     if db_version and not db_version.strip():
         db_version = None
-    
+
     return vi_generator.generate_value_searches(
         value_search_inputs_json, dialect, db_version
     )
@@ -200,14 +202,14 @@ def list_match_functions(dialect: str, db_version: str | None = None) -> str:
     """
     Lists the valid match template functions with their descriptions and examples for a specific database dialect.
     Use this to show the user what 'match_function' options are available, along with their details.
-    
+
     If the dialect or version is not supported, this will return an error message
     listing the valid options.
 
     Args:
         dialect: The database dialect (e.g., 'postgresql').
         db_version: The specific database version (optional).
-    
+
     Returns:
         A JSON string containing a dictionary of available function names mapped to their descriptions and examples,
         or an error message if validation fails.
@@ -248,7 +250,7 @@ def save_context_set(
         with open(filepath, "w") as f:
             json.dump(data, f, indent=2)
         return f"Successfully saved context set to {filepath}"
-    except (json.JSONDecodeError, IOError) as e:
+    except (OSError, json.JSONDecodeError) as e:
         return f"Error saving file: {e}"
 
 
@@ -274,7 +276,7 @@ def attach_context_set(
 
     existing_content_dict = {"templates": [], "facets": [], "value_searches": []}
     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             existing_content_dict = json.load(f)
 
     existing_context = context.ContextSet(**existing_content_dict)
@@ -358,6 +360,7 @@ def generate_targeted_facets() -> str:
     """Initiates a guided workflow to generate specific facets based on the user's input."""
     return prompts.GENERATE_TARGETED_FACETS_PROMPT
 
+
 @mcp.prompt
 def generate_targeted_value_searches() -> str:
     """Initiates a guided workflow to generate specific Value Search configurations."""
@@ -386,10 +389,10 @@ def mutate_context_set(
     Example 'mutations_json':
     '[
       {
-        "operation": "add", 
-        "type": "template", 
+        "operation": "add",
+        "type": "template",
         "value": {
-          "nl_query": "How many users registered in 2023?", 
+          "nl_query": "How many users registered in 2023?",
           "sql": "SELECT count(*) FROM users WHERE year = 2023",
           "intent": "Count users registered in 2023",
           "manifest": "Count users registered in a given year",
@@ -400,14 +403,14 @@ def mutate_context_set(
         }
       },
       {
-        "operation": "delete", 
-        "type": "facet", 
+        "operation": "delete",
+        "type": "facet",
         "identifier": {"intent": "high price"}
       },
       {
-        "operation": "update", 
-        "type": "facet", 
-        "identifier": {"intent": "high price"}, 
+        "operation": "update",
+        "type": "facet",
+        "identifier": {"intent": "high price"},
         "value": {"sql_snippet": "price > 2000", "intent": "very high price"}
       }
     ]'
@@ -424,7 +427,9 @@ def mutate_context_set(
 
 
 @mcp.tool
-async def read_evaluation_result(run_folder_path: str, offset: int = 0, batch_size: int = 10) -> str:
+async def read_evaluation_result(
+    run_folder_path: str, offset: int = 0, batch_size: int = 10
+) -> str:
     """Reads evaluation results from a folder and produces a markdown summary.
 
     Args:

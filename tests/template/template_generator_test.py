@@ -1,8 +1,10 @@
-import pytest
 import json
-from unittest.mock import patch, AsyncMock
-from template.template_generator import generate_templates
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from model.context import ContextSet
+from template.template_generator import generate_templates
 
 
 @pytest.mark.asyncio
@@ -115,6 +117,4 @@ async def test_generate_templates_from_items_with_explicit_intent():
         assert args[2] == "Count all users"
 
         # Verify extract_value_phrases was called with intent, NOT question
-        mock_extract_value_phrases.assert_called_once_with(
-            nl_query="Count all users"
-        )
+        mock_extract_value_phrases.assert_called_once_with(nl_query="Count all users")

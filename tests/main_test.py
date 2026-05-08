@@ -1,9 +1,8 @@
-import os
 import json
+
 import pytest
-from unittest.mock import patch, mock_open
+
 from main import attach_context_set
-from model.context import ContextSet
 
 
 @pytest.fixture
@@ -119,4 +118,3 @@ def test_attach_context_set_file_not_exist(tmp_path, clean_context_set_json):
     updated_content = json.loads(new_file.read_text())
     assert len(updated_content["facets"]) == 1
     assert updated_content["facets"][0]["sql_snippet"] == "new_snippet"
-

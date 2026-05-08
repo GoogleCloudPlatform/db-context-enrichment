@@ -1,9 +1,11 @@
 import re
-from typing import Dict, Any, List
-from pydantic import BaseModel, Field
-from google import genai
 import textwrap
 from enum import Enum
+from typing import Any
+
+from google import genai
+from pydantic import BaseModel, Field
+
 from common import config
 
 
@@ -19,7 +21,7 @@ class ValuePhrasePair(BaseModel):
     """A key-value pair for a named entity and its types."""
 
     key: str = Field(..., description="The extracted named entity.")
-    value: List[str] = Field(
+    value: list[str] = Field(
         ..., description="A list of identified types for the entity."
     )
 
@@ -27,13 +29,13 @@ class ValuePhrasePair(BaseModel):
 class ValuePhrasesList(BaseModel):
     """A list of named entity pairs."""
 
-    value_phrases: List[ValuePhrasePair] = Field(
+    value_phrases: list[ValuePhrasePair] = Field(
         ...,
         description="A list of key-value pairs, where each key is a named entity and the value is a list of its types.",
     )
 
 
-async def extract_value_phrases(nl_query: str) -> Dict[str, List[str]]:
+async def extract_value_phrases(nl_query: str) -> dict[str, list[str]]:
     """
     Extracts potential value phrases from a natural language question using an LLM.
 
@@ -111,11 +113,11 @@ async def extract_value_phrases(nl_query: str) -> Dict[str, List[str]]:
 
 
 def parameterize_sql_and_intent(
-    value_phrases: Dict[str, Any],
+    value_phrases: dict[str, Any],
     sql: str,
     intent: str,
     db_dialect: SQLDialect = SQLDialect.POSTGRESQL,
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     Replaces value phrases in a SQL query and an intent string with placeholders.
 

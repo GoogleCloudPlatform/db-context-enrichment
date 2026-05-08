@@ -1,7 +1,9 @@
 import json
+from typing import Any
+
 from model import context
 from value_search import match_templates
-from typing import List, Dict, Any
+
 
 def generate_value_searches(
     value_search_inputs_json: str,
@@ -26,17 +28,24 @@ def generate_value_searches(
         A JSON string representation of a ContextSet containing all generated value searches.
     """
     try:
-        inputs: List[Dict[str, Any]] = json.loads(value_search_inputs_json)
+        inputs: list[dict[str, Any]] = json.loads(value_search_inputs_json)
     except json.JSONDecodeError as e:
         return json.dumps({"error": f"Invalid JSON format: {str(e)}"})
 
     value_searches = []
 
     for index, item in enumerate(inputs):
-        required_fields = ["table_name", "column_name", "concept_type", "match_function"]
+        required_fields = [
+            "table_name",
+            "column_name",
+            "concept_type",
+            "match_function",
+        ]
         for field in required_fields:
             if not item.get(field):
-                return json.dumps({"error": f"Field '{field}' is missing at index {index}"})
+                return json.dumps(
+                    {"error": f"Field '{field}' is missing at index {index}"}
+                )
 
         table_name = item.get("table_name")
         column_name = item.get("column_name")
@@ -71,7 +80,11 @@ def generate_value_searches(
             value_searches.append(vs)
 
         except ValueError as e:
-            return json.dumps({"error": f"Error while processing value search at index {index}: {str(e)}"})
+            return json.dumps(
+                {
+                    "error": f"Error while processing value search at index {index}: {str(e)}"
+                }
+            )
 
     return context.ContextSet(value_searches=value_searches).model_dump_json(
         indent=2, exclude_none=True

@@ -1,10 +1,11 @@
 import textwrap
+
 from value_search.match_templates import MatchFunction
 
-_SUPPORTED_DB_ENGINE = ['alloydb', 'postgres', 'mysql', 'spanner']
+_SUPPORTED_DB_ENGINE = ["alloydb", "postgres", "mysql", "spanner"]
 
 GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
-        """
+    """
         **Workflow for Generating Targeted Value Search**
 
         1.  **Database Configuration:**
@@ -17,7 +18,7 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
               - **mysql** -> `mysql`
               - **spanner** -> `googlesql`
             - Confirm the database engine provided is one of the supported engines. If not, notify the user this database engine is not supported yet and end the workflow.
-        
+
         2.  **Fetch Capabilities:**
             - **Immediately after** receiving the Database Engine (and Version if provided), call the `list_match_functions` tool.
             - **Important:** Pass the **inferred dialect** (as defined in step 1) to the `dialect` parameter of the tool.
@@ -83,8 +84,8 @@ GENERATE_TARGETED_VALUE_SEARCH_PROMPT = textwrap.dedent(
 
         Start the workflow.
         """
-    ).format(
-        supported_db_engines=_SUPPORTED_DB_ENGINE,
-        trigram_match=MatchFunction.TRIGRAM_STRING_MATCH.value,
-        semantic_match=MatchFunction.SEMANTIC_SIMILARITY_MATCH.value,
-    )
+).format(
+    supported_db_engines=_SUPPORTED_DB_ENGINE,
+    trigram_match=MatchFunction.TRIGRAM_STRING_MATCH.value,
+    semantic_match=MatchFunction.SEMANTIC_SIMILARITY_MATCH.value,
+)

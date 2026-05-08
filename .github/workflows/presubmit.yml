@@ -1,9 +1,20 @@
-name: MCP Tests
+name: Presubmit
 
 on:
   pull_request:
 
 jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ruff
+        run: pipx install ruff
+      - name: Lint with Ruff
+        run: ruff check .
+      - name: Check formatting with Ruff
+        run: ruff format --check .
+
   test:
     runs-on: ubuntu-latest
     steps:

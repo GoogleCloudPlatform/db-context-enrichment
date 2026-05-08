@@ -26,7 +26,7 @@ steps:
 
           # Fetch PR data and status code
           HTTP_STATUS=$(curl -s -o pr_data.json -w "%{http_code}" -H "Authorization: token $$GITHUB_TOKEN" \
-            "https://api.github.com/repos/$_REPO_FULL_NAME/pulls/$_PR_NUMBER")
+            "https://api.github.com/repos/$REPO_FULL_NAME/pulls/$_PR_NUMBER")
 
           if [ "$$HTTP_STATUS" -ne 200 ]; then
             echo "Error fetching PR data: HTTP $$HTTP_STATUS"

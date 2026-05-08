@@ -102,3 +102,21 @@ def test_attach_context_set_standard(tmp_path, clean_context_set_json):
     # Check new item
     new_item = updated_content["facets"][1]
     assert new_item["sql_snippet"] == "new_snippet"
+
+
+def test_attach_context_set_file_not_exist(tmp_path, clean_context_set_json):
+    """Test attaching new context to a file that does not exist (it should be created successfully)."""
+    new_file = tmp_path / "new_context_file.json"
+    assert not new_file.exists()
+
+    # Call the tool (should not raise FileNotFoundError)
+    attach_context_set.fn(
+        context_set_json=clean_context_set_json, file_path=str(new_file)
+    )
+
+    # Verify the file was created and holds the new content
+    assert new_file.exists()
+    updated_content = json.loads(new_file.read_text())
+    assert len(updated_content["facets"]) == 1
+    assert updated_content["facets"][0]["sql_snippet"] == "new_snippet"
+

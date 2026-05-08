@@ -1,9 +1,11 @@
 import json
-from template import template_generator
+
+from pydantic import ValidationError
+
+from common.context_mutator import Mutation, mutate_context_set
 from facet import facet_generator
 from model import context
-from pydantic import ValidationError
-from common.context_mutator import mutate_context_set, Mutation
+from template import template_generator
 
 
 async def generate_context(
@@ -19,12 +21,16 @@ async def generate_context(
     final_facets = None
 
     if template_inputs_json:
-        res_str = await template_generator.generate_templates(template_inputs_json, sql_dialect)
+        res_str = await template_generator.generate_templates(
+            template_inputs_json, sql_dialect
+        )
         if '"error":' in res_str:
             raise RuntimeError(f"Error generating templates: {res_str}")
         try:
             res_dict = json.loads(res_str)
-            final_templates = [context.Template(**t) for t in res_dict.get("templates", [])]
+            final_templates = [
+                context.Template(**t) for t in res_dict.get("templates", [])
+            ]
         except (json.JSONDecodeError, ValidationError) as e:
             raise ValueError(f"Error parsing generated templates: {e}") from e
 
@@ -42,19 +48,21 @@ async def generate_context(
 
     if final_templates:
         for t in final_templates:
-            mutations.append(Mutation(
-                operation="add",
-                type="template",
-                value=t.model_dump(exclude_none=True)
-            ))
+            mutations.append(
+                Mutation(
+                    operation="add",
+                    type="template",
+                    value=t.model_dump(exclude_none=True),
+                )
+            )
 
     if final_facets:
         for f in final_facets:
-            mutations.append(Mutation(
-                operation="add",
-                type="facet",
-                value=f.model_dump(exclude_none=True)
-            ))
+            mutations.append(
+                Mutation(
+                    operation="add", type="facet", value=f.model_dump(exclude_none=True)
+                )
+            )
 
     if not mutations:
         raise ValueError("No templates or facets were generated to save.")

@@ -1,9 +1,10 @@
-import pytest
 import textwrap
-from unittest.mock import patch, mock_open
-import os
+from unittest.mock import mock_open, patch
+
+import pytest
 
 from evaluate.result_reader import read_eval_results
+
 
 def test_read_eval_results_success():
     summary_data = "metric_name,metric_score,correct_results_count,total_results_count,run_time\nm1,90,9,10,1s\n"
@@ -14,7 +15,14 @@ def test_read_eval_results_success():
     m_scores = mock_open(read_data=scores_data)
     m_evals = mock_open(read_data=evals_data)
 
-    with patch("builtins.open", side_effect=[m_summary.return_value, m_scores.return_value, m_evals.return_value]):
+    with patch(
+        "builtins.open",
+        side_effect=[
+            m_summary.return_value,
+            m_scores.return_value,
+            m_evals.return_value,
+        ],
+    ):
         result = read_eval_results("/fake/path")
 
     expected = textwrap.dedent("""\
@@ -63,11 +71,12 @@ def test_read_eval_results_success():
 
         **Evaluation Details**:
         Error analysis for 1
-        
+
         ---
 
         """)
     assert result == expected
+
 
 def test_read_eval_results_no_failures():
     summary_data = "metric_name,metric_score,correct_results_count,total_results_count,run_time\nm1,100,10,10,1s\n"
@@ -76,7 +85,9 @@ def test_read_eval_results_no_failures():
     m_summary = mock_open(read_data=summary_data)
     m_scores = mock_open(read_data=scores_data)
 
-    with patch("builtins.open", side_effect=[m_summary.return_value, m_scores.return_value]):
+    with patch(
+        "builtins.open", side_effect=[m_summary.return_value, m_scores.return_value]
+    ):
         result = read_eval_results("/fake/path")
 
     expected = textwrap.dedent("""\
@@ -89,6 +100,7 @@ def test_read_eval_results_no_failures():
         No failure cases found (all passed).""")
     assert result == expected
 
+
 def test_read_eval_results_generator_error():
     summary_data = "metric_name,metric_score,correct_results_count,total_results_count,run_time\nm1,0,0,10,1s\n"
     scores_data = "id,score,comparison_logs\n1,0,\n"
@@ -98,7 +110,14 @@ def test_read_eval_results_generator_error():
     m_scores = mock_open(read_data=scores_data)
     m_evals = mock_open(read_data=evals_data)
 
-    with patch("builtins.open", side_effect=[m_summary.return_value, m_scores.return_value, m_evals.return_value]):
+    with patch(
+        "builtins.open",
+        side_effect=[
+            m_summary.return_value,
+            m_scores.return_value,
+            m_evals.return_value,
+        ],
+    ):
         result = read_eval_results("/fake/path")
 
     expected = textwrap.dedent("""\
@@ -147,11 +166,12 @@ def test_read_eval_results_generator_error():
 
         **Evaluation Details**:
         N/A
-        
+
         ---
 
         """)
     assert result == expected
+
 
 def test_read_eval_results_batching():
     summary_data = "metric_name,metric_score,correct_results_count,total_results_count,run_time\nm1,50,5,10,1s\n"
@@ -159,7 +179,7 @@ def test_read_eval_results_batching():
     scores_data = "id,score,comparison_logs\n"
     for i in range(1, 13):
         scores_data += f"{i},50,Error {i}\n"
-        
+
     evals_data = "id,nl_prompt,golden_sql,generated_sql,sql_generator_error,generated_error,other\n"
     for i in range(1, 13):
         evals_data += f"{i},Prompt {i},SELECT {i},SELECT {i},,,\n"
@@ -169,7 +189,14 @@ def test_read_eval_results_batching():
     m_evals = mock_open(read_data=evals_data)
 
     # Test first batch (offset 0)
-    with patch("builtins.open", side_effect=[m_summary.return_value, m_scores.return_value, m_evals.return_value]):
+    with patch(
+        "builtins.open",
+        side_effect=[
+            m_summary.return_value,
+            m_scores.return_value,
+            m_evals.return_value,
+        ],
+    ):
         result = read_eval_results("/fake/path", offset=0)
 
     assert "**Showing failures**: 1 to 10 of 12" in result
@@ -181,14 +208,22 @@ def test_read_eval_results_batching():
     m_summary2 = mock_open(read_data=summary_data)
     m_scores2 = mock_open(read_data=scores_data)
     m_evals2 = mock_open(read_data=evals_data)
-    
-    with patch("builtins.open", side_effect=[m_summary2.return_value, m_scores2.return_value, m_evals2.return_value]):
+
+    with patch(
+        "builtins.open",
+        side_effect=[
+            m_summary2.return_value,
+            m_scores2.return_value,
+            m_evals2.return_value,
+        ],
+    ):
         result2 = read_eval_results("/fake/path", offset=10)
 
     assert "**Showing failures**: 11 to 12 of 12" in result2
     assert "## Case ID: 11 (" in result2
     assert "## Case ID: 12 (" in result2
     assert "## Case ID: 10 (" not in result2
+
 
 def test_read_eval_results_file_not_found():
     with pytest.raises(FileNotFoundError):

@@ -1,25 +1,26 @@
-from typing import Dict, Any, List
-from enum import Enum
+from enum import StrEnum
+from typing import Any
 
 
-class Dialect(str, Enum):
+class Dialect(StrEnum):
     """Supported database dialects."""
+
     POSTGRESQL = "postgresql"
     MYSQL = "mysql"
     GOOGLE_SQL = "googlesql"
 
 
-class MatchFunction(str, Enum):
+class MatchFunction(StrEnum):
     """Available match functions."""
+
     EXACT_MATCH_STRINGS = "EXACT_MATCH_STRINGS"
     TRIGRAM_STRING_MATCH = "TRIGRAM_STRING_MATCH"
     SEMANTIC_SIMILARITY_MATCH = "SEMANTIC_SIMILARITY_MATCH"
 
 
-_MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
+_MATCH_CONFIG: dict[Dialect, dict[str, Any]] = {
     Dialect.POSTGRESQL: {
         "min_version": "13",
-        
         # Default templates
         "defaults": {
             MatchFunction.EXACT_MATCH_STRINGS.value: {
@@ -28,7 +29,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "sql_template": (
                     "SELECT $value as value, '{table}.{column}' as columns, "
                     "'{concept_type}' as concept_type, 0 as distance, "
-                    "'' as context FROM \"{table}\" T WHERE T.\"{column}\" = $value"
+                    '\'\' as context FROM "{table}" T WHERE T."{column}" = $value'
                 ),
             },
             MatchFunction.TRIGRAM_STRING_MATCH.value: {
@@ -36,10 +37,10 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "example": "Use when searching for names, addresses, or plain text where users might have typos, misspellings, or partial matches.",
                 "sql_template": (
                     "WITH TrigramMetrics AS ("
-                    "    SELECT T.\"{column}\" AS original_value, "
-                    "    (T.\"{column}\" <-> $value::text) AS normalized_dist "
-                    "    FROM \"{table}\" T "
-                    "    WHERE T.\"{column}\" % $value::text"
+                    '    SELECT T."{column}" AS original_value, '
+                    '    (T."{column}" <-> $value::text) AS normalized_dist '
+                    '    FROM "{table}" T '
+                    '    WHERE T."{column}" % $value::text'
                     ") "
                     "SELECT original_value AS value, '{table}.{column}' AS columns, "
                     "'{concept_type}' AS concept_type, normalized_dist AS distance, "
@@ -51,20 +52,20 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "example": "Use when searching for concepts, descriptions, themes, or abstract text where the exact words might differ but the underlying meaning is similar.",
                 "sql_template": (
                     "WITH SemanticMetrics AS ("
-                    "    SELECT T.\"{column}\" AS original_value, ("
+                    '    SELECT T."{column}" AS original_value, ('
                     "        (google_ml.embedding('gemini-embedding-001', $value)::vector <=> "
                     "         google_ml.embedding('gemini-embedding-001', T.\"{column}\")::vector) / 2.0"
                     "    ) AS normalized_dist "
-                    "    FROM \"{table}\" T "
-                    "    WHERE T.\"{column}\" IS NOT NULL"
+                    '    FROM "{table}" T '
+                    '    WHERE T."{column}" IS NOT NULL'
                     ") "
                     "SELECT original_value AS value, '{table}.{column}' AS columns, "
                     "'{concept_type}' AS concept_type, normalized_dist AS distance, "
                     "''::text AS context FROM SemanticMetrics"
                 ),
-            }
+            },
         },
-        "overrides": {}
+        "overrides": {},
     },
     Dialect.GOOGLE_SQL: {
         "min_version": "1",
@@ -78,7 +79,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     "JSON '{{}}' AS context "
                     "FROM `{table}` AS T "
                     "WHERE CAST(T.`{column}` AS STRING) = CAST($value AS STRING) "
-                )
+                ),
             },
             MatchFunction.TRIGRAM_STRING_MATCH.value: {
                 "description": "String similarity using Spanner Search Indexes.",
@@ -93,7 +94,7 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 ),
             },
         },
-        "overrides": {}
+        "overrides": {},
     },
     Dialect.MYSQL: {
         "min_version": "8",
@@ -150,15 +151,17 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 ),
             },
         },
-        "overrides": {}
-    }
+        "overrides": {},
+    },
 }
+
 
 def _is_version_supported(version: str, min_version: str) -> bool:
     """Helper to compare version strings (e.g. '13.2' >= '13')."""
+
     def parse(v: str):
-        return tuple(map(int, v.split('.')))
-    
+        return tuple(map(int, v.split(".")))
+
     try:
         return parse(version) >= parse(min_version)
     except ValueError:
@@ -180,7 +183,7 @@ def get_match_template(
         A dictionary containing the template definition.
 
     Raises:
-        ValueError: 
+        ValueError:
             - If dialect is invalid.
             - If version is provided but unsupported.
             - If function_name is not found (lists available templates).
@@ -225,7 +228,10 @@ def get_match_template(
 
     return template
 
-def get_available_functions(dialect: str, version: str | None = None) -> Dict[str, Dict[str, str]]:
+
+def get_available_functions(
+    dialect: str, version: str | None = None
+) -> dict[str, dict[str, str]]:
     """
     Returns a dictionary of available match function names with their descriptions and examples for a given dialect.
     Validates both the dialect and the version (if provided).
@@ -239,7 +245,7 @@ def get_available_functions(dialect: str, version: str | None = None) -> Dict[st
         )
 
     engine_config = _MATCH_CONFIG.get(dialect_enum, {})
-    
+
     if version:
         min_version = engine_config.get("min_version")
         version = str(version)
@@ -250,13 +256,12 @@ def get_available_functions(dialect: str, version: str | None = None) -> Dict[st
             )
 
     defaults = engine_config.get("defaults", {})
-    version_overrides = engine_config.get("overrides", {}).get(version, {}) if version else {}
+    version_overrides = (
+        engine_config.get("overrides", {}).get(version, {}) if version else {}
+    )
     effective_templates = defaults | version_overrides
-    
+
     return {
-        k: {
-            "description": v.get("description", ""),
-            "example": v.get("example", "")
-        }
+        k: {"description": v.get("description", ""), "example": v.get("example", "")}
         for k, v in effective_templates.items()
     }

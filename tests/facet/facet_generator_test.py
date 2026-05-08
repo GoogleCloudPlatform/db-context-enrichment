@@ -1,8 +1,10 @@
-import pytest
 import json
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from facet.facet_generator import generate_facets
-from model.context import ContextSet, Facet, ParameterizedFacet
+from model.context import ContextSet
 
 
 @pytest.mark.asyncio
@@ -91,7 +93,9 @@ async def test_generate_facets_from_items_multiple_phrases():
 
 @pytest.mark.asyncio
 async def test_generate_facets_from_items_empty_phrases():
-    facet_inputs_json = json.dumps([{"intent": "List all users", "sql_snippet": "TRUE"}])
+    facet_inputs_json = json.dumps(
+        [{"intent": "List all users", "sql_snippet": "TRUE"}]
+    )
     mock_phrases = {}
 
     with patch(

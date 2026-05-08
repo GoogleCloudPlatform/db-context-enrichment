@@ -1,4 +1,5 @@
 import json
+
 from common import parameterizer
 from model import context
 
@@ -26,14 +27,13 @@ async def generate_facets(
     final_facets = []
 
     for item in item_list:
-
         sql_snippet = item.get("sql_snippet")
         if not sql_snippet:
             return '{"error": "Each item must have a \'sql_snippet\' key."}'
 
         intent = item.get("intent")
         if not intent:
-             return '{"error": "Each item must have an \'intent\' key."}'
+            return '{"error": "Each item must have an \'intent\' key."}'
 
         # 1. Extract value phrases from the intent (used as nl_query)
         phrases = await parameterizer.extract_value_phrases(nl_query=intent)

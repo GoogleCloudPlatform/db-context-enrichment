@@ -1,5 +1,4 @@
 from pydantic import AliasChoices, BaseModel, Field
-from typing import List
 
 
 class ParameterizedTemplate(BaseModel):
@@ -50,15 +49,14 @@ class Facet(BaseModel):
         ...,
         description="The corresponding, complete SQL facet.",
         # "fragment" is deprecated, keep alias for backward compatibility
-        validation_alias=AliasChoices(
-            "sql_snippet", "fragment"
-        ),  
+        validation_alias=AliasChoices("sql_snippet", "fragment"),
     )
     intent: str = Field(..., description="The user's specific intent.")
     manifest: str = Field(
         ..., description="A general description of what the facet does."
     )
     parameterized: ParameterizedFacet
+
 
 class ValueSearch(BaseModel):
     """Represents a single, complete value search."""
@@ -69,22 +67,20 @@ class ValueSearch(BaseModel):
     )
     description: str | None = Field(None, description="Optional description.")
 
+
 class ContextSet(BaseModel):
     """A set of templates, facets and value searches."""
 
-    templates: List[Template] | None = Field(
+    templates: list[Template] | None = Field(
         None, description="A list of complete templates."
     )
-    facets: List[Facet] | None = Field(
+    facets: list[Facet] | None = Field(
         None,
         description="A list of SQL facets.",
         # "fragments" is deprecated, keep alias for backward compatibility
-        validation_alias=AliasChoices(
-            "facets", "fragments"
-        ),  
+        validation_alias=AliasChoices("facets", "fragments"),
     )
-    value_searches: List[ValueSearch] | None = Field(
+    value_searches: list[ValueSearch] | None = Field(
         None,
         description="A list of value searches.",
     )
-

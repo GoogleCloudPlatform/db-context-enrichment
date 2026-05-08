@@ -1,11 +1,11 @@
+from unittest.mock import AsyncMock, patch
+
 import pytest
+
 from common.parameterizer import (
-    parameterize_sql_and_intent,
     SQLDialect,
-    ValuePhrasesList,
-    ValuePhrasePair,
+    parameterize_sql_and_intent,
 )
-from unittest.mock import patch, AsyncMock
 
 
 def test_parameterize_sql_and_intent_simple():

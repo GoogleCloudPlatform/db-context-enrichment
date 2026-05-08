@@ -1,7 +1,14 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from value_search import match_templates
-from value_search.match_templates import Dialect, get_match_template, get_available_functions
+from value_search.match_templates import (
+    Dialect,
+    get_available_functions,
+    get_match_template,
+)
+
 
 def test_get_match_template_real_config_defaults():
     """
@@ -9,11 +16,11 @@ def test_get_match_template_real_config_defaults():
     defined in the codebase without any mocking.
     """
     template = get_match_template(
-        dialect="postgresql",
-        function_name="EXACT_MATCH_STRINGS"
+        dialect="postgresql", function_name="EXACT_MATCH_STRINGS"
     )
     assert "SELECT $value as value" in template["sql_template"]
     assert template["description"] is not None
+
 
 def test_get_available_functions_postgres():
     """
@@ -24,12 +31,14 @@ def test_get_available_functions_postgres():
     assert "TRIGRAM_STRING_MATCH" in funcs
     assert "SEMANTIC_SIMILARITY_MATCH" in funcs
 
+
 def test_get_match_template_invalid_dialect_real():
     """
     Ensure the Enum conversion raises the correct error for bad inputs.
     """
     with pytest.raises(ValueError, match="Dialect 'mysql1' not supported"):
         get_match_template("mysql1", "EXACT_MATCH_STRINGS")
+
 
 @pytest.fixture
 def mock_config():
@@ -38,15 +47,16 @@ def mock_config():
             "min_version": "14",
             "defaults": {
                 "TEST_FUNC": {"sql_template": "DEFAULT_SQL", "desc": "default"},
-                "ONLY_DEFAULT": {"sql_template": "DEFAULT_ONLY", "desc": "default"}
+                "ONLY_DEFAULT": {"sql_template": "DEFAULT_ONLY", "desc": "default"},
             },
             "overrides": {
                 "15": {
                     "TEST_FUNC": {"sql_template": "OVERRIDE_SQL_15", "desc": "override"}
                 }
-            }
+            },
         }
     }
+
 
 def test_logic_fallback_to_default(mock_config):
     """
@@ -57,6 +67,7 @@ def test_logic_fallback_to_default(mock_config):
         template = get_match_template("postgresql", "TEST_FUNC", version="14")
         assert template["sql_template"] == "DEFAULT_SQL"
 
+
 def test_logic_version_override(mock_config):
     """
     If a version is provided (15) and it HAS an override, return the override.
@@ -64,6 +75,7 @@ def test_logic_version_override(mock_config):
     with patch.dict(match_templates._MATCH_CONFIG, mock_config, clear=True):
         template = get_match_template("postgresql", "TEST_FUNC", version="15")
         assert template["sql_template"] == "OVERRIDE_SQL_15"
+
 
 def test_logic_version_higher_than_min(mock_config):
     """
@@ -74,6 +86,7 @@ def test_logic_version_higher_than_min(mock_config):
         template = get_match_template("postgresql", "TEST_FUNC", version="16")
         assert template["sql_template"] == "DEFAULT_SQL"
 
+
 def test_logic_partial_override(mock_config):
     """
     If version 15 is requested, but we ask for a function that isn't overridden
@@ -83,6 +96,7 @@ def test_logic_partial_override(mock_config):
         template = get_match_template("postgresql", "ONLY_DEFAULT", version="15")
         assert template["sql_template"] == "DEFAULT_ONLY"
 
+
 def test_logic_unsupported_version(mock_config):
     """
     If a version is below 'min_version', it should raise a ValueError
@@ -91,6 +105,7 @@ def test_logic_unsupported_version(mock_config):
     with patch.dict(match_templates._MATCH_CONFIG, mock_config, clear=True):
         with pytest.raises(ValueError, match="Minimum required version: 14"):
             get_match_template("postgresql", "TEST_FUNC", version="13")
+
 
 def test_logic_missing_function(mock_config):
     """

@@ -1,10 +1,10 @@
-import pytest
 import json
 from unittest.mock import patch
-from value_search.generator import generate_value_searches
-from value_search import match_templates
-from value_search.match_templates import Dialect
+
 from model.context import ContextSet
+from value_search import match_templates
+from value_search.generator import generate_value_searches
+from value_search.match_templates import Dialect
 
 
 def test_generate_value_searches_postgres_single():
@@ -18,7 +18,7 @@ def test_generate_value_searches_postgres_single():
             "column_name": "country_code",
             "concept_type": "Country",
             "match_function": "EXACT_MATCH_STRINGS",
-            "description": "Find users by country"
+            "description": "Find users by country",
         }
     ]
     input_json = json.dumps(input_data)
@@ -30,10 +30,10 @@ def test_generate_value_searches_postgres_single():
 
     # Validate JSON structure and content
     context_set = ContextSet.model_validate_json(result_json)
-    
+
     assert context_set.value_searches is not None
     assert len(context_set.value_searches) == 1
-    
+
     vs = context_set.value_searches[0]
     assert vs.concept_type == "Country"
     assert "users.country_code" in vs.query
@@ -50,26 +50,25 @@ def test_generate_value_searches_batch_mixed():
             "table_name": "users",
             "column_name": "city",
             "concept_type": "City",
-            "match_function": "EXACT_MATCH_STRINGS"
+            "match_function": "EXACT_MATCH_STRINGS",
         },
         # Invalid Item (missing column_name) -> Should return error
         {
             "table_name": "products",
             "concept_type": "Product",
-            "match_function": "EXACT_MATCH_STRINGS"
+            "match_function": "EXACT_MATCH_STRINGS",
         },
         # Valid Item 2
         {
             "table_name": "products",
             "column_name": "name",
             "concept_type": "ProductName",
-            "match_function": "FUZZY_MATCH_STRINGS"
-        }
+            "match_function": "FUZZY_MATCH_STRINGS",
+        },
     ]
-    
+
     result_json = generate_value_searches(
-        value_search_inputs_json=json.dumps(input_data),
-        dialect="postgresql"
+        value_search_inputs_json=json.dumps(input_data), dialect="postgresql"
     )
 
     result = json.loads(result_json)
@@ -82,16 +81,19 @@ def test_generate_value_searches_invalid_dialect():
     Test invalid database dialect.
     Expected: Returns an error JSON.
     """
-    input_data = [{
-        "table_name": "t", "column_name": "c", "concept_type": "C", 
-        "match_function": "EXACT_MATCH_STRINGS"
-    }]
-    
+    input_data = [
+        {
+            "table_name": "t",
+            "column_name": "c",
+            "concept_type": "C",
+            "match_function": "EXACT_MATCH_STRINGS",
+        }
+    ]
+
     result_json = generate_value_searches(
-        value_search_inputs_json=json.dumps(input_data),
-        dialect="invalid_db"
+        value_search_inputs_json=json.dumps(input_data), dialect="invalid_db"
     )
-    
+
     result = json.loads(result_json)
     assert "error" in result
     assert "Dialect 'invalid_db' not supported" in result["error"]
@@ -102,16 +104,19 @@ def test_generate_value_searches_invalid_function():
     Test unknown match function.
     Expected: Returns an error JSON.
     """
-    input_data = [{
-        "table_name": "t", "column_name": "c", "concept_type": "C", 
-        "match_function": "BAD_FUNC"
-    }]
+    input_data = [
+        {
+            "table_name": "t",
+            "column_name": "c",
+            "concept_type": "C",
+            "match_function": "BAD_FUNC",
+        }
+    ]
 
     result_json = generate_value_searches(
-        value_search_inputs_json=json.dumps(input_data),
-        dialect="postgresql"
+        value_search_inputs_json=json.dumps(input_data), dialect="postgresql"
     )
-    
+
     result = json.loads(result_json)
     assert "error" in result
     assert "not found" in result["error"]
@@ -122,10 +127,9 @@ def test_generate_value_searches_malformed_json():
     Test that really bad JSON returns an error object, not a ContextSet.
     """
     result_json = generate_value_searches(
-        value_search_inputs_json="{ bad json ",
-        dialect="postgresql"
+        value_search_inputs_json="{ bad json ", dialect="postgresql"
     )
-    
+
     # result_json should be '{"error": "Invalid JSON format: ..."}'
     result = json.loads(result_json)
     assert "error" in result
@@ -144,23 +148,27 @@ def test_generate_value_searches_specific_version_success():
                 "99.0": {
                     "TEST_FUNC": {
                         "sql_template": "SELECT {table}.{column} WHERE version=99",
-                        "description": "Test Description"
+                        "description": "Test Description",
                     }
                 }
-            }
+            },
         }
     }
 
-    input_data = [{
-        "table_name": "users", "column_name": "age", "concept_type": "Age", 
-        "match_function": "TEST_FUNC"
-    }]
+    input_data = [
+        {
+            "table_name": "users",
+            "column_name": "age",
+            "concept_type": "Age",
+            "match_function": "TEST_FUNC",
+        }
+    ]
 
     with patch.dict(match_templates._MATCH_CONFIG, fake_config, clear=True):
         result_json = generate_value_searches(
             value_search_inputs_json=json.dumps(input_data),
             dialect="postgresql",
-            db_version="99.0"
+            db_version="99.0",
         )
 
         context_set = ContextSet.model_validate_json(result_json)
@@ -171,21 +179,25 @@ def test_generate_value_searches_specific_version_success():
 
 def test_generate_value_searches_specific_version_not_supported():
     """
-    Verify strict version checking. 
+    Verify strict version checking.
     New behavior: Version error -> Returns error JSON.
     """
-    input_data = [{
-        "table_name": "t", "column_name": "c", "concept_type": "C", 
-        "match_function": "EXACT_MATCH_STRINGS"
-    }]
+    input_data = [
+        {
+            "table_name": "t",
+            "column_name": "c",
+            "concept_type": "C",
+            "match_function": "EXACT_MATCH_STRINGS",
+        }
+    ]
 
     # 12.0 is below the min_version (13) for postgres
     result_json = generate_value_searches(
         value_search_inputs_json=json.dumps(input_data),
         dialect="postgresql",
-        db_version="12.0"
+        db_version="12.0",
     )
-    
+
     result = json.loads(result_json)
     assert "error" in result
     assert "Minimum required version: 13" in result["error"]
@@ -195,22 +207,23 @@ def test_generate_value_searches_optional_parameters_googlesql():
     """
     Verify that optional parameters like 'column_tokens' are passed to formatting correctly.
     """
-    input_data = [{
-        "table_name": "t", 
-        "column_name": "c", 
-        "concept_type": "C", 
-        "match_function": "TRIGRAM_STRING_MATCH",
-        "column_tokens": "c_tokens"
-    }]
+    input_data = [
+        {
+            "table_name": "t",
+            "column_name": "c",
+            "concept_type": "C",
+            "match_function": "TRIGRAM_STRING_MATCH",
+            "column_tokens": "c_tokens",
+        }
+    ]
 
     result_json = generate_value_searches(
-        value_search_inputs_json=json.dumps(input_data),
-        dialect="googlesql"
+        value_search_inputs_json=json.dumps(input_data), dialect="googlesql"
     )
 
     context_set = ContextSet.model_validate_json(result_json)
     assert len(context_set.value_searches) == 1
     vs = context_set.value_searches[0]
-    
+
     # Check that 'c_tokens' replaces '{column_tokens}' in the Spanner template
     assert "c_tokens" in vs.query

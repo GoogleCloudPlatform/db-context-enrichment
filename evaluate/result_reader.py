@@ -2,7 +2,6 @@ import csv
 import os
 import re
 import textwrap
-from typing import Dict, List, Optional
 from dataclasses import dataclass
 
 
@@ -24,7 +23,9 @@ class EvalRecord:
     other: str = "N/A"
 
 
-def read_eval_results(run_folder_path: str, offset: int = 0, batch_size: int = 10) -> str:
+def read_eval_results(
+    run_folder_path: str, offset: int = 0, batch_size: int = 10
+) -> str:
     """
     Reads evaluation results from a folder and produces a markdown summary.
 
@@ -43,7 +44,7 @@ def read_eval_results(run_folder_path: str, offset: int = 0, batch_size: int = 1
     summary_md = _read_summary(run_folder_path)
 
     # Read Scores to find failures
-    with open(scores_path, mode="r", encoding="utf-8") as f:
+    with open(scores_path, encoding="utf-8") as f:
         failures = sorted(
             [
                 ScoreRecord(
@@ -67,7 +68,7 @@ def read_eval_results(run_folder_path: str, offset: int = 0, batch_size: int = 1
     summary_md += textwrap.dedent(
         f"""\
         ## All Failures
-        {', '.join([str(f.id) for f in failures])}
+        {", ".join([str(f.id) for f in failures])}
 
         **Showing failures**: {offset + 1} to {min(offset + batch_size, len(failures))} of {len(failures)}
 
@@ -75,7 +76,7 @@ def read_eval_results(run_folder_path: str, offset: int = 0, batch_size: int = 1
     )
 
     # Read Evals to get prompts and golden SQL
-    with open(evals_path, mode="r", encoding="utf-8") as f:
+    with open(evals_path, encoding="utf-8") as f:
         evals_data = {
             row["id"]: EvalRecord(
                 id=row["id"],
@@ -95,7 +96,9 @@ def read_eval_results(run_folder_path: str, offset: int = 0, batch_size: int = 1
     return summary_md + failures_md
 
 
-def _format_failures(failures: List[ScoreRecord], evals_data: Dict[str, EvalRecord]) -> str:
+def _format_failures(
+    failures: list[ScoreRecord], evals_data: dict[str, EvalRecord]
+) -> str:
     failures_md = "# Failure Cases\n\n"
     for fail in failures:
         fail_id = fail.id
@@ -135,7 +138,7 @@ def _format_failures(failures: List[ScoreRecord], evals_data: Dict[str, EvalReco
 
             **Evaluation Details**:
             {fail.comparison_logs}
-            
+
             ---
 
             """
@@ -146,7 +149,7 @@ def _format_failures(failures: List[ScoreRecord], evals_data: Dict[str, EvalReco
 def _read_summary(run_folder_path: str) -> str:
     summary_path = os.path.join(run_folder_path, "summary.csv")
     summary_md = "# Evaluation Summary\n\n"
-    with open(summary_path, mode="r", encoding="utf-8") as f:
+    with open(summary_path, encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             summary_md += textwrap.dedent(
@@ -165,12 +168,14 @@ def _natural_sort_key(val):
     Splits a string into a list of string and integer chunks.
     Example: "user10" -> ["user", 10, ""]
     """
-    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', str(val))]
+    return [
+        int(text) if text.isdigit() else text.lower()
+        for text in re.split(r"(\d+)", str(val))
+    ]
 
 
-def _get_score(row: Dict[str, str]) -> Optional[float]:
+def _get_score(row: dict[str, str]) -> float | None:
     try:
         return float(row.get("score", ""))
     except ValueError:
         return None
-

@@ -77,9 +77,6 @@ steps:
           echo "Uploading results..."
           gsutil -m cp -r evals/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/
           
-          echo "Uploading Autoctx workspace..."
-          gsutil -m cp -r evals/.venv/fake_home/autoctx/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/autoctx/
-          
           echo "Uploading Gemini workspace..."
           gsutil -m cp -r evals/.venv/fake_home/.gemini/tmp/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/gemini/
         else

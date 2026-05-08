@@ -9,8 +9,8 @@ def collect_dynamic_resources():
     # 1. Project Assets
     # Include default prompts directory. Paths are relative to this spec file.
     datas.append(('prompts', 'prompts'))
-    # Include README from the repo root (parent directory)
-    datas.append(('../README.md', '.'))
+    # Include README from the repo root
+    datas.append(('README.md', '.'))
 
     # 2. Dependency Metadata / Complex Packages
     # These packages require full collection (datas, binaries, hiddenimports)

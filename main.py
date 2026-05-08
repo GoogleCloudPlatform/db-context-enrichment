@@ -273,7 +273,7 @@ def attach_context_set(
     """
 
     existing_content_dict = {"templates": [], "facets": [], "value_searches": []}
-    if os.path.getsize(file_path) > 0:
+    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
         with open(file_path, "r") as f:
             existing_content_dict = json.load(f)
 

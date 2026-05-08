@@ -20,29 +20,23 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+          key: ${{ runner.os }}-uv-${{ hashFiles('uv.lock') }}
           restore-keys: |
             ${{ runner.os }}-uv-
 
       - name: Create uv virtual environment
         run: uv venv
-        working-directory: ./mcp
 
       - name: Install dependencies
         run: uv pip install ".[test]"
-        working-directory: ./mcp
       - name: Run tests
         run: uv run pytest
-        working-directory: ./mcp
 
       - name: Install PyInstaller
         run: uv pip install pyinstaller
-        working-directory: ./mcp
 
       - name: Build binary
         run: uv run pyinstaller pyinstaller.spec
-        working-directory: ./mcp
 
       - name: Validate binary
         run: ./dist/db-context-enrichment --help
-        working-directory: ./mcp

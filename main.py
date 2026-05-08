@@ -17,7 +17,7 @@ from dataset import dataset_generator
 from common import context_mutator
 
 
-mcp = FastMCP("DB Context Enrichment MCP")
+mcp = FastMCP("Context Engineering Agent MCP")
 
 
 @mcp.tool

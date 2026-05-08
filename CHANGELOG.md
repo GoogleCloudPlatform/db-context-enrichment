@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.5.0...v0.5.1) (2026-05-08)
+
+
+### Bug Fixes
+
+* modernize package discovery and refine error handling ([#104](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/104)) ([81b217e](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/81b217e497096af6cedfdfa1535ff982cf57fa7b))
+* modernize setuptools configuration and add missing init files ([410627b](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/410627b43dad15da30d66f63c27569971ff6d295))
+* repo variable in cloud build ([#115](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/115)) ([ba3f550](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/ba3f55064b740a55543e7ac48e617fee82bd01c9))
+* separate error messages for missing vs unreadable config files ([09bf799](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/09bf799e29eb382c8e12415c4bf1ab6ada4218a2))
+
 ## [0.5.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.4.3...v0.5.0) (2026-04-21)
 
 

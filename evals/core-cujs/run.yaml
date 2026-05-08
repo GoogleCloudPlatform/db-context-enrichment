@@ -20,10 +20,6 @@ scorers:
   goal_completion:
     model_config: core-cujs/gemini_2.5_pro_model.yaml
 
-  # Evaluates agent behavior (e.g., hallucination, clarification).
-  behavioral_metrics:
-    model_config: core-cujs/gemini_2.5_pro_model.yaml
-
   # Metrics for efficiency and performance.
   turn_count: {}
   end_to_end_latency: {}

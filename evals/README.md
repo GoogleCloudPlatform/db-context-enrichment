@@ -1,6 +1,6 @@
 # Evaluation
 
-This directory contains the evaluation suite for the main functionalities of the DB Context Enrichment extension. This evaluation measures the agent's ability to handle standard database enrichment tasks and workflows.
+This directory contains the evaluation suite for the main functionalities of the Context Engineering Agent. This evaluation measures the agent's ability to handle standard database enrichment tasks and workflows.
 
 ## Overview
 

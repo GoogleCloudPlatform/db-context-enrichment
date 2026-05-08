@@ -50,7 +50,7 @@ steps:
         cd /workspace/evals
 
         # Override model.yaml to use the locally built extension instead of GitHub
-        sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/mcp/staging|g' core-cujs/model.yaml
+        sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' core-cujs/model.yaml
 
         # Set environment variables for evalbench
         export EVAL_GCP_PROJECT_ID=$PROJECT_ID

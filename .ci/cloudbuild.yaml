@@ -63,7 +63,7 @@ steps:
 
         echo "Launching Standalone Evaluation..."
         python3 /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
-        
+
         # Mark that evaluation ran
         touch /workspace/EVAL_RAN
 
@@ -76,7 +76,7 @@ steps:
         if [ -f /workspace/EVAL_RAN ]; then
           echo "Uploading results..."
           gsutil -m cp -r evals/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/
-          
+
           echo "Uploading Gemini workspace..."
           gsutil -m cp -r evals/.venv/fake_home/.gemini/tmp/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/gemini/
         else

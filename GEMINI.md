@@ -84,7 +84,7 @@ The Autoctx workflows generate and interact with a structured workspace to maint
 
 > [!NOTE]
 > The **simplified golden evaluation dataset** is the **user-facing external format** required as input for the evaluation workflow. It can reside anywhere in the file system. The tool automatically converts this user-facing format into the more complex **EvalBench internal format** and saves it as `golden_queries.json` inside `eval_configs/`.
-> 
+>
 > See `skills/autoctx-evaluate/SKILL.md` for details on the simplified user-facing format.
 
 

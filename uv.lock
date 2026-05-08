@@ -433,48 +433,6 @@ wheels = [
 ]
 
 [[package]]
-name = "db-context-enrichment"
-version = "0.5.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "fastmcp" },
-    { name = "google-cloud-geminidataanalytics" },
-    { name = "google-genai" },
-    { name = "toolbox-core" },
-]
-
-[package.optional-dependencies]
-test = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pre-commit" },
-    { name = "pyinstaller" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastmcp", specifier = ">=2.12.5" },
-    { name = "google-cloud-geminidataanalytics", specifier = ">=0.1.0" },
-    { name = "google-genai", specifier = ">=1.46.0" },
-    { name = "pytest", marker = "extra == 'test'" },
-    { name = "pytest-asyncio", marker = "extra == 'test'" },
-    { name = "toolbox-core", specifier = ">=0.5.2" },
-]
-provides-extras = ["test"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pre-commit", specifier = ">=4.6.0" },
-    { name = "pyinstaller", specifier = ">=6.18.0" },
-    { name = "ruff", specifier = ">=0.15.12" },
-]
-
-[[package]]
 name = "deprecated"
 version = "1.2.18"
 source = { registry = "https://pypi.org/simple" }
@@ -733,6 +691,48 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a8/af/5129ce5b2f9688d2fa49b463e544972a7c82b0fdb50980dafee92e121d9f/google_auth-2.41.1.tar.gz", hash = "sha256:b76b7b1f9e61f0cb7e88870d14f6a94aeef248959ef6992670efee37709cbfd2", size = 292284, upload-time = "2025-09-30T22:51:26.363Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/be/a4/7319a2a8add4cc352be9e3efeff5e2aacee917c85ca2fa1647e29089983c/google_auth-2.41.1-py2.py3-none-any.whl", hash = "sha256:754843be95575b9a19c604a848a41be03f7f2afd8c019f716dc1f51ee41c639d", size = 221302, upload-time = "2025-09-30T22:51:24.212Z" },
+]
+
+[[package]]
+name = "google-cloud-db-context-enrichment"
+version = "0.5.0"
+source = { editable = "." }
+dependencies = [
+    { name = "fastmcp" },
+    { name = "google-cloud-geminidataanalytics" },
+    { name = "google-genai" },
+    { name = "toolbox-core" },
+]
+
+[package.optional-dependencies]
+test = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pre-commit" },
+    { name = "pyinstaller" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastmcp", specifier = ">=2.12.5" },
+    { name = "google-cloud-geminidataanalytics", specifier = ">=0.1.0" },
+    { name = "google-genai", specifier = ">=1.46.0" },
+    { name = "pytest", marker = "extra == 'test'" },
+    { name = "pytest-asyncio", marker = "extra == 'test'" },
+    { name = "toolbox-core", specifier = ">=0.5.2" },
+]
+provides-extras = ["test"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pre-commit", specifier = ">=4.6.0" },
+    { name = "pyinstaller", specifier = ">=6.18.0" },
+    { name = "ruff", specifier = ">=0.15.12" },
 ]
 
 [[package]]

@@ -5,10 +5,10 @@ def collect_dynamic_resources():
     datas = []
     binaries = []
     hiddenimports = []
-    
+
     # 1. Project Assets
     # Include default prompts directory. Paths are relative to this spec file.
-    datas.append(('prompts', 'prompts'))
+    datas.append(('src/google/cloud/db_context_enrichment/prompts', 'google/cloud/db_context_enrichment/prompts'))
     # Include README from the repo root
     datas.append(('README.md', '.'))
 
@@ -26,12 +26,12 @@ def collect_dynamic_resources():
         datas += tmp_ret[0]
         binaries += tmp_ret[1]
         hiddenimports += tmp_ret[2]
-    
+
     # Copy metadata for packages that use entry points or version checks
     packages_needing_metadata = [
-        'fastmcp', 
-        'google-genai', 
-        'mcp', 
+        'fastmcp',
+        'google-genai',
+        'mcp',
         'toolbox-core',
     ]
 
@@ -47,8 +47,8 @@ def collect_dynamic_resources():
 project_datas, project_binaries, project_hiddenimports = collect_dynamic_resources()
 
 a = Analysis(
-    ['main.py'],
-    pathex=['.'], # Run in the current context (mcp folder)
+    ['src/google/cloud/db_context_enrichment/main.py'],
+    pathex=['src'], # Resolve absolute imports starting from the src directory
     binaries=project_binaries,
     datas=project_datas,
     hiddenimports=project_hiddenimports,
@@ -67,7 +67,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='db-context-enrichment',
+    name='google-cloud-db-context-enrichment',
     debug=False,
     bootloader_ignore_signals=False,
     # Disable strip/upx to prevent Windows DLL corruption

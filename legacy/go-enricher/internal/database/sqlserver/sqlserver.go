@@ -539,7 +539,7 @@ func (h sqlServerHandler) checkExtendedPropertyExists(ctx context.Context, db *d
 }
 func (h sqlServerHandler) GetForeignKeys(db *database.DB, tableName string, columnName string) ([]database.ForeignKeyReference, error) {
 	query := `
-		SELECT 
+		SELECT
 			rt.name as referenced_table,
 			rc.name as referenced_column,
 			fk.name as constraint_name

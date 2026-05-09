@@ -42,7 +42,7 @@ rm "${ARCHIVE}"
 uv run pyinstaller pyinstaller.spec
 
 # 7. Validate binary
-./dist/db-context-enrichment --help
+./dist/google-cloud-db-context-enrichment --help
 
 # 8. Prepare distribution (Staging)
 mkdir -p staging
@@ -51,12 +51,12 @@ cp -r commands/ staging/commands/
 mkdir -p staging/skills/autoctx-init/scripts/
 mkdir -p staging/skills/autoctx-evaluate/scripts/
 
-mv dist/db-context-enrichment staging/
+mv dist/google-cloud-db-context-enrichment staging/
 mv toolbox staging/skills/autoctx-init/scripts/
 mv evalbench staging/skills/autoctx-evaluate/scripts/
 
 # Update gemini-extension.json
-BINARY_NAME="\${extensionPath}/db-context-enrichment"
+BINARY_NAME="\${extensionPath}/google-cloud-db-context-enrichment"
 TOOLBOX_NAME="\${extensionPath}/skills/autoctx-init/scripts/toolbox"
 
 jq ".contextFileName = \"GEMINI.md\" | .mcpServers.mcp_db_context_enrichment.command = \"$BINARY_NAME\" | .mcpServers.mcp_db_context_enrichment.args = [] | .mcpServers.mcp_toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\", \"--config\", \"autoctx/tools.yaml\"]}" gemini-extension.json > staging/gemini-extension.json
@@ -66,7 +66,7 @@ cp LICENSE staging/
 
 # Create tarball
 cd staging
-tar -czf ../linux.x64.db-context-enrichment.tar.gz *
+tar -czf ../linux.x64.google-cloud-db-context-enrichment.tar.gz *
 cd ..
 
-echo "Build completed successfully! Artifact at linux.x64.db-context-enrichment.tar.gz"
+echo "Build completed successfully! Artifact at linux.x64.google-cloud-db-context-enrichment.tar.gz"

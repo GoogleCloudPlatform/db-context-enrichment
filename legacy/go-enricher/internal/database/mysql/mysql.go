@@ -435,7 +435,7 @@ func (h mysqlHandler) GenerateDeleteTableCommentSQL(ctx context.Context, db *dat
 
 func (h mysqlHandler) GetForeignKeys(db *database.DB, tableName string, columnName string) ([]database.ForeignKeyReference, error) {
 	query := `
-		SELECT 
+		SELECT
 			REFERENCED_TABLE_NAME as referenced_table,
 			REFERENCED_COLUMN_NAME as referenced_column,
 			CONSTRAINT_NAME as constraint_name

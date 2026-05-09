@@ -1,5 +1,5 @@
 [project]
-name = "db-context-enrichment"
+name = "google-cloud-db-context-enrichment"
 version = "0.5.0"
 description = "A FastMCP server for generating natural language to SQL templates from database schemas."
 readme = "README.md"
@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-db-context-enrichment = "main:mcp.run"
+google-cloud-db-context-enrichment = "google.cloud.db_context_enrichment.main:mcp.run"
 
 [project.optional-dependencies]
 test = [
@@ -21,14 +21,14 @@ test = [
 ]
 
 [tool.setuptools]
-py-modules = ["main"]
+package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["template*", "facet*", "value_search*", "common*", "model*", "prompts*", "bootstrap*", "evaluate*", "dataset*"]
+where = ["src"]
+include = ["google.cloud.db_context_enrichment*"]
 
 [tool.pytest.ini_options]
-pythonpath = "."
+pythonpath = "src"
 
 [[tool.uv.index]]
 url = "https://pypi.org/simple"
@@ -52,3 +52,10 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["google.cloud.db_context_enrichment"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

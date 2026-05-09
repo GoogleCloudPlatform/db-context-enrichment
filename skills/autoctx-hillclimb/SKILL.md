@@ -16,7 +16,7 @@ Follow these steps exactly in order:
 
 ### 1. Setup & Loop Identification
 
-1.  **Validation**: 
+1.  **Validation**:
     -   Check if `autoctx/experiments/` directory and `autoctx/state.md` exist. If missing, warn the user that the workspace might not be initialized (suggest running `/autoctx:init`).
     -   Once an experiment is selected, verify it contains an `eval_reports/` folder. If missing, suggest running the Evaluation workflow first.
 2.  **Identify Experiment**:
@@ -37,7 +37,7 @@ Follow these steps exactly in order:
 
 ### 2. Phase 1: Gap Analysis
 
-1.  **Validation**: 
+1.  **Validation**:
     -   Determine the target evaluation run folder under `eval_reports/`. If multiple folders exist, find the most recent one by modified time. **Prefer the latest run by default**, but list other available runs as well (peeking into their `summary.csv` or `configs.csv` to show timestamps/metrics for visual context). Ask the user to confirm the selection.
     -   Verify that the selected `eval_reports/<job_id_folder>/` contains expected files (e.g., `scores.csv`, `summary.csv`). If missing or empty, STOP and inform the user.
 2.  **Read Evaluation Results**: Use the `read_evaluation_result` MCP tool passing the path to `eval_reports/<job_id_folder>/`.

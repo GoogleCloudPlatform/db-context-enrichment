@@ -49,7 +49,7 @@ When collecting information from the user, inform the user that only Application
 
 **Sample Message:**
 > "I'll help you configure the database connection in `tools.yaml`. Note that the system only supports Application Default Credentials (ADC) for authentication, so you don't need to provide a username or password. Please ensure that the IAM account you are using has the required permissions to access the database.
-> 
+>
 > Could you please provide the following details:
 > - Google Cloud Project ID:
 > - Region:

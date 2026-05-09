@@ -26,15 +26,15 @@ type: postgres-list-tables
 source: <data_source_name>
 description: |
   Use this tool to list tables and their schemas in the <data_source_name> database.
-  
+
   Progressive Schema Discovery (Recommended):
   1) Fetch structure first (output_format='simple'),
   2) Go deep on specific parts if interested,
   3) Use batching if info is too large.
-  
+
   Scope:
   - The tool can fetch system/extension schemas. Agents should ignore them and focus on user data.
-  
+
   Behavior:
   - Omit 'table_names' to fetch all tables.
   - Omit 'output_format' for detailed schema (default).
@@ -45,6 +45,3 @@ type: postgres-execute-sql
 source: <data_source_name>
 description: Use this tool to execute SQL statements against the <data_source_name> database.
 ```
-
-
-

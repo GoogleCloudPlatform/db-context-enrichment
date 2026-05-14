@@ -1,0 +1,84 @@
+# -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import copy_metadata, collect_all
+
+def collect_dynamic_resources():
+    datas = []
+    binaries = []
+    hiddenimports = []
+
+    # 1. Project Assets
+    # Include default prompts directory. Paths are relative to this spec file.
+    datas.append(('src/google/cloud/db_context_enrichment/prompts', 'google/cloud/db_context_enrichment/prompts'))
+    # Include README from the repo root
+    datas.append(('README.md', '.'))
+
+    # 2. Dependency Metadata / Complex Packages
+    # These packages require full collection (datas, binaries, hiddenimports)
+    # because they use dynamic loading or C extensions.
+    packages_to_collect = [
+        'google.auth',
+        'lupa',      # Used by fakeredis for Lua scripting
+        'fakeredis', # Requires data files like commands.json
+    ]
+
+    for pkg in packages_to_collect:
+        tmp_ret = collect_all(pkg)
+        datas += tmp_ret[0]
+        binaries += tmp_ret[1]
+        hiddenimports += tmp_ret[2]
+
+    # Copy metadata for packages that use entry points or version checks
+    packages_needing_metadata = [
+        'fastmcp',
+        'google-genai',
+        'mcp',
+        'toolbox-core',
+    ]
+
+    for pkg in packages_needing_metadata:
+        try:
+            datas += copy_metadata(pkg, recursive=True)
+        except Exception as e:
+            print(f"CRITICAL ERROR: Failed to copy required metadata for {pkg}.")
+            raise e
+
+    return datas, binaries, hiddenimports
+
+project_datas, project_binaries, project_hiddenimports = collect_dynamic_resources()
+
+a = Analysis(
+    ['src/google/cloud/db_context_enrichment/main.py'],
+    pathex=['src'], # Resolve absolute imports starting from the src directory
+    binaries=project_binaries,
+    datas=project_datas,
+    hiddenimports=project_hiddenimports,
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+pyz = PYZ(a.pure)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.datas,
+    [],
+    name='google-cloud-db-context-enrichment',
+    debug=False,
+    bootloader_ignore_signals=False,
+    # Disable strip/upx to prevent Windows DLL corruption
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=True,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)

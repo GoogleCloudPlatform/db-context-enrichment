@@ -1,0 +1,4 @@
+# Invoked via: /ctx-setup-database-connection
+
+description = "Enable database connectivity skill"
+prompt = "Enable database connectivity skill"

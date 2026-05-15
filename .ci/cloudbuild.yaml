@@ -60,6 +60,7 @@ steps:
         # Setup Python path and run evalbench
         export PYTHONPATH=/evalbench:/evalbench/evalproto
         export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+        export PATH=/evalbench/.venv/bin:$PATH
 
         echo "Launching Standalone Evaluation..."
         python3 /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml

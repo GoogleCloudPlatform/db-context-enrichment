@@ -719,7 +719,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastmcp", specifier = ">=2.12.5" },
+    { name = "fastmcp", specifier = ">=2.12.5,<2.14.3" },
     { name = "google-cloud-geminidataanalytics", specifier = ">=0.1.0" },
     { name = "google-genai", specifier = ">=1.46.0" },
     { name = "pytest", marker = "extra == 'test'" },

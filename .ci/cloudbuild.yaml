@@ -58,7 +58,6 @@ steps:
         # Set environment variables for evalbench
         export EVAL_GCP_PROJECT_ID=$PROJECT_ID
         export EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION
-        export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
         export GEMINI_API_KEY=$$GEMINI_API_KEY
 
         # Setup Python path and run evalbench

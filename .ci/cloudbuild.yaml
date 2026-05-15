@@ -13,7 +13,7 @@ steps:
   # --- Evaluation Step ---
   - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY', 'GITHUB_TOKEN']
+    secretEnv: ['ADC_KEY', 'GITHUB_TOKEN', 'GEMINI_API_KEY']
     args:
       - '-c'
       - |
@@ -56,6 +56,7 @@ steps:
         export EVAL_GCP_PROJECT_ID=$PROJECT_ID
         export EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION
         export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+        export GEMINI_API_KEY=$$GEMINI_API_KEY
 
         # Setup Python path and run evalbench
         export PYTHONPATH=/evalbench:/evalbench/evalproto
@@ -89,6 +90,8 @@ availableSecrets:
     env: 'GITHUB_TOKEN'
   - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-adc-credentials/versions/latest
     env: 'ADC_KEY'
+  - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-gemini-api-key/versions/latest
+    env: 'GEMINI_API_KEY'
 
 serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/crema-eval@cloud-db-nl2sql.iam.gserviceaccount.com'
 

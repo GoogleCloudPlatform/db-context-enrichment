@@ -52,6 +52,9 @@ steps:
         # Override model.yaml to use the locally built extension instead of GitHub
         sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' core-cujs/model.yaml
 
+        # Inject GEMINI_API_KEY into model.yaml's env section
+        sed -i '/env:/a \ \ GEMINI_API_KEY: "$$GEMINI_API_KEY"' core-cujs/model.yaml
+
         # Set environment variables for evalbench
         export EVAL_GCP_PROJECT_ID=$PROJECT_ID
         export EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION
@@ -64,6 +67,9 @@ steps:
 
         echo "Launching Standalone Evaluation..."
         uv run --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
+
+        # Remove GEMINI_API_KEY from model.yaml to avoid uploading it
+        # sed -i '/GEMINI_API_KEY:/d' core-cujs/model.yaml
 
         # Mark that evaluation ran
         touch /workspace/EVAL_RAN

@@ -53,7 +53,7 @@ steps:
         sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' core-cujs/model.yaml
 
         # Inject GEMINI_API_KEY into model.yaml's env section
-        sed -i '/env:/a \ \ GEMINI_API_KEY: "$$GEMINI_API_KEY"' core-cujs/model.yaml
+        sed -i '/env:/a \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' core-cujs/model.yaml
 
         # Set environment variables for evalbench
         export EVAL_GCP_PROJECT_ID=$PROJECT_ID

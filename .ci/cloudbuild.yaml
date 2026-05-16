@@ -71,8 +71,7 @@ steps:
         uv run --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
 
         # Remove GEMINI_API_KEY from model.yaml to avoid uploading it
-        # sed -i '/GEMINI_API_KEY:/d' core-cujs/model.yaml
-        # sed -i '/gemini_API_key:/d' core-cujs/model.yaml
+        sed -i '/GEMINI_API_KEY:/d' core-cujs/model.yaml
 
         # Mark that evaluation ran
         touch /workspace/EVAL_RAN

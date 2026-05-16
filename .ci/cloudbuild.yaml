@@ -13,7 +13,7 @@ steps:
   # --- Evaluation Step ---
   - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY', 'GITHUB_TOKEN']
+    secretEnv: ['ADC_KEY', 'GITHUB_TOKEN', 'GEMINI_API_KEY']
     args:
       - '-c'
       - |
@@ -52,10 +52,16 @@ steps:
         # Override model.yaml to use the locally built extension instead of GitHub
         sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' core-cujs/model.yaml
 
+        # Inject GEMINI_API_KEY into model.yaml's env section
+        sed -i '/env:/a \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' core-cujs/model.yaml
+
+        # Inject GEMINI_API_KEY into model.yaml's settings section
+        sed -i '/settings: {/a \ \ \ \ \ \ \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' core-cujs/model.yaml
+
         # Set environment variables for evalbench
         export EVAL_GCP_PROJECT_ID=$PROJECT_ID
         export EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION
-        export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+        export GEMINI_API_KEY=$$GEMINI_API_KEY
 
         # Setup Python path and run evalbench
         export PYTHONPATH=/evalbench:/evalbench/evalproto
@@ -63,6 +69,9 @@ steps:
 
         echo "Launching Standalone Evaluation..."
         uv run --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
+
+        # Remove GEMINI_API_KEY from model.yaml to avoid uploading it
+        sed -i '/GEMINI_API_KEY:/d' core-cujs/model.yaml
 
         # Mark that evaluation ran
         touch /workspace/EVAL_RAN
@@ -79,6 +88,8 @@ steps:
 
           echo "Uploading Gemini workspace..."
           gsutil -m cp -r evals/.venv/fake_home/.gemini/tmp/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/gemini/
+
+          echo "View uploaded results at: https://console.cloud.google.com/storage/browser/context-engineering-agent-eval-results/evals/$BUILD_ID"
         else
           echo "Evaluation did not run. Skipping upload."
         fi
@@ -89,6 +100,8 @@ availableSecrets:
     env: 'GITHUB_TOKEN'
   - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-adc-credentials/versions/latest
     env: 'ADC_KEY'
+  - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-gemini-api-key/versions/latest
+    env: 'GEMINI_API_KEY'
 
 serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/crema-eval@cloud-db-nl2sql.iam.gserviceaccount.com'
 

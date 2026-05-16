@@ -55,6 +55,9 @@ steps:
         # Inject GEMINI_API_KEY into model.yaml's env section
         sed -i '/env:/a \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' core-cujs/model.yaml
 
+        # Inject GEMINI_API_KEY into model.yaml's settings section
+        sed -i '/settings: {/a \ \ \ \ \ \ \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' core-cujs/model.yaml
+
         # Set environment variables for evalbench
         export EVAL_GCP_PROJECT_ID=$PROJECT_ID
         export EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION
@@ -69,6 +72,7 @@ steps:
 
         # Remove GEMINI_API_KEY from model.yaml to avoid uploading it
         # sed -i '/GEMINI_API_KEY:/d' core-cujs/model.yaml
+        # sed -i '/gemini_API_key:/d' core-cujs/model.yaml
 
         # Mark that evaluation ran
         touch /workspace/EVAL_RAN

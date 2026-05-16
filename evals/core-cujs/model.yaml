@@ -5,4 +5,7 @@ env:
   GEMINI_MODEL: "gemini-3-flash-preview"
 setup:
   extensions:
-    "https://github.com/GoogleCloudPlatform/db-context-enrichment": {}
+    "https://github.com/GoogleCloudPlatform/db-context-enrichment":
+      settings: {
+      }
+

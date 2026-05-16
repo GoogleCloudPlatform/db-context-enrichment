@@ -88,6 +88,8 @@ steps:
 
           echo "Uploading Gemini workspace..."
           gsutil -m cp -r evals/.venv/fake_home/.gemini/tmp/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/gemini/
+
+          echo "View uploaded results at: https://console.cloud.google.com/storage/browser/context-engineering-agent-eval-results/evals/$BUILD_ID"
         else
           echo "Evaluation did not run. Skipping upload."
         fi

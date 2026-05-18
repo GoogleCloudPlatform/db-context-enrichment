@@ -695,7 +695,7 @@ wheels = [
 
 [[package]]
 name = "google-cloud-db-context-enrichment"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
@@ -719,12 +719,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastmcp", specifier = ">=2.12.5,<2.14.3" },
-    { name = "google-cloud-geminidataanalytics", specifier = ">=0.1.0" },
-    { name = "google-genai", specifier = ">=1.46.0" },
+    { name = "fastmcp", specifier = "==2.14.2" },
+    { name = "google-cloud-geminidataanalytics", specifier = "==0.11.0" },
+    { name = "google-genai", specifier = "==1.46.0" },
     { name = "pytest", marker = "extra == 'test'" },
     { name = "pytest-asyncio", marker = "extra == 'test'" },
-    { name = "toolbox-core", specifier = ">=0.5.2" },
+    { name = "toolbox-core", specifier = "==0.5.2" },
 ]
 provides-extras = ["test"]
 

@@ -99,16 +99,17 @@ Follow these steps exactly in order:
     -   **Fixing Strategy Guidelines**:
         -   **Conciseness**: Try to use *less context* to cover *more scenarios*. Avoid adding redundant or hyper-specific templates for every single edge case.
         -   **Generalizability**: Prefer solutions that generalize well (e.g., use a `facet` for a column definition rather than a specific `template` for every query using that column).
-        -   **Constraint**: Limit mutations strictly to `template` and `facet` types only. Do not attempt to generate or apply other types of mutations.
+        -   **Supported Types**: Support mutations for `template`, `facet`, and `value_search` types.
 3.  **Apply Mutations**:
     -   **Copy the Base Context**: Copy the base ContextSet file to the new destination: `autoctx/experiments/<experiment_name>/hillclimb/improved_context_vN.json`.
-    -   **Generate New Items**: For any new templates or facets identified in the fixing strategy (for "add" operations):
-        -   Call the specialized generation tools (e.g., `generate_templates` or `generate_facets`) with the identified inputs.
-        -   Parse the returned JSON string (which represents a `ContextSet`) and extract the generated items from the `templates` or `facets` list.
+    -   **Generate New Items**: For any new context items identified in the fixing strategy (for "add" operations):
+        -   **Invoke the `targeted-context-generation` skill** to produce the final parameterized items.
+        -   Provide the identified candidates to that skill.
+        -   That skill will handle phrase extraction, parameterization, and constructing the valid JSON structure.
     -   **Validate New Items**:
         -   **Templates**: Run generated SQL examples via `<source>-execute-sql` (use dummy values for placeholders) to verify syntax.
         -   **Others**: Cross-check table/column references against the schema via `<source>-list-schemas`.
-    -   **Apply Mutations**: Call the specialized `mutate_context_set` MCP tool passing the **new** file path as `file_path` and mutations as `mutations_json` to mutate the context set. Use the extracted item bodies as the `value` for `add` operations.
+    -   **Apply Mutations**: Call the `mutate_context_set` tool passing the **new** file path as `file_path` and mutations as `mutations_json` to mutate the context set.
 3.  **Log in State Tracking**:
     -   Update `autoctx/state.md` to include the output path of `improved_context_vN.json` for Loop `vN`.
 

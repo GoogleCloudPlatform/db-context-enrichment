@@ -5,7 +5,7 @@ import os
 from fastmcp import FastMCP
 
 import google.cloud.db_context_enrichment.prompts as prompts
-from google.cloud.db_context_enrichment.bootstrap import bootstrap_generator
+
 from google.cloud.db_context_enrichment.common import context_mutator
 from google.cloud.db_context_enrichment.dataset import dataset_generator
 from google.cloud.db_context_enrichment.evaluate import (

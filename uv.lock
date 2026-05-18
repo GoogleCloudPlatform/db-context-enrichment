@@ -695,7 +695,7 @@ wheels = [
 
 [[package]]
 name = "google-cloud-db-context-enrichment"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },

@@ -12,56 +12,12 @@ from google.cloud.db_context_enrichment.evaluate import (
     evaluate_generator,
     result_reader,
 )
-from google.cloud.db_context_enrichment.facet import facet_generator
 from google.cloud.db_context_enrichment.model import context
-from google.cloud.db_context_enrichment.template import template_generator
 from google.cloud.db_context_enrichment.value_search import generator as vi_generator
 from google.cloud.db_context_enrichment.value_search import match_templates
 
 mcp = FastMCP("Context Engineering Agent MCP")
 
-
-@mcp.tool
-async def generate_templates(
-    template_inputs_json: str, sql_dialect: str = "postgresql"
-) -> str:
-    """
-    Generates final templates from a list of user-approved template question, template SQL statement, and optional template intent.
-
-    Args:
-        template_inputs_json: A JSON string representing a list of dictionaries (template inputs),
-                             where each dictionary has "question", "sql", and optional "intent" keys.
-                             Example (with intent): '[{"question": "How many users?", "sql": "SELECT count(*) FROM users", "intent": "Count total users"}]'
-                             Example (default intent): '[{"question": "List all items", "sql": "SELECT * FROM items"}]'
-        sql_dialect: The SQL dialect to use for parameterization. Accepted
-                   values are 'postgresql' (default), 'mysql', or 'googlesql'.
-
-    Returns:
-        A JSON string representing a ContextSet object.
-    """
-    return await template_generator.generate_templates(
-        template_inputs_json, sql_dialect
-    )
-
-
-@mcp.tool
-async def generate_facets(
-    facet_inputs_json: str, sql_dialect: str = "postgresql"
-) -> str:
-    """
-    Generates final facets from a list of user-approved facet intent and facet SQL snippet.
-
-    Args:
-        facet_inputs_json: A JSON string representing a list of dictionaries (facet inputs),
-                             where each dictionary has "intent" and "sql_snippet".
-                             Example: '[{"intent": "high price", "sql_snippet": "price > 1000"}]'
-        sql_dialect: The SQL dialect to use for parameterization. Accepted
-                   values are 'postgresql' (default), 'mysql', or 'googlesql'.
-
-    Returns:
-        A JSON string representing a ContextSet object.
-    """
-    return await facet_generator.generate_facets(facet_inputs_json, sql_dialect)
 
 
 @mcp.tool
@@ -352,22 +308,7 @@ def generate_upload_url(
         return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', or 'spanner'."
 
 
-@mcp.prompt
-def generate_targeted_templates() -> str:
-    """Initiates a guided workflow to generate specific templates based on the user's input."""
-    return prompts.GENERATE_TARGETED_TEMPLATES_PROMPT
 
-
-@mcp.prompt
-def generate_targeted_facets() -> str:
-    """Initiates a guided workflow to generate specific facets based on the user's input."""
-    return prompts.GENERATE_TARGETED_FACETS_PROMPT
-
-
-@mcp.prompt
-def generate_targeted_value_searches() -> str:
-    """Initiates a guided workflow to generate specific Value Search configurations."""
-    return prompts.GENERATE_TARGETED_VALUE_SEARCH_PROMPT
 
 
 @mcp.tool

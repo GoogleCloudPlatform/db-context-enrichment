@@ -111,6 +111,14 @@
       "kind": "agents",
       "work_dir": "workspace_with_golden/",
       "max_turns": 10
+    },
+    {
+      "id": "freeform:bulk:edits-from-guidance",
+      "starting_prompt": "Several context items in `context_set.json` use the wrong encoding for `account.frequency`. The database actually stores Czech codes, not English. Please update everything affected: use `frequency = 'POPLATEK PO OBRATU'` for 'issuance after transaction' (not `frequency = 'after_transaction'`), and `frequency = 'POPLATEK MESICNE'` for 'monthly issuance' (not `frequency = 'monthly'`). Leave unrelated items alone.",
+      "conversation_plan": "Verify the agent opens `context_set.json`, identifies every template and facet that uses the wrong English encodings (`frequency = 'monthly'` and `frequency = 'after_transaction'`), and rewrites each one to use the correct Czech code (`POPLATEK MESICNE` and `POPLATEK PO OBRATU` respectively). The agent must update all 4 affected items (2 templates + 2 facets), must NOT modify the unrelated cards template, and should issue the corrections as a single coherent batch (e.g., via `mutate_context_set` with multiple update operations) rather than asking for confirmation item-by-item. Verify the final `context_set.json` reflects all corrections. Terminate after the agent reports completion.",
+      "kind": "agents",
+      "work_dir": "workspace_bulk_edit_from_guidance/",
+      "max_turns": 10
     }
   ]
 }

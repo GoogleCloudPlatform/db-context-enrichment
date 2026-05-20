@@ -1,0 +1,54 @@
+{
+  "templates": [
+    {
+      "nl_query": "How many accounts have monthly issuance?",
+      "sql": "SELECT count(*) FROM account WHERE frequency = 'monthly'",
+      "intent": "How many accounts have monthly issuance?",
+      "manifest": "How many accounts have a given issuance frequency?",
+      "parameterized": {
+        "parameterized_sql": "SELECT count(*) FROM account WHERE frequency = $1",
+        "parameterized_intent": "How many accounts have $1 issuance?"
+      }
+    },
+    {
+      "nl_query": "List accounts with after-transaction issuance.",
+      "sql": "SELECT * FROM account WHERE frequency = 'after_transaction'",
+      "intent": "List accounts with after-transaction issuance.",
+      "manifest": "List accounts with a given issuance frequency.",
+      "parameterized": {
+        "parameterized_sql": "SELECT * FROM account WHERE frequency = $1",
+        "parameterized_intent": "List accounts with $1 issuance."
+      }
+    },
+    {
+      "nl_query": "List all cards issued after 1995.",
+      "sql": "SELECT * FROM card WHERE issued > '1995-01-01'",
+      "intent": "List all cards issued after 1995.",
+      "manifest": "List cards issued after a given date.",
+      "parameterized": {
+        "parameterized_sql": "SELECT * FROM card WHERE issued > $1",
+        "parameterized_intent": "List all cards issued after $1."
+      }
+    }
+  ],
+  "facets": [
+    {
+      "sql_snippet": "frequency = 'monthly'",
+      "intent": "monthly issuance",
+      "manifest": "monthly issuance frequency",
+      "parameterized": {
+        "parameterized_sql_snippet": "frequency = $1",
+        "parameterized_intent": "$1 issuance"
+      }
+    },
+    {
+      "sql_snippet": "frequency = 'after_transaction'",
+      "intent": "issuance after transaction",
+      "manifest": "issuance after transaction frequency",
+      "parameterized": {
+        "parameterized_sql_snippet": "frequency = $1",
+        "parameterized_intent": "$1 issuance"
+      }
+    }
+  ]
+}

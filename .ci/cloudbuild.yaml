@@ -50,13 +50,13 @@ steps:
         cd /workspace/evals
 
         # Override model.yaml to use the locally built extension instead of GitHub
-        sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' core-cujs/model.yaml
+        sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' freeform-input/model.yaml
 
         # Inject GEMINI_API_KEY into model.yaml's env section
-        sed -i '/env:/a \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' core-cujs/model.yaml
+        sed -i '/env:/a \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' freeform-input/model.yaml
 
         # Inject GEMINI_API_KEY into model.yaml's settings section
-        sed -i '/settings: {/a \ \ \ \ \ \ \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' core-cujs/model.yaml
+        sed -i '/settings: {/a \ \ \ \ \ \ \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' freeform-input/model.yaml
 
         # Set environment variables for evalbench
         export EVAL_GCP_PROJECT_ID=$PROJECT_ID
@@ -68,10 +68,10 @@ steps:
         export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
         echo "Launching Standalone Evaluation..."
-        uv run --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
+        uv run --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config=freeform-input/model.yaml
 
         # Remove GEMINI_API_KEY from model.yaml to avoid uploading it
-        sed -i '/GEMINI_API_KEY:/d' core-cujs/model.yaml
+        sed -i '/GEMINI_API_KEY:/d' freeform-input/model.yaml
 
         # Mark that evaluation ran
         touch /workspace/EVAL_RAN

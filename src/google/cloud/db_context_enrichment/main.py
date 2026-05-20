@@ -1,6 +1,4 @@
-import datetime
 import json
-import os
 
 from fastmcp import FastMCP
 
@@ -10,7 +8,6 @@ from google.cloud.db_context_enrichment.evaluate import (
     evaluate_generator,
     result_reader,
 )
-from google.cloud.db_context_enrichment.model import context
 
 mcp = FastMCP("Context Engineering Agent MCP")
 

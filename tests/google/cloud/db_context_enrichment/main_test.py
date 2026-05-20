@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
-import pytest
+
 from google.cloud.db_context_enrichment.main import mutate_context_set
+
 
 def test_mutate_context_set_success(tmp_path: Path):
     file_path = tmp_path / "context.json"

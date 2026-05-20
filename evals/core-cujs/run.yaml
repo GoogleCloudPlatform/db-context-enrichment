@@ -16,6 +16,9 @@ scorers:
   # Checks if the agent used the expected tools in the correct order.
   trajectory_matcher: {}
 
+  # Checks if the agent activated the expected skills (skill routing/retrieval).
+  skills_trajectory: {}
+
   # Uses an LLM to judge if the user's goal was met.
   goal_completion:
     model_config: core-cujs/gemini_model.yaml

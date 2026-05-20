@@ -5,7 +5,9 @@
       "starting_prompt": "setup context generation for my database.",
       "conversation_plan": "Ask the agent to setup the auto context generation for my alloydb database. Connection information: datasource name as my-alloydb, project id is cloud-db-nl2sql, region us-central1, cluster whaoyu-test, instance whaoyu-test-primary, database financial. Verify the agent generate a valid tools.yaml. Explicitly ask the agent to perform validation. You should terminate the conversation immediately after the agent successfully set up the files and performed the validation.",
       "expected_trajectory": [],
+      "expected_skills": ["skill-autoctx-init"],
       "kind": "agents",
+      "work_dir": "workspace_empty/",
       "max_turns": 15
     },
     {
@@ -13,6 +15,7 @@
       "starting_prompt": "generate a evaluation dataset for my alloydb database financial named golden.json, based on my seed dataset to be provided.",
       "conversation_plan": "Ask the agent to generate a evaluation dataset for my alloydb database financial named golden.json. The 'seed' includes the following two golden NL-SQL pair:\n\nHow many accounts who choose issuance after transaction are staying in East Bohemia region? A3 contains the data of region; 'POPLATEK PO OBRATU' represents for 'issuance after transaction'.\nSELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'east Bohemia' AND \"T1\".\"frequency\" = 'POPLATEK PO OBRATU'\n\nHow many accounts who have region in Prague are eligible for loans? A3 contains the data of region\nSELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'Prague'. If prompted for validating the query, reply yes to the agent. Once the initial golden dataset is generated, ask the agent to expand it with 2 additional examples in the same file. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
+      "expected_skills": ["skill-autoctx-dataset-generation"],
       "kind": "agents",
       "work_dir": "workspace_post_init/",
       "max_turns": 15
@@ -22,6 +25,7 @@
       "starting_prompt": "create initial context set for my alloydb database",
       "conversation_plan": "Ask the agent to create initial context set for my alloydb database. Need to have at least 2 templates and 2 facets. If prompted for experiment name, use 'my-alloydb-tuning-experiment'. You should terminate the conversation immediately after the agent successfully created the context set, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
+      "expected_skills": ["skill-autoctx-bootstrap"],
       "kind": "agents",
       "work_dir": "workspace_post_dataset_generation/",
       "max_turns": 15
@@ -31,6 +35,7 @@
       "starting_prompt": "evaluate on the golden dataset golden.json with context set id projects/cloud-db-nl2sql/locations/us-east1/contextSets/whaoyu-eval-contextset",
       "conversation_plan": "Ask the agent to evaluate the golden dataset golden.json, using the current context set with context set id projects/cloud-db-nl2sql/locations/us-east1/contextSets/whaoyu-eval-contextset. If prompted for experiment name, use 'my-alloydb-tuning-experiment'. You should terminate the conversation immediately after the agent successfully evaluated the dataset, even if the agent prompts you to perform context improving task or take next steps.",
       "expected_trajectory": [],
+      "expected_skills": ["skill-autoctx-evaluate"],
       "kind": "agents",
       "work_dir": "workspace_post_bootstrap/",
       "max_turns": 15
@@ -40,9 +45,40 @@
       "starting_prompt": "improve the context set based on eval failure",
       "conversation_plan": "Ask the agent to perform the hillclimbing to improve the context set based on eval failure. If prompted for experiment name, use 'my-alloydb-tuning-experiment'. You should terminate the conversation immediately after the agent successfully performed the hillclimbing task, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
+      "expected_skills": ["skill-autoctx-hillclimb"],
       "kind": "agents",
       "work_dir": "workspace_post_evaluation/",
       "max_turns": 15
+    },
+    {
+      "id": "ccb-routing:customer-context-builder",
+      "starting_prompt": "Pull together everything we know about the Acme GCP project into an LLM context repo, using BigQuery and our internal docs.",
+      "conversation_plan": "You only want to verify routing, not full execution. Ask the agent to build/refresh a context repository (LLM wiki) for the Acme GCP customer, drawing from BigQuery datasets and the team's internal Google Docs. Do NOT provide any project ids, credentials, or extra details. As soon as the agent activates a skill or clearly states which skill/workflow it will use to fulfill the request, terminate the conversation immediately. Do not let it proceed to actually fetch data.",
+      "expected_trajectory": ["activate_skill"],
+      "expected_skills": ["skill-ccb-customer-context-builder"],
+      "kind": "agents",
+      "work_dir": "workspace_empty/",
+      "max_turns": 4
+    },
+    {
+      "id": "ccb-routing:gcp-data-qa",
+      "starting_prompt": "What was Q1 revenue by channel? Just ask BigQuery in plain English, I don't want to write any SQL.",
+      "conversation_plan": "You only want to verify routing, not full execution. Ask the agent to answer an analytics question about the customer's BigQuery data using natural language (Conversational Analytics), without writing SQL yourself. Do NOT provide any project ids, credentials, or extra details. As soon as the agent activates a skill or clearly states which skill/workflow it will use to fulfill the request, terminate the conversation immediately. Do not let it proceed to actually run the query.",
+      "expected_trajectory": ["activate_skill"],
+      "expected_skills": ["skill-ccb-gcp-data-qa"],
+      "kind": "agents",
+      "work_dir": "workspace_empty/",
+      "max_turns": 4
+    },
+    {
+      "id": "ccb-routing:wiki-viewer",
+      "starting_prompt": "Open the customer context wiki in a browser so I can explore it.",
+      "conversation_plan": "You only want to verify routing, not full execution. Ask the agent to view/serve/preview the previously generated customer-context wiki (Context Center) in a browser. Do NOT provide any paths or extra details. As soon as the agent activates a skill or clearly states which skill/workflow it will use to fulfill the request, terminate the conversation immediately. Do not let it proceed to actually start a server.",
+      "expected_trajectory": ["activate_skill"],
+      "expected_skills": ["skill-ccb-wiki-viewer"],
+      "kind": "agents",
+      "work_dir": "workspace_empty/",
+      "max_turns": 4
     }
   ]
 }

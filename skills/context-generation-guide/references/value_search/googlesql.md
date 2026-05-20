@@ -36,33 +36,3 @@ JSON '{}' AS context
 FROM `{table}` AS T
 WHERE SEARCH_NGRAMS(T.`{column_tokens}`, CAST($value AS STRING))
 ```
-
-### 3. SEMANTIC_SIMILARITY_GEMINI
-
-**Description**: Semantic search using Vector Search on string embeddings.
-**Prerequisites**: Requires an embedding model (e.g., registered in Spanner) and an embedding column.
-**Example**: Use for conceptual search or synonym matching in Spanner.
-
-**Performance Recommendations**:
-*   Create a Search Index with `distance_type => 'COSINE'` on the embedding column to accelerate vector search.
-
-**Template**:
-```sql
-WITH value_embedding AS (
-    SELECT embeddings.values 
-    FROM ML.PREDICT(
-        MODEL {EmbedModel}, 
-        (SELECT @value AS content))
-)
-SELECT T.`{column}` AS value, 
-       '{column}' AS `columns`, 
-       '{concept_type}' AS concept_type,
-       COSINE_DISTANCE(
-         T.`{column_embedding}`, 
-         value_embedding.values) AS distance, 
-       JSON '{}' AS context, 
-       T.PK AS primary_key 
-FROM `{table}` AS T, value_embedding
-WHERE T.`{column_embedding}` IS NOT NULL 
-ORDER BY distance ASC LIMIT 10
-```

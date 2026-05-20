@@ -19,7 +19,7 @@ Context generation allows you to create specific, high-value items in three form
 
 When asked to generate context items:
 1.  **Identify the Type**: Determine if the user wants to create a Template, Facet, or Value Search.
-2.  **Gather Information**: Ensure you have all the required information listed in the "Information Needed" section. If anything is missing, ask the user to provide it.
+2.  **Gather Information**: Ensure you have all the required information for the chosen context type as described in the "Context Type Definitions" section below. If information is missing, try to explore the database to find it or ask the user for clarification.
 3.  **Select Dialect Reference**: Identify the target database dialect (PostgreSQL, GoogleSQL, or MySQL) and consult the corresponding file in `references/` for specific syntax and patterns.
 4.  **Parameterize**: Follow the [Phrase Extraction and Parameterization Guidelines](references/phrase_extraction/guidelines.md) to generalize the values.
 5.  **Format Output**: Construct the final JSON object according to the examples in the reference files.

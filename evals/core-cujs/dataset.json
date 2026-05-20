@@ -6,6 +6,7 @@
       "conversation_plan": "Ask the agent to setup the auto context generation for my alloydb database. Connection information: datasource name as my-alloydb, project id is cloud-db-nl2sql, region us-central1, cluster whaoyu-test, instance whaoyu-test-primary, database financial. Verify the agent generate a valid tools.yaml. Explicitly ask the agent to perform validation. You should terminate the conversation immediately after the agent successfully set up the files and performed the validation.",
       "expected_trajectory": [],
       "kind": "agents",
+      "work_dir": "workspace_empty/",
       "max_turns": 15
     },
     {

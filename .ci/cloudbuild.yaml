@@ -49,29 +49,36 @@ steps:
 
         cd /workspace/evals
 
-        # Override model.yaml to use the locally built extension instead of GitHub
-        sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' freeform-input/model.yaml
+        # Eval suites to run sequentially
+        EVAL_SUITES=(core-cujs freeform-input)
 
-        # Inject GEMINI_API_KEY into model.yaml's env section
-        sed -i '/env:/a \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' freeform-input/model.yaml
-
-        # Inject GEMINI_API_KEY into model.yaml's settings section
-        sed -i '/settings: {/a \ \ \ \ \ \ \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' freeform-input/model.yaml
+        # Prepare each suite's model.yaml: point at the locally built extension and inject the API key.
+        for SUITE in "$${EVAL_SUITES[@]}"; do
+          echo "Preparing $$SUITE/model.yaml..."
+          sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' $$SUITE/model.yaml
+          sed -i '/env:/a \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' $$SUITE/model.yaml
+          sed -i '/settings: {/a \ \ \ \ \ \ \ \ GEMINI_API_KEY: "'"$$GEMINI_API_KEY"'"' $$SUITE/model.yaml
+        done
 
         # Set environment variables for evalbench
         export EVAL_GCP_PROJECT_ID=$PROJECT_ID
         export EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION
         export GEMINI_API_KEY=$$GEMINI_API_KEY
 
-        # Setup Python path and run evalbench
+        # Setup Python path
         export PYTHONPATH=/evalbench:/evalbench/evalproto
         export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
-        echo "Launching Standalone Evaluation..."
-        uv run --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config=freeform-input/run.yaml
+        # Run each eval suite sequentially.
+        for SUITE in "$${EVAL_SUITES[@]}"; do
+          echo "Launching $$SUITE evaluation..."
+          uv run --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config=$$SUITE/run.yaml
+        done
 
-        # Remove GEMINI_API_KEY from model.yaml to avoid uploading it
-        sed -i '/GEMINI_API_KEY:/d' freeform-input/model.yaml
+        # Strip injected API key from each model.yaml before upload.
+        for SUITE in "$${EVAL_SUITES[@]}"; do
+          sed -i '/GEMINI_API_KEY:/d' $$SUITE/model.yaml
+        done
 
         # Mark that evaluation ran
         touch /workspace/EVAL_RAN

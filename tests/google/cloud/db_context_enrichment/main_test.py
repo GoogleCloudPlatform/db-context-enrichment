@@ -22,9 +22,9 @@ def test_mutate_context_set_success(tmp_path: Path):
             },
         }
     ]
-    
+
     result = mutate_context_set.fn(str(file_path), json.dumps(mutations))
-    
+
     assert "Successfully applied" in result
     assert file_path.exists()
     with open(file_path) as f:
@@ -32,16 +32,21 @@ def test_mutate_context_set_success(tmp_path: Path):
     assert len(data.get("templates", [])) == 1
     assert data["templates"][0]["nl_query"] == "Test query"
 
+
 def test_mutate_context_set_invalid_json(tmp_path: Path):
     file_path = tmp_path / "context.json"
     result = mutate_context_set.fn(str(file_path), "invalid json")
     assert "Error applying mutations" in result
     assert "JSONDecodeError" in result or "invalid json" in result or "Error" in result
 
+
 def test_mutate_context_set_non_list_json(tmp_path: Path):
     file_path = tmp_path / "context.json"
-    result = mutate_context_set.fn(str(file_path), json.dumps({"operation": "add", "type": "template"}))
+    result = mutate_context_set.fn(
+        str(file_path), json.dumps({"operation": "add", "type": "template"})
+    )
     assert "must be a JSON list" in result
+
 
 def test_mutate_context_set_validation_error(tmp_path: Path):
     file_path = tmp_path / "context.json"

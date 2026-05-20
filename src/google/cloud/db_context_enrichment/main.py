@@ -117,9 +117,6 @@ def generate_upload_url(
         return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', or 'spanner'."
 
 
-
-
-
 @mcp.tool
 def mutate_context_set(
     file_path: str,

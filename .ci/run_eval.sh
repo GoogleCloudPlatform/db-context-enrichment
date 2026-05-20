@@ -26,10 +26,10 @@ mkdir -p "${WORK_DIR}"
 cp -r "/workspace/evals/${SUITE}" "${WORK_DIR}/"
 cd "${WORK_DIR}"
 
-# Point model.yaml at the locally built extension and inject the API key.
+# Point model.yaml at the locally built extension and inject the Gemini API
+# key into the CLI's env (orchestrator auth — the extension itself no longer
+# needs the key, so we no longer touch the `settings: {}` block).
 sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' "${SUITE}/model.yaml"
-sed -i '/env:/a \ \ GEMINI_API_KEY: "'"${GEMINI_API_KEY}"'"' "${SUITE}/model.yaml"
-sed -i '/settings: {/a \ \ \ \ \ \ \ \ GEMINI_API_KEY: "'"${GEMINI_API_KEY}"'"' "${SUITE}/model.yaml"
 
 # evalbench runtime
 export PYTHONPATH=/evalbench:/evalbench/evalproto
@@ -37,8 +37,5 @@ export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
 echo "Launching ${SUITE} evaluation..."
 uv run --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config="${SUITE}/run.yaml"
-
-# Strip injected API key from model.yaml before upload.
-sed -i '/GEMINI_API_KEY:/d' "${SUITE}/model.yaml"
 
 touch "/workspace/EVAL_RAN_${SUITE}"

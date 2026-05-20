@@ -1,5 +1,5 @@
 [project]
-name = "google-cloud-db-context-enrichment"
+name = "google-cloud-db-context-engineering"
 version = "0.5.1"
 description = "A FastMCP server for generating natural language to SQL templates from database schemas."
 readme = "README.md"
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-google-cloud-db-context-enrichment = "google.cloud.db_context_enrichment.main:mcp.run"
+google-cloud-db-context-engineering = "google.cloud.db_context_enrichment.main:mcp.run"
 
 [project.optional-dependencies]
 test = [
@@ -42,7 +42,7 @@ dev = [
     "ruff>=0.15.12",
 ]
 
-[tool.db-context-enrichment]
+[tool.db-context-engineering]
 toolbox_version = "0.31.0"
 evalbench_version = "1.7.1"
 

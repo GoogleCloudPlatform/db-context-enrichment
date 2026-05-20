@@ -708,7 +708,7 @@ wheels = [
 ]
 
 [[package]]
-name = "google-cloud-db-context-enrichment"
+name = "google-cloud-db-context-engineering"
 version = "0.5.1"
 source = { editable = "." }
 dependencies = [

@@ -109,7 +109,7 @@ Follow these steps exactly in order:
     -   **Validate New Items**:
         -   **Templates**: Run generated SQL examples via `<source>-execute-sql` (use dummy values for placeholders) to verify syntax.
         -   **Others**: Cross-check table/column references against the schema via `<source>-list-schemas`.
-    -   **Apply Mutations**: Call the `mutate_context_set` tool passing the **new** file path as `file_path` and mutations as `mutations_json` to mutate the context set.
+    -   **Apply Mutations**: Call the `mutate_context_set` MCP tool passing the **new** file path as `file_path` and mutations as `mutations_json` to mutate the context set.
 3.  **Log in State Tracking**:
     -   Update `autoctx/state.md` to include the output path of `improved_context_vN.json` for Loop `vN`.
 

@@ -25,26 +25,29 @@ When asked to generate context items:
 5.  **Format Output**: Construct the final JSON object according to the examples in the reference files.
 6.  **Save Context**: Use the appropriate MCP tool (e.g., `mutate_context_set`) to save or update the context set.
 
-## Information Needed
+## Context Type Definitions
 
 ### 1. Templates
-To generate a template, you need:
-*   **Natural Language Question**: The question a user might ask.
-*   **SQL Query**: The correct, executable SQL query to answer that question.
-*   **Intent** (Optional): A description of what the query does. Defaults to the question if not provided.
+A **Template** represents a complete mapping between a natural language query and an executable SQL query. It is composed of:
+*   **Natural Language Question**: An example question asking for specific data.
+*   **SQL Query**: The exact SQL query that correctly answers the question.
+*   **Intent**: The specific goal of the query.
+*   **Manifest**: A generalized description of the template's purpose.
+*   **Parameterized Form**: The SQL and intent with specific values replaced by placeholders (e.g., `$1`).
 
 ### 2. Facets
-To generate a facet, you need:
-*   **SQL Snippet**: The reusable SQL fragment (e.g., `rating > 4.5`).
-*   **Intent**: The description of the condition (e.g., "highly rated products (above 4.5)").
+A **Facet** is a modular SQL fragment representing a specific filter or condition. It is composed of:
+*   **SQL Snippet**: The SQL fragment (usually a boolean expression or part of a WHERE clause).
+*   **Intent**: The natural language expression corresponding to the snippet.
+*   **Manifest**: A generalized description of the facet.
+*   **Parameterized Form**: The SQL snippet and intent with specific values replaced by placeholders.
 
 ### 3. Value Searches
-To generate a value search, you need:
-*   **Table Name**: The table containing the data.
-*   **Column Name**: The column containing the values to search.
-*   **Concept Type**: A high-level description of the concept (e.g., "City").
-*   **Match Function**: The algorithm to use (e.g., `EXACT_MATCH_STRINGS`, `TRIGRAM_STRING_MATCH`, `SEMANTIC_SIMILARITY_MATCH`).
-*   **Dialect-Specific Parameters**: E.g., token columns for Spanner or embedding columns for MySQL.
+A **Value Search** defines how to look up values that might not match exactly. It requires:
+*   **Target Concept**: The entity being searched (e.g., "City").
+*   **Database Location**: The specific Table and Column containing the values.
+*   **Match Strategy**: The function used for matching (e.g., Trigram, Semantic).
+*   **Dialect-Specific Configuration**: Any specific columns or parameters required by the dialect.
 
 ## Best Practices
 

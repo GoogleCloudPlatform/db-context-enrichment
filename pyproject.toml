@@ -42,7 +42,7 @@ dev = [
     "ruff>=0.15.12",
 ]
 
-[tool.db-context-enrichment]
+[tool.db-context-engineering]
 toolbox_version = "0.31.0"
 evalbench_version = "1.7.1"
 

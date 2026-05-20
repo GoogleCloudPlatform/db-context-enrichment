@@ -25,7 +25,7 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "package-name": "google-cloud-db-context-enrichment",
+      "package-name": "google-cloud-db-context-engineering",
       "extra-files": [
         {
           "type": "json",

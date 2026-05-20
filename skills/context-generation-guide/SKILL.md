@@ -1,15 +1,15 @@
 ---
-name: skill-targeted-context-generation
-description: Guidelines and best practices for generating targeted context items (Templates, Facets, Value Searches). Use this skill whenever the user asks to manually create, author, or generate context for database enrichment, or asks for examples and instructions on how to write templates, facets, or value searches. It helps bridge the gap between LLMs and structured databases.
+name: context-generation-guide
+description: Guidelines and best practices for generating context items (Templates, Facets, Value Searches). Use this skill whenever the user asks to create, author, or generate context for database enrichment, or asks for examples and instructions on how to write templates, facets, or value searches. It helps bridge the gap between LLMs and structured databases.
 ---
 
-# Targeted Context Generation Skill
+# Context Generation Guide Skill
 
 This skill provides the agent with the necessary information, concepts, and best practices to generate high-quality context items for the "Context Engineering Agent". This context bridges the gap between LLMs and structured databases, enabling accurate Natural Language to SQL generation.
 
 ## Overview
 
-Targeted manual generation allows you to create specific, high-value context items in three forms:
+Context generation allows you to create specific, high-value items in three forms:
 
 1.  **Templates**: End-to-end mappings linking a natural language query to a complete, runnable SQL query. They teach the system overarching operational logic, table join infrastructures, and broad business rules.
 2.  **Facets**: Reusable, modular SQL fragments (like a `WHERE` clause or specialized join). They are dynamically injected filters linked to specific vocabulary or terminology.
@@ -17,13 +17,13 @@ Targeted manual generation allows you to create specific, high-value context ite
 
 ## Workflow
 
-When asked to generate targeted context items:
+When asked to generate context items:
 1.  **Identify the Type**: Determine if the user wants to create a Template, Facet, or Value Search.
 2.  **Gather Information**: Ensure you have all the required information listed in the "Information Needed" section. If anything is missing, ask the user to provide it.
 3.  **Select Dialect Reference**: Identify the target database dialect (PostgreSQL, GoogleSQL, or MySQL) and consult the corresponding file in `references/` for specific syntax and patterns.
 4.  **Parameterize**: Follow the [Phrase Extraction and Parameterization Guidelines](references/phrase_extraction/guidelines.md) to generalize the values.
 5.  **Format Output**: Construct the final JSON object according to the examples in the reference files.
-6.  **Save Context**: Use the appropriate tool (e.g., `mutate_context_set`) to save or update the context set.
+6.  **Save Context**: Use the appropriate MCP tool (e.g., `mutate_context_set`) to save or update the context set.
 
 ## Information Needed
 

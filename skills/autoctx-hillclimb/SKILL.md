@@ -103,7 +103,7 @@ Follow these steps exactly in order:
 3.  **Apply Mutations**:
     -   **Copy the Base Context**: Copy the base ContextSet file to the new destination: `autoctx/experiments/<experiment_name>/hillclimb/improved_context_vN.json`.
     -   **Generate New Items**: For any new context items identified in the fixing strategy (for "add" operations):
-        -   **Invoke the `targeted-context-generation` skill** to produce the final parameterized items.
+        -   **Invoke the `context-generation-guide` skill** to produce the final parameterized items.
         -   Provide the identified candidates to that skill.
         -   That skill will handle phrase extraction, parameterization, and constructing the valid JSON structure.
     -   **Validate New Items**:

@@ -29,10 +29,10 @@ Follow these steps exactly in order:
    - *Review Check:* Briefly display these candidates to the user for approval or modifications before proceeding.
 
 3. **Context Generation (Core Execution):**
-   - **Invoke the `targeted-context-generation` skill** to produce the context (Templates, Facets, and Value Searches).
+   - **Invoke the `context-generation-guide` skill** to produce the context (Templates, Facets, and Value Searches).
    - Provide the deduced candidates collected in Step 2 as input to that skill.
    - That skill will handle phrase extraction, parameterization, and constructing the final valid JSON structure according to dialect best practices for all context types.
-   - Once generated, save the `ContextSet` file inside the approved experiment folder as `bootstrap_context.json` using the `save_context_set` tool.
+   - Once generated, use the `mutate_context_set` tool to save the context items to `bootstrap_context.json` inside the approved experiment folder. Since this is a new file, construct a list of `"operation": "add"` mutations for each generated item (Template, Facet, Value Search) and pass them to the tool.
 
 ## Output
 

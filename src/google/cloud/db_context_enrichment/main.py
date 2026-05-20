@@ -4,8 +4,6 @@ import os
 
 from fastmcp import FastMCP
 
-import google.cloud.db_context_enrichment.prompts as prompts
-
 from google.cloud.db_context_enrichment.common import context_mutator
 from google.cloud.db_context_enrichment.dataset import dataset_generator
 from google.cloud.db_context_enrichment.evaluate import (
@@ -75,90 +73,6 @@ def generate_evalbench_configs(
         toolbox_source_name,
     )
     return f"Successfully generated all configs for evaluation in experiments/{experiment_name}/eval_configs/"
-
-
-
-@mcp.tool
-def save_context_set(
-    context_set_json: str,
-    db_instance: str,
-    db_name: str,
-    output_dir: str,
-) -> str:
-    """
-    Saves a ContextSet to a new JSON file with a generated timestamp.
-
-    Args:
-        context_set_json: The JSON string of the ContextSet.
-        db_instance: The database instance name.
-        db_name: The database name.
-        output_dir: The directory to save the file in. The root of where the
-          Gemini CLI is running.
-
-    Returns:
-        A confirmation message with the path to the newly created file.
-    """
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"{db_instance}_{db_name}_context_set_{timestamp}.json"
-    filepath = os.path.join(output_dir, filename)
-
-    try:
-        data = json.loads(context_set_json)
-        with open(filepath, "w") as f:
-            json.dump(data, f, indent=2)
-        return f"Successfully saved context set to {filepath}"
-    except (OSError, json.JSONDecodeError) as e:
-        return f"Error saving file: {e}"
-
-
-@mcp.tool
-def attach_context_set(
-    context_set_json: str,
-    file_path: str,
-) -> str:
-    """
-    Attaches a ContextSet to an existing JSON file.
-
-    This tool reads an existing JSON file containing a ContextSet,
-    appends new templates/facets/value_searches to it, and writes the updated ContextSet
-    back to the file. Exceptions are propagated to the caller.
-
-    Args:
-        context_set_json: The JSON string output from the generation tools.
-        file_path: The **absolute path** to the existing template file.
-
-    Returns:
-        A confirmation message with the path to the updated file.
-    """
-
-    existing_content_dict = {"templates": [], "facets": [], "value_searches": []}
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        with open(file_path) as f:
-            existing_content_dict = json.load(f)
-
-    existing_context = context.ContextSet(**existing_content_dict)
-
-    new_context = context.ContextSet(**json.loads(context_set_json))
-
-    if existing_context.templates is None:
-        existing_context.templates = []
-    if new_context.templates:
-        existing_context.templates.extend(new_context.templates)
-
-    if existing_context.facets is None:
-        existing_context.facets = []
-    if new_context.facets:
-        existing_context.facets.extend(new_context.facets)
-
-    if existing_context.value_searches is None:
-        existing_context.value_searches = []
-    if new_context.value_searches:
-        existing_context.value_searches.extend(new_context.value_searches)
-
-    with open(file_path, "w") as f:
-        json.dump(existing_context.model_dump(), f, indent=2)
-
-    return f"Successfully attached context to {file_path}"
 
 
 @mcp.tool

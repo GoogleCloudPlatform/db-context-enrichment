@@ -7,6 +7,110 @@
       "kind": "agents",
       "work_dir": "workspace_explain_capabilities/",
       "max_turns": 5
+    },
+    {
+      "id": "freeform:explain:template-purpose",
+      "starting_prompt": "What can a template help with?",
+      "conversation_plan": "Verify that the agent explains that templates teach the system overarching operational logic, table join infrastructures, and broad business rules, linking NL queries to SQL. Terminate after the agent provides the explanation.",
+      "kind": "agents",
+      "work_dir": "workspace_explain_template_purpose/",
+      "max_turns": 5
+    },
+    {
+      "id": "freeform:explain:facet-purpose",
+      "starting_prompt": "What can a facet help with?",
+      "conversation_plan": "Verify that the agent explains facets as reusable, modular SQL fragments (e.g., WHERE clauses or specialized joins) tied to specific vocabulary, dynamically injected into queries. Terminate after the agent provides the explanation.",
+      "kind": "agents",
+      "work_dir": "workspace_explain_facet_purpose/",
+      "max_turns": 5
+    },
+    {
+      "id": "freeform:explain:value-search-purpose",
+      "starting_prompt": "When should I create a value search?",
+      "conversation_plan": "Verify that the agent explains value searches as the tool for resolving NL terms that don't exactly match stored DB values, and mentions match strategies (e.g., Trigram, Semantic). Terminate after the agent provides the explanation.",
+      "kind": "agents",
+      "work_dir": "workspace_explain_value_search_purpose/",
+      "max_turns": 5
+    },
+    {
+      "id": "freeform:targeted:template",
+      "starting_prompt": "Create a template for: 'How many accounts are in region Prague?' with SQL: 'SELECT count(*) FROM account AS T1 INNER JOIN district AS T2 ON T1.district_id = T2.district_id WHERE T2.A3 = ''Prague'''",
+      "conversation_plan": "Verify that the agent uses the `context-generation-guide` skill. Check that it correctly parameterizes the query (e.g., using `$1` for 'Prague') and returns a valid Template JSON object with nl_query, sql, intent, manifest, and parameterized fields. Terminate after the agent provides the JSON.",
+      "kind": "agents",
+      "work_dir": "workspace_targeted_template/",
+      "max_turns": 5
+    },
+    {
+      "id": "freeform:targeted:facet",
+      "starting_prompt": "Create a facet for: 'issuance after transaction' with SQL snippet: `frequency = 'POPLATEK PO OBRATU'`",
+      "conversation_plan": "Verify that the agent uses the `context-generation-guide` skill. Check that it returns a valid Facet JSON object with sql_snippet: \"frequency = 'POPLATEK PO OBRATU'\", intent: \"issuance after transaction\", manifest: \"issuance after transaction frequency\", and appropriate parameterized fields. Terminate after the agent provides the JSON.",
+      "kind": "agents",
+      "work_dir": "workspace_targeted_facet/",
+      "max_turns": 5
+    },
+    {
+      "id": "freeform:targeted:value-search",
+      "starting_prompt": "Create a value search for 'Region' in `district.A3` table using Trigram match.",
+      "conversation_plan": "Verify that the agent uses the `context-generation-guide` skill. Check that it returns a valid ValueSearch JSON object. Terminate after the agent provides the JSON.",
+      "kind": "agents",
+      "work_dir": "workspace_targeted_value_search/",
+      "max_turns": 5
+    },
+    {
+      "id": "freeform:authoring:parameterize-multiple-literals",
+      "starting_prompt": "Create a template for: 'List loans over 50000 issued between 1996-01-01 and 1996-12-31' with SQL: \"SELECT * FROM loan WHERE amount > 50000 AND date BETWEEN '1996-01-01' AND '1996-12-31'\"",
+      "conversation_plan": "Verify the agent parameterizes all three literals (the amount, the start date, and the end date) into placeholders such as $1, $2, $3, following the phrase extraction guidelines. Both the parameterized SQL and parameterized intent must reflect all three placeholders. Terminate after the JSON is returned.",
+      "kind": "agents",
+      "work_dir": "workspace_parameterize_multiple_literals/",
+      "max_turns": 5
+    },
+    {
+      "id": "freeform:authoring:dedup-existing-template",
+      "starting_prompt": "Add a template for 'How many accounts are in district 5?' with SQL 'SELECT count(*) FROM account WHERE district_id = 5'. The existing context set is in `context_set.json` — I think we already have something like this, check first.",
+      "conversation_plan": "Verify the agent opens `context_set.json`, identifies the existing parameterized template (`parameterized_sql: SELECT count(*) FROM account WHERE district_id = $1`) as already covering the new request, and either declines to add a duplicate or proposes updating/extending that existing template instead of blindly inserting a new one. Terminate after the agent's recommendation.",
+      "kind": "agents",
+      "work_dir": "workspace_dedup_existing_template/",
+      "max_turns": 5
+    },
+    {
+      "id": "freeform:reasoning:type-selection",
+      "starting_prompt": "I keep writing the filter `frequency = 'POPLATEK PO OBRATU'` across many different queries. What's the best way to capture this?",
+      "conversation_plan": "Verify the agent recommends a Facet (not a Template) because the user described a reusable filter fragment rather than a full NL→SQL mapping, and produces a valid Facet JSON. Terminate after the recommendation and JSON.",
+      "kind": "agents",
+      "work_dir": "workspace_type_selection/",
+      "max_turns": 5
+    },
+    {
+      "id": "freeform:reasoning:value-search-strategy-choice",
+      "starting_prompt": "Users describe loan reasons in free text and I want to match those to the loan.status column. What kind of value search should I set up?",
+      "conversation_plan": "Verify the agent recommends a Semantic match strategy (not Trigram) because the user describes free-text / semantic similarity, and produces a valid ValueSearch JSON targeting loan.status. Terminate after the JSON is returned.",
+      "kind": "agents",
+      "work_dir": "workspace_value_search_strategy_choice/",
+      "max_turns": 5
+    },
+    {
+      "id": "freeform:reasoning:fix-query-gap",
+      "starting_prompt": "I have a query that fails: 'How many accounts who choose issuance after transaction are staying in East Bohemia region?'. The LLM cannot match the term 'East Bohemia' to the database value. Help me fix this.",
+      "conversation_plan": "Verify that the agent identifies the need for a Value Search or Facet to fix the matching issue for 'East Bohemia'. It should produce the appropriate context item to resolve the gap. Terminate after the agent provides the solution.",
+      "kind": "agents",
+      "work_dir": "workspace_fix_query_gap/",
+      "max_turns": 10
+    },
+    {
+      "id": "freeform:reasoning:missing-info-exploration",
+      "starting_prompt": "Create a template for finding active accounts.",
+      "conversation_plan": "The agent should recognize that it lacks the definition of 'active'. Verify that it uses database exploration tools (leveraging `tools.yaml`) to look at the `account` table or related tables to find a column that might indicate status or activity, rather than just asking the user immediately. Terminate after the agent proposes a solution or asks for clarification after exploration.",
+      "kind": "agents",
+      "work_dir": "workspace_missing_info_exploration/",
+      "max_turns": 10
+    },
+    {
+      "id": "freeform:bulk:templates",
+      "starting_prompt": "Read the file `golden.txt` in the workspace directory and turn all 10 golden pairs into templates.",
+      "conversation_plan": "Verify that the agent reads the file `golden.txt` and processes all 10 pairs. It should generate Template objects for them and return the results. Terminate after the agent completes the task.",
+      "kind": "agents",
+      "work_dir": "workspace_with_golden/",
+      "max_turns": 10
     }
   ]
 }

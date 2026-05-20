@@ -43,7 +43,7 @@ def test_attach_context_set_legacy_compatibility(tmp_path, clean_context_set_jso
     legacy_file.write_text(json.dumps(legacy_content))
 
     # Call the tool
-    attach_context_set.fn(
+    attach_context_set(
         context_set_json=clean_context_set_json, file_path=str(legacy_file)
     )
 
@@ -83,7 +83,7 @@ def test_attach_context_set_standard(tmp_path, clean_context_set_json):
     standard_file.write_text(json.dumps(standard_content))
 
     # Call the tool
-    attach_context_set.fn(
+    attach_context_set(
         context_set_json=clean_context_set_json, file_path=str(standard_file)
     )
 
@@ -109,9 +109,7 @@ def test_attach_context_set_file_not_exist(tmp_path, clean_context_set_json):
     assert not new_file.exists()
 
     # Call the tool (should not raise FileNotFoundError)
-    attach_context_set.fn(
-        context_set_json=clean_context_set_json, file_path=str(new_file)
-    )
+    attach_context_set(context_set_json=clean_context_set_json, file_path=str(new_file))
 
     # Verify the file was created and holds the new content
     assert new_file.exists()

@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 # Pinned to exact versions because this project is distributed as a standalone application.
 dependencies = [
-    "fastmcp==2.14.2",
+    "fastmcp==3.3.1",
     "google-genai==1.46.0",
     "toolbox-core==0.5.2",
     "google-cloud-geminidataanalytics==0.11.0",

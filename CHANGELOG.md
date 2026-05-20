@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.5.1...v0.5.2) (2026-05-20)
+
+
+### Bug Fixes
+
+* gemini eval key ([#123](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/123)) ([1a24f6a](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/1a24f6a351aa7d6b6bf0af38501df1409edc980e))
+
 ## [0.5.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.5.0...v0.5.1) (2026-05-15)
 
 

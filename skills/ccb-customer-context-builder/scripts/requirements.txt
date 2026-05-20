@@ -1,0 +1,12 @@
+google-api-python-client>=2.120.0
+google-auth>=2.28.0
+PyYAML>=6.0
+# Optional — used by scripts/gap_check.py for entity extraction.
+# Falls back to regex-only if not installed; recall is materially better
+# when the en_core_web_sm model is downloaded:
+#   python -m spacy download en_core_web_sm
+spacy>=3.7.0
+# Optional — used by scripts/gap_check.py --cluster-mode for InfraNodus-style
+# cluster-based structural gap detection (Louvain community detection +
+# betweenness centrality). Falls back to pair-based gaps when not installed.
+networkx>=3.0

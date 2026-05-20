@@ -1,0 +1,48 @@
+# Example manifest for the gcp-customer-context-builder skill.
+#
+# Pass this to the skill to control which projects are explored and to
+# pin the Drive folders that hold internal notes about each customer.
+#
+# Save your real manifest as customers.yaml (gitignored) — never commit
+# Drive folder IDs that point to internal/customer data into this repo.
+
+customers:
+  - project_id: acme-prod-123
+    name: Acme Corp
+    drive:
+      docs_folder_id: 1AbCdEfGhIjKlMnOpQrStUvWxYz_DOCS
+      sheets_folder_id: 1AbCdEfGhIjKlMnOpQrStUvWxYz_SHEETS
+      # Extra keywords to broaden Drive search beyond the project_id and
+      # customer name (useful when the team uses a code-name internally).
+      search_terms:
+        - "Acme"
+        - "Project Quasar"
+
+  - project_id: bigco-analytics-456
+    name: BigCo
+    # No drive section: the orchestrator runs Drive discovery (recently-
+    # viewed docs + sheets) and shows you a picker. If you skip the
+    # picker too, the personal_context agent falls back to keyword
+    # search using name + project_id.
+
+  - project_id: smallco-data-789
+    name: SmallCo
+    drive:
+      # Folder-only is fine if you don't want keyword fallback.
+      docs_folder_id: 1XyZSmallCoFolder
+
+# Top-level options (all optional).
+options:
+  bq_query_window_days: 30
+  bq_max_datasets: 50
+  bq_max_tables_per_dataset: 200
+  bq_priority_tables_per_dataset: 20
+  drive_max_docs_per_customer: 30
+  drive_max_sheets_per_customer: 20
+
+  # Mirror the generated wiki to a GCS bucket after build (optional).
+  # Auth uses the same gcloud / ADC stack the rest of the skill uses;
+  # the active gcloud account needs storage.objectAdmin on this bucket.
+  # Omit to skip the GCS upload step.
+  gcs_bucket: gs://my-team-customer-wikis/optional/prefix
+  gcs_delete_extra: true   # mirror semantics: remove remote files not in local

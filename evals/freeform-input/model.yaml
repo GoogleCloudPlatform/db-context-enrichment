@@ -1,0 +1,10 @@
+gemini_cli_version: "@google/gemini-cli@0.38.2"
+generator: gemini_cli
+env:
+  GEMINI_MODEL: "gemini-3-flash-preview"
+setup:
+  extensions:
+    "https://github.com/GoogleCloudPlatform/db-context-enrichment":
+      settings: {
+      }
+

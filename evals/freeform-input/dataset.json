@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "id": "context-gen:targeted-template",
+      "starting_prompt": "Create a template for: 'How many accounts are in region Prague?' with SQL: 'SELECT count(*) FROM account AS T1 INNER JOIN district AS T2 ON T1.district_id = T2.district_id WHERE T2.A3 = ''Prague'''",
+      "conversation_plan": "Verify that the agent uses the `context-generation-guide` skill. Check that it correctly parameterizes the query (e.g., using `$1` for 'Prague') and returns a valid Template JSON object with nl_query, sql, intent, manifest, and parameterized fields. Terminate after the agent provides the JSON.",
+      "kind": "agents",
+      "work_dir": "workspace_targeted_template/",
+      "max_turns": 5
+    },
+    {
+      "id": "context-gen:targeted-facet",
+      "starting_prompt": "Create a facet for: 'issuance after transaction' with SQL snippet: `frequency = 'POPLATEK PO OBRATU'`",
+      "conversation_plan": "Verify that the agent uses the `context-generation-guide` skill. Check that it returns a valid Facet JSON object with sql_snippet: \"frequency = 'POPLATEK PO OBRATU'\", intent: \"issuance after transaction\", manifest: \"issuance after transaction frequency\", and appropriate parameterized fields. Terminate after the agent provides the JSON.",
+      "kind": "agents",
+      "work_dir": "workspace_targeted_facet/",
+      "max_turns": 5
+    },
+    {
+      "id": "context-gen:targeted-value-search",
+      "starting_prompt": "Create a value search for 'Region' in `district.A3` table using Trigram match.",
+      "conversation_plan": "Verify that the agent uses the `context-generation-guide` skill. Check that it returns a valid ValueSearch JSON object. Terminate after the agent provides the JSON.",
+      "kind": "agents",
+      "work_dir": "workspace_targeted_value_search/",
+      "max_turns": 5
+    },
+    {
+      "id": "context-gen:fix-query-gap",
+      "starting_prompt": "I have a query that fails: 'How many accounts who choose issuance after transaction are staying in East Bohemia region?'. The LLM cannot match the term 'East Bohemia' to the database value. Help me fix this.",
+      "conversation_plan": "Verify that the agent identifies the need for a Value Search or Facet to fix the matching issue for 'East Bohemia'. It should produce the appropriate context item to resolve the gap. Terminate after the agent provides the solution.",
+      "kind": "agents",
+      "work_dir": "workspace_fix_query_gap/",
+      "max_turns": 10
+    },
+    {
+      "id": "context-gen:bulk-templates",
+      "starting_prompt": "Read the file `golden.txt` in the workspace directory and turn all 10 golden pairs into templates.",
+      "conversation_plan": "Verify that the agent reads the file `golden.txt` and processes all 10 pairs. It should generate Template objects for them and return the results. Terminate after the agent completes the task.",
+      "kind": "agents",
+      "work_dir": "workspace_with_golden/",
+      "max_turns": 10
+    },
+    {
+      "id": "context-gen:missing-info-exploration",
+      "starting_prompt": "Create a template for finding active accounts.",
+      "conversation_plan": "The agent should recognize that it lacks the definition of 'active'. Verify that it uses database exploration tools (leveraging `tools.yaml`) to look at the `account` table or related tables to find a column that might indicate status or activity, rather than just asking the user immediately. Terminate after the agent proposes a solution or asks for clarification after exploration.",
+      "kind": "agents",
+      "work_dir": "workspace_missing_info_exploration/",
+      "max_turns": 10
+    },
+    {
+      "id": "context-gen:explain-capabilities",
+      "starting_prompt": "What kind of context can you generate for me?",
+      "conversation_plan": "Verify that the agent explains Templates, Facets, and Value Searches based on the `context-generation-guide` skill. Terminate after the agent provides the explanation.",
+      "kind": "agents",
+      "work_dir": "workspace_explain/",
+      "max_turns": 5
+    },
+    {
+      "id": "context-gen:explain-template-purpose",
+      "starting_prompt": "What can a template help with?",
+      "conversation_plan": "Verify that the agent explains that templates teach the system overarching operational logic, table join infrastructures, and broad business rules, linking NL queries to SQL. Terminate after the agent provides the explanation.",
+      "kind": "agents",
+      "work_dir": "workspace_explain/",
+      "max_turns": 5
+    }
+  ]
+}

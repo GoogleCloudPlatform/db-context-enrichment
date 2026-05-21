@@ -37,7 +37,7 @@ A **Template** represents a complete mapping between a natural language query an
 
 ### 2. Facets
 A **Facet** is a modular SQL fragment representing a specific filter or condition. It is composed of:
-*   **SQL Snippet**: The SQL fragment (usually a boolean expression or part of a WHERE clause).
+*   **SQL Snippet**: The SQL fragment (usually a boolean expression or part of a WHERE clause). Every column reference **must** be qualified with its table name (e.g., `table.column`) so the fragment is unambiguous when injected into a query that joins multiple tables. Schema/database prefixes are not required.
 *   **Intent**: The natural language expression corresponding to the snippet.
 *   **Manifest**: A generalized description of the facet.
 *   **Parameterized Form**: The SQL snippet and intent with specific values replaced by placeholders.
@@ -59,6 +59,9 @@ A **Value Search** defines how to look up values that might not match exactly. I
 ### Templates & Facets
 *   Ensure SQL is valid for the target dialect.
 *   Intents should be clear and descriptive.
+
+### Facets
+*   **Always qualify every column reference with its table name** (`table.column`) in both the literal and parameterized SQL snippets. A facet is injected into a larger query that may join multiple tables, so unqualified column names risk ambiguity errors or silently binding to the wrong column. Do not use aliases — the surrounding query controls them.
 
 ### Value Searches
 *   Choose the appropriate match function based on the column content and performance requirements.

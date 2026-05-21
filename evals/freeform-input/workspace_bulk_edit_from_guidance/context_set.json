@@ -33,20 +33,20 @@
   ],
   "facets": [
     {
-      "sql_snippet": "frequency = 'monthly'",
+      "sql_snippet": "account.frequency = 'monthly'",
       "intent": "monthly issuance",
       "manifest": "monthly issuance frequency",
       "parameterized": {
-        "parameterized_sql_snippet": "frequency = $1",
+        "parameterized_sql_snippet": "account.frequency = $1",
         "parameterized_intent": "$1 issuance"
       }
     },
     {
-      "sql_snippet": "frequency = 'after_transaction'",
+      "sql_snippet": "account.frequency = 'after_transaction'",
       "intent": "issuance after transaction",
       "manifest": "issuance after transaction frequency",
       "parameterized": {
-        "parameterized_sql_snippet": "frequency = $1",
+        "parameterized_sql_snippet": "account.frequency = $1",
         "parameterized_intent": "$1 issuance"
       }
     }

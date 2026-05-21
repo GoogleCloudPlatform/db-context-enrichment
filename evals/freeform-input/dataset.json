@@ -42,8 +42,8 @@
     },
     {
       "id": "freeform:targeted:facet",
-      "starting_prompt": "Create a facet for: 'issuance after transaction' with SQL snippet: `frequency = 'POPLATEK PO OBRATU'`",
-      "conversation_plan": "Verify that the agent uses the `context-generation-guide` skill. Check that it returns a valid Facet JSON object with sql_snippet: \"frequency = 'POPLATEK PO OBRATU'\", intent: \"issuance after transaction\", manifest: \"issuance after transaction frequency\", and appropriate parameterized fields. Terminate after the agent provides the JSON.",
+      "starting_prompt": "Create a facet for: 'issuance after transaction' with SQL snippet: `account.frequency = 'POPLATEK PO OBRATU'`",
+      "conversation_plan": "Verify that the agent uses the `context-generation-guide` skill. Check that it returns a valid Facet JSON object with sql_snippet: \"account.frequency = 'POPLATEK PO OBRATU'\" (column reference must be table-qualified as `account.frequency`, not bare `frequency`), intent: \"issuance after transaction\", manifest: \"issuance after transaction frequency\", and appropriate parameterized fields (e.g., `account.frequency = $1`). Terminate after the agent provides the JSON.",
       "kind": "agents",
       "work_dir": "workspace_targeted_facet/",
       "max_turns": 5
@@ -74,8 +74,8 @@
     },
     {
       "id": "freeform:reasoning:type-selection",
-      "starting_prompt": "I keep writing the filter `frequency = 'POPLATEK PO OBRATU'` across many different queries. What's the best way to capture this?",
-      "conversation_plan": "Verify the agent recommends a Facet (not a Template) because the user described a reusable filter fragment rather than a full NL→SQL mapping, and produces a valid Facet JSON. Terminate after the recommendation and JSON.",
+      "starting_prompt": "I keep writing the filter `account.frequency = 'POPLATEK PO OBRATU'` across many different queries. What's the best way to capture this?",
+      "conversation_plan": "Verify the agent recommends a Facet (not a Template) because the user described a reusable filter fragment rather than a full NL→SQL mapping, and produces a valid Facet JSON. The facet's sql_snippet must keep the column reference qualified as `account.frequency = 'POPLATEK PO OBRATU'` (not strip it down to bare `frequency = ...`). Terminate after the recommendation and JSON.",
       "kind": "agents",
       "work_dir": "workspace_type_selection/",
       "max_turns": 5
@@ -114,8 +114,8 @@
     },
     {
       "id": "freeform:bulk:edits-from-guidance",
-      "starting_prompt": "Several context items in `context_set.json` use the wrong encoding for `account.frequency`. The database actually stores Czech codes, not English. Please update everything affected: use `frequency = 'POPLATEK PO OBRATU'` for 'issuance after transaction' (not `frequency = 'after_transaction'`), and `frequency = 'POPLATEK MESICNE'` for 'monthly issuance' (not `frequency = 'monthly'`). Leave unrelated items alone.",
-      "conversation_plan": "Verify the agent opens `context_set.json`, identifies every template and facet that uses the wrong English encodings (`frequency = 'monthly'` and `frequency = 'after_transaction'`), and rewrites each one to use the correct Czech code (`POPLATEK MESICNE` and `POPLATEK PO OBRATU` respectively). The agent must update all 4 affected items (2 templates + 2 facets), must NOT modify the unrelated cards template, and should issue the corrections as a single coherent batch (e.g., via `mutate_context_set` with multiple update operations) rather than asking for confirmation item-by-item. Verify the final `context_set.json` reflects all corrections. Terminate after the agent reports completion.",
+      "starting_prompt": "Several context items in `context_set.json` use the wrong encoding for `account.frequency`. The database actually stores Czech codes, not English. Please update everything affected: use `'POPLATEK PO OBRATU'` for 'issuance after transaction' (not `'after_transaction'`), and `'POPLATEK MESICNE'` for 'monthly issuance' (not `'monthly'`). Leave unrelated items alone.",
+      "conversation_plan": "Verify the agent opens `context_set.json`, identifies every template and facet that uses the wrong English encodings ('monthly' and 'after_transaction' on the account.frequency column), and rewrites each one to use the correct Czech code ('POPLATEK MESICNE' and 'POPLATEK PO OBRATU' respectively). The agent must update all 4 affected items (2 templates + 2 facets), must NOT modify the unrelated cards template, must preserve the existing table-qualified column references in the facets (e.g., `account.frequency = 'POPLATEK PO OBRATU'`, not bare `frequency = ...`), and should issue the corrections as a single coherent batch (e.g., via `mutate_context_set` with multiple update operations) rather than asking for confirmation item-by-item. Verify the final `context_set.json` reflects all corrections. Terminate after the agent reports completion.",
       "kind": "agents",
       "work_dir": "workspace_bulk_edit_from_guidance/",
       "max_turns": 10

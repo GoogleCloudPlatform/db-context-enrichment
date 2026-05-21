@@ -6,6 +6,10 @@ This reference provides best practices and ideal output definitions for generati
 
 Facets are reusable, modular SQL fragments (like a `WHERE` clause or specialized join). They are dynamically injected filters linked to specific vocabulary or terminology.
 
+## Fully-Qualified Column References
+
+Every column reference in a facet's SQL snippet **must** be qualified with its table name as `table.column` (e.g., `products.rating`). Facets are injected into larger queries that may join multiple tables, so unqualified columns risk ambiguity errors or silently binding to the wrong column. Never use table aliases — the surrounding query controls aliasing.
+
 ## Parameterization
 
 Values in the SQL snippet and the intent must be replaced with positional parameters represented by `?`, according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
@@ -13,17 +17,17 @@ Values in the SQL snippet and the intent must be replaced with positional parame
 ### Example
 
 **Input**:
-*   **SQL Snippet**: `rating > 4.5`
+*   **SQL Snippet**: `products.rating > 4.5`
 *   **Intent**: "highly rated products (above 4.5)"
 
 **Generated Output** (Conceptual):
 ```json
 {
-  "sql_snippet": "rating > 4.5",
+  "sql_snippet": "products.rating > 4.5",
   "intent": "highly rated products (above 4.5)",
   "manifest": "highly rated products (above a given number)",
   "parameterized": {
-    "parameterized_sql_snippet": "rating > ?",
+    "parameterized_sql_snippet": "products.rating > ?",
     "parameterized_intent": "highly rated products (above ?)"
   }
 }
@@ -32,5 +36,6 @@ Values in the SQL snippet and the intent must be replaced with positional parame
 ## Best Practices
 
 *   Provide clear and reusable SQL snippets.
+*   **Always qualify columns as `table.column`** in both the literal and parameterized SQL snippets. Never use bare column names or table aliases.
 *   Ensure the SQL snippet follows MySQL syntax.
 *   The intent should clearly describe the condition or filter.

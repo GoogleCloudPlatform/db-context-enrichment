@@ -65,7 +65,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='google-cloud-db-context-enrichment',
+    name='google-cloud-db-context-engineering',
     debug=False,
     bootloader_ignore_signals=False,
     # Disable strip/upx to prevent Windows DLL corruption

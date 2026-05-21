@@ -1,15 +1,15 @@
 {
-  "name": "google-cloud-db-context-enrichment",
+  "name": "google-cloud-db-context-engineering",
   "version": "0.5.1",
   "contextFileName": "./GEMINI.md",
   "mcpServers": {
-    "mcp_db_context_enrichment": {
+    "mcp_db_context_engineering": {
       "command": "uv",
       "args": [
         "run",
         "--directory",
         "${extensionPath}",
-        "google-cloud-db-context-enrichment"
+        "google-cloud-db-context-engineering"
       ]
     }
   }

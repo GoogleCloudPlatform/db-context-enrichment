@@ -31,11 +31,18 @@ cd "${WORK_DIR}"
 # needs the key, so we no longer touch the `settings: {}` block).
 sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' "${SUITE}/model.yaml"
 
+# Inject Vertex project/location into the CLI env block so the extension can
+# talk to the right GCP project without the values being committed to the repo.
+sed -i \
+  -e "/^  GEMINI_MODEL:/a\\  GOOGLE_CLOUD_PROJECT: \"${EVAL_GCP_PROJECT_ID}\"" \
+  -e "/^  GEMINI_MODEL:/a\\  GOOGLE_CLOUD_LOCATION: \"${EVAL_GCP_PROJECT_REGION}\"" \
+  "${SUITE}/model.yaml"
+
 # evalbench runtime
 export PYTHONPATH=/evalbench:/evalbench/evalproto
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
 echo "Launching ${SUITE} evaluation..."
-uv run --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config="${SUITE}/run.yaml"
+uv run --no-sync --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config="${SUITE}/run.yaml"
 
 touch "/workspace/EVAL_RAN_${SUITE}"

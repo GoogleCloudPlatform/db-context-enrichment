@@ -54,7 +54,7 @@ steps:
   - id: eval-core-cujs
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY', 'GEMINI_API_KEY']
+    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
@@ -64,7 +64,7 @@ steps:
   - id: eval-freeform-input
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY', 'GEMINI_API_KEY']
+    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
@@ -110,8 +110,6 @@ availableSecrets:
     env: 'GITHUB_TOKEN'
   - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-adc-credentials/versions/latest
     env: 'ADC_KEY'
-  - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-gemini-api-key/versions/latest
-    env: 'GEMINI_API_KEY'
 
 serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/crema-eval@cloud-db-nl2sql.iam.gserviceaccount.com'
 

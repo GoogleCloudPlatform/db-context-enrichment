@@ -94,7 +94,7 @@
       "conversation_plan": "Verify that the agent identifies the need for a Value Search or Facet to fix the matching issue for 'East Bohemia'. It should produce the appropriate context item to resolve the gap. Terminate after the agent provides the solution.",
       "kind": "agents",
       "work_dir": "workspace_fix_query_gap/",
-      "max_turns": 10
+      "max_turns": 5
     },
     {
       "id": "freeform:reasoning:missing-info-exploration",
@@ -102,7 +102,7 @@
       "conversation_plan": "The agent should recognize that it lacks the definition of 'active'. Verify that it uses database exploration tools (leveraging `tools.yaml`) to look at the `account` table or related tables to find a column that might indicate status or activity, rather than just asking the user immediately. Terminate after the agent proposes a solution or asks for clarification after exploration.",
       "kind": "agents",
       "work_dir": "workspace_missing_info_exploration/",
-      "max_turns": 10
+      "max_turns": 5
     },
     {
       "id": "freeform:bulk:templates",
@@ -110,7 +110,7 @@
       "conversation_plan": "Verify that the agent reads the file `golden.txt` and processes all 10 pairs. It should generate Template objects for them and return the results. Terminate after the agent completes the task.",
       "kind": "agents",
       "work_dir": "workspace_with_golden/",
-      "max_turns": 10
+      "max_turns": 5
     },
     {
       "id": "freeform:bulk:edits-from-guidance",
@@ -118,7 +118,7 @@
       "conversation_plan": "Verify the agent opens `context_set.json`, identifies every template and facet that uses the wrong English encodings ('monthly' and 'after_transaction' on the account.frequency column), and rewrites each one to use the correct Czech code ('POPLATEK MESICNE' and 'POPLATEK PO OBRATU' respectively). The agent must update all 4 affected items (2 templates + 2 facets), must NOT modify the unrelated cards template, must preserve the existing table-qualified column references in the facets (e.g., `account.frequency = 'POPLATEK PO OBRATU'`, not bare `frequency = ...`), and should issue the corrections as a single coherent batch (e.g., via `mutate_context_set` with multiple update operations) rather than asking for confirmation item-by-item. Verify the final `context_set.json` reflects all corrections. Terminate after the agent reports completion.",
       "kind": "agents",
       "work_dir": "workspace_bulk_edit_from_guidance/",
-      "max_turns": 10
+      "max_turns": 5
     }
   ]
 }

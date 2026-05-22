@@ -1,0 +1,24 @@
+{
+  "templates": [
+    {
+      "nl_query": "How many accounts are in district 7?",
+      "sql": "SELECT count(*) FROM account WHERE district_id = 7",
+      "intent": "How many accounts are in district 7?",
+      "manifest": "How many accounts are in a given district?",
+      "parameterized": {
+        "parameterized_sql": "SELECT count(*) FROM account WHERE district_id = $1",
+        "parameterized_intent": "How many accounts are in district $1?"
+      }
+    },
+    {
+      "nl_query": "List all cards issued after 1995.",
+      "sql": "SELECT * FROM card WHERE issued > '1995-01-01'",
+      "intent": "List all cards issued after 1995.",
+      "manifest": "List cards issued after a given date.",
+      "parameterized": {
+        "parameterized_sql": "SELECT * FROM card WHERE issued > $1",
+        "parameterized_intent": "List all cards issued after $1."
+      }
+    }
+  ]
+}

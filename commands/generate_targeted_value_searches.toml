@@ -1,0 +1,6 @@
+description = "Guided workflow to configure a Value Search (e.g., exact, trigram, or semantic match) for a concept."
+prompt = """
+The user wants to author a **Value Search** — a specialized query used when a value in the natural language query does not exactly match the value stored in the database.
+
+Please use the `activate_skill` tool to activate the `context-generation-guide` skill and follow its workflow, scoped to the Value Search context type. Gather the target concept, the database table/column, and the desired match strategy (e.g., Trigram, Semantic) from the user if not already provided, and save via `mutate_context_set`.
+"""

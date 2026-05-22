@@ -12,12 +12,5 @@
         "google-cloud-db-context-engineering"
       ]
     }
-  },
-  "settings": [
-    {
-      "name": "Gemini API Key",
-      "description": "Your Gemini API key",
-      "envVar": "GEMINI_API_KEY"
-    }
-  ]
+  }
 }

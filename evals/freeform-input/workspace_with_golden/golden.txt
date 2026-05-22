@@ -1,0 +1,29 @@
+NL: How many accounts are in district 5?
+SQL: SELECT count(*) FROM account WHERE district_id = 5
+---
+NL: List all cards issued after 1995.
+SQL: SELECT * FROM card WHERE issued > '1995-01-01'
+---
+NL: How many regions are there?
+SQL: SELECT count(*) FROM regions
+---
+NL: Find accounts opened on 1993-01-01.
+SQL: SELECT * FROM account WHERE date = '1993-01-01'
+---
+NL: Count cards of type junior.
+SQL: SELECT count(*) FROM card WHERE type = 'junior'
+---
+NL: Get district name for district_id 10.
+SQL: SELECT A2 FROM district WHERE district_id = 10
+---
+NL: Find cards issued to disp_id 100.
+SQL: SELECT * FROM card WHERE disp_id = 100
+---
+NL: How many accounts have frequency POPLATEK PO OBRATU?
+SQL: SELECT count(*) FROM account WHERE frequency = 'POPLATEK PO OBRATU'
+---
+NL: List regions with region_id less than 5.
+SQL: SELECT * FROM regions WHERE region_id < 5
+---
+NL: Find accounts in Prague.
+SQL: SELECT T1.* FROM account T1 JOIN district T2 ON T1.district_id = T2.district_id WHERE T2.A3 = 'Prague'

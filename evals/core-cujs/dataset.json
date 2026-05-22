@@ -7,7 +7,7 @@
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_empty/",
-      "max_turns": 15
+      "max_turns": 5
     },
     {
       "id": "autoctx:generate-dataset",
@@ -16,7 +16,7 @@
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_init/",
-      "max_turns": 15
+      "max_turns": 5
     },
     {
       "id": "autoctx:bootstrap",
@@ -25,7 +25,7 @@
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_dataset_generation/",
-      "max_turns": 15
+      "max_turns": 5
     },
     {
       "id": "autoctx:evaluate",
@@ -34,7 +34,7 @@
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_bootstrap/",
-      "max_turns": 15
+      "max_turns": 5
     },
     {
       "id": "autoctx:hillclimb",
@@ -43,7 +43,7 @@
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_evaluation/",
-      "max_turns": 15
+      "max_turns": 5
     }
   ]
 }

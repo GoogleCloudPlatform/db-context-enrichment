@@ -1,0 +1,19 @@
+{
+  "name": "db-context-enrichment-marketplace",
+  "owner": {
+    "name": "Google Cloud Platform",
+    "url": "https://cloud.google.com/"
+  },
+  "plugins": [
+    {
+      "name": "db-context-engineering",
+      "description": "Context Engineering Agent for generating natural language to SQL templates, facets, and value searches.",
+      "source": "./",
+      "homepage": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
+      "repository": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
+      "license": "Apache-2.0",
+      "keywords": ["database", "sql", "nl2sql", "context-engineering", "mcp"],
+      "category": "data"
+    }
+  ]
+}

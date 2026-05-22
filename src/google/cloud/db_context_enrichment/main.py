@@ -133,7 +133,7 @@ def mutate_context_set(
       - 'type': "template", "facet", or "value_search"
       - 'identifier' (dict): Required for "delete" and "update" to find the target item (e.g., {"nl_query": "What are all users?"}).
       - 'value' (dict): Required for "add" and "update".
-        - For "add": Must be the FULL item body. Rely on specialized generation tools (like `generate_templates`) to produce this content deterministically.
+        - For "add": Must be the FULL item body. Follow the formatting guidance in the `context-generation-guide` skill to produce well-formed content.
         - For "update": Can be a PARTIAL body containing only the fields to change (it will be merged with the existing item).
 
     Example 'mutations_json':

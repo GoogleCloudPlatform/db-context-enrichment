@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Q&A charts — What was the channel breakdown of revenue for the last 4 weeks? Use whichever at</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; max-width: 1100px; margin: 30px auto; padding: 0 24px; color: #1f2328; }
+  h1 { font-size: 18px; color: #57606a; margin-bottom: 4px; }
+  h1 .q { display: block; color: #1f2328; font-size: 22px; margin-top: 4px; }
+  h2 { font-size: 16px; margin-top: 36px; padding-bottom: 6px; border-bottom: 1px solid #d1d9e0; }
+  .meta { font-size: 12px; color: #6e7781; margin-bottom: 28px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+</head>
+<body>
+<h1>Q&amp;A charts <span class="q">What was the channel breakdown of revenue for the last 4 weeks? Use whichever attribution table is recommended, and visualize the result.</span></h1>
+<div class="meta">1 chart(s); rendered via vega-embed (CDN). Use the menu in the corner of each chart to download as PNG/SVG/JSON.</div>
+<h2>Chart 1</h2><div id="chart-1"></div>
+<script>
+vegaEmbed('#chart-1', {"$schema": "https://vega.github.io/schema/vega-lite/v4.17.0.json", "mark": "bar", "data": {"values": [{"channel": "email", "total_revenue": 213392.19}, {"channel": "social_paid", "total_revenue": 195108.11}, {"channel": "organic_search", "total_revenue": 193145.62}, {"channel": "affiliate", "total_revenue": 186127.06}, {"channel": "paid_search", "total_revenue": 185321.73}, {"channel": "direct", "total_revenue": 148109.01}]}, "config": {"view": {"continuousWidth": 400.0, "continuousHeight": 300.0}}, "encoding": {"color": {"field": "channel", "type": "nominal", "legend": null}, "x": {"field": "total_revenue", "type": "quantitative", "title": "Total Revenue (USD)"}, "y": {"field": "channel", "sort": "-x", "type": "nominal", "title": "Marketing Channel"}}, "title": "Revenue Breakdown by Channel (Last 4 Weeks)", "usermeta": {"chart_id": "channel_revenue_breakdown", "data_result_name": "revenue_by_channel_last_4_weeks"}, "width": 600.0}, {actions: true}).catch(e => { document.getElementById('chart-1').innerHTML = '<pre>chart-1 render failed: ' + e + '</pre>'; });
+</script>
+</body>
+</html>

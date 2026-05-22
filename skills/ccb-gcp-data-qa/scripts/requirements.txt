@@ -1,0 +1,7 @@
+google-cloud-geminidataanalytics>=0.4.0
+PyYAML>=6.0
+# Optional: enables server-side Vega-Lite -> inline SVG rendering so chart
+# previews are self-contained (work on file://, markdown viewers, etc.).
+# If absent, the wrapper falls back to a CDN-loaded vega-embed runtime.
+vl-convert-python>=1.0
+

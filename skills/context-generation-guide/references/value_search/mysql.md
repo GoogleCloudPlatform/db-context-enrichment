@@ -2,6 +2,10 @@
 
 This reference provides the SQL templates and examples for Value Search in MySQL.
 
+## Requirements
+
+*   **Minimum MySQL version**: `8`.
+
 ## Supported Match Functions
 
 ### 1. EXACT_MATCH_STRINGS

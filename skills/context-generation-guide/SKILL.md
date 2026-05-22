@@ -54,11 +54,11 @@ A **Value Search** defines how to look up values that might not match exactly. I
 ### General
 *   **Focus on Quality**: Provide accurate and representative examples.
 *   **Avoid Redundancy**: Don't create duplicate templates or facets for the same logic.
-*   **Use Parameters**: Manually parameterize values in the SQL and intent according to the [Phrase Extraction and Parameterization Guidelines](references/phrase_extraction/guidelines.md). This is necessary to generalize the context items so they can match variations of user queries.
 
 ### Templates & Facets
 *   Ensure SQL is valid for the target dialect.
 *   Intents should be clear and descriptive.
+*   **Use Parameters**: parameterize values in the SQL and intent according to the [Phrase Extraction and Parameterization Guidelines](references/phrase_extraction/guidelines.md). This is necessary to generalize the context items so they can match variations of user queries.
 
 ### Facets
 *   **Always qualify every column reference with its table name** (`table.column`) in both the literal and parameterized SQL snippets. A facet is injected into a larger query that may join multiple tables, so unqualified column names risk ambiguity errors or silently binding to the wrong column. Do not use aliases — the surrounding query controls them.

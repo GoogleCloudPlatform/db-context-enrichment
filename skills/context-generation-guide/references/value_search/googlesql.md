@@ -2,6 +2,10 @@
 
 This reference provides the SQL templates and examples for Value Search in Spanner (GoogleSQL).
 
+## Requirements
+
+*   **`SEMANTIC_SIMILARITY_MATCH` is NOT supported** on Spanner. Only `EXACT_MATCH_STRINGS` and `TRIGRAM_STRING_MATCH` are available — do not author value searches that rely on semantic embeddings here.
+
 ## Supported Match Functions
 
 ### 1. EXACT_MATCH_STRINGS

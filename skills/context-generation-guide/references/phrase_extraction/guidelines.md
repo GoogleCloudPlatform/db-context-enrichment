@@ -1,10 +1,14 @@
-# Phrase Extraction and Parameterization Guidelines
+# Phrase Extraction, Manifest Generation, and Parameterization Guidelines
 
-This guide provides instructions for extracting value phrases (named entities) from natural language queries and parameterizing them in both the SQL and the intent. This process is crucial for creating generalized Templates and Facets.
+This guide provides instructions for extracting value phrases (named entities) from natural language queries, generating a generalized manifest, and parameterizing them in both the SQL and the intent. This process is crucial for creating generalized Templates and Facets.
+
+The output of Phase 1 feeds both Phase 2 (manifest) and Phase 3 (parameterization) — extract once, then reuse the same phrase set for both downstream steps.
 
 ## Phase 1: Value Phrase Extraction
 
 Identify and extract specific values (named entities) from the natural language query literally. Do not perform spell checking or correction.
+
+Each extracted phrase is associated with exactly one entity type, which is used for manifest generation in Phase 2.
 
 ### Target Entity Types
 
@@ -28,9 +32,26 @@ Extract entities that fall into these categories:
 
 **Example**:
 Query: "Show me sales in London and Paris for 2025"
-Extracted Phrases: `["London", "Paris", "2025"]`
+Extracted Phrases: `{"London": "city", "Paris": "city", "2025": "date"}`
 
-## Phase 2: Parameterization
+## Phase 2: Manifest Generation
+
+The manifest is a generalized, human-readable description of the intent where each concrete value phrase is replaced by `a given <type>`. It is derived from the **intent string**, not the SQL.
+
+### Rules
+
+1.  **Source**: Start from the intent string (verbatim).
+2.  **Replacement Form**: Substitute each occurrence with the literal string `a given <type>` (e.g., `a given city`, `a given date`).
+3.  **Processing Order**: Process phrases in **descending order of length** so longer compound phrases (e.g., `"New York"`) are replaced before any shorter substring they contain (e.g., `"York"`).
+4.  **No Quoting Awareness**: Manifest generation does a literal string replacement on the intent. It does not distinguish between quoted and unquoted occurrences.
+
+### Example
+
+*   **Intent**: `"Show me sales in London and Paris for 2025"`
+*   **Phrases**: `{"London": "city", "Paris": "city", "2025": "date"}`
+*   **Manifest**: `"Show me sales in a given city and a given city for a given date"`
+
+## Phase 3: Parameterization
 
 Replace the extracted value phrases with placeholders in both the SQL query and the intent string.
 
@@ -78,10 +99,13 @@ Avoid replacing phrases that are already part of a placeholder (e.g., do not rep
 **Step 1: Extract**
 *   Phrase: `"London"` (Type: city)
 
-**Step 2: Parameterize**
+**Step 2: Generate Manifest**
+*   Primary type for `"London"` is `city`.
+*   **Manifest**: `"How many accounts are in a given city?"`
+
+**Step 3: Parameterize**
 *   Dialect: PostgreSQL (use `$1`)
 *   Occurrence: Quoted in SQL (`'London'`), Unquoted in Intent (`London`).
 *   Output:
     *   **Parameterized SQL**: `SELECT count(*) FROM account WHERE city = $1`
-    *   **Parameterized Intent**: "How many accounts are in $1?"
-    *   **Manifest**: "How many accounts are in a given city?" (Generalized description)
+    *   **Parameterized Intent**: `"How many accounts are in $1?"`

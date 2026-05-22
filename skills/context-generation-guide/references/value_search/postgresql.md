@@ -2,6 +2,10 @@
 
 This reference provides the SQL templates and examples for Value Search in PostgreSQL.
 
+## Requirements
+
+*   **Minimum PostgreSQL version**: `13`.
+
 ## Supported Match Functions
 
 ### 1. EXACT_MATCH_STRINGS

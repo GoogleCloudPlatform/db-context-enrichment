@@ -61,7 +61,18 @@ steps:
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
     args: ['.ci/run_eval.sh', 'core-cujs']
 
-  - id: eval-freeform-input
+  # - id: eval-freeform-input
+  #   name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+  #   entrypoint: 'bash'
+  #   secretEnv: ['ADC_KEY']
+  #   waitFor: ['build-extension', 'preflight']
+  #   env:
+  #     - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+  #     - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+  #   args: ['.ci/run_eval.sh', 'freeform-input']
+
+  # --- Claude Code eval ---
+  - id: eval-claude-core-cujs
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
     secretEnv: ['ADC_KEY']
@@ -69,18 +80,20 @@ steps:
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
-    args: ['.ci/run_eval.sh', 'freeform-input']
+      - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
+      - 'CLAUDE_PLUGIN_BRANCH=$_HEAD_BRANCH'
+    args: ['.ci/run_claude_eval.sh']
 
-  # --- Upload Results and Workspaces (after both eval steps) ---
+  # --- Upload Results and Workspaces (after all eval steps) ---
   - id: upload
     name: 'gcr.io/cloud-builders/gsutil'
     entrypoint: 'bash'
-    waitFor: ['eval-core-cujs', 'eval-freeform-input']
+    waitFor: ['eval-core-cujs', 'eval-claude-core-cujs']
     args:
       - '-c'
       - |
         ANY_RAN=0
-        for SUITE in core-cujs freeform-input; do
+        for SUITE in core-cujs freeform-input claude-core-cujs; do
           if [ ! -f /workspace/EVAL_RAN_$$SUITE ]; then
             echo "$$SUITE did not run; skipping its upload."
             continue
@@ -95,6 +108,12 @@ steps:
           if [ -d $$WORK_DIR/.venv/fake_home/.gemini/tmp ]; then
             echo "Uploading $$SUITE Gemini workspace..."
             gsutil -m cp -r $$WORK_DIR/.venv/fake_home/.gemini/tmp/* $$DEST/gemini/
+          fi
+
+          # TEMP: upload entire .claude directory for debugging Claude Code runs.
+          if [ -d $$WORK_DIR/.venv/fake_home_claude/.claude ]; then
+            echo "Uploading $$SUITE .claude directory..."
+            gsutil -m cp -r $$WORK_DIR/.venv/fake_home_claude/.claude $$DEST/claude/
           fi
         done
 

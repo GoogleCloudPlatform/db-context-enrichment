@@ -1,0 +1,37 @@
+############################################################
+### Dataset / Eval Items
+############################################################
+dataset_config: core-cujs/dataset.json
+dataset_format: gemini-cli-format
+
+# Orchestrator Configuration
+# `agent` is the alias of `geminicli` that also drives Claude Code.
+orchestrator: agent
+model_config: core-cujs/claude_code_model.yaml
+simulated_user_model_config: core-cujs/gemini_model.yaml
+
+# Run scenarios sequentially: Claude Code shares ~/.claude session store
+# inside the sandboxed fake_home, so concurrent runs can conflict.
+runners:
+  agent_runners: 1
+
+############################################################
+### Scorer Related Configs
+############################################################
+scorers:
+  trajectory_matcher: {}
+
+  goal_completion:
+    model_config: core-cujs/gemini_model.yaml
+
+  turn_count: {}
+  end_to_end_latency: {}
+  tool_call_latency: {}
+  token_consumption: {}
+
+############################################################
+### Reporting Related Configs
+############################################################
+reporting:
+  csv:
+    output_directory: 'results'

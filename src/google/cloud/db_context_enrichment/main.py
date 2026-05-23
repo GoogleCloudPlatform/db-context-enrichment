@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -17,6 +18,8 @@ from google.cloud.db_context_enrichment.model import context
 from google.cloud.db_context_enrichment.template import template_generator
 from google.cloud.db_context_enrichment.value_search import generator as vi_generator
 from google.cloud.db_context_enrichment.value_search import match_templates
+from google.cloud.db_context_enrichment.dataset.eval_seed_gen.dataset_generator import SeedEvalDatasetGenerator
+
 
 mcp = FastMCP("Context Engineering Agent MCP")
 
@@ -444,6 +447,19 @@ async def read_evaluation_result(
         A string in markdown format containing the summary and failure cases.
     """
     return result_reader.read_eval_results(run_folder_path, offset, batch_size)
+
+
+@mcp.tool
+async def generate_seed_eval_dataset(payload: dict[str, Any]) -> dict[str, Any]:
+    """Reads the `task` field in the `payload` argument to determine which of a list of tasks to perform for generate_seed_eval_dataset.
+
+    Args:
+        payload: A dictionary object which must have the fields `task`, `task_working_dir`, and other required fields based on the value of `task`.
+
+    Returns:
+        A dictionary object which holds the results
+    """
+    return await SeedEvalDatasetGenerator().run_task(payload)
 
 
 if __name__ == "__main__":

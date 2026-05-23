@@ -18,9 +18,6 @@ from .schema import generate_ddls_from_json_schema, SchemaDDL, TableProfile, Sch
 from .generators import SQLCandidateGenerator, QuestionGenerator, QuestionReviewer, QuestionRefiner
 
 
-assert os.getenv('GEMINI_API_KEY'), "Missing GEMINI_API_KEY environment variable."
-
-
 def _prepare_sql_for_execution_accuracy_check(sql: str) -> str:
     if sql.strip().endswith(";"):
         sql = sql.strip()[:-1]

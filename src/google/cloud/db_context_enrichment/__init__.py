@@ -1,1 +1,1 @@
-# google-cloud-db-context-enrichment package
+# db_context_enrichment package

@@ -2,11 +2,12 @@
   "scenarios": [
     {
       "id": "autoctx:init",
-      "starting_prompt": "setup context generation for my alloydb database.",
+      "starting_prompt": "setup context generation for my database.",
       "conversation_plan": "Ask the agent to setup the auto context generation for my alloydb database. Connection information: datasource name as my-alloydb, project id is cloud-db-nl2sql, region us-central1, cluster whaoyu-test, instance whaoyu-test-primary, database financial. Verify the agent generate a valid tools.yaml. Explicitly ask the agent to perform validation. You should terminate the conversation immediately after the agent successfully set up the files and performed the validation.",
       "expected_trajectory": [],
       "kind": "agents",
-      "max_turns": 15
+      "work_dir": "workspace_empty/",
+      "max_turns": 5
     },
     {
       "id": "autoctx:expand-dataset",
@@ -15,7 +16,7 @@
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_init/",
-      "max_turns": 15
+      "max_turns": 5
     },
     {
       "id": "autoctx:generate-dataset",
@@ -33,7 +34,7 @@
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_dataset_generation/",
-      "max_turns": 15
+      "max_turns": 5
     },
     {
       "id": "autoctx:evaluate",
@@ -42,7 +43,7 @@
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_bootstrap/",
-      "max_turns": 15
+      "max_turns": 5
     },
     {
       "id": "autoctx:hillclimb",
@@ -51,7 +52,7 @@
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_evaluation/",
-      "max_turns": 15
+      "max_turns": 5
     }
   ]
 }

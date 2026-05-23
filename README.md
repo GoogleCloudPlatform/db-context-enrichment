@@ -76,8 +76,6 @@ To install the Context Engineering Agent via the Gemini CLI:
 gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enrichment
 ```
 
-*Note: The extension requires a Gemini API key at installation or via environment variable `GEMINI_API_KEY`.*
-
 ### Optional: VSCode Integration
 For an enhanced editing and diffing experience when reviewing context changes:
 1. Install [VSCode](https://code.visualstudio.com/download).
@@ -131,7 +129,7 @@ To develop a new feature and test it with the correct dependencies and full bund
    ```sh
    gemini extensions install https://github.com/YOUR-USERNAME/db-context-enrichment --ref 0.0.1-test
    ```
-   *Note: Use `gemini extensions uninstall mcp-db-context-enrichment` to remove previous installations if needed.*
+   *Note: Use `gemini extensions uninstall google-cloud-db-context-engineering` to remove previous installations if needed.*
 
 ### 2. Official Release Pipeline
 - Releases are versioned and prepared automatically by the Release Please GitHub App.

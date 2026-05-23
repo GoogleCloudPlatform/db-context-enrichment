@@ -8,10 +8,18 @@ The evaluation uses the [evalbench](https://github.com/GoogleCloudPlatform/evalb
 
 ## Configuration Files
 
-- `core-cujs/dataset.json`: Defines the test cases, prompts, and expected behaviors for the Core CUJs.
-- `core-cujs/run.yaml`: The main evaluation configuration file, defining the scorers, models, and reporting settings.
-- `core-cujs/model.yaml`: The configuration for the system-under-test (SUT) model.
-- `core-cujs/gemini_2.5_pro_model.yaml`: The configuration used for the simulated user and the LLM-as-a-judge scorers.
+Each suite folder (`core-cujs/`, `freeform-input/`) contains only the things
+that are suite-specific:
+
+- `dataset.json`: test cases, prompts, and expected behaviors.
+- `run_gemini_cli.yaml`: orchestrator + scorer config for the Gemini CLI SUT.
+- `run_claude.yaml`: orchestrator + scorer config for the Claude Code SUT.
+
+SUT and judge model configs are shared across suites under `model_configs/`:
+
+- `model_configs/gemini_cli_model.yaml`: Gemini CLI SUT.
+- `model_configs/claude_code_model.yaml`: Claude Code SUT.
+- `model_configs/gemini_model.yaml`: simulated user and LLM-as-judge scorer.
 
 ## Evaluation Metrics
 
@@ -29,7 +37,8 @@ From the `evals/` directory, execute the evaluation using latest [evalbench](htt
 
 ```bash
 cd evals/
-evalbench run core-cujs/run.yaml
+evalbench run core-cujs/run_gemini_cli.yaml      # Gemini CLI
+evalbench run core-cujs/run_claude.yaml          # Claude Code
 ```
 
 Results will be generated in the `results/` directory as CSV reports.

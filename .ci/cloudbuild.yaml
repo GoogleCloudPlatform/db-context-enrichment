@@ -11,10 +11,11 @@ steps:
         chmod +x .ci/build.sh
         .ci/build.sh
 
-  # --- Pre-flight: gate evals on PR label ---
-  # Runs in parallel with build-extension; writes /workspace/SHOULD_RUN
-  # if evals should proceed (always for manual runs; only on 'ci:eval' label
-  # for PR-triggered runs).
+  # --- Pre-flight: gate evals on PR labels ---
+  # Runs in parallel with build-extension. Writes per-SUT marker files:
+  #   /workspace/SHOULD_RUN_GEMINI_CLI   — gated by 'ci:eval'
+  #   /workspace/SHOULD_RUN_CLAUDE_CODE  — gated by 'ci:eval-claude'
+  # Manual / non-PR runs enable both.
   - id: preflight
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
@@ -26,8 +27,9 @@ steps:
         set -e
 
         if [ -z "$_PR_NUMBER" ]; then
-          echo "No PR number provided. Assuming local/manual run — enabling evals."
-          touch /workspace/SHOULD_RUN
+          echo "No PR number provided. Assuming local/manual run — enabling all evals."
+          touch /workspace/SHOULD_RUN_GEMINI_CLI
+          touch /workspace/SHOULD_RUN_CLAUDE_CODE
           exit 0
         fi
 
@@ -41,17 +43,22 @@ steps:
           exit 1
         fi
 
-        if ! jq -e '.labels | any(.name == "ci:eval")' pr_data.json > /dev/null; then
-          echo "PR does not have 'ci:eval' label. Skipping evals."
-          exit 0
+        if jq -e '.labels | any(.name == "ci:eval")' pr_data.json > /dev/null; then
+          echo "ci:eval label detected — enabling Gemini CLI evals."
+          touch /workspace/SHOULD_RUN_GEMINI_CLI
+        else
+          echo "PR does not have 'ci:eval' label. Skipping Gemini CLI evals."
         fi
 
-        echo "ci:eval label detected — enabling evals."
-        touch /workspace/SHOULD_RUN
+        if jq -e '.labels | any(.name == "ci:eval-claude")' pr_data.json > /dev/null; then
+          echo "ci:eval-claude label detected — enabling Claude Code evals."
+          touch /workspace/SHOULD_RUN_CLAUDE_CODE
+        else
+          echo "PR does not have 'ci:eval-claude' label. Skipping Claude Code evals."
+        fi
 
-  # --- Eval steps (parallel, isolated per suite) ---
-  # Both steps run the same .ci/run_eval.sh script with a different suite arg.
-  - id: eval-core-cujs
+  # --- Gemini CLI eval steps (parallel, isolated per suite) ---
+  - id: eval-gemini-cli-core-cujs
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
     secretEnv: ['ADC_KEY']
@@ -59,20 +66,20 @@ steps:
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
-    args: ['.ci/run_eval.sh', 'core-cujs']
+    args: ['.ci/run_gemini_cli.sh', 'core-cujs']
 
-  # - id: eval-freeform-input
-  #   name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
-  #   entrypoint: 'bash'
-  #   secretEnv: ['ADC_KEY']
-  #   waitFor: ['build-extension', 'preflight']
-  #   env:
-  #     - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
-  #     - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
-  #   args: ['.ci/run_eval.sh', 'freeform-input']
+  - id: eval-gemini-cli-freeform-input
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+    args: ['.ci/run_gemini_cli.sh', 'freeform-input']
 
-  # --- Claude Code eval ---
-  - id: eval-claude-core-cujs
+  # --- Claude Code eval steps (parallel, isolated per suite) ---
+  - id: eval-claude-code-core-cujs
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
     secretEnv: ['ADC_KEY']
@@ -82,38 +89,54 @@ steps:
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
       - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
       - 'CLAUDE_PLUGIN_BRANCH=$_HEAD_BRANCH'
-    args: ['.ci/run_claude_eval.sh']
+    args: ['.ci/run_claude_code.sh', 'core-cujs']
+
+  - id: eval-claude-code-freeform-input
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
+      - 'CLAUDE_PLUGIN_BRANCH=$_HEAD_BRANCH'
+    args: ['.ci/run_claude_code.sh', 'freeform-input']
 
   # --- Upload Results and Workspaces (after all eval steps) ---
   - id: upload
     name: 'gcr.io/cloud-builders/gsutil'
     entrypoint: 'bash'
-    waitFor: ['eval-core-cujs', 'eval-claude-core-cujs']
+    waitFor:
+      - 'eval-gemini-cli-core-cujs'
+      - 'eval-gemini-cli-freeform-input'
+      - 'eval-claude-code-core-cujs'
+      - 'eval-claude-code-freeform-input'
     args:
       - '-c'
       - |
         ANY_RAN=0
-        for SUITE in core-cujs freeform-input claude-core-cujs; do
-          if [ ! -f /workspace/EVAL_RAN_$$SUITE ]; then
-            echo "$$SUITE did not run; skipping its upload."
+        for RUN in gemini-cli-core-cujs gemini-cli-freeform-input claude-code-core-cujs claude-code-freeform-input; do
+          if [ ! -f /workspace/EVAL_RAN_$$RUN ]; then
+            echo "$$RUN did not run; skipping its upload."
             continue
           fi
           ANY_RAN=1
-          WORK_DIR=/workspace/eval-$$SUITE
-          DEST=gs://context-engineering-agent-eval-results/evals/$BUILD_ID/$$SUITE
+          WORK_DIR=/workspace/eval-$$RUN
+          DEST=gs://context-engineering-agent-eval-results/evals/$BUILD_ID/$$RUN
 
-          echo "Uploading $$SUITE results to $$DEST ..."
+          echo "Uploading $$RUN results to $$DEST ..."
           gsutil -m cp -r $$WORK_DIR/* $$DEST/
 
           if [ -d $$WORK_DIR/.venv/fake_home/.gemini/tmp ]; then
-            echo "Uploading $$SUITE Gemini workspace..."
+            echo "Uploading $$RUN Gemini workspace..."
             gsutil -m cp -r $$WORK_DIR/.venv/fake_home/.gemini/tmp/* $$DEST/gemini/
           fi
 
-          # TEMP: upload entire .claude directory for debugging Claude Code runs.
-          if [ -d $$WORK_DIR/.venv/fake_home_claude/.claude ]; then
-            echo "Uploading $$SUITE .claude directory..."
-            gsutil -m cp -r $$WORK_DIR/.venv/fake_home_claude/.claude $$DEST/claude/
+          # Upload Claude Code chat history (per-project JSONL transcripts only).
+          if [ -d $$WORK_DIR/.venv/fake_home_claude/.claude/projects ]; then
+            echo "Uploading $$RUN Claude chat history..."
+            gsutil -m cp -r $$WORK_DIR/.venv/fake_home_claude/.claude/projects $$DEST/claude/
           fi
         done
 

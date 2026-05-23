@@ -6,8 +6,8 @@ dataset_format: gemini-cli-format
 
 # Orchestrator Configuration
 orchestrator: geminicli
-model_config: freeform-input/model.yaml
-simulated_user_model_config: freeform-input/gemini_model.yaml
+model_config: model_configs/gemini_cli_model.yaml
+simulated_user_model_config: model_configs/gemini_model.yaml
 
 ############################################################
 ### Scorer Related Configs
@@ -18,7 +18,7 @@ scorers:
 
   # Uses an LLM to judge if the user's goal was met.
   goal_completion:
-    model_config: freeform-input/gemini_model.yaml
+    model_config: model_configs/gemini_model.yaml
 
   # Metrics for efficiency and performance.
   turn_count: {}

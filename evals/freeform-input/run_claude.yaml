@@ -1,7 +1,7 @@
 ############################################################
 ### Dataset / Eval Items
 ############################################################
-dataset_config: core-cujs/dataset.json
+dataset_config: freeform-input/dataset.json
 dataset_format: gemini-cli-format
 
 # Orchestrator Configuration

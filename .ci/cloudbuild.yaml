@@ -159,6 +159,7 @@ substitutions:
   # Tag of the evalbench eval_server image. Override on the trigger to pin a
   # specific build; defaults to :latest.
   _EVALBENCH_IMAGE_TAG: 'latest'
+  _PROJECT_LOCATION: 'global'
 
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

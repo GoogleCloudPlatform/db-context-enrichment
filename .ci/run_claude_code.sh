@@ -16,6 +16,7 @@ SUT="claude-code"
 PLUGIN_BRANCH="${CLAUDE_PLUGIN_BRANCH:-main}"
 
 echo $CLAUDE_PLUGIN_BRANCH
+# TODO: remove this CLAUDE_PLUGIN_BRANCH override once feat/claude-code-plugin is merged to main.
 PLUGIN_BRANCH="feat/claude-code-plugin"
 
 if [ ! -f /workspace/SHOULD_RUN_CLAUDE_CODE ]; then

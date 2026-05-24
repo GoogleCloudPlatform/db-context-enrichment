@@ -1,15 +1,6 @@
 {
   "scenarios": [
     {
-      "id": "autoctx:init",
-      "starting_prompt": "setup context generation for my database.",
-      "conversation_plan": "Ask the agent to setup the auto context generation for my alloydb database. Connection information: datasource name as my-alloydb, project id is cloud-db-nl2sql, region us-central1, cluster whaoyu-test, instance whaoyu-test-primary, database financial. Verify the agent generate a valid tools.yaml. Explicitly ask the agent to perform validation. You should terminate the conversation immediately after the agent successfully set up the files and performed the validation.",
-      "expected_trajectory": [],
-      "kind": "agents",
-      "work_dir": "workspace_empty/",
-      "max_turns": 5
-    },
-    {
       "id": "list-skills-and-mcp-tools",
       "starting_prompt": "What skills and MCP tools do you have available?",
       "conversation_plan": "Ask the agent to list all the skills and MCP tools it currently has available. The agent should enumerate the db-context-engineering skills (e.g., autoctx:init, autoctx:generate-dataset, autoctx:bootstrap, autoctx:evaluate, autoctx:hillclimb, context-generation-guide) and the db-context-engineering MCP tools (e.g., generate_dataset, generate_evalbench_configs, generate_upload_url, mutate_context_set, read_evaluation_result). Terminate the conversation immediately after the agent provides the list.",

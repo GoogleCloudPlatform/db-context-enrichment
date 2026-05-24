@@ -1,7 +1,7 @@
 steps:
   # --- Build Extension Step ---
   - id: build-extension
-    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -17,7 +17,7 @@ steps:
   #   /workspace/SHOULD_RUN_CLAUDE_CODE  — gated by 'ci:eval-claude'
   # Manual / non-PR runs enable both.
   - id: preflight
-    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
     secretEnv: ['GITHUB_TOKEN']
     waitFor: ['-']
@@ -59,7 +59,7 @@ steps:
 
   # --- Gemini CLI eval steps (parallel, isolated per suite) ---
   - id: eval-gemini-cli-core-cujs
-    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
     secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
@@ -69,7 +69,7 @@ steps:
     args: ['.ci/run_gemini_cli.sh', 'core-cujs']
 
   - id: eval-gemini-cli-freeform-input
-    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
     secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
@@ -80,7 +80,7 @@ steps:
 
   # --- Claude Code eval steps (parallel, isolated per suite) ---
   - id: eval-claude-code-core-cujs
-    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
     secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
@@ -92,7 +92,7 @@ steps:
     args: ['.ci/run_claude_code.sh', 'core-cujs']
 
   - id: eval-claude-code-freeform-input
-    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
     secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
@@ -154,6 +154,11 @@ availableSecrets:
     env: 'ADC_KEY'
 
 serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/crema-eval@cloud-db-nl2sql.iam.gserviceaccount.com'
+
+substitutions:
+  # Tag of the evalbench eval_server image. Override on the trigger to pin a
+  # specific build; defaults to :latest.
+  _EVALBENCH_IMAGE_TAG: 'latest'
 
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

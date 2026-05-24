@@ -134,9 +134,9 @@ steps:
           fi
 
           # Upload Claude Code chat history (per-project JSONL transcripts only).
-          if [ -d $$WORK_DIR/.venv/fake_home_claude/.claude ]; then
+          if [ -d $$WORK_DIR/.venv/fake_home_claude/.claude/projects ]; then
             echo "Uploading $$RUN Claude chat history..."
-            gsutil -m cp -r $$WORK_DIR/.venv/fake_home_claude/.claude $$DEST/claude/
+            gsutil -m cp -r $$WORK_DIR/.venv/fake_home_claude/.claude/projects $$DEST/claude/
           fi
         done
 

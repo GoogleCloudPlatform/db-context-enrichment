@@ -19,8 +19,8 @@
     },
     {
       "id": "autoctx:generate-dataset",
-      "starting_prompt": "generate a seed evaluation dataset for my alloydb database financial named golden.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 medium-level SQL/Question pairs for my alloydb database financial named golden.json. I prefer the generated SQL to have filter conditions on text or jsonb columns",
+      "starting_prompt": "generate a seed evaluation dataset for my alloydb database financial named golden_seed.json",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 medium-level SQL/Question pairs for my alloydb database financial named golden_seed.json. I prefer the generated SQL to have filter conditions on text or jsonb columns. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_init/",

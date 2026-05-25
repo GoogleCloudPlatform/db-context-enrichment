@@ -26,6 +26,7 @@ Complete the following checklist before proceeding to step 1.2:
 * Check for `tools.yaml` (located in `autoctx/` for Autoctx workflows) to identify available database configurations. Prompt the user to select the target database for dataset generation. If `tools.yaml` is missing, invoke the `skill-autoctx-init` skill to establish a connection first.
 * Infer the database name `target_database_name` from the user and the `tools.yaml` file. If unsure, ask the user to confirm.
 * Infer the database dialect `database_dialect` from the user and the `tools.yaml` file. If unsure, ask the user to confirm.
+* Infer the parallelism `internal_parallelism` from the user. If not provided, set `internal_parallelism` to `10`.
 * Check for the current workspace directory by running `pwd`.
 * You must provide the exact `output_file_path`.
 * Set the `evalset_working_dir` to the absolute path of the folder `.dataset_cache`, which is a hidden directory in the current workspace directory.
@@ -47,6 +48,7 @@ Once all parameters are staged, you MUST explicitly ask the user to confirm the 
   "constraints": "[generation_constraints]",
   "database_name": "[target_database_name]",
   "size": "[target_dataset_size]",
+  "parallelism": "[internal_parallelism]",
   "output_file_path": "[output_file_path]"
 }
 

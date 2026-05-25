@@ -1,6 +1,7 @@
 steps:
   # --- Build Extension Step ---
-  - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+  - id: build-extension
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -10,77 +11,97 @@ steps:
         chmod +x .ci/build.sh
         .ci/build.sh
 
-  # --- Evaluation Step ---
-  - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+  # --- Pre-flight: gate evals on PR label ---
+  # Runs in parallel with build-extension; writes /workspace/SHOULD_RUN
+  # if evals should proceed (always for manual runs; only on 'ci:eval' label
+  # for PR-triggered runs).
+  - id: preflight
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY', 'GITHUB_TOKEN']
+    secretEnv: ['GITHUB_TOKEN']
+    waitFor: ['-']
     args:
       - '-c'
       - |
         set -e
 
         if [ -z "$_PR_NUMBER" ]; then
-          echo "No PR number provided. Skipping PR check (assuming local/manual run)."
-        else
-          echo "Fetching PR data from GitHub API..."
-
-          # Fetch PR data and status code
-          HTTP_STATUS=$(curl -s -o pr_data.json -w "%{http_code}" -H "Authorization: token $$GITHUB_TOKEN" \
-            "https://api.github.com/repos/$REPO_FULL_NAME/pulls/$_PR_NUMBER")
-
-          if [ "$$HTTP_STATUS" -ne 200 ]; then
-            echo "Error fetching PR data: HTTP $$HTTP_STATUS"
-            cat pr_data.json
-            exit 1
-          fi
-
-          # Check if execution labels are present
-          if ! jq -e '.labels | any(.name == "ci:eval")' pr_data.json > /dev/null; then
-            echo "PR does not have 'ci:eval' label. Skipping execution."
-            exit 0
-          fi
-          echo "Execution label detected. Processing release version context..."
+          echo "No PR number provided. Assuming local/manual run — enabling evals."
+          touch /workspace/SHOULD_RUN
+          exit 0
         fi
 
-        # Write secret to file for ADC
-        echo "$$ADC_KEY" > /tmp/adc.json
-        chmod 600 /tmp/adc.json
-        export GOOGLE_APPLICATION_CREDENTIALS=/tmp/adc.json
+        echo "Fetching PR data from GitHub API..."
+        HTTP_STATUS=$(curl -s -o pr_data.json -w "%{http_code}" -H "Authorization: token $$GITHUB_TOKEN" \
+          "https://api.github.com/repos/$REPO_FULL_NAME/pulls/$_PR_NUMBER")
 
-        cd /workspace/evals
+        if [ "$$HTTP_STATUS" -ne 200 ]; then
+          echo "Error fetching PR data: HTTP $$HTTP_STATUS"
+          cat pr_data.json
+          exit 1
+        fi
 
-        # Override model.yaml to use the locally built extension instead of GitHub
-        sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' core-cujs/model.yaml
+        if ! jq -e '.labels | any(.name == "ci:eval")' pr_data.json > /dev/null; then
+          echo "PR does not have 'ci:eval' label. Skipping evals."
+          exit 0
+        fi
 
-        # Set environment variables for evalbench
-        export EVAL_GCP_PROJECT_ID=$PROJECT_ID
-        export EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION
-        export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+        echo "ci:eval label detected — enabling evals."
+        touch /workspace/SHOULD_RUN
 
-        # Setup Python path and run evalbench
-        export PYTHONPATH=/evalbench:/evalbench/evalproto
-        export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
-
-        echo "Launching Standalone Evaluation..."
-        python3 /evalbench/evalbench/evalbench.py --experiment_config=core-cujs/run.yaml
-
-        # Mark that evaluation ran
-        touch /workspace/EVAL_RAN
-
-  # --- Upload Results and Workspaces ---
-  - name: 'gcr.io/cloud-builders/gsutil'
+  # --- Eval steps (parallel, isolated per suite) ---
+  # Both steps run the same .ci/run_eval.sh script with a different suite arg.
+  - id: eval-core-cujs
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+    args: ['.ci/run_eval.sh', 'core-cujs']
+
+  - id: eval-freeform-input
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+    args: ['.ci/run_eval.sh', 'freeform-input']
+
+  # --- Upload Results and Workspaces (after both eval steps) ---
+  - id: upload
+    name: 'gcr.io/cloud-builders/gsutil'
+    entrypoint: 'bash'
+    waitFor: ['eval-core-cujs', 'eval-freeform-input']
     args:
       - '-c'
       - |
-        if [ -f /workspace/EVAL_RAN ]; then
-          echo "Uploading results..."
-          gsutil -m cp -r evals/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/
+        ANY_RAN=0
+        for SUITE in core-cujs freeform-input; do
+          if [ ! -f /workspace/EVAL_RAN_$$SUITE ]; then
+            echo "$$SUITE did not run; skipping its upload."
+            continue
+          fi
+          ANY_RAN=1
+          WORK_DIR=/workspace/eval-$$SUITE
+          DEST=gs://context-engineering-agent-eval-results/evals/$BUILD_ID/$$SUITE
 
-          echo "Uploading Gemini workspace..."
-          gsutil -m cp -r evals/.venv/fake_home/.gemini/tmp/* gs://context-engineering-agent-eval-results/evals/$BUILD_ID/gemini/
+          echo "Uploading $$SUITE results to $$DEST ..."
+          gsutil -m cp -r $$WORK_DIR/* $$DEST/
+
+          if [ -d $$WORK_DIR/.venv/fake_home/.gemini/tmp ]; then
+            echo "Uploading $$SUITE Gemini workspace..."
+            gsutil -m cp -r $$WORK_DIR/.venv/fake_home/.gemini/tmp/* $$DEST/gemini/
+          fi
+        done
+
+        if [ "$$ANY_RAN" = "1" ]; then
+          echo "View uploaded results at: https://console.cloud.google.com/storage/browser/context-engineering-agent-eval-results/evals/$BUILD_ID"
         else
-          echo "Evaluation did not run. Skipping upload."
+          echo "No evaluations ran. Skipping upload."
         fi
 
 availableSecrets:

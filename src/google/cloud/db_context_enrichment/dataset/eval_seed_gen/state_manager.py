@@ -68,7 +68,9 @@ class DatasetGenConfig:
     
     @property
     def parallelism(self) -> int:
-        return max(1, min(10, self.desired_output_pairs))
+        config = self._load()
+        parallelism =  config.get("parallelism", 10)
+        return max(1, min(parallelism, self.desired_output_pairs))
     
     @property
     def output_file_path(self) -> str:

@@ -1,6 +1,7 @@
 steps:
   # --- Build Extension Step ---
-  - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+  - id: build-extension
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
     args:
       - '-c'

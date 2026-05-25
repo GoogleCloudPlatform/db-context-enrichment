@@ -33,6 +33,8 @@ from .state_manager import (
 
 warnings.filterwarnings("ignore")
 
+MAX_NLQ_REFINES_PER_ITERATION = 3
+
 
 def _prepare_sql_for_execution_accuracy_check(sql: str) -> str:
     if sql.strip().endswith(";"):
@@ -47,7 +49,7 @@ class SeedEvalDatasetGenerator:
     def __init__(self):
         self._genai_client = GenAiClient(timeout_secs=45)
 
-    async def generate_sql(self, task_working_dir: str) -> list[dict]:
+    async def generate_sql(self, task_working_dir: str) -> dict[str, Any]:
         """Reads database schema profile and use it to generate SQL candidates.
 
         Args:
@@ -365,7 +367,9 @@ class SeedEvalDatasetGenerator:
         )
 
         if not rejected_pair_collection.is_empty():
-            pending_pairs = rejected_pair_collection.pop_pairs(3)
+            pending_pairs = rejected_pair_collection.pop_pairs(
+                MAX_NLQ_REFINES_PER_ITERATION
+            )
             new_rejected_pairs = []
             new_verified_pairs = []
 

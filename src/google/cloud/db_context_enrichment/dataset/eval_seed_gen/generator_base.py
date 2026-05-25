@@ -1,5 +1,6 @@
-from .genai_client import GenAiClient
 from google.genai import types
+
+from .genai_client import GenAiClient
 
 
 class GeneratorBase:

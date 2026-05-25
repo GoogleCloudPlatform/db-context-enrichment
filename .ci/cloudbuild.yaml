@@ -1,7 +1,6 @@
 steps:
   # --- Build Extension Step ---
-  - id: build-extension
-    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+  - name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -105,4 +104,3 @@ serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/crema-eval@cloud-db-nl
 
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
-  substitutionOption: ALLOW_LOOSE

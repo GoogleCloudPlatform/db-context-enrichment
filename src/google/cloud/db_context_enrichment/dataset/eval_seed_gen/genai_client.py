@@ -1,12 +1,11 @@
 """GenAI client for NL2SQL Eval Dataset Generator."""
 
-import os
 import asyncio
 
-from google import genai
-from google.genai import types
-from google.genai.errors import APIError
 import pydantic
+from google.genai import types
+
+from google import genai
 
 BaseModel = pydantic.BaseModel
 
@@ -45,6 +44,6 @@ class GenAiClient:
           ),
       ), timeout=self.timeout_secs)
       return result
-    except Exception as e:
+    except Exception:
       return None
     

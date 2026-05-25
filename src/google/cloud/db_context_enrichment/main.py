@@ -9,6 +9,9 @@ import google.cloud.db_context_enrichment.prompts as prompts
 from google.cloud.db_context_enrichment.bootstrap import bootstrap_generator
 from google.cloud.db_context_enrichment.common import context_mutator
 from google.cloud.db_context_enrichment.dataset import dataset_generator
+from google.cloud.db_context_enrichment.dataset.eval_seed_gen.dataset_generator import (
+    SeedEvalDatasetGenerator,
+)
 from google.cloud.db_context_enrichment.evaluate import (
     evaluate_generator,
     result_reader,
@@ -18,8 +21,6 @@ from google.cloud.db_context_enrichment.model import context
 from google.cloud.db_context_enrichment.template import template_generator
 from google.cloud.db_context_enrichment.value_search import generator as vi_generator
 from google.cloud.db_context_enrichment.value_search import match_templates
-from google.cloud.db_context_enrichment.dataset.eval_seed_gen.dataset_generator import SeedEvalDatasetGenerator
-
 
 mcp = FastMCP("Context Engineering Agent MCP")
 

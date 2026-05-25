@@ -2,6 +2,7 @@ import random
 import textwrap
 
 from pydantic import BaseModel, Field
+
 from .generator_base import GeneratorBase
 
 

@@ -1,21 +1,37 @@
 import asyncio
+import collections
 import json
 import os
-import collections
-from typing import Any
-from pathlib import Path
-
 import warnings
-warnings.filterwarnings("ignore")
+from pathlib import Path
+from typing import Any
 
 from .genai_client import GenAiClient
-from .state_manager import CommittedPairCollection, PendingPairCollection, RejectedPairCollection
-from .state_manager import DatasetGenConfig, DatasetGenDbProfile
-from .state_manager import DatasetGenStates, DatasetGenEventLogger
-from .state_manager import SqlCollection
+from .generators import (
+    QuestionGenerator,
+    QuestionRefiner,
+    QuestionReviewer,
+    SQLCandidateGenerator,
+)
+from .schema import (
+    SchemaDDL,
+    SchemaProfile,
+    TableProfile,
+    TableSelector,
+    generate_ddls_from_json_schema,
+)
+from .state_manager import (
+    CommittedPairCollection,
+    DatasetGenConfig,
+    DatasetGenDbProfile,
+    DatasetGenEventLogger,
+    DatasetGenStates,
+    PendingPairCollection,
+    RejectedPairCollection,
+    SqlCollection,
+)
 
-from .schema import generate_ddls_from_json_schema, SchemaDDL, TableProfile, SchemaProfile, TableSelector
-from .generators import SQLCandidateGenerator, QuestionGenerator, QuestionReviewer, QuestionRefiner
+warnings.filterwarnings("ignore")
 
 
 def _prepare_sql_for_execution_accuracy_check(sql: str) -> str:
@@ -326,7 +342,7 @@ class SeedEvalDatasetGenerator:
                     if review_report.is_golden:
                         pair["nlq"] = refined_nlq
                         pair["tags"].append(f"nlq_review_report: {review_report.summary}")
-                        pair["tags"].append(f"notes: refined_nlq")
+                        pair["tags"].append("notes: refined_nlq")
                         pair["tags"].append(f"timestamp: {states.timestamp()}")
                         pair["tags"].append(f"elapsed_hr: {states.elapsed_time_hr()}")
                         new_verified_pairs.append(pair)
@@ -503,7 +519,7 @@ class SeedEvalDatasetGenerator:
             for column in columns:
                 if column.is_primary_key or column.is_foreign_key:
                     continue
-                query = f"SELECT DISTINCT {column.name} as val, '{column.name}' as name FROM {table.full_table_name} LIMIT 5";
+                query = f"SELECT DISTINCT {column.name} as val, '{column.name}' as name FROM {table.full_table_name} LIMIT 5"
                 qlist_by_cat[column.data_type].append(query)
                 qlist.append(query)
             if len(qlist) > 10:
@@ -521,7 +537,7 @@ class SeedEvalDatasetGenerator:
             row_sampling_queries.append({
                 'table_name': table.full_table_name,
                 'sampling_query': f"SELECT * FROM {table.full_table_name} LIMIT 5"
-            });
+            })
 
         column_sampling_query_path = os.path.join(output_dir, 'column_sampling_queries.json')
         row_sampling_query_path = os.path.join(output_dir, 'row_sampling_queries.json')

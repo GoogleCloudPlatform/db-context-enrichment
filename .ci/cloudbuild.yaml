@@ -104,3 +104,4 @@ serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/crema-eval@cloud-db-nl
 
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
+  substitutionOption: ALLOW_LOOSE

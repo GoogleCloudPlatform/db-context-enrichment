@@ -109,9 +109,7 @@ def test_attach_context_set_file_not_exist(tmp_path, clean_context_set_json):
     assert not new_file.exists()
 
     # Call the tool (should not raise FileNotFoundError)
-    attach_context_set(
-        context_set_json=clean_context_set_json, file_path=str(new_file)
-    )
+    attach_context_set(context_set_json=clean_context_set_json, file_path=str(new_file))
 
     # Verify the file was created and holds the new content
     assert new_file.exists()

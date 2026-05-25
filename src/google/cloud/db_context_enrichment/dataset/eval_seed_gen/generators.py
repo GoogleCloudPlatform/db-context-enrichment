@@ -5,6 +5,9 @@ from pydantic import BaseModel, Field
 
 from .generator_base import GeneratorBase
 
+MIN_SQL_LENGTH = 20
+MAX_SQL_LENGTH = 300
+
 
 class GeneratedQuery(BaseModel):
     """A generated SQL query or question."""
@@ -87,7 +90,9 @@ class SQLCandidateGenerator(GeneratorBase):
                 count=count,
             )
 
-        sqls = [sql for sql in sqls if sql and 20 <= len(sql) <= 300]
+        sqls = [
+            sql for sql in sqls if sql and MIN_SQL_LENGTH <= len(sql) <= MAX_SQL_LENGTH
+        ]
 
         sqls = list(set(sqls))
 

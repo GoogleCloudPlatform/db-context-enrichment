@@ -1,9 +1,11 @@
 """GenAI client for NL2SQL Eval Dataset Generator."""
 
 import asyncio
+import logging
 
 import pydantic
 from google.genai import types
+from google.genai.errors import APIError
 
 from google import genai
 
@@ -48,5 +50,11 @@ class GenAiClient:
                 timeout=self.timeout_secs,
             )
             return result
-        except Exception:
+        except (TimeoutError, APIError) as e:
+            logging.warning(
+                f"generate_content is not able to complete due to timeout or api error: {e}"
+            )
+            return None
+        except Exception as e:
+            logging.warning(f"generate_content was not able to complete due to: {e}")
             return None

@@ -5,9 +5,14 @@ from .genai_client import GenAiClient
 
 class GeneratorBase:
     """Base class for generators in NL2SQL Eval Dataset Generation."""
+
     pass
 
-    def __init__(self, genai_client: GenAiClient, generator_model_id: str = "gemini-3-flash-preview"):
+    def __init__(
+        self,
+        genai_client: GenAiClient,
+        generator_model_id: str = "gemini-3-flash-preview",
+    ):
         super().__init__()
         self._genai_client = genai_client
         self._generator_model_id = generator_model_id

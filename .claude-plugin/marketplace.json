@@ -8,7 +8,11 @@
     {
       "name": "db-context-engineering",
       "description": "Context Engineering Agent for generating natural language to SQL templates, facets, and value searches.",
-      "source": "./",
+      "source": {
+        "source": "github",
+        "repo": "GoogleCloudPlatform/db-context-enrichment",
+        "ref": "v0.5.1"
+      },
       "homepage": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
       "repository": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
       "license": "Apache-2.0",

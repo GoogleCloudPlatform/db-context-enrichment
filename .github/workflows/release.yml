@@ -194,3 +194,50 @@ jobs:
         with:
           tag_name: ${{ github.event.release.tag_name }}
           files: release-assets/*
+
+  # After PyPI publishes the new wheel, open a PR to pin the Claude Code
+  # plugin marketplace ref to this release tag. The PR gate ensures users
+  # never install a marketplace version pointing at a missing PyPI wheel.
+  pin-marketplace-ref:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for PyPI release
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          PKG="google-cloud-db-context-engineering"
+          for i in {1..72}; do
+            if curl -sf "https://pypi.org/pypi/${PKG}/${VERSION}/json" > /dev/null; then
+              echo "PyPI ${PKG}==${VERSION} is live"
+              exit 0
+            fi
+            echo "Waiting for PyPI ${PKG}==${VERSION} (attempt $i/72)..."
+            sleep 300
+          done
+          echo "::error::Timed out waiting for PyPI ${PKG}==${VERSION}"
+          exit 1
+
+      - name: Open PR to pin marketplace ref
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          BRANCH="chore/pin-marketplace-${TAG}"
+          jq --arg ref "$TAG" '.plugins[0].source.ref = $ref' \
+            .claude-plugin/marketplace.json > tmp && mv tmp .claude-plugin/marketplace.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add .claude-plugin/marketplace.json
+          git commit -m "chore: pin marketplace ref to $TAG"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "chore: pin marketplace ref to $TAG" \
+            --body "Auto-generated after PyPI wheel for \`$TAG\` is live. Merging this updates the Claude Code plugin marketplace to install \`$TAG\`." \
+            --base main --head "$BRANCH"

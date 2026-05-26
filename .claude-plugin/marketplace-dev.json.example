@@ -1,0 +1,37 @@
+{
+  "name": "db-context-enrichment-marketplace-dev",
+  "owner": {
+    "name": "Google Cloud Platform",
+    "url": "https://cloud.google.com/"
+  },
+  "plugins": [
+    {
+      "name": "db-context-engineering",
+      "description": "Local dev variant: runs the MCP server from your working tree instead of PyPI.",
+      "source": "./plugin",
+      "license": "Apache-2.0",
+      "strict": false,
+      "mcpServers": {
+        "db-context-engineering": {
+          "command": "uv",
+          "args": [
+            "run",
+            "--project",
+            "<REPLACE_WITH_ABS_REPO_PATH>",
+            "google-cloud-db-context-engineering"
+          ]
+        },
+        "toolbox": {
+          "command": "npx",
+          "args": [
+            "-y",
+            "@toolbox-sdk/server",
+            "--config",
+            "autoctx/tools.yaml",
+            "--stdio"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -4,23 +4,5 @@
   "version": "0.5.1",
   "author": {
     "name": "Google Cloud Platform"
-  },
-  "mcpServers": {
-    "db-context-engineering": {
-      "command": "uvx",
-      "args": [
-        "google-cloud-db-context-engineering"
-      ]
-    },
-    "toolbox": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@toolbox-sdk/server",
-        "--config",
-        "autoctx/tools.yaml",
-        "--stdio"
-      ]
-    }
   }
 }

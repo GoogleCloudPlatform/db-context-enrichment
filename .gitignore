@@ -34,6 +34,9 @@ htmlcov/
 # Claude Code local user settings
 .claude/settings.local.json
 
+# Claude Code plugin local dev variant (collaborator copies .example and edits)
+.claude-plugin/marketplace-dev.json
+
 # OS metadata
 .DS_Store
 Thumbs.db

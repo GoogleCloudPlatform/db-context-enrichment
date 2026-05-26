@@ -1,118 +1,56 @@
 import json
+from pathlib import Path
 
-import pytest
-
-from google.cloud.db_context_enrichment.main import attach_context_set
+from google.cloud.db_context_enrichment.main import mutate_context_set
 
 
-@pytest.fixture
-def clean_context_set_json():
-    return json.dumps(
+def test_mutate_context_set_success(tmp_path: Path):
+    file_path = tmp_path / "context.json"
+    mutations = [
         {
-            "facets": [
-                {
-                    "sql_snippet": "new_snippet",
-                    "intent": "new_intent",
-                    "manifest": "new_manifest",
-                    "parameterized": {
-                        "parameterized_sql_snippet": "p_new_snippet",
-                        "parameterized_intent": "p_new_intent",
-                    },
-                }
-            ]
+            "operation": "add",
+            "type": "template",
+            "value": {
+                "nl_query": "Test query",
+                "sql": "SELECT *",
+                "intent": "Test intent",
+                "manifest": "Test manifest",
+                "parameterized": {
+                    "parameterized_sql": "SELECT * FROM t",
+                    "parameterized_intent": "Test",
+                },
+            },
         }
+    ]
+
+    result = mutate_context_set(str(file_path), json.dumps(mutations))
+
+    assert "Successfully applied" in result
+    assert file_path.exists()
+    with open(file_path) as f:
+        data = json.load(f)
+    assert len(data.get("templates", [])) == 1
+    assert data["templates"][0]["nl_query"] == "Test query"
+
+
+def test_mutate_context_set_invalid_json(tmp_path: Path):
+    file_path = tmp_path / "context.json"
+    result = mutate_context_set(str(file_path), "invalid json")
+    assert "Error applying mutations" in result
+    assert "JSONDecodeError" in result or "invalid json" in result or "Error" in result
+
+
+def test_mutate_context_set_non_list_json(tmp_path: Path):
+    file_path = tmp_path / "context.json"
+    result = mutate_context_set(
+        str(file_path), json.dumps({"operation": "add", "type": "template"})
     )
+    assert "must be a JSON list" in result
 
 
-def test_attach_context_set_legacy_compatibility(tmp_path, clean_context_set_json):
-    """Test attaching new context to a file with legacy 'fragment' and 'fragments' keys."""
-    legacy_file = tmp_path / "legacy_context.json"
-    legacy_content = {
-        "fragments": [
-            {
-                "fragment": "old_snippet",
-                "intent": "old_intent",
-                "manifest": "old_manifest",
-                "parameterized": {
-                    "parameterized_fragment": "p_old_snippet",
-                    "parameterized_intent": "p_old_intent",
-                },
-            }
-        ]
-    }
-    legacy_file.write_text(json.dumps(legacy_content))
-
-    # Call the tool
-    attach_context_set(
-        context_set_json=clean_context_set_json, file_path=str(legacy_file)
-    )
-
-    # Verify the file was updated and migrated
-    updated_content = json.loads(legacy_file.read_text())
-
-    # Check that legacy content was correctly parsed and migrated to 'facets' and 'sql_snippet'
-    assert "facets" in updated_content
-    assert "fragments" not in updated_content
-    assert len(updated_content["facets"]) == 2
-
-    # Check old item (migrated)
-    old_item = updated_content["facets"][0]
-    assert old_item["sql_snippet"] == "old_snippet"
-
-    # Check new item
-    new_item = updated_content["facets"][1]
-    assert new_item["sql_snippet"] == "new_snippet"
-
-
-def test_attach_context_set_standard(tmp_path, clean_context_set_json):
-    """Test attaching new context to a file with standard 'facets' key."""
-    standard_file = tmp_path / "standard_context.json"
-    standard_content = {
-        "facets": [
-            {
-                "sql_snippet": "existing_snippet",
-                "intent": "existing_intent",
-                "manifest": "existing_manifest",
-                "parameterized": {
-                    "parameterized_sql_snippet": "p_existing_snippet",
-                    "parameterized_intent": "p_existing_intent",
-                },
-            }
-        ]
-    }
-    standard_file.write_text(json.dumps(standard_content))
-
-    # Call the tool
-    attach_context_set(
-        context_set_json=clean_context_set_json, file_path=str(standard_file)
-    )
-
-    # Verify the file was updated
-    updated_content = json.loads(standard_file.read_text())
-
-    assert "facets" in updated_content
-    assert "fragments" not in updated_content
-    assert len(updated_content["facets"]) == 2
-
-    # Check existing item
-    existing_item = updated_content["facets"][0]
-    assert existing_item["sql_snippet"] == "existing_snippet"
-
-    # Check new item
-    new_item = updated_content["facets"][1]
-    assert new_item["sql_snippet"] == "new_snippet"
-
-
-def test_attach_context_set_file_not_exist(tmp_path, clean_context_set_json):
-    """Test attaching new context to a file that does not exist (it should be created successfully)."""
-    new_file = tmp_path / "new_context_file.json"
-    assert not new_file.exists()
-
-    # Call the tool (should not raise FileNotFoundError)
-    attach_context_set(context_set_json=clean_context_set_json, file_path=str(new_file))
-
-    # Verify the file was created and holds the new content
-    assert new_file.exists()
-    updated_content = json.loads(new_file.read_text())
-    assert len(updated_content["facets"]) == 1
-    assert updated_content["facets"][0]["sql_snippet"] == "new_snippet"
+def test_mutate_context_set_validation_error(tmp_path: Path):
+    file_path = tmp_path / "context.json"
+    # Invalid operation
+    mutations = [{"operation": "invalid", "type": "template"}]
+    result = mutate_context_set(str(file_path), json.dumps(mutations))
+    assert "Error applying mutations" in result

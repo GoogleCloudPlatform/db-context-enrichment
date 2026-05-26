@@ -8,7 +8,7 @@
       "args": [
         "run",
         "--directory",
-        "${extensionPath}",
+        "${extensionPath}/..",
         "google-cloud-db-context-engineering"
       ]
     }

@@ -46,8 +46,8 @@ uv run pyinstaller pyinstaller.spec
 
 # 8. Prepare distribution (Staging)
 mkdir -p staging
-cp -r skills/ staging/skills/
-cp -r commands/ staging/commands/
+cp -r plugin/skills/ staging/skills/
+cp -r plugin/commands/ staging/commands/
 mkdir -p staging/skills/autoctx-init/scripts/
 mkdir -p staging/skills/autoctx-evaluate/scripts/
 
@@ -59,9 +59,9 @@ mv evalbench staging/skills/autoctx-evaluate/scripts/
 BINARY_NAME="\${extensionPath}/google-cloud-db-context-engineering"
 TOOLBOX_NAME="\${extensionPath}/skills/autoctx-init/scripts/toolbox"
 
-jq ".contextFileName = \"GEMINI.md\" | .mcpServers.mcp_db_context_engineering.command = \"$BINARY_NAME\" | .mcpServers.mcp_db_context_engineering.args = [] | .mcpServers.mcp_toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\", \"--config\", \"autoctx/tools.yaml\"]}" gemini-extension.json > staging/gemini-extension.json
+jq ".contextFileName = \"GEMINI.md\" | .mcpServers.mcp_db_context_engineering.command = \"$BINARY_NAME\" | .mcpServers.mcp_db_context_engineering.args = [] | .mcpServers.mcp_toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\", \"--config\", \"autoctx/tools.yaml\"]}" plugin/gemini-extension.json > staging/gemini-extension.json
 
-cp GEMINI.md staging/
+cp plugin/GEMINI.md staging/
 cp LICENSE staging/
 
 # Create tarball

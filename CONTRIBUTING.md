@@ -34,45 +34,41 @@ information on using pull requests.
 
 ## Local Claude Code plugin development
 
-The published plugin (`.claude-plugin/marketplace.json`) runs the MCP server
-via `uvx`, which pulls the released wheel from PyPI. For iterating on the
-Python source in `src/` without a release, install a dev variant of the
-plugin that runs the MCP server from your working tree via `uv run`.
+The published plugin runs the MCP server via `uvx
+google-cloud-db-context-engineering`, which fetches the released wheel
+from PyPI. For local iteration, register the working tree as an editable
+`uv` tool so `uvx` resolves to your source instead of PyPI — no separate
+dev plugin or marketplace is needed.
 
-The dev marketplace lives in its own root (`dev/`) so it has its own
-`.claude-plugin/marketplace.json` — `/plugin marketplace add` only
-recognises that exact filename, so the prod and dev marketplaces cannot
-share a directory. The dev marketplace's `source: "./plugin"` resolves
-via the `dev/plugin -> ../plugin` symlink back to the shared payload,
-so skills and commands are not duplicated. (The validator rejects `..`
-in source paths, hence the symlink.)
-
-One-time setup:
+One-time setup (from the repo root):
 
 ```bash
-cp dev/.claude-plugin/marketplace.json.example dev/.claude-plugin/marketplace.json
-# Edit the file: replace <REPLACE_WITH_ABS_REPO_PATH> with $(pwd)
+uv tool install --editable .
 ```
 
-Then in Claude Code:
+Then install the plugin from your local checkout in Claude Code:
 
 ```
-/plugin marketplace add ./dev
-/plugin install db-context-engineering@db-context-enrichment-marketplace-dev
+/plugin marketplace add /absolute/path/to/db-context-enrichment
+/plugin install db-context-engineering@db-context-enrichment-marketplace
+/reload-plugins
 ```
-
-The dev marketplace and prod marketplace both register a plugin named
-`db-context-engineering`. Enable only one at a time — disable the prod
-plugin before enabling the dev plugin (or simply do not add the prod
-marketplace in your dev environment).
 
 Edit-test loop:
 
-- **Python source (`src/`)**: edit and save. `uv run --project` picks up
-  changes on the next MCP tool invocation. No reinstall needed.
+- **Python source (`src/`)**: edit and save. The editable install means
+  `uvx` already resolves to your working tree, so changes take effect on
+  the next MCP server restart. (Claude Code restarts the MCP server on
+  `/reload-plugins`.)
 - **Skills / commands (`plugin/skills/`, `plugin/commands/`)**: edit and
-  run `/plugin update` (or uninstall + install). Claude Code copies plugin
-  files to a cache on install, so reinstall is required.
+  run `/plugin update` (or uninstall + install). Claude Code copies
+  plugin files to a cache on install, so a reinstall is required to
+  pick up changes.
 
-`dev/.claude-plugin/marketplace.json` is gitignored. Each collaborator
-maintains their own copy with their own absolute path.
+To return to the released version later: `uv tool uninstall
+google-cloud-db-context-engineering`.
+
+Note: `mcpServers` config is read from
+`plugin/.claude-plugin/plugin.json`, not from `marketplace.json`. The
+marketplace entry's other fields (description, license, homepage,
+keywords) are authoritative because `strict: false` is set.

@@ -19,25 +19,7 @@
       "license": "Apache-2.0",
       "keywords": ["database", "sql", "nl2sql", "context-engineering", "mcp"],
       "category": "data",
-      "strict": false,
-      "mcpServers": {
-        "db-context-engineering": {
-          "command": "uvx",
-          "args": [
-            "google-cloud-db-context-engineering"
-          ]
-        },
-        "toolbox": {
-          "command": "npx",
-          "args": [
-            "-y",
-            "@toolbox-sdk/server",
-            "--config",
-            "autoctx/tools.yaml",
-            "--stdio"
-          ]
-        }
-      }
+      "strict": false
     }
   ]
 }

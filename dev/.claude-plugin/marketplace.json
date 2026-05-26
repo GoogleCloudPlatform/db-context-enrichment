@@ -11,8 +11,7 @@
       "source": "./plugin",
       "homepage": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
       "repository": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
-      "license": "Apache-2.0",
-      "strict": false
+      "license": "Apache-2.0"
     }
   ]
 }

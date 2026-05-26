@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "db-context-engineering",
-      "description": "Context Engineering Agent for generating natural language to SQL templates, facets, and value searches.",
+      "description": "Context Engineering Agent for generating context (templates, facets, value searches) for natural language to SQL task.",
       "source": {
         "source": "git-subdir",
         "url": "GoogleCloudPlatform/db-context-enrichment",
@@ -18,8 +18,7 @@
       "repository": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
       "license": "Apache-2.0",
       "keywords": ["database", "sql", "nl2sql", "context-engineering", "mcp"],
-      "category": "data",
-      "strict": false
+      "category": "data"
     }
   ]
 }

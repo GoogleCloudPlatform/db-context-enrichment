@@ -72,10 +72,10 @@ gemini extensions uninstall google-cloud-db-context-engineering
 gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enrichment
 ```
 
-The linked dev extension (`google-cloud-db-context-engineering`) and the
-released extension (`google-cloud-db-context-enrichment`, pre-rename
-v0.5.1) have different names and can coexist if needed, but only one MCP
-server config should be active at a time to avoid confusion.
+Both the linked dev extension and the released extension are named
+`google-cloud-db-context-engineering`, so only one can be installed at a
+time. Always `gemini extensions uninstall google-cloud-db-context-engineering`
+before installing the other variant.
 
 For integration-testing the full PyInstaller-bundled release (Evalbench
 + Toolbox binaries), see the "Development and Testing" section in
@@ -100,7 +100,7 @@ One-time setup (from the repo root):
 uv tool install --editable .
 ```
 
-Then in Claude Code:
+Then in Claude Code (from any directory):
 
 ```
 /plugin marketplace add /absolute/path/to/db-context-enrichment/dev
@@ -111,15 +111,17 @@ Then in Claude Code:
 Edit-test loop:
 
 - **Python source (`src/`)**: edit and save. The editable install means
-  `uvx` already resolves to your working tree, so changes take effect on
-  the next MCP server subprocess start. **`/reload-plugins` does NOT
-  actually restart MCP subprocesses** despite reporting "N plugin MCP
-  servers" in its output — you need to `/quit` Claude Code and relaunch
-  it for src/ edits to take effect.
+  `uvx` already resolves to your working tree, but **`/reload-plugins`
+  will not restart an already-running MCP subprocess** (it does start
+  one on first install, and it does reload skills/commands/agents/hooks
+  — it just won't respawn the running MCP server, despite reporting "N
+  plugin MCP servers" in its output). You need to `/quit` Claude Code
+  and relaunch it for src/ edits to take effect.
 - **Skills / commands (`plugin/skills/`, `plugin/commands/`)**: edit and
-  run `/plugin update` (or uninstall + install). Claude Code copies
-  plugin files to a cache on install, so a reinstall is required to
-  pick up changes.
+  run `/plugin update` to refresh the install cache. Claude Code copies
+  plugin files to a cache at install time, so source-tree edits don't
+  propagate until a refresh. Fall back to `/plugin uninstall` +
+  `/plugin install` if update misses the change.
 
 To return to the released version: `uv tool uninstall
 google-cloud-db-context-engineering` and reinstall from the prod
@@ -137,7 +139,9 @@ marketplaces exist:
   payload, so dev installs read your working tree directly. (The
   validator rejects `..` in source paths, hence the symlink.)
 
-Note: `mcpServers` config is read from
-`plugin/.claude-plugin/plugin.json`, not from `marketplace.json`. The
-marketplace entry's other fields (description, license, homepage,
-keywords) are authoritative because `strict: false` is set.
+Note: `mcpServers` config must live in
+`plugin/.claude-plugin/plugin.json`. `mcpServers` declared in
+`marketplace.json` is silently ignored at startup regardless of the
+`strict` setting. Display metadata (description, license, homepage,
+keywords) can live in either file — the marketplace entry's values are
+used at install time for catalog listing.

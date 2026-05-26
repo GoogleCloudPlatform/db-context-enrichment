@@ -39,17 +39,25 @@ via `uvx`, which pulls the released wheel from PyPI. For iterating on the
 Python source in `src/` without a release, install a dev variant of the
 plugin that runs the MCP server from your working tree via `uv run`.
 
+The dev marketplace lives in its own root (`dev/`) so it has its own
+`.claude-plugin/marketplace.json` — `/plugin marketplace add` only
+recognises that exact filename, so the prod and dev marketplaces cannot
+share a directory. The dev marketplace's `source: "./plugin"` resolves
+via the `dev/plugin -> ../plugin` symlink back to the shared payload,
+so skills and commands are not duplicated. (The validator rejects `..`
+in source paths, hence the symlink.)
+
 One-time setup:
 
 ```bash
-cp .claude-plugin/marketplace-dev.json.example .claude-plugin/marketplace-dev.json
+cp dev/.claude-plugin/marketplace.json.example dev/.claude-plugin/marketplace.json
 # Edit the file: replace <REPLACE_WITH_ABS_REPO_PATH> with $(pwd)
 ```
 
 Then in Claude Code:
 
 ```
-/plugin marketplace add .
+/plugin marketplace add ./dev
 /plugin install db-context-engineering@db-context-enrichment-marketplace-dev
 ```
 
@@ -66,5 +74,5 @@ Edit-test loop:
   run `/plugin update` (or uninstall + install). Claude Code copies plugin
   files to a cache on install, so reinstall is required.
 
-`marketplace-dev.json` is gitignored. Each collaborator maintains their own
-copy with their own absolute path.
+`dev/.claude-plugin/marketplace.json` is gitignored. Each collaborator
+maintains their own copy with their own absolute path.

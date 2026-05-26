@@ -207,6 +207,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Strip leading 'v' from the release tag (e.g. v0.5.1 -> 0.5.1) since PyPI versions are unprefixed.
+      # Poll PyPI for up to 6 hours (72 attempts x 5min) waiting for the wheel to be indexed.
       - name: Wait for PyPI release
         run: |
           TAG="${{ github.event.release.tag_name }}"
@@ -223,6 +225,8 @@ jobs:
           echo "::error::Timed out waiting for PyPI ${PKG}==${VERSION}"
           exit 1
 
+      # Must run after the PyPI wait above: the bumped marketplace ref points users at
+      # this tag's wheel via uvx, which would 404 if PyPI hasn't indexed it yet.
       - name: Open PR to pin marketplace ref
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

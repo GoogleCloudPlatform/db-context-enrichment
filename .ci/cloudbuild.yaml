@@ -169,6 +169,49 @@ steps:
           echo "No evaluations ran. Skipping upload."
         fi
 
+  # --- Pass-rate gate (runs after upload so artifacts always make it to GCS) ---
+  # Fails the build if any run's goal_completion score is below 50%. The score
+  # is the LLM-judged pass rate across all scenarios in the suite (0-100).
+  - id: gate
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    waitFor: ['upload']
+    args:
+      - '-c'
+      - |
+        THRESHOLD=50
+        FAILED=0
+        for RUN in gemini-cli-smoke-test claude-code-smoke-test gemini-cli-core-cujs gemini-cli-freeform-input claude-code-core-cujs claude-code-freeform-input; do
+          if [ ! -f /workspace/EVAL_RAN_$$RUN ]; then
+            continue
+          fi
+          # evalbench writes results/<job-uuid>/summary.csv per run; one row per scorer.
+          SUMMARY=$$(ls /workspace/eval-$$RUN/results/*/summary.csv 2>/dev/null | head -1)
+          if [ -z "$$SUMMARY" ]; then
+            echo "[FAIL] $$RUN: summary.csv not found under /workspace/eval-$$RUN/results/"
+            FAILED=1
+            continue
+          fi
+          SCORE=$$(awk -F',' '$$1 == "goal_completion" { print $$2 }' "$$SUMMARY")
+          if [ -z "$$SCORE" ]; then
+            echo "[FAIL] $$RUN: goal_completion metric missing in $$SUMMARY"
+            FAILED=1
+            continue
+          fi
+          if awk "BEGIN { exit !($$SCORE < $$THRESHOLD) }"; then
+            echo "[FAIL] $$RUN: goal_completion=$$SCORE (below $$THRESHOLD threshold)"
+            FAILED=1
+          else
+            echo "[PASS] $$RUN: goal_completion=$$SCORE"
+          fi
+        done
+        if [ "$$FAILED" = "1" ]; then
+          echo "One or more eval runs failed the $$THRESHOLD%% pass-rate gate."
+          echo "Results were still uploaded to gs://context-engineering-agent-eval-results/evals/$BUILD_ID/ — inspect summary.csv there."
+          exit 1
+        fi
+        echo "All eval runs cleared the $$THRESHOLD%% pass-rate gate."
+
 availableSecrets:
   secretManager:
   - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-pat/versions/latest

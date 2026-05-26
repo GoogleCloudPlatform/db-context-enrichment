@@ -29,7 +29,7 @@
       "extra-files": [
         {
           "type": "json",
-          "path": "gemini-extension.json",
+          "path": "plugin/gemini-extension.json",
           "jsonpath": "$.version"
         },
         {
@@ -39,7 +39,7 @@
         },
         {
           "type": "json",
-          "path": ".claude-plugin/plugin.json",
+          "path": "plugin/.claude-plugin/plugin.json",
           "jsonpath": "$.version"
         }
       ]

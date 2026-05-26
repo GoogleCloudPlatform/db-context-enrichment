@@ -63,7 +63,10 @@ Edit-test loop:
 
 - **Python source (`src/`)**: edit and save. The editable install means
   `uvx` already resolves to your working tree, so changes take effect on
-  the next MCP server restart. `/reload-plugins` restarts the server.
+  the next MCP server subprocess start. **`/reload-plugins` does NOT
+  actually restart MCP subprocesses** despite reporting "N plugin MCP
+  servers" in its output — you need to `/quit` Claude Code and relaunch
+  it for src/ edits to take effect.
 - **Skills / commands (`plugin/skills/`, `plugin/commands/`)**: edit and
   run `/plugin update` (or uninstall + install). Claude Code copies
   plugin files to a cache on install, so a reinstall is required to

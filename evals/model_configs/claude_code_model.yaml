@@ -7,6 +7,4 @@ use_vertex: true
 vertex_region: "global"
 
 setup:
-  skills:
-    - action: install_from_repo
-      url: "https://github.com/GoogleCloudPlatform/db-context-enrichment.git"
+  skills_dir: "./dev"

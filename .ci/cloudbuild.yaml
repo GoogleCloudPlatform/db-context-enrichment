@@ -88,7 +88,6 @@ steps:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
       - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
-      - 'CLAUDE_PLUGIN_BRANCH=$_HEAD_BRANCH'
     args: ['.ci/run_claude_code.sh', 'core-cujs']
 
   - id: eval-claude-code-freeform-input
@@ -100,7 +99,6 @@ steps:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
       - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
-      - 'CLAUDE_PLUGIN_BRANCH=$_HEAD_BRANCH'
     args: ['.ci/run_claude_code.sh', 'freeform-input']
 
   # --- Upload Results and Workspaces (after all eval steps) ---

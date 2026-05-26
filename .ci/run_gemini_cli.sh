@@ -11,7 +11,9 @@ set -e
 SUITE="${1:?usage: run_gemini_cli.sh <suite-name>}"
 SUT="gemini-cli"
 
-if [ ! -f /workspace/SHOULD_RUN_GEMINI_CLI ]; then
+# The smoke-test suite always runs regardless of PR labels; other suites are
+# gated by the ci:eval label (marker written by the preflight step).
+if [ "${SUITE}" != "smoke-test" ] && [ ! -f /workspace/SHOULD_RUN_GEMINI_CLI ]; then
   echo "Gemini CLI evals disabled by preflight (missing 'ci:eval' label); skipping ${SUT}/${SUITE}."
   exit 0
 fi

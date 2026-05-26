@@ -11,7 +11,9 @@ set -e
 SUITE="${1:?usage: run_claude_code.sh <suite-name>}"
 SUT="claude-code"
 
-if [ ! -f /workspace/SHOULD_RUN_CLAUDE_CODE ]; then
+# The smoke-test suite always runs regardless of PR labels; other suites are
+# gated by the ci:eval-claude label (marker written by the preflight step).
+if [ "${SUITE}" != "smoke-test" ] && [ ! -f /workspace/SHOULD_RUN_CLAUDE_CODE ]; then
   echo "Claude Code evals disabled by preflight (missing 'ci:eval-claude' label); skipping ${SUT}/${SUITE}."
   exit 0
 fi

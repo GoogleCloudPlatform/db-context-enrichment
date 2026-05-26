@@ -1,0 +1,13 @@
+{
+  "scenarios": [
+    {
+      "id": "plugin:list-skills-and-mcp-tools",
+      "starting_prompt": "What skills and MCP tools do you have available?",
+      "conversation_plan": "Verify the db-context-engineering plugin loaded correctly. The agent should list its db-context-engineering skills (e.g., autoctx-init, autoctx-bootstrap, autoctx-dataset-generation, autoctx-evaluate, autoctx-hillclimb, context-generation-guide) and the MCP tools provided by the two plugin-configured servers: the `db-context-engineering` MCP server (e.g., generate_dataset, generate_evalbench_configs, generate_upload_url, mutate_context_set, read_evaluation_result) and the `toolbox` MCP server (the my-alloydb-* tools loaded from autoctx/tools.yaml in the workspace, e.g., my-alloydb-list-schemas, my-alloydb-execute-sql). Terminate the conversation immediately after the agent provides the list.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_init/",
+      "max_turns": 2
+    }
+  ]
+}

@@ -57,6 +57,29 @@ steps:
           echo "PR does not have 'ci:eval-claude' label. Skipping Claude Code evals."
         fi
 
+  # --- Smoke tests (always run, regardless of PR labels) ---
+  # Cheap signal that the agent + plugin + MCP wiring loads at all.
+  - id: eval-gemini-cli-smoke-test
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+    args: ['.ci/run_gemini_cli.sh', 'smoke-test']
+
+  - id: eval-claude-code-smoke-test
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
+    args: ['.ci/run_claude_code.sh', 'smoke-test']
+
   # --- Gemini CLI eval steps (parallel, isolated per suite) ---
   - id: eval-gemini-cli-core-cujs
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
@@ -106,6 +129,8 @@ steps:
     name: 'gcr.io/cloud-builders/gsutil'
     entrypoint: 'bash'
     waitFor:
+      - 'eval-gemini-cli-smoke-test'
+      - 'eval-claude-code-smoke-test'
       - 'eval-gemini-cli-core-cujs'
       - 'eval-gemini-cli-freeform-input'
       - 'eval-claude-code-core-cujs'
@@ -114,7 +139,7 @@ steps:
       - '-c'
       - |
         ANY_RAN=0
-        for RUN in gemini-cli-core-cujs gemini-cli-freeform-input claude-code-core-cujs claude-code-freeform-input; do
+        for RUN in gemini-cli-smoke-test claude-code-smoke-test gemini-cli-core-cujs gemini-cli-freeform-input claude-code-core-cujs claude-code-freeform-input; do
           if [ ! -f /workspace/EVAL_RAN_$$RUN ]; then
             echo "$$RUN did not run; skipping its upload."
             continue

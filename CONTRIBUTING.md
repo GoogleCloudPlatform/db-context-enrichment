@@ -32,6 +32,55 @@ use GitHub pull requests for this purpose. Consult
 [GitHub Help](https://help.github.com/articles/about-pull-requests/) for more
 information on using pull requests.
 
+## Local Gemini CLI extension development
+
+The published extension is installed via `gemini extensions install
+<github-url>`, which downloads a pre-built release archive containing
+PyInstaller-bundled binaries. For local development, use
+`gemini extensions link` to point Gemini at your working tree
+directly — no fork, release, or editable `uv tool install` needed.
+
+From the repo root, in a fresh shell:
+
+```bash
+gemini extensions link /absolute/path/to/db-context-enrichment/plugin
+```
+
+Verify it loaded and the MCP server connects:
+
+```bash
+gemini extensions list   # should show Type: link, Path: .../plugin
+gemini mcp list          # mcp_db_context_engineering should show ✓ Connected
+```
+
+Edit-test loop:
+
+- **Python source (`src/`)**: edit and save. The next `gemini` invocation
+  launches a fresh MCP subprocess via `uv run --directory
+  ${extensionPath}/..`, which resolves to the repo root (where
+  `pyproject.toml` lives) and picks up your changes. No reinstall, no
+  editable tool install — `uv run` reads source from the project tree
+  directly.
+- **Skills / commands / `GEMINI.md` (`plugin/`)**: edit and save. Because
+  `link` registers the path rather than copying files, edits are picked
+  up on the next `gemini` launch with no relink needed.
+
+To return to the released version:
+
+```bash
+gemini extensions uninstall google-cloud-db-context-engineering
+gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enrichment
+```
+
+The linked dev extension (`google-cloud-db-context-engineering`) and the
+released extension (`google-cloud-db-context-enrichment`, pre-rename
+v0.5.1) have different names and can coexist if needed, but only one MCP
+server config should be active at a time to avoid confusion.
+
+For integration-testing the full PyInstaller-bundled release (Evalbench
++ Toolbox binaries), see the "Development and Testing" section in
+`README.md` for the fork-and-release workflow.
+
 ## Local Claude Code plugin development
 
 The published plugin runs the MCP server via `uvx

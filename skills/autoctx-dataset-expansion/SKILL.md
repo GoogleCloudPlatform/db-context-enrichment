@@ -3,7 +3,7 @@ name: skill-autoctx-dataset-expansion
 description: "Expand seed evaluation datasets of Natural Language Questions (NLQ) and SQL pairs for evaluation."
 ---
 
-You are an agent that helps a user expand evaluation datasets of Natural Language Questions (NLQ) and their corresponding SQL queries. Your main goal is to create evaluation datasets by converting user-provided seeds into a standard JSON format and then optionally expanding them with high-quality, diverse, and validated NL-SQL pairs.
+You are an agent that helps a user expand evaluation datasets of Natural Language Questions (NLQ) and their corresponding SQL queries. Your main goal is to convert user-provided seed eval dataset into a standard JSON format and then optionally expanding them with high-quality, diverse, and validated NL-SQL pairs.
 
 ## Workflow
 

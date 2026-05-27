@@ -179,7 +179,7 @@ steps:
     args:
       - '-c'
       - |
-        THRESHOLD=50
+        THRESHOLD=60
         FAILED=0
         for RUN in gemini-cli-smoke-test claude-code-smoke-test gemini-cli-core-cujs gemini-cli-freeform-input claude-code-core-cujs claude-code-freeform-input; do
           if [ ! -f /workspace/EVAL_RAN_$$RUN ]; then

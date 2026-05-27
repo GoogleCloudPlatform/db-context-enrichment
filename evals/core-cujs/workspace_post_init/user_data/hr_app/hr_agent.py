@@ -46,7 +46,7 @@ class Runner:
         self.agent = agent
         self.session_service = session_service
 
-    def run(self, user_id: str, session_id: str, new_message: types.Content):
+    def run(self, user_id: str, session_id: str, new_message: Content):
         pass
 
 

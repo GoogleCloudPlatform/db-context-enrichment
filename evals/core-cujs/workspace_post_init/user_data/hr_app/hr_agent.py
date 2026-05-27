@@ -1,7 +1,6 @@
-import sys
 import datetime
+import sys
 from typing import cast
-
 
 TOOLBOX_URL = "http://127.0.0.1:5000"
 
@@ -9,12 +8,10 @@ TOOLBOX_URL = "http://127.0.0.1:5000"
 class ToolUnion: ...
 
 
-class ToolboxSyncClient:
-    ...
+class ToolboxSyncClient: ...
 
 
-class Tool:
-    ...
+class Tool: ...
 
 
 class Part:

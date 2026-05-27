@@ -1,26 +1,29 @@
 ############################################################
 ### Dataset / Eval Items
 ############################################################
-dataset_config: freeform-input/dataset.json
+dataset_config: core-cujs/dataset.json
 dataset_format: gemini-cli-format
 
 # Orchestrator Configuration
-orchestrator: geminicli
-model_config: freeform-input/model.yaml
-simulated_user_model_config: freeform-input/gemini_model.yaml
+# `agent` is the alias of `geminicli` that also drives Claude Code.
+orchestrator: agent
+model_config: model_configs/claude_code_model.yaml
+simulated_user_model_config: model_configs/gemini_model.yaml
+
+# Run scenarios sequentially: Claude Code shares ~/.claude session store
+# inside the sandboxed fake_home, so concurrent runs can conflict.
+runners:
+  agent_runners: 1
 
 ############################################################
 ### Scorer Related Configs
 ############################################################
 scorers:
-  # Checks if the agent used the expected tools in the correct order.
   trajectory_matcher: {}
 
-  # Uses an LLM to judge if the user's goal was met.
   goal_completion:
-    model_config: freeform-input/gemini_model.yaml
+    model_config: model_configs/gemini_model.yaml
 
-  # Metrics for efficiency and performance.
   turn_count: {}
   end_to_end_latency: {}
   tool_call_latency: {}

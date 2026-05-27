@@ -1,7 +1,7 @@
 steps:
   # --- Build Extension Step ---
   - id: build-extension
-    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -11,12 +11,13 @@ steps:
         chmod +x .ci/build.sh
         .ci/build.sh
 
-  # --- Pre-flight: gate evals on PR label ---
-  # Runs in parallel with build-extension; writes /workspace/SHOULD_RUN
-  # if evals should proceed (always for manual runs; only on 'ci:eval' label
-  # for PR-triggered runs).
+  # --- Pre-flight: gate evals on PR labels ---
+  # Runs in parallel with build-extension. Writes per-SUT marker files:
+  #   /workspace/SHOULD_RUN_GEMINI_CLI   — gated by 'ci:eval-gemini'
+  #   /workspace/SHOULD_RUN_CLAUDE_CODE  — gated by 'ci:eval-claude'
+  # Manual / non-PR runs enable both.
   - id: preflight
-    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
     secretEnv: ['GITHUB_TOKEN']
     waitFor: ['-']
@@ -26,8 +27,9 @@ steps:
         set -e
 
         if [ -z "$_PR_NUMBER" ]; then
-          echo "No PR number provided. Assuming local/manual run — enabling evals."
-          touch /workspace/SHOULD_RUN
+          echo "No PR number provided. Assuming local/manual run — enabling all evals."
+          touch /workspace/SHOULD_RUN_GEMINI_CLI
+          touch /workspace/SHOULD_RUN_CLAUDE_CODE
           exit 0
         fi
 
@@ -41,60 +43,123 @@ steps:
           exit 1
         fi
 
-        if ! jq -e '.labels | any(.name == "ci:eval")' pr_data.json > /dev/null; then
-          echo "PR does not have 'ci:eval' label. Skipping evals."
-          exit 0
+        if jq -e '.labels | any(.name == "ci:eval-gemini")' pr_data.json > /dev/null; then
+          echo "ci:eval label detected — enabling Gemini CLI evals."
+          touch /workspace/SHOULD_RUN_GEMINI_CLI
+        else
+          echo "PR does not have 'ci:eval' label. Skipping Gemini CLI evals."
         fi
 
-        echo "ci:eval label detected — enabling evals."
-        touch /workspace/SHOULD_RUN
+        if jq -e '.labels | any(.name == "ci:eval-claude")' pr_data.json > /dev/null; then
+          echo "ci:eval-claude label detected — enabling Claude Code evals."
+          touch /workspace/SHOULD_RUN_CLAUDE_CODE
+        else
+          echo "PR does not have 'ci:eval-claude' label. Skipping Claude Code evals."
+        fi
 
-  # --- Eval steps (parallel, isolated per suite) ---
-  # Both steps run the same .ci/run_eval.sh script with a different suite arg.
-  - id: eval-core-cujs
-    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+  # --- Smoke tests (always run, regardless of PR labels) ---
+  # Cheap signal that the agent + plugin + MCP wiring loads at all.
+  - id: eval-gemini-cli-smoke-test
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
     secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
-    args: ['.ci/run_eval.sh', 'core-cujs']
+    args: ['.ci/run_gemini_cli.sh', 'smoke-test']
 
-  - id: eval-freeform-input
-    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+  - id: eval-claude-code-smoke-test
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
     secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
-    args: ['.ci/run_eval.sh', 'freeform-input']
+      - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
+    args: ['.ci/run_claude_code.sh', 'smoke-test']
 
-  # --- Upload Results and Workspaces (after both eval steps) ---
+  # --- Gemini CLI eval steps (parallel, isolated per suite) ---
+  - id: eval-gemini-cli-core-cujs
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+    args: ['.ci/run_gemini_cli.sh', 'core-cujs']
+
+  - id: eval-gemini-cli-freeform-input
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+    args: ['.ci/run_gemini_cli.sh', 'freeform-input']
+
+  # --- Claude Code eval steps (parallel, isolated per suite) ---
+  - id: eval-claude-code-core-cujs
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
+    args: ['.ci/run_claude_code.sh', 'core-cujs']
+
+  - id: eval-claude-code-freeform-input
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
+    args: ['.ci/run_claude_code.sh', 'freeform-input']
+
+  # --- Upload Results and Workspaces (after all eval steps) ---
   - id: upload
     name: 'gcr.io/cloud-builders/gsutil'
     entrypoint: 'bash'
-    waitFor: ['eval-core-cujs', 'eval-freeform-input']
+    waitFor:
+      - 'eval-gemini-cli-smoke-test'
+      - 'eval-claude-code-smoke-test'
+      - 'eval-gemini-cli-core-cujs'
+      - 'eval-gemini-cli-freeform-input'
+      - 'eval-claude-code-core-cujs'
+      - 'eval-claude-code-freeform-input'
     args:
       - '-c'
       - |
         ANY_RAN=0
-        for SUITE in core-cujs freeform-input; do
-          if [ ! -f /workspace/EVAL_RAN_$$SUITE ]; then
-            echo "$$SUITE did not run; skipping its upload."
+        for RUN in gemini-cli-smoke-test claude-code-smoke-test gemini-cli-core-cujs gemini-cli-freeform-input claude-code-core-cujs claude-code-freeform-input; do
+          if [ ! -f /workspace/EVAL_RAN_$$RUN ]; then
+            echo "$$RUN did not run; skipping its upload."
             continue
           fi
           ANY_RAN=1
-          WORK_DIR=/workspace/eval-$$SUITE
-          DEST=gs://context-engineering-agent-eval-results/evals/$BUILD_ID/$$SUITE
+          WORK_DIR=/workspace/eval-$$RUN
+          DEST=gs://context-engineering-agent-eval-results/evals/$BUILD_ID/$$RUN
 
-          echo "Uploading $$SUITE results to $$DEST ..."
+          echo "Uploading $$RUN results to $$DEST ..."
           gsutil -m cp -r $$WORK_DIR/* $$DEST/
 
           if [ -d $$WORK_DIR/.venv/fake_home/.gemini/tmp ]; then
-            echo "Uploading $$SUITE Gemini workspace..."
+            echo "Uploading $$RUN Gemini workspace..."
             gsutil -m cp -r $$WORK_DIR/.venv/fake_home/.gemini/tmp/* $$DEST/gemini/
+          fi
+
+          # Upload Claude Code chat history (per-project JSONL transcripts only).
+          if [ -d $$WORK_DIR/.venv/fake_home_claude/.claude ]; then
+            echo "Uploading $$RUN Claude chat history..."
+            gsutil -m cp -r $$WORK_DIR/.venv/fake_home_claude/.claude $$DEST/claude/
           fi
         done
 
@@ -104,6 +169,49 @@ steps:
           echo "No evaluations ran. Skipping upload."
         fi
 
+  # --- Pass-rate gate (runs after upload so artifacts always make it to GCS) ---
+  # Fails the build if any run's goal_completion score is below 60%. The score
+  # is the LLM-judged pass rate across all scenarios in the suite (0-100).
+  - id: gate
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    waitFor: ['upload']
+    args:
+      - '-c'
+      - |
+        THRESHOLD=60
+        FAILED=0
+        for RUN in gemini-cli-smoke-test claude-code-smoke-test gemini-cli-core-cujs gemini-cli-freeform-input claude-code-core-cujs claude-code-freeform-input; do
+          if [ ! -f /workspace/EVAL_RAN_$$RUN ]; then
+            continue
+          fi
+          # evalbench writes results/<job-uuid>/summary.csv per run; one row per scorer.
+          SUMMARY=$$(ls /workspace/eval-$$RUN/results/*/summary.csv 2>/dev/null | head -1)
+          if [ -z "$$SUMMARY" ]; then
+            echo "[FAIL] $$RUN: summary.csv not found under /workspace/eval-$$RUN/results/"
+            FAILED=1
+            continue
+          fi
+          SCORE=$$(awk -F',' '$$1 == "goal_completion" { print $$2 }' "$$SUMMARY")
+          if [ -z "$$SCORE" ]; then
+            echo "[FAIL] $$RUN: goal_completion metric missing in $$SUMMARY"
+            FAILED=1
+            continue
+          fi
+          if awk "BEGIN { exit !($$SCORE < $$THRESHOLD) }"; then
+            echo "[FAIL] $$RUN: goal_completion=$$SCORE (below $$THRESHOLD threshold)"
+            FAILED=1
+          else
+            echo "[PASS] $$RUN: goal_completion=$$SCORE"
+          fi
+        done
+        if [ "$$FAILED" = "1" ]; then
+          echo "One or more eval runs failed the $$THRESHOLD%% pass-rate gate."
+          echo "Results were still uploaded to gs://context-engineering-agent-eval-results/evals/$BUILD_ID/ — inspect summary.csv there."
+          exit 1
+        fi
+        echo "All eval runs cleared the $$THRESHOLD%% pass-rate gate."
+
 availableSecrets:
   secretManager:
   - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-pat/versions/latest
@@ -112,6 +220,12 @@ availableSecrets:
     env: 'ADC_KEY'
 
 serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/crema-eval@cloud-db-nl2sql.iam.gserviceaccount.com'
+
+substitutions:
+  # Tag of the evalbench eval_server image. Override on the trigger to pin a
+  # specific build; defaults to :latest.
+  _EVALBENCH_IMAGE_TAG: 'latest'
+  _PROJECT_LOCATION: 'global'
 
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

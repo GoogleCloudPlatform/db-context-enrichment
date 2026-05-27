@@ -1,14 +1,30 @@
 import sys
 import datetime
 from typing import cast
-from google.genai import types
-from toolbox_core import ToolboxSyncClient
 
 
 TOOLBOX_URL = "http://127.0.0.1:5000"
 
 
 class ToolUnion: ...
+
+
+class ToolboxSyncClient:
+    ...
+
+
+class Tool:
+    ...
+
+
+class Part:
+    def __init__(self, text: str | None = None):
+        self.text = text
+
+
+class Content:
+    def __init__(self, parts: list[Part]):
+        self.parts = parts
 
 
 class Agent:
@@ -133,7 +149,7 @@ def main():
 
     print(f"Sending Query: '{query_text}'")
 
-    user_message = types.Content(parts=[types.Part(text=query_text)])
+    user_message = Content(parts=[Part(text=query_text)])
 
     print("\n--- Agent Response Stream ---")
     for event in runner.run(

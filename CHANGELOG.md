@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.2](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.5.1...v0.5.2) (2026-05-27)
+
+
+### Features
+
+* add Claude Code plugin support ([#136](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/136)) ([44ab514](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/44ab514c95a9a269f149141e005f34d019dcb5fe))
+* migrate MCP prompts and tools into Agent Skills ([#129](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/129)) ([bd8ff60](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/bd8ff603561f1dfd21c800b327eb07085ed088cf))
+
+
+### Bug Fixes
+
+* gemini eval key ([#123](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/123)) ([1a24f6a](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/1a24f6a351aa7d6b6bf0af38501df1409edc980e))
+
 ## [0.5.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.5.0...v0.5.1) (2026-05-15)
 
 

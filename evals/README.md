@@ -4,7 +4,7 @@ This directory contains the evaluation suite for the main functionalities of the
 
 ## Overview
 
-The evaluation uses the [evalbench](https://github.com/GoogleCloudPlatform/evalbench) framework with the `geminicli` orchestrator to run a set of simulated user tasks against the agent.
+The evaluation uses the [evalbench](https://github.com/GoogleCloudPlatform/evalbench) framework with the Gemini CLI and Claude Code orchestrator to run a set of simulated user tasks against the agent.
 
 ## Configuration Files
 

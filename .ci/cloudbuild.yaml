@@ -13,7 +13,7 @@ steps:
 
   # --- Pre-flight: gate evals on PR labels ---
   # Runs in parallel with build-extension. Writes per-SUT marker files:
-  #   /workspace/SHOULD_RUN_GEMINI_CLI   — gated by 'ci:eval'
+  #   /workspace/SHOULD_RUN_GEMINI_CLI   — gated by 'ci:eval-gemini'
   #   /workspace/SHOULD_RUN_CLAUDE_CODE  — gated by 'ci:eval-claude'
   # Manual / non-PR runs enable both.
   - id: preflight
@@ -43,7 +43,7 @@ steps:
           exit 1
         fi
 
-        if jq -e '.labels | any(.name == "ci:eval")' pr_data.json > /dev/null; then
+        if jq -e '.labels | any(.name == "ci:eval-gemini")' pr_data.json > /dev/null; then
           echo "ci:eval label detected — enabling Gemini CLI evals."
           touch /workspace/SHOULD_RUN_GEMINI_CLI
         else
@@ -170,7 +170,7 @@ steps:
         fi
 
   # --- Pass-rate gate (runs after upload so artifacts always make it to GCS) ---
-  # Fails the build if any run's goal_completion score is below 50%. The score
+  # Fails the build if any run's goal_completion score is below 60%. The score
   # is the LLM-judged pass rate across all scenarios in the suite (0-100).
   - id: gate
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'

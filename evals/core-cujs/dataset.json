@@ -18,9 +18,81 @@
       "max_turns": 15
     },
     {
-      "id": "autoctx:generate-dataset",
-      "starting_prompt": "generate a seed evaluation dataset for my alloydb database financial named golden_seed.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 medium-level SQL/Question pairs for my alloydb database financial named golden_seed.json. I prefer the generated SQL to have filter conditions on text or jsonb columns. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "id": "autoctx:generate-dataset-bfd-simple",
+      "starting_prompt": "generate a evaluation dataset consisting of simple SQL/Question pairs for my alloydb database financial named golden_bfd_simple.json",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 simple SQL/Question pairs for my alloydb database financial named golden_bfd_simple.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_init/",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:generate-dataset-bfd-advanced",
+      "starting_prompt": "generate a seed evaluation dataset consisting of advanced SQL/Question pairs for my alloydb database financial named golden_bfd_advanced.json",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs for my alloydb database financial named golden_bfd_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_init/",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:generate-dataset-bfd-expert",
+      "starting_prompt": "generate a seed evaluation dataset consisting of expert SQL/Question pairs for my alloydb database financial named golden_bfd_expert.json",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 expert SQL/Question pairs for my alloydb database financial named golden_bfd_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_init/",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:generate-dataset-app-property",
+      "starting_prompt": "generate a seed evaluation dataset consisting of advanced SQL/Question pairs for property search application named golden_property_search_advanced.json",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the application at https://github.com/kupp0/multi-db-property-search-data-agents, save the generated pairs in output file named golden_property_search_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_init/",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:generate-dataset-app-flight",
+      "starting_prompt": "generate a seed evaluation dataset consisting of advanced SQL/Question pairs for flight booking application named golden_flight_booking_expert.json",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 expert SQL/Question pairs in postgres dialect for the flight booking application at https://docs.cloud.google.com/alloydb/docs/ai/integrate-applications-data-agent, save the generated pairs in output file named golden_flight_booking_expert.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_init/",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:generate-dataset-hr-advanced",
+      "starting_prompt": "generate a seed evaluation dataset consisting of advanced SQL/Question pairs for hr application named golden_hr_advanced.json",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the hr application whose source codes can be found in the directory `user_data/hr_app`, save the generated pairs in output file named golden_hr_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_init/",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:generate-dataset-ecomm-advanced",
+      "starting_prompt": "generate a seed evaluation dataset consisting of advanced SQL/Question pairs for ecommerce application named golden_ecomm_advanced.json",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the ecommerce application whose design and schema can be found in the directory `user_data/ecommerce_app`, save the generated pairs in output file named golden_ecomm_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_init/",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:generate-dataset-blog-advanced",
+      "starting_prompt": "generate a seed evaluation dataset consisting of advanced SQL/Question pairs for blog application named golden_blog_advanced.json",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the blog application whose er diagram and design doc can be found in the directory `user_data/binary_data`, save the generated pairs in output file named golden_blog_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_init/",
+      "max_turns": 15
+    },
+    {
+      "id": "autoctx:generate-dataset-rust-advanced",
+      "starting_prompt": "generate a seed evaluation dataset consisting of advanced SQL/Question pairs for blog application named golden_rust_advanced.json",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the blog application whose source codes can be found in the directory `user_data/rust_app`, save the generated pairs in output file named golden_rust_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_init/",

@@ -1,232 +1,74 @@
 ---
 name: skill-autoctx-dataset-generation
-description: "Generate a seed dataset of Natural Language Questions (NLQ) and SQL pairs for evaluation."
+description: "Generate and expand datasets of Natural Language Questions (NLQ) and SQL pairs for evaluation."
 ---
 
-You are an agent that helps a user generate evaluation datasets of Natural Language Questions (NLQ) and their corresponding SQL queries. Your main goal is to create evaluation datasets by converting user-provided seeds into a standard JSON format and then optionally expanding them with high-quality, diverse, and validated NL-SQL pairs. Your workflow enforces a strict multi-step workflow with crash-resilient state recovery. You are acting as a strict instruction follower that performs setup and validation step-by-step to guarantee a completely autonomous loop in later stages.
-
-## CRITICAL: Anti-Patterns to Avoid
-
-To ensure execution stability, the agent MUST strictly avoid the following anti-patterns. Violating any of these rules will result in corrupted datasets or broken loop execution.
-
-*  **The "Hallucinated Progress" Trap:** Never assume or guess that a tool execution succeeded or that the target size was reached. 
-*  **The "Conversation Hijack" Trap:** Do NOT attempt to manually step through the loop in the chat window if an MCP tool call fails. When you are asked to call an MCP tool, you MUST call the MCP tool. You are FORBIDDEN from guessing, simulating, or approximating the tool results. Do NOT try to manually guess the SQL/Question pairs.
-*  **The "No-Op / Comment Leak" Trap:** You are strictly forbidden from inserting pseudo-code comments, markdown explanations, or phrases like `# No-op to explain intent` inside any JSON payload, tool argument, or telemetry log. Tool arguments must strictly match the expected parameters and contain zero conversational or structural noise.
-
+You are an agent that helps a user generate and expand evaluation datasets of Natural Language Questions (NLQ) and their corresponding SQL queries. Your main goal is to create high-fidelity evaluation datasets by converting user-provided seeds into a standard JSON format, actively validating them for logical alignment, and expanding them using tunable complexity levels.
 
 ## Workflow
 
-### Step 1. Setup and Verification
+1.  **Verification**: Check for `tools.yaml` (located in `autoctx/` for Autoctx workflows) to identify available database configurations. Prompt the user to select the target database for dataset generation. If `tools.yaml` is missing, invoke the `skill-autoctx-init` skill to establish a connection first.
 
-You MUST NEVER attempt to combine steps 1.1 and 1.2 into a single step or skip any steps. You MUST follow the exact order of the steps and complete all required actions in each step before proceeding to the next step.
+2.  **Initiate Interaction**: Greet the user and ask if they have an optional "seed" or context to start the dataset. The input can be:
+    *   **A file path / Raw Pairs**: Existing NL-SQL pairs to use as a seed.
+    *   **Query Logs**: Local files or directories containing historical database queries (e.g., SQL server logs, application query history). You will extract these to discover real-world access patterns and reverse-engineer them into NL-SQL seeds.
+    *   **Business Context Artifacts & Offline Schemas**: Local file paths to documents (Word, Excel, Markdown, PDF, Image) containing business logic, metric definitions, ER diagrams, or offline database schemas.
+    *   **Application source code**: A GitHub link or local path to analyze real-world queries and ORM logic.
+    *   **No seed**: Explicitly confirm you will bootstrap entirely from the schema.
 
-#### Step 1.1: Workspace Setup and Validation
+3.  **Acquire Context, Resolve Schema, & Establish Semantic Bridge**: 
+    *   **Fetch Schema**: Attempt to use the `<source>-list-schemas` MCP tool.
+    *   **Schema Conflict Resolution (Source of Truth)**: If the user provided Business Context Artifacts or Application Source Code that contain schema definitions, you MUST cross-check the MCP tool's output against them. 
+        *   If the MCP tool returns a schema that fundamentally conflicts with the domain or tables described in the user's offline artifacts, **assume the MCP tool is connected to the wrong environment. Discard the MCP tool's schema entirely.** 
+        *   Treat the provided artifacts and source code as the single, infallible source of truth for the schema. Inform the user of this mismatch and your decision to use the offline schema.
+    *   **Synthesize Business Logic**: Map the business definitions from the documents to your finalized schema. 
+    *   **CRITICAL - Vocabulary Separation**: You must act as a semantic bridge. The **NLQ** must strictly use natural business terminology (e.g., "Active Users"). The **SQL** must strictly adhere to the technical schema (e.g., `WHERE status = 1`). Never invent column names in SQL based on business docs, and never leak raw column names into the NLQ.
 
-Complete the following checklist before proceeding to step 1.2:
-* Check for `tools.yaml` (located in `autoctx/` for Autoctx workflows) to identify available database configurations. Prompt the user to select the target database for dataset generation. If `tools.yaml` is missing, invoke the `skill-autoctx-init` skill to establish a connection first.
-* Infer the database name `target_database_name` from the user and the `tools.yaml` file. If unsure, ask the user to confirm.
-* Infer the database dialect `database_dialect` from the user and the `tools.yaml` file. If unsure, ask the user to confirm.
-* Infer the parallelism `internal_parallelism` from the user. If not provided, set `internal_parallelism` to `10`.
-* Check for the current workspace directory by running `pwd`.
-* You must provide the exact `output_file_path`.
-* Set the `evalset_working_dir` to the absolute path of the folder `.dataset_cache`, which is a hidden directory in the current workspace directory.
+4.  **Analyze Real-World Usage (Query Logs & Source Code)**: 
+    *   **If Query Logs are provided**: 
+        1. Extract the queries and rigorously filter out administrative or DML queries (`INSERT`, `UPDATE`, `DELETE`, `SELECT 1`, etc.). Keep only meaningful analytical `SELECT` statements.
+        2. Perform **Reverse Translation**: Translate the extracted SQL queries into natural language business questions. You MUST apply the *Semantic Bridge* rule here—the generated NLQs should sound like a business user asking a question, using the vocabulary from any provided business artifacts.
+        3. Treat these reverse-translated pairs as your "Seed Pairs" for the rest of the workflow.
+    *   **If Source Code is provided**: Analyze ORM models, API endpoints, and reporting logic to understand how the application queries the data. Use these insights to guide the creation of realistic queries during the expansion phase.
 
-#### Step 1.2 Gather Input Parameters & Authorize Headless Execution
+5.  **Initial Save (If Seed Pairs Provided or Extracted)**: If seed pairs were provided explicitly OR extracted/translated from Query Logs, use the `generate_dataset` MCP tool to save them. You must provide the exact `output_file_path`. Pass the constructed dataset as a JSON string (`dataset_entries_json`).
 
-Check to see whether the config file `<evalset_working_dir>/config.json` already exists. If it already exists, inform the user and proceed to step 2. If the config file does not exist, either infer the following input parameters from the user if they are provided, or ask the user to provide them if not already provided before proceeding:
+6.  **Prompt for Validation (If Seed Pairs Provided)**: If a seed was saved, ask the user if they want to validate the `golden_sql` and NLQ alignment in the dataset file. Advise them that this step ensures high-quality evaluation data.
 
-* `target_complexity`: the generated SQL complexity (`easy`, `medium`, `hard`). Default: `medium`
-* `generation_constraints`: the guideline for generating SQL. Default: `None`
-* `target_dataset_size`: a positive integer representing the number of valid SQL/Question pairs to generate. Default: `10`
+7.  **Advanced Validation & Golden Standard Check**: If the user agrees to validate the seed (or during the generation phase below), apply the following strict multi-stage verification loop for each entry:
+    *   **Execution & Data Reality Check**: Use the `<source>-execute-sql` MCP tool. Report any syntax errors. Crucially, **check the returned rows**. If the query returns 0 rows, verify if this is expected. If it's due to hallucinated filters (e.g., filtering for a name that doesn't exist in the DB), rewrite the SQL and NLQ to use actual, representative data from the database.
+    *   **Dialect & Aliasing Strictness**: Ensure the query perfectly conforms to the target database dialect (e.g., exact date functions). Ensure *every* column reference in a multi-table query is fully qualified with a table alias (e.g., `t1.id` instead of just `id`) to prevent ambiguous column errors.
+    *   **Ambiguity Detection**: Analyze the NLQ for vague terminology (e.g., "recent", "top", "best", "active"). If found, ensure the SQL explicitly resolves this. Does the reverse-translation of the SQL expose implicit assumptions not stated in the NLQ?
+    *   **Edge-Case Stress Test**: Consider how the query handles ties (e.g., `LIMIT 5` without tie-breakers), NULL values, and exact date boundaries. 
+    *   **Action**: Present any discovered flaws to the user and suggest specific corrections. Overwrite the file with user-approved corrections.
 
-Once all parameters are staged, you MUST explicitly ask the user to confirm the parameters so that they can be saved in the config file. Always save the parameters to `<evalset_working_dir>/config.json` in the following JSON format immediately before proceeding to step 2, so that they can be retrieved for state recovery if the execution gets interrupted:
+8.  **Prompt for Generation/Expansion & Complexity Tuning**: Ask the user if they want to generate new pairs. If yes, ask them to define the desired **SQL Complexity Level**:
+    *   *Level 1 (Simple)*: Basic filtering and sorting (`SELECT`, `WHERE`, `ORDER BY`, `LIMIT`).
+    *   *Level 2 (Intermediate)*: Aggregations and basic relationships (`GROUP BY`, `HAVING`, `INNER/LEFT JOIN`, Date/Math functions).
+    *   *Level 3 (Advanced)*: Complex logic (`CTEs`, Subqueries, Multiple `JOIN`s, `CASE WHEN` conditional logic).
+    *   *Level 4 (Expert)*: Analytical operations (Window functions like `RANK()`/`ROW_NUMBER()`, Self-joins, Pivot logic, handling complex JSON/Array data types).
 
-```json
-{
-  "dialect": "[database_dialect]",
-  "complexity": "[target_complexity]",
-  "constraints": "[generation_constraints]",
-  "database_name": "[target_database_name]",
-  "size": "[target_dataset_size]",
-  "parallelism": "[internal_parallelism]",
-  "output_file_path": "[output_file_path]"
-}
+9.  **Generate Dataset Pairs**:
+    a.  If expanding, read the current dataset file.
+    b.  **Generate Variations**: Generate diverse NL-SQL pairs targeting the requested Complexity Level. Use the schema, **artifact insights**, **business rules**, and **source code insights** creatively:
+        *   *Context-Driven Realism*: Formulate questions that directly reflect the KPIs, dashboards, and terminology discovered in the provided documents and images.
+        *   *Scenario Shifting*: Transform a financial question into an operational one.
+        *   *Constraint Layering*: Add intersecting conditions.
+        *   *Conversational Phrasing*: Mix formal reporting requests with casual queries.
+    c.  Run the newly generated pairs through the **Advanced Validation & Golden Standard Check** (Step 7) internally before presenting them. **Do not propose a pair if it fails the execution or ambiguity checks.**
+    d.  Present the validated variations for user review (accept, edit, reject).
+    e.  Append (or create) the user-approved variations to the dataset file using the `generate_dataset` tool.
 
-```
+10. **Finalize**: Inform the user that the process is complete and confirm the final location and total size of the dataset file.
 
-### Step 2. Generate Database Profile
-
-You must perform all actions in this step in a completely headless manner without prompting the user for intervention.
-
-#### Step 2.1: Verify Existence of Database Profile
-
-**IMPORTANT**: Check to see whether the file `<evalset_working_dir>/db_profile.txt` exists. If it exists, skip directly to Step 3 to generate SQL/Question pairs. Otherwise, proceed to Step 2.2.
-
-#### Step 2.2: List Tables
-
-Check whether the database schema profile is available. If not available, use the `<source>-list-schemas` MCP tool to fetch the schema profile. Save results to `<evalset_working_dir>/_dbp/tables.json` in the following JSON format:
-
-```json
-[
-  {
-    "schema_name": "[schema_name]",
-    "object_details": {
-      "object_name": "[table_name]",
-      "columns": [
-        {
-          "column_name": "[column_name]",
-          "data_type": "[data_type]"
-        }
-      ],
-      "constraints": [
-        {
-          "constraint_name": "[constraint_name]",
-          "constraint_type": "[constraint_type]",
-          "constraint_definition": "[constraint_definition]"
-        }
-      ]
-    }
-  }
-]
-
-```
-
-#### Step 2.3: Generate Database Profiling Plan
-
-Call the `generate_seed_eval_dataset` MCP tool with the following payload structure:
-
-```json
-{
-  "task": "generate_database_profile_plan",
-  "task_working_dir": "<evalset_working_dir>"
-}
-
-```
-
-The output returned from the tool will contain:
-
-```json
-{
-  "plan": "...",
-  "column_sampling_queries": "<evalset_working_dir>/_dbp/column_sampling_queries.json",
-  "row_sampling_queries": "<evalset_working_dir>/_dbp/row_sampling_queries.json"
-}
-
-```
-
-#### Step 2.4: Generate Sample Rows
-
-For each `(table_name, sampling_query)` pair in `row_sampling_queries.json`, call the `<source>-execute-sql` MCP tool to execute the query. Save the output to `<evalset_working_dir>/_dbp/row_samples/<table_name>.json` matching this layout:
-
+## Expected Standard Format
+The dataset must be output as a JSON object matching this schema:
 ```json
 [
-  {"[column_name]": "[sampled_value]"}
-]
-
-```
-
-#### Step 2.5: Generate Sample Columns
-
-For each `(table_name, sampling_query)` pair in `column_sampling_queries.json`, call the `<source>-execute-sql` MCP tool to execute the query. Save the output to `<evalset_working_dir>/_dbp/column_samples/<table_name>.json` matching this layout:
-
-```json
-[
-  {"val": "[value_token]", "name": "[column_name]"}
-]
-
-```
-
-#### Step 2.6: Assemble Database Profile
-
-Call the `generate_seed_eval_dataset` MCP tool to build the final plain text database profile structure:
-
-```json
-{
-  "task": "generate_database_profile",
-  "task_working_dir": "<evalset_working_dir>"
-}
-
-```
-
-### Step 3. Generate SQL/Question pairs
-
-You are acting as a strict state-machine loop. You are FORBIDDEN from guessing, simulating, or approximating the tool results. You MUST call the MCP tools iteratively until the precise exit condition is met. The state file `<evalset_working_dir>/states.json` is the single source of truth for tracking the progress of dataset generation. You MUST read from this file for the latest states such as `completed_pairs`, `remaining_pairs`, and `is_done`. Do NOT attempt to maintain any in-memory state or rely on conversational memory for tracking progress.
-
-**Loop Execution Protocol**: To prevent the main agent from pausing, throwing session-turn warnings, or interrupting the loop during large target sizes, you MUST follow the loop execution protocol below:
-
-1. **Sub-Agent Chunking & Lifecycle Guard**: The main agent MUST iteratively spin up a dedicated, isolated sub-agent execution context to process this specific loop execution. The sub-agent MUST only run a maximum of **15** iterations and then return control back to the main agent.
-2. **Headless Execution Guard**: You are executing in a strictly headless pipeline. Under no circumstances should you output natural language prompt validations, internal commentary, or placeholder strings like `# No-op`. Payloads sent to tools MUST be pure, production-grade JSON strings containing only the keys and values required by the tool schema. Under no circumstances should you output natural language prompt validations or compromise the iteration loop by pausing to ask conversational confirmation questions. You are running in a fully automated pipeline context. Do NOT prompt the user with confirmation questions like "Continue with more automated batches?", "Would you like to proceed with fewer pairs/batches?", or "Should we stop here?". Your only valid behavior is to continue until the termination condition is met. When you are hesitating or uncertain about the next step (e.g. to RESUME or MERGE when the pipeline is interrupted), you MUST read the state file for the latest progress and continue executing. Do NOT attempt to ask the user for guidance on how to proceed. Always read the state file and continue executing according to the latest states. 
-3. **Strict Telemetry Restrictions**: Your log output must strictly match the text schema provided. Do not append explanatory prefaces or structural comments before or after the telemetry payload.
-4. **Long Running Loop Guard**: It is understood that generating the target pairs will require many batches. In case you become conscious of the loop execution for an extended period of time, You MUST treat the state file as the single source of truth and continue to execute. Do NOT panic or prompt the user for conversational input on whether to continue or not. Do NOT attempt to guess or simulate the tool results.
-5. **Stateless Inter-Turn Handshake**: After a sub-agent chunk completes (or recovers from a crash), read the progress metrics (`completed_pairs`, `remaining_pairs`, `iterations`, `is_done`). Immediately print a standard telemetry log precisely matching this token layout:
-`[TELEMETRY] Batch Complete. Completed: <completed_pairs>. Iterations: <iterations>. Remaining: <remaining_pairs>. Target achieved: <is_done>.`
-
-#### Loop Execution Single Iteration:
-
-Call the `generate_seed_eval_dataset` MCP tool with the following payload structure to generate raw candidate SQL expressions:
-
-```json
-{
-  "task": "generate_sql",
-  "task_working_dir": "<evalset_working_dir>"
-}
-
-```
-
-The output structure returned will be parsed as follows:
-
-```json
-{
-  "sqls": [
     {
-      "qid": "[unique_sql_identifier]",
-      "sql": "[generated_candidate_sql]"
+        "id": "eval_001",
+        "database": "<database_name>",
+        "nlq": "What is the total net revenue generated by the top 5 products (based on revenue), broken down by seller?",
+        "golden_sql": "SELECT s.seller_id, s.product_id, SUM(s.net_revenue) AS total_revenue FROM sales s GROUP BY s.seller_id, s.product_id ORDER BY total_revenue DESC LIMIT 5;"
     }
-  ]
-}
-
-```
-
-Validate the generated batch using these rules:
-
-1. For each SQL query returned, call the `<source>-execute-sql` MCP tool to validate query syntax and engine compatibility.
-2. A SQL query is considered valid if it runs without returning syntax errors.
-
-Once the entire batch from the current iteration has been processed and filtered, compile the `qid` of all valid SQL items into a single array.
-
-Generate Questions for the valid SQLs by invoking the `generate_seed_eval_dataset` MCP tool with the following payload configuration:
-
-```json
-{
-  "task": "generate_nlq",
-  "task_working_dir": "<evalset_working_dir>",
-  "golden_sql_qids": [
-    "[validated_qid_string]"
-  ]
-}
-
-```
-
-Verify the generated Questions by invoking the `generate_seed_eval_dataset` MCP tool:
-
-```json
-{
-  "task": "review_nlq",
-  "task_working_dir": "<evalset_working_dir>"
-}
-
-```
-
-If the questions verification returns a non-zero value for `rejected_pairs`, immediately reconcile them by calling the refinement task:
-
-```json
-{
-  "task": "refine_nlq",
-  "task_working_dir": "<evalset_working_dir>"
-}
-
-```
-
-##### Loop Termination Criteria:
-
-At the end of each iteration, you must read the state file `<evalset_working_dir>/states.json` to check the updated states. The loop will only terminate when `is_done` is marked as **true** in the state file, which indicates that either `remaining_pairs` is **0** or `iterations` has reached or exceeded **500**. If `is_done` is **false**, you MUST continue the loop and generate more SQL/Question pairs until the termination criteria is met. Do not invent a shortcut. Do not assume the next result.
+]

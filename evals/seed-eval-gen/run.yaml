@@ -1,0 +1,34 @@
+############################################################
+### Dataset / Eval Items
+############################################################
+dataset_config: seed-eval-gen/dataset.json
+dataset_format: gemini-cli-format
+
+# Orchestrator Configuration
+orchestrator: geminicli
+model_config: seed-eval-gen/model.yaml
+simulated_user_model_config: seed-eval-gen/gemini_2.5_pro_model.yaml
+
+############################################################
+### Scorer Related Configs
+############################################################
+scorers:
+  # Checks if the agent used the expected tools in the correct order.
+  trajectory_matcher: {}
+
+  # Uses an LLM to judge if the user's goal was met.
+  goal_completion:
+    model_config: seed-eval-gen/gemini_2.5_pro_model.yaml
+
+  # Metrics for efficiency and performance.
+  turn_count: {}
+  end_to_end_latency: {}
+  tool_call_latency: {}
+  token_consumption: {}
+
+############################################################
+### Reporting Related Configs
+############################################################
+reporting:
+  csv:
+    output_directory: 'results'

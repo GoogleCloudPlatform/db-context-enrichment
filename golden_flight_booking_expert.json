@@ -1,0 +1,32 @@
+[
+  {
+    "id": "flight_expert_001",
+    "database": "flight_booking",
+    "nlq": "Find all flights departing from San Francisco that avoid the evening rush hour between 5 PM and 7 PM.",
+    "golden_sql": "SELECT * FROM flights WHERE departure_airport = 'SFO' AND (departure_time::time < '17:00:00' OR departure_time::time > '19:00:00');"
+  },
+  {
+    "id": "flight_expert_002",
+    "database": "flight_booking",
+    "nlq": "Which airlines have the most flights arriving at Orlando (MCO) on January 2nd, 2025?",
+    "golden_sql": "SELECT airline, COUNT(*) as flight_count FROM flights WHERE arrival_airport = 'MCO' AND arrival_time::date = '2025-01-02' GROUP BY airline ORDER BY flight_count DESC;"
+  },
+  {
+    "id": "flight_expert_003",
+    "database": "flight_booking",
+    "nlq": "List the full names of airports that have more than 100 departing flights scheduled.",
+    "golden_sql": "SELECT a.name, COUNT(f.flight_id) as total_departures FROM airports a JOIN flights f ON a.code = f.departure_airport GROUP BY a.name HAVING COUNT(f.flight_id) > 100;"
+  },
+  {
+    "id": "flight_expert_004",
+    "database": "flight_booking",
+    "nlq": "What is the average flight duration for United Airlines (UA) flights between San Francisco (SFO) and New York (JFK)?",
+    "golden_sql": "SELECT AVG(arrival_time - departure_time) as avg_duration FROM flights WHERE airline = 'UA' AND departure_airport = 'SFO' AND arrival_airport = 'JFK';"
+  },
+  {
+    "id": "flight_expert_005",
+    "database": "flight_booking",
+    "nlq": "Find flights to Disney World (Orlando) departing from the West Coast (SFO, LAX, or SEA) tomorrow.",
+    "golden_sql": "SELECT f.* FROM flights f JOIN airports a ON f.arrival_airport = a.code WHERE a.city = 'Orlando' AND f.departure_airport IN ('SFO', 'LAX', 'SEA') AND f.departure_time::date = CURRENT_DATE + 1;"
+  }
+]

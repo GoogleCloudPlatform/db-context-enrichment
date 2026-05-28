@@ -32,7 +32,7 @@
 
 **Expected Outcome**: The eval dataset generator needs to figure out how to generate NL which leverage domain knowledge from the business context doc which explains the cryptic column names, and its corresponding SQL only knows the cryptic column names.
 
-## CUJ: case_bdf_ql
+## CUJ: case_financials
 
 **Setup**: In this CUJ, the user provides the querylog file `querylog.txt` which simulates the query log for the `financials` database.
 

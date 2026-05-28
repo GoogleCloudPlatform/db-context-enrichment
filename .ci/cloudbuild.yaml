@@ -61,16 +61,26 @@ steps:
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
     args: ['.ci/run_eval.sh', 'core-cujs']
 
+  - id: eval-seed-eval-gen
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:latest'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+    args: ['.ci/run_eval.sh', 'seed-eval-gen']
+
   # --- Upload Results and Workspaces (after both eval steps) ---
   - id: upload
     name: 'gcr.io/cloud-builders/gsutil'
     entrypoint: 'bash'
-    waitFor: ['eval-core-cujs']
+    waitFor: ['eval-core-cujs', 'eval-seed-eval-gen']
     args:
       - '-c'
       - |
         ANY_RAN=0
-        for SUITE in core-cujs; do
+        for SUITE in core-cujs seed-eval-gen; do
           if [ ! -f /workspace/EVAL_RAN_$$SUITE ]; then
             echo "$$SUITE did not run; skipping its upload."
             continue

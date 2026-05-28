@@ -1,0 +1,11 @@
+gemini_cli_version: "@google/gemini-cli@0.38.2"
+generator: gemini_cli
+env:
+  GOOGLE_CLOUD_PROJECT: "cloud-db-nl2sql"
+  GOOGLE_CLOUD_LOCATION: "us-central1"
+  GOOGLE_GENAI_USE_VERTEXAI: "true"
+  GEMINI_API_MODEL: "gemini-2.5-pro"
+  GEMINI_MODEL: "gemini-2.5-pro"
+setup:
+  extensions:
+    "https://github.com/GoogleCloudPlatform/db-context-enrichment": {}

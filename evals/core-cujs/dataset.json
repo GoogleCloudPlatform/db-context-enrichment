@@ -50,7 +50,7 @@
       "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the application at https://github.com/kupp0/multi-db-property-search-data-agents, save the generated pairs in output file named golden_property_search_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
-      "work_dir": "workspace_post_init/",
+      "work_dir": "workspace_post_init_seed/case_property_search",
       "max_turns": 15
     },
     {
@@ -59,43 +59,43 @@
       "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 expert SQL/Question pairs in postgres dialect for the flight booking application at https://docs.cloud.google.com/alloydb/docs/ai/integrate-applications-data-agent, save the generated pairs in output file named golden_flight_booking_expert.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
-      "work_dir": "workspace_post_init/",
+      "work_dir": "workspace_post_init_seed/case_flights",
       "max_turns": 15
     },
     {
-      "id": "autoctx:generate-dataset-hr-advanced",
+      "id": "autoctx:generate-dataset-app-hr",
       "starting_prompt": "generate a seed evaluation dataset consisting of advanced SQL/Question pairs for hr application named golden_hr_advanced.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the hr application whose source codes can be found in the directory `user_data/hr_app`, save the generated pairs in output file named golden_hr_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the hr application whose source codes can be found in the directory `./app_data`, save the generated pairs in output file named golden_hr_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
-      "work_dir": "workspace_post_init/",
+      "work_dir": "workspace_post_init_seed/case_hr",
       "max_turns": 15
     },
     {
-      "id": "autoctx:generate-dataset-ecomm-advanced",
+      "id": "autoctx:generate-dataset-ecommmerce-cryptic",
       "starting_prompt": "generate a seed evaluation dataset consisting of advanced SQL/Question pairs for ecommerce application named golden_ecomm_advanced.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the ecommerce application whose design and schema can be found in the directory `user_data/ecommerce_app`, save the generated pairs in output file named golden_ecomm_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the ecommerce application whose business context doc can be found in the directory `./app_data`, save the generated pairs in output file named golden_ecomm_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
-      "work_dir": "workspace_post_init/",
+      "work_dir": "workspace_post_init_seed/case_ecommerce_cryptic",
       "max_turns": 15
     },
     {
-      "id": "autoctx:generate-dataset-blog-advanced",
+      "id": "autoctx:generate-dataset-blog",
       "starting_prompt": "generate a seed evaluation dataset consisting of advanced SQL/Question pairs for blog application named golden_blog_advanced.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the blog application whose er diagram and design doc can be found in the directory `user_data/binary_data`, save the generated pairs in output file named golden_blog_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the blog application whose er diagram and design doc can be found in the directory `./app_data`, save the generated pairs in output file named golden_blog_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
-      "work_dir": "workspace_post_init/",
+      "work_dir": "workspace_post_init_seed/case_blog",
       "max_turns": 15
     },
     {
-      "id": "autoctx:generate-dataset-rust-advanced",
-      "starting_prompt": "generate a seed evaluation dataset consisting of advanced SQL/Question pairs for blog application named golden_rust_advanced.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 advanced SQL/Question pairs in postgres dialect for the blog application whose source codes can be found in the directory `user_data/rust_app`, save the generated pairs in output file named golden_rust_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "id": "autoctx:generate-dataset-bdf-querylog",
+      "starting_prompt": "generate a seed evaluation dataset consisting of SQL/Question pairs for my alloydb database financials named golden_bdf_querylog_advanced.json",
+      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 SQL/Question pairs in postgres dialect for my alloydb database financial whose query log can be found in the file `./app_data/querylog.txt`, save the generated pairs in output file named golden_rust_app_advanced.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
-      "work_dir": "workspace_post_init/",
+      "work_dir": "workspace_post_init_seed/case_bdf_ql",
       "max_turns": 15
     },
     {

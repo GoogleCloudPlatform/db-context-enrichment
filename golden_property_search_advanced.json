@@ -1,0 +1,32 @@
+[
+  {
+    "id": "adv_001",
+    "database": "search",
+    "nlq": "Find the average price and total count of 3-bedroom properties for each canton, but only include cantons with at least 5 listings, sorted by average price descending.",
+    "golden_sql": "SELECT canton, AVG(price) as avg_price, COUNT(*) as property_count FROM property_listings WHERE bedrooms = 3 GROUP BY canton HAVING COUNT(*) >= 5 ORDER BY avg_price DESC"
+  },
+  {
+    "id": "adv_002",
+    "database": "search",
+    "nlq": "Show the top 5 most expensive cities in terms of average property price where there are listings with more than 4 bedrooms.",
+    "golden_sql": "SELECT city, AVG(price) as avg_city_price FROM property_listings WHERE bedrooms > 4 GROUP BY city ORDER BY avg_city_price DESC LIMIT 5"
+  },
+  {
+    "id": "adv_003",
+    "database": "search",
+    "nlq": "List all properties in 'Zurich' or 'Geneva' that have a price lower than the overall average price of all properties in Switzerland, ordered by price.",
+    "golden_sql": "SELECT * FROM property_listings WHERE city IN ('Zurich', 'Geneva') AND price < (SELECT AVG(price) FROM property_listings) ORDER BY price ASC"
+  },
+  {
+    "id": "adv_004",
+    "database": "search",
+    "nlq": "Find cantons where the difference between the maximum and minimum property price is greater than 10000, and show the count of properties in those cantons.",
+    "golden_sql": "SELECT canton, COUNT(*) as property_count, (MAX(price) - MIN(price)) as price_range FROM property_listings GROUP BY canton HAVING (MAX(price) - MIN(price)) > 10000"
+  },
+  {
+    "id": "adv_005",
+    "database": "search",
+    "nlq": "Retrieve properties that have the same number of bedrooms and are in the same city as the property with ID 10, excluding property 10 itself.",
+    "golden_sql": "SELECT p1.* FROM property_listings p1 JOIN property_listings p2 ON p1.bedrooms = p2.bedrooms AND p1.city = p2.city WHERE p2.id = 10 AND p1.id <> 10"
+  }
+]

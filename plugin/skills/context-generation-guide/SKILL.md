@@ -15,6 +15,8 @@ Context generation allows you to create specific, high-value items in three form
 2.  **Facets**: Reusable, modular SQL fragments (like a `WHERE` clause or specialized join). They are dynamically injected filters linked to specific vocabulary or terminology.
 3.  **Value Searches**: Specialized queries used when a value in the natural language query does not perfectly match the stored value in the database. They employ mapping functions to find candidate values.
 
+> All `references/...` paths below are bundled with this skill, alongside this `SKILL.md`.
+
 ## Workflow
 
 When asked to generate context items:

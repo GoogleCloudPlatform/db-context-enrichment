@@ -25,7 +25,9 @@ def valid_postgres_params():
 def test_generate_evalbench_configs_file_not_found(tmp_path):
     missing_file = str(tmp_path / "missing_tools.yaml")
     with pytest.raises(ValueError, match="Config file not found"):
-        generate_evalbench_configs("exp", "path", "ctx", missing_file, "any-name")
+        generate_evalbench_configs(
+            "/out/exp", "path", "ctx", missing_file, "any-name"
+        )
 
 
 def test_generate_evalbench_configs_permission_error():
@@ -34,7 +36,7 @@ def test_generate_evalbench_configs_permission_error():
     ):
         with pytest.raises(ValueError, match="Permission denied reading config file"):
             generate_evalbench_configs(
-                "exp", "path", "ctx", "fake_tools.yaml", "any-name"
+                "/out/exp", "path", "ctx", "fake_tools.yaml", "any-name"
             )
 
 
@@ -49,7 +51,7 @@ def test_generate_evalbench_configs_missing_source():
             ValueError, match="Could not find a 'kind: source' named 'test-source'"
         ):
             generate_evalbench_configs(
-                "exp", "path", "ctx", "/fake/tools.yaml", "test-source"
+                "/out/exp", "path", "ctx", "/fake/tools.yaml", "test-source"
             )
 
 
@@ -62,7 +64,7 @@ def test_generate_evalbench_configs_missing_type():
     with patch("builtins.open", mock_open(read_data=mock_yaml)):
         with pytest.raises(ValueError, match="is missing the 'type' field"):
             generate_evalbench_configs(
-                "exp", "path", "ctx", "/fake/tools.yaml", "test-source"
+                "/out/exp", "path", "ctx", "/fake/tools.yaml", "test-source"
             )
 
 
@@ -77,7 +79,7 @@ def test_generate_evalbench_configs_unsupported_type():
             ValueError, match="Unsupported evaluating toolbox source type: 'unknown-db'"
         ):
             generate_evalbench_configs(
-                "exp", "path", "ctx", "/fake/tools.yaml", "test-source"
+                "/out/exp", "path", "ctx", "/fake/tools.yaml", "test-source"
             )
 
 
@@ -117,7 +119,7 @@ def test_generate_evalbench_configs():
                 "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
             ) as mock_makedirs:
                 configs = generate_evalbench_configs(
-                    experiment_name="test-exp",
+                    output_dir="/out/test-exp",
                     dataset_path="/local/path/data.json",
                     context_set_id="context-123",
                     toolbox_config_path="/fake/tools.yaml",
@@ -126,20 +128,20 @@ def test_generate_evalbench_configs():
 
     assert configs is None
     mock_makedirs.assert_called_once_with(
-        "autoctx/experiments/test-exp/eval_configs", exist_ok=True
+        "/out/test-exp/eval_configs", exist_ok=True
     )
 
     # Verify all file writes
-    m.assert_any_call("autoctx/experiments/test-exp/eval_configs/db_config.yaml", "w")
+    m.assert_any_call("/out/test-exp/eval_configs/db_config.yaml", "w")
     m.assert_any_call(
-        "autoctx/experiments/test-exp/eval_configs/model_config.yaml", "w"
+        "/out/test-exp/eval_configs/model_config.yaml", "w"
     )
-    m.assert_any_call("autoctx/experiments/test-exp/eval_configs/run_config.yaml", "w")
+    m.assert_any_call("/out/test-exp/eval_configs/run_config.yaml", "w")
     m.assert_any_call(
-        "autoctx/experiments/test-exp/eval_configs/llmrater_config.yaml", "w"
+        "/out/test-exp/eval_configs/llmrater_config.yaml", "w"
     )
     m.assert_any_call(
-        "autoctx/experiments/test-exp/eval_configs/golden_queries.json", "w"
+        "/out/test-exp/eval_configs/golden_queries.json", "w"
     )
 
     expected_db_config = textwrap.dedent("""\
@@ -182,10 +184,10 @@ def test_generate_evalbench_configs():
         ############################################################
         ### Dataset / Eval Items
         ############################################################
-        dataset_config: autoctx/experiments/test-exp/eval_configs/golden_queries.json
+        dataset_config: /out/test-exp/eval_configs/golden_queries.json
         dataset_format: evalbench-standard-format
         database_configs:
-         - autoctx/experiments/test-exp/eval_configs/db_config.yaml
+         - /out/test-exp/eval_configs/db_config.yaml
         dialect: postgres    # DB connection mapping
         query_types:
          - dql
@@ -193,7 +195,7 @@ def test_generate_evalbench_configs():
         ############################################################
         ### Prompt and Generation Modules
         ############################################################
-        model_config: autoctx/experiments/test-exp/eval_configs/model_config.yaml
+        model_config: /out/test-exp/eval_configs/model_config.yaml
         prompt_generator: 'NOOPGenerator'
 
         ############################################################
@@ -208,14 +210,14 @@ def test_generate_evalbench_configs():
         ############################################################
         scorers:
           llmrater:
-            model_config: autoctx/experiments/test-exp/eval_configs/llmrater_config.yaml
+            model_config: /out/test-exp/eval_configs/llmrater_config.yaml
 
         ############################################################
         ### Reporting Related Configs
         ############################################################
         reporting:
           csv:
-            output_directory: 'autoctx/experiments/test-exp/eval_reports/'
+            output_directory: '/out/test-exp/eval_reports/'
     """).strip()
 
     # Verify content written
@@ -249,7 +251,7 @@ def test_generate_evalbench_configs_env_interpolation():
                     "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
                 ):
                     configs = generate_evalbench_configs(
-                        experiment_name="test-exp",
+                        output_dir="/out/test-exp",
                         dataset_path="/local/path/data.json",
                         context_set_id="context-123",
                         toolbox_config_path="/fake/tools.yaml",
@@ -285,7 +287,7 @@ def test_generate_evalbench_configs_env_fallback():
                     "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
                 ):
                     configs = generate_evalbench_configs(
-                        experiment_name="test-exp",
+                        output_dir="/out/test-exp",
                         dataset_path="/local/path/data.json",
                         context_set_id="context-123",
                         toolbox_config_path="/fake/tools.yaml",
@@ -318,7 +320,7 @@ def test_generate_evalbench_configs_env_missing():
                 match="Environment variable 'MISSING_PROJECT' not found and no default provided.",
             ):
                 generate_evalbench_configs(
-                    "exp", "path", "ctx", "/fake/tools.yaml", "test-source"
+                    "/out/exp", "path", "ctx", "/fake/tools.yaml", "test-source"
                 )
 
 

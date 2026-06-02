@@ -1,5 +1,5 @@
-description = "Initializes the auto context generation for DB Data Agent."
+description = "Configures a Toolbox `tools.yaml` for a database connection."
 prompt = """
-Your task is to initialize the auto context generation workspace for the DB Data Agent.
-Please use the `activate_skill` tool to activate the `skill-autoctx-init` skill, and then follow its exact workflow to guide the user through the initialization process.
+Your task is to configure a Toolbox `tools.yaml` so downstream autoctx skills can talk to the user's database.
+Please use the `activate_skill` tool to activate the `skill-autoctx-init` skill, and then follow its exact workflow.
 """

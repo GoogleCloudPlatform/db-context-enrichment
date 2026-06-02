@@ -1,53 +1,55 @@
 ---
 name: skill-autoctx-bootstrap
-description: Guides the agent to bootstrap an initial context set (templates & facets) by deducing key information from the database schema and generating a ContextSet file.
+description: Generate a baseline ContextSet (templates, facets, value searches) for a database from its schema. Standalone; output is a local JSON file with optional upload to the Context Store.
 ---
 
-# Auto Context Generation - Bootstrap Workflow
+# Auto Context Bootstrap
 
-This skill guides the process of bootstrapping an initial ContextSet (baseline context) from the target database schema.
+## Goals
 
-## Input
+Produce a baseline `ContextSet` JSON file for a target database, derived from its schema and any user-supplied design docs or application code. Optionally upload it to the Context Store and return a resource name.
 
-Before beginning the workflow, you explicitly require:
-- An active `tools.yaml` configuration (located in `autoctx/`) with database schema fetching tools configured (e.g., `<source>-list-schemas`).
-- Target database schemas to act upon.
+## Prerequisites
 
-## Workflow
+- A `tools.yaml` with the target database configured as a Toolbox source. If missing, refer the user to the `skill-autoctx-init` skill and stop.
+- The Toolbox MCP server is running and exposes `<source>-list-schemas` (and related tools) for the target source. If a recent `tools.yaml` change has not been reloaded, instruct the user to restart the MCP server first.
+- Target database name and Toolbox source name (the user provides both, or you confirm from `tools.yaml`).
 
-Follow these steps exactly in order:
+## Guidances
 
-1. **Condition Check & Schema Retrieval:**
-   - You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`). A new dedicated subfolder will be created inside the `autoctx/experiments/` directory using this name to hold the entire tuning lifecycle and prevent any surprises. Do not proceed until you have their confirmation.
-   - Use the available Toolbox MCP tools configured in the active `autoctx/tools.yaml` to fetch the schemas for the target database.
-   - Present the retrieved schema summary **structurally and cleanly** to the user. Ask the user if they want to filter or focus on specific schemas or tables.
-   - **Source Enrichment**: Prompt the user for any existing **Design Docs** or **Application Code** (e.g., ORM models, SQL queries) they wish to provide to enrich the context generation. Wait for the user's response before proceeding.
+The skill is one linear pass; do not assume a fixed workspace layout.
 
-2. **Deduce Key Info (Core Execution):**
-   - Perform a **deep analysis** of the retrieved **schema and any provided documentation or code** to identify important concepts, relationships, and likely query patterns.
-   - **Collect Candidates**: Identify representative natural language queries with their corresponding SQL, common filter conditions or business rules, and **columns that require specialized value searching** (e.g., names needing fuzzy match, descriptions needing semantic search).
-   - *Review Check:* Briefly display these candidates to the user for approval or modifications before proceeding.
+1. **Confirm scope.** Ask the user:
+   - Which Toolbox source in `tools.yaml` to target (confirm by listing what you find in the file).
+   - Output file path for the generated ContextSet. Default: `./<source_name>_bootstrap_context.json` in the cwd. State the absolute path back before writing.
+   - Any schema or table filters they want to apply.
+2. **Fetch the schema** using `<source>-list-schemas` (and any related Toolbox tools). Present a clean summary back to the user — schemas, tables, key columns. Ask whether to narrow further.
+3. **Collect enrichment sources.** Ask the user if they want to provide design docs, ORM models, sample SQL, or business glossary. Wait for response. If they decline, proceed with schema only.
+4. **Identify candidates.** From schema + any supplied docs, surface:
+   - Representative NL → SQL pairs that exercise common query patterns and joins (→ Templates).
+   - Recurring filter conditions or business rules (→ Facets).
+   - Columns whose values are likely to need fuzzy / semantic matching from user input (→ Value Searches).
+5. **Review with the user.** Briefly list the candidates and confirm before generation. Trim aggressively if the list is overlong — quality beats coverage at the baseline.
+6. **Generate the ContextSet.** Invoke the `context-generation-guide` skill with the approved candidates. It handles parameterization, dialect specifics, and the JSON shape.
+7. **Write the file.** Initialize an empty ContextSet JSON at the output path, then use `mutate_context_set` with one `"operation": "add"` per generated item (Template, Facet, Value Search).
+8. **Optional upload.** Ask the user if they want to push the file to the Context Store now. If yes:
+   - Ask for a `csg_id` (suggest the source name as a default — `<source_name>`).
+   - Use `cs_id="autoctx"` and `version="baseline"` as defaults; let the user override.
+   - Call `upload_context_set(local_file_path, csg_id, cs_id, version)`. Surface the returned resource name to the user.
+   - On a 409 error (version already exists), ask whether to bump the version label rather than silently overwriting.
+9. **Summarize.** Report the local file path and (if uploaded) the resource name. Do not invoke evaluate or hillclimb — those are the user's next move.
 
-3. **Context Generation (Core Execution):**
-   - **Invoke the `context-generation-guide` skill** to produce the context (Templates, Facets, and Value Searches).
-   - Provide the deduced candidates collected in Step 2 as input to that skill.
-   - That skill will handle phrase extraction, parameterization, and constructing the final valid JSON structure according to dialect best practices for all context types.
-   - Once generated, use the `mutate_context_set` MCP tool to save the context items to `bootstrap_context.json` inside the approved experiment folder. Since this is a new file, construct a list of `"operation": "add"` mutations for each generated item (Template, Facet, Value Search) and pass them to the tool.
+## Rules
 
-## Output
+- **Never write to `autoctx/experiments/...` or any fixed path.** The caller supplies (or confirms a default for) the output path.
+- **Never upload without the user's explicit consent in step 8.** Local file is the default output.
+- **Never overwrite an existing ContextSet version in the Context Store.** A 409 surfaces to the user; bump the version label rather than retry blindly.
+- **Do not invoke `skill-autoctx-evaluate` or `skill-autoctx-hillclimb`.** Bootstrap returns; the user composes the next step.
 
-Upon successful completion, the workspace must contain:
-- A generated `.json` file (`bootstrap_context.json`) representing the baseline `ContextSet`, stored successfully at the requested `output_file_path`.
+## Tools
 
-## Upload Advice & Next Steps
-
-Conclude by providing a succinct summary to the user:
-1. **Summarize Results**:
-   - Confirm that the bootstrap context file has been successfully generated and saved.
-   - Mention the final file path.
-2. **Upload Instructions**:
-   - **Read Database Details**: Read `autoctx/tools.yaml` to fetch the specific project, location, and instance/cluster details for the active database.
-   - **Generate URL**: Call the `generate_upload_url` tool passing the extracted values to provide the direct console link to the user.
-   - Present the local file path to `bootstrap_context.json` and the generated console link together in a single clear message.
-3. **Instruct Next Step Evaluation**:
-   - Instruct the user to upload the file to Database Studio and then run evaluation using the evaluating workflow on this new ContextSet to establish a baseline.
+- **`<source>-list-schemas`** (Toolbox MCP) — and related schema-introspection tools — to fetch DB metadata.
+- **`mutate_context_set`** (MCP) — to write generated items into the output file.
+- **`upload_context_set`** (MCP) — optional, when the user wants to push to the Context Store. Returns the full resource name.
+- **`skill-context-generation-guide`** — invoked to produce well-formed Template / Facet / ValueSearch JSON from the candidates.
+- **Read / Write** — to read `tools.yaml`, initialize the output JSON, and inspect user-supplied docs.

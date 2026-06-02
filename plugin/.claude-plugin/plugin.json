@@ -7,9 +7,11 @@
   },
   "mcpServers": {
     "db-context-engineering": {
-      "command": "uvx",
+      "command": "uv",
       "args": [
-        "google-cloud-db-context-engineering@latest"
+        "run",
+        "--directory", "/Users/juexinw/Workspace/nla/db-context-enrichment",
+        "python", "-m", "google.cloud.db_context_enrichment.main"
       ]
     },
     "toolbox": {
@@ -18,7 +20,7 @@
         "-y",
         "@toolbox-sdk/server",
         "--config",
-        "autoctx/tools.yaml",
+        "tools.yaml",
         "--stdio"
       ]
     }

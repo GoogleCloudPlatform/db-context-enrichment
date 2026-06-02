@@ -1,7 +1,7 @@
 ---
-description: Initializes the auto context generation for DB Data Agent.
+description: Configures a Toolbox `tools.yaml` for a database connection.
 ---
 
-Your task is to initialize the auto context generation workspace for the DB Data Agent.
+Your task is to configure a Toolbox `tools.yaml` so downstream autoctx skills can talk to the user's database.
 
-Please activate the `skill-autoctx-init` skill, and then follow its exact workflow to guide the user through the initialization process.
+Please activate the `skill-autoctx-init` skill, and then follow its exact workflow.

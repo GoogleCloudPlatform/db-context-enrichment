@@ -1,15 +1,19 @@
 import json
+from pathlib import Path
 
 from fastmcp import FastMCP
 
 from google.cloud.db_context_enrichment.common import context_mutator
-from google.cloud.db_context_enrichment.dataset import dataset_generator
-from google.cloud.db_context_enrichment.evaluate import (
-    evaluate_generator,
-    result_reader,
+from google.cloud.db_context_enrichment.common.context_store_client import (
+    ContextStoreClient,
 )
+from google.cloud.db_context_enrichment.dataset import dataset_generator
+from google.cloud.db_context_enrichment.evaluate import evaluate_generator
+from google.cloud.db_context_enrichment.model.context import ContextSet
 
 mcp = FastMCP("Context Engineering Agent MCP")
+
+_CONTEXT_STORE_LOCATION = "us-central1"
 
 
 @mcp.tool
@@ -36,7 +40,7 @@ async def generate_dataset(
 
 @mcp.tool
 def generate_evalbench_configs(
-    experiment_name: str,
+    output_dir: str,
     dataset_path: str,
     context_set_id: str,
     toolbox_config_path: str,
@@ -45,17 +49,19 @@ def generate_evalbench_configs(
     """
     Generates Evalbench YAML configurations and converts the user-facing golden dataset to be compatible for evaluation, saving all files directly to disk.
 
-    This tool writes the following files inside `experiments/<experiment_name>/eval_configs/`:
+    This tool writes the following files inside `<output_dir>/eval_configs/`:
     - `db_config.yaml`
     - `model_config.yaml`
     - `run_config.yaml`
     - `llmrater_config.yaml`
     - `golden_queries.json` (converted to EvalBench internal format)
 
+    The runner emits eval reports under `<output_dir>/eval_reports/`.
+
     Args:
-        experiment_name: The name of the target experiment folder.
+        output_dir: Absolute path of the directory where this eval run's configs and reports should live. Caller supplies — no experiment concept at this layer.
         dataset_path: The absolute path to the golden dataset file in the simplified user-facing format (JSON list of objects with keys: "id", "database", "nlq", "golden_sql").
-        context_set_id: The specific context_set_id inside the experiment.
+        context_set_id: The Context Store resource name of the ContextSet to evaluate.
         toolbox_config_path: The absolute path to the tools.yaml configuration file.
         toolbox_source_name: The name of the database source to use inside tools.yaml. The underlying source block must use a supported 'type' (cloud-sql-postgres, cloud-sql-mysql, spanner, alloydb-postgres).
 
@@ -63,58 +69,75 @@ def generate_evalbench_configs(
         A message indicating that the configuration files were successfully created.
     """
     evaluate_generator.generate_evalbench_configs(
-        experiment_name,
+        output_dir,
         dataset_path,
         context_set_id,
         toolbox_config_path,
         toolbox_source_name,
     )
-    return f"Successfully generated all configs for evaluation in experiments/{experiment_name}/eval_configs/"
+    return f"Successfully generated all configs for evaluation in {output_dir}/eval_configs/"
 
 
 @mcp.tool
-def generate_upload_url(
-    db_engine: str,
-    project_id: str,
-    location: str | None = None,
-    cluster_id: str | None = None,
-    instance_id: str | None = None,
-    database_id: str | None = None,
+def upload_context_set(
+    local_file_path: str,
+    csg_id: str,
+    cs_id: str,
+    version: str,
 ) -> str:
     """
-    Generates a URL for uploading the template file based on the database engine.
+    Upload a local ContextSet JSON file to the Context Store. Idempotent on
+    the ContextSetGroup — it is created if absent. Returns the full resource
+    name of the uploaded ContextSet, suitable for downstream tools like
+    `generate_evalbench_configs` or `download_context_set`.
 
     Args:
-        db_engine: The database engine. Accepted values are 'alloydb',
-                 'cloudsql', or 'spanner'. This can be derived from the 'kind'
-                 field in the tools.yaml file. For example, 'alloydb-postgres'
-                 becomes 'alloydb', and 'cloud-sql-postgres' becomes 'cloudsql'.
-        project_id: The Google Cloud project ID.
-        location: The location of the AlloyDB cluster.
-        cluster_id: The ID of the AlloyDB cluster.
-        instance_id: The ID of the Cloud SQL or Spanner instance.
-        database_id: The ID of the Spanner database.
+        local_file_path: Absolute path to a ContextSet JSON file.
+        csg_id: ContextSetGroup ID (eg. an experiment name). Created if absent.
+        cs_id: ContextSet ID (eg. "autoctx"). Stable across versions.
+        version: Version label (eg. "baseline", "v1"). Each version is
+                 immutable; uploading the same (cs_id, version) twice returns
+                 a 409 error.
 
     Returns:
-        The generated URL as a string, or an error message if the source kind is invalid.
+        On success: full resource name, eg.
+        `projects/<p>/locations/<l>/contextSetGroups/<csg_id>/contextSets/<cs_id>@<version>`.
+        On failure: an error string including the upstream HTTP status.
     """
-    if db_engine == "alloydb":
-        if location and cluster_id and project_id:
-            return f"https://console.cloud.google.com/alloydb/locations/{location}/clusters/{cluster_id}/studio?project={project_id}"
-        else:
-            return "Error: Missing location, cluster_id, or project_id for alloydb."
-    elif db_engine == "cloudsql":
-        if instance_id and project_id:
-            return f"https://console.cloud.google.com/sql/instances/{instance_id}/studio?project={project_id}"
-        else:
-            return "Error: Missing instance_id or project_id for cloudsql."
-    elif db_engine == "spanner":
-        if instance_id and database_id and project_id:
-            return f"https://console.cloud.google.com/spanner/instances/{instance_id}/databases/{database_id}/details/query?project={project_id}"
-        else:
-            return "Error: Missing instance_id, database_id, or project_id for spanner."
-    else:
-        return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', or 'spanner'."
+    try:
+        text = Path(local_file_path).read_text()
+        ctx = ContextSet.model_validate_json(text)
+        client = ContextStoreClient(location=_CONTEXT_STORE_LOCATION)
+        csg_name = client.ensure_context_set_group(csg_id)
+        resource_name = client.create_context_set(csg_name, cs_id, version)
+        client.upload_context_set(resource_name, ctx)
+        return resource_name
+    except Exception as e:
+        return f"Error uploading context set: {e}"
+
+
+@mcp.tool
+def download_context_set(resource_name: str, output_file_path: str) -> str:
+    """
+    Download a ContextSet from the Context Store and write it to a local
+    JSON file.
+
+    Args:
+        resource_name: Full resource name as returned by `upload_context_set`.
+        output_file_path: Absolute path where the JSON file should be written.
+
+    Returns:
+        The output file path on success, or an error string on failure.
+    """
+    try:
+        client = ContextStoreClient(location=_CONTEXT_STORE_LOCATION)
+        ctx = client.download_context_set(resource_name)
+        Path(output_file_path).write_text(
+            ctx.model_dump_json(exclude_none=True, indent=2)
+        )
+        return output_file_path
+    except Exception as e:
+        return f"Error downloading context set: {e}"
 
 
 @mcp.tool
@@ -162,6 +185,15 @@ def mutate_context_set(
         "type": "facet",
         "identifier": {"intent": "high price"},
         "value": {"sql_snippet": "price > 2000", "intent": "very high price"}
+      },
+      {
+        "operation": "add",
+        "type": "value_search",
+        "value": {
+          "concept_type": "City",
+          "query": "SELECT T.\\"city\\" AS value, 'users.city' AS columns, 'City' AS concept_type, fuzzy_distance(T.\\"city\\", $value) AS distance FROM \\"users\\" T WHERE fuzzy_match(T.\\"city\\", $value)",
+          "description": "Fuzzy match for city in users.city"
+        }
       }
     ]'
     """
@@ -174,23 +206,6 @@ def mutate_context_set(
         return f"Successfully applied {len(mutations)} mutations to {file_path}"
     except Exception as e:
         return f"Error applying mutations: {str(e)}"
-
-
-@mcp.tool
-async def read_evaluation_result(
-    run_folder_path: str, offset: int = 0, batch_size: int = 10
-) -> str:
-    """Reads evaluation results from a folder and produces a markdown summary.
-
-    Args:
-        run_folder_path: The absolute path to the evaluation run result folder, which ends with the eval run job id.
-        offset: Offset to start reading failure cases from (default: 0).
-        batch_size: Number of failure cases to show in the report (default: 10).
-
-    Returns:
-        A string in markdown format containing the summary and failure cases.
-    """
-    return result_reader.read_eval_results(run_folder_path, offset, batch_size)
 
 
 if __name__ == "__main__":

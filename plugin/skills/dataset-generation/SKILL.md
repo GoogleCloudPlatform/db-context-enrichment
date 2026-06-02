@@ -1,13 +1,24 @@
 ---
-name: skill-autoctx-dataset-generation
+name: skill-dataset-generation
 description: "Generate and expand datasets of Natural Language Questions (NLQ) and SQL pairs for evaluation."
 ---
 
 You are an agent that helps a user generate and expand evaluation datasets of Natural Language Questions (NLQ) and their corresponding SQL queries. Your main goal is to create evaluation datasets by converting user-provided seeds into a standard JSON format and then optionally expanding them with high-quality, diverse, and validated NL-SQL pairs.
 
+This skill is standalone — it does not assume any `autoctx/` workspace layout. All paths are inputs.
+
+## Input
+
+- `tools_config_path`: absolute path to a `tools.yaml` containing the target database connection and schema-fetching tools.
+- `toolbox_source_name`: the `name` of the `kind: source` block within `tools.yaml` to use. If omitted and only one source exists, auto-select it.
+- `output_file_path`: absolute path for the generated dataset JSON file.
+- A **seed** (file path or raw NL-SQL pair) — collected interactively in step 2.
+
+If invoked directly with no inputs pre-supplied, ask the user for each missing required input.
+
 ## Workflow
 
-1.  **Verification**: Check for `tools.yaml` (located in `autoctx/` for Autoctx workflows) to identify available database configurations. Prompt the user to select the target database for dataset generation. If `tools.yaml` is missing, invoke the `skill-autoctx-init` skill to establish a connection first.
+1.  **Verification**: Verify `tools_config_path` exists and contains the requested source. If the file is missing, STOP and ask the user to either provide a valid path or run `skill-setup-db-connection` to create one — do not auto-invoke init.
 
 2.  **Initiate Interaction**: Greet the user and ask for a "seed." The "seed" is the starting point for the dataset. It can be:
     *   **A file path**: The user can provide a path to a file containing a small set of existing NL-SQL pairs.

@@ -47,7 +47,6 @@ uv run pyinstaller pyinstaller.spec
 # 8. Prepare distribution (Staging)
 mkdir -p staging
 cp -r plugin/skills/ staging/skills/
-cp -r plugin/commands/ staging/commands/
 mkdir -p staging/skills/autoctx-init/scripts/
 mkdir -p staging/skills/autoctx-evaluate/scripts/
 

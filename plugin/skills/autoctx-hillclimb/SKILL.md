@@ -17,7 +17,7 @@ Follow these steps exactly in order:
 ### 1. Setup & Loop Identification
 
 1.  **Validation**:
-    -   Check if `autoctx/experiments/` directory and `autoctx/state.md` exist. If missing, warn the user that the workspace might not be initialized (suggest running `/autoctx:init`).
+    -   Check if `autoctx/experiments/` directory and `autoctx/state.md` exist. If missing, warn the user that the workspace might not be initialized (suggest activating the `autoctx-init` skill).
     -   Once an experiment is selected, verify it contains an `eval_reports/` folder. If missing, suggest running the Evaluation workflow first.
 2.  **Identify Experiment**:
     -   Read the local `autoctx/state.md` to identify the active experiment.

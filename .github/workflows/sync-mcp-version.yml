@@ -1,10 +1,11 @@
 name: Sync MCP version pin
 
-# release-please bumps `$.version` in plugin.json but cannot do in-string
-# substitution to also bump the `@<version>` suffix inside the uvx args.
+# release-please bumps `$.version` in the Claude Code plugin.json and the
+# Antigravity-facing root gemini-extension.json but cannot do in-string
+# substitution to also bump the `@<version>` suffix inside their uvx args.
 # This workflow listens for release-please PRs and amends them with the
-# corresponding args[0] update, so the released plugin payload pins users
-# to a matching MCP server version atomically.
+# corresponding args[0] updates, so each released payload pins users to a
+# matching MCP server version atomically.
 
 on:
   pull_request:
@@ -12,6 +13,7 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - "plugin/.claude-plugin/plugin.json"
+      - "gemini-extension.json"
 
 permissions:
   contents: write
@@ -27,25 +29,26 @@ jobs:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Rewrite args[0] to match plugin.json version
+      - name: Rewrite args[0] to match each manifest's version
         run: |
           set -euo pipefail
-          FILE=plugin/.claude-plugin/plugin.json
-          VERSION=$(jq -r '.version' "$FILE")
-          PIN="google-cloud-db-context-engineering@${VERSION}"
-          jq --arg pin "$PIN" \
-            '.mcpServers["db-context-engineering"].args[0] = $pin' \
-            "$FILE" > "$FILE.tmp"
-          mv "$FILE.tmp" "$FILE"
+          for FILE in plugin/.claude-plugin/plugin.json gemini-extension.json; do
+            VERSION=$(jq -r '.version' "$FILE")
+            PIN="google-cloud-db-context-engineering@${VERSION}"
+            jq --arg pin "$PIN" \
+              '.mcpServers["db-context-engineering"].args[0] = $pin' \
+              "$FILE" > "$FILE.tmp"
+            mv "$FILE.tmp" "$FILE"
+          done
 
       - name: Commit if changed
         run: |
-          if git diff --quiet plugin/.claude-plugin/plugin.json; then
+          if git diff --quiet plugin/.claude-plugin/plugin.json gemini-extension.json; then
             echo "args[0] already in sync; nothing to do."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add plugin/.claude-plugin/plugin.json
-          git commit -m "chore: sync MCP server version pin in plugin.json"
+          git add plugin/.claude-plugin/plugin.json gemini-extension.json
+          git commit -m "chore: sync MCP server version pin in plugin manifests"
           git push

@@ -92,23 +92,23 @@ The extension is designed to support the **Critical User Journeys (CUJs)** for c
 4.  **Iterate**: Apply the improved context and re-run evaluation to continuously improve quality.
 5.  **Final Validation** (Optional): Verify mutations against a separated test set to ensure generalization and prevent overfitting.
 
+All workflows are exposed as Agent Skills. Activate them by asking the agent in natural language (e.g. "bootstrap the context for my database") or by invoking the skill by name. Start the Gemini CLI by running `gemini` in your workspace folder, or launch Claude Code with the plugin installed.
+
 ### Automated Iterative Optimization (Autoctx)
 
-The extension automates this loop via the following commands. Start the Gemini CLI by running `gemini` in your workspace folder:
-
-1.  **Initialize (`/autoctx:init`)**: Sets up your local workspace by creating an `autoctx/` directory. It checks for the presence of a valid `tools.yaml` configuration inside it. If missing, the agent will interactively prompt you for your database connection details and generate the file for you. It also creates the `state.md` file to track experiment progress and an `experiments/` directory, all within `autoctx/`.
-2.  **Generate Dataset (`/autoctx:generate-dataset`)**: Rapidly creates or expands a baseline of evaluation questions (golden dataset). It asks you for sample queries or descriptions of what users might ask, and generates a JSON file with Natural Language Queries (NLQs) and Golden SQL statements.
-3.  **Bootstrap (`/autoctx:bootstrap`)**: Generates an initial context set. It performs progressive schema discovery to understand your database structure and qualified tables. It then generates starting Templates and Facets based on the schema and any user-provided documentation or sample queries.
-4.  **Evaluate (`/autoctx:evaluate`)**: Measures context effectiveness against your golden dataset. This step automatically generates all necessary Evalbench configuration files (`db_config.yaml`, `model_config.yaml`, `run_config.yaml`, `llmrater_config.yaml`) inside the experiment folder and runs the evaluation pipeline to produce accuracy scores and identify failure cases.
-5.  **Hill-Climb (`/autoctx:hillclimb`)**: Performs gap analysis on failures identified in the evaluation step. It reads the failure cases, determines why the LLM failed to generate correct SQL, and proposes updates or new additions to the context set (Templates or Facets) to improve performance in the next iteration.
+1.  **Initialize (`autoctx-init`)**: Sets up your local workspace by creating an `autoctx/` directory. It checks for the presence of a valid `tools.yaml` configuration inside it. If missing, the agent will interactively prompt you for your database connection details and generate the file for you. It also creates the `state.md` file to track experiment progress and an `experiments/` directory, all within `autoctx/`.
+2.  **Generate Dataset (`autoctx-dataset-generation`)**: Rapidly creates or expands a baseline of evaluation questions (golden dataset). It asks you for sample queries or descriptions of what users might ask, and generates a JSON file with Natural Language Queries (NLQs) and Golden SQL statements.
+3.  **Bootstrap (`autoctx-bootstrap`)**: Generates an initial context set. It performs progressive schema discovery to understand your database structure and qualified tables. It then generates starting Templates and Facets based on the schema and any user-provided documentation or sample queries.
+4.  **Evaluate (`autoctx-evaluate`)**: Measures context effectiveness against your golden dataset. This step automatically generates all necessary Evalbench configuration files (`db_config.yaml`, `model_config.yaml`, `run_config.yaml`, `llmrater_config.yaml`) inside the experiment folder and runs the evaluation pipeline to produce accuracy scores and identify failure cases.
+5.  **Hill-Climb (`autoctx-hillclimb`)**: Performs gap analysis on failures identified in the evaluation step. It reads the failure cases, determines why the LLM failed to generate correct SQL, and proposes updates or new additions to the context set (Templates or Facets) to improve performance in the next iteration.
 
 ### Targeted Manual Generation
 
-These are more basic workflows for context engineering to manually author specific context elements:
+These are more basic workflows for context engineering to manually author specific context elements, each exposed via the `context-generation-guide` skill scoped to the relevant context type:
 
-*   **Generate Templates (`/generate_targeted_templates`)**: Initiates a guided workflow where you provide a sample question and SQL, and the agent helps you parameterize and save it as a template.
-*   **Generate Facets (`/generate_targeted_facets`)**: Guides you to define a specific intent and the corresponding SQL snippet (e.g., filter condition) to save as a facet.
-*   **Generate Value Searches (`/generate_targeted_value_searches`)**: Helps you configure how the system searches for and matches specific values within a concept type (e.g., setting up exact match or trigram fuzzy search for product names).
+*   **Generate Templates**: Initiates a guided workflow where you provide a sample question and SQL, and the agent helps you parameterize and save it as a template.
+*   **Generate Facets**: Guides you to define a specific intent and the corresponding SQL snippet (e.g., filter condition) to save as a facet.
+*   **Generate Value Searches**: Helps you configure how the system searches for and matches specific values within a concept type (e.g., setting up exact match or trigram fuzzy search for product names).
 
 ## Development and Testing
 

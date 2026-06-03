@@ -1,5 +1,5 @@
 ---
-name: skill-autoctx-evaluate
+name: autoctx-evaluate
 description: Guides the agent to execute an evaluation of a generated ContextSet against a golden dataset utilizing the Evalbench framework.
 ---
 

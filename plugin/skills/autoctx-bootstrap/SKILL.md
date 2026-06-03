@@ -1,5 +1,5 @@
 ---
-name: skill-autoctx-bootstrap
+name: autoctx-bootstrap
 description: Guides the agent to bootstrap an initial context set (templates & facets) by deducing key information from the database schema and generating a ContextSet file.
 ---
 

@@ -1,0 +1,51 @@
+name: Sync MCP version pin
+
+# release-please bumps `$.version` in plugin.json but cannot do in-string
+# substitution to also bump the `@<version>` suffix inside the uvx args.
+# This workflow listens for release-please PRs and amends them with the
+# corresponding args[0] update, so the released plugin payload pins users
+# to a matching MCP server version atomically.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - "plugin/.claude-plugin/plugin.json"
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  sync:
+    if: startsWith(github.head_ref, 'release-please--')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Rewrite args[0] to match plugin.json version
+        run: |
+          set -euo pipefail
+          FILE=plugin/.claude-plugin/plugin.json
+          VERSION=$(jq -r '.version' "$FILE")
+          PIN="google-cloud-db-context-engineering@${VERSION}"
+          jq --arg pin "$PIN" \
+            '.mcpServers["db-context-engineering"].args[0] = $pin' \
+            "$FILE" > "$FILE.tmp"
+          mv "$FILE.tmp" "$FILE"
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet plugin/.claude-plugin/plugin.json; then
+            echo "args[0] already in sync; nothing to do."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add plugin/.claude-plugin/plugin.json
+          git commit -m "chore: sync MCP server version pin in plugin.json"
+          git push

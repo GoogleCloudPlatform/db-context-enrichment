@@ -1,5 +1,5 @@
 ---
-name: skill-autoctx-hillclimb
+name: autoctx-hillclimb
 description: Guides the agent to perform hill-climbing iterations to improve a ContextSet based on evaluation results.
 ---
 

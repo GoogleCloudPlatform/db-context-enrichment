@@ -1,5 +1,5 @@
 ---
-name: skill-autoctx-init
+name: autoctx-init
 description: Orchestrates the initialization workflow for auto context generation, and provides helper workflow for setting up dataset connection by creating or updating tools.yaml configurations.
 ---
 

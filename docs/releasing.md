@@ -86,35 +86,48 @@ unit.
 
 ## Release atomicity (Antigravity CLI)
 
-Antigravity installs the extension directly from the GitHub repo
-(`agy plugin install <github-url>`), reading the root
-`gemini-extension.json` and the root `skills/` symlink. There is no
-PyPI wheel resolution and no marketplace ref to coordinate — the git
-tag itself bundles skills + manifest atomically — but the manifest's
-`uvx pkg@<version>` arg must still match its `$.version` so end users
-pull the correct MCP server version.
+Antigravity reads the root `gemini-extension.json` and the root
+`skills/` symlink. There is no PyPI wheel resolution and no marketplace
+ref to coordinate, but two failure modes still exist:
 
-1. **Root `gemini-extension.json` keeps `$.version` and the
-   `mcpServers.db-context-engineering.args[0]` uvx pin in sync.** Same
-   mechanism as `plugin/.claude-plugin/plugin.json`:
-   - `release-please` bumps `$.version` (configured via
-     `extra-files` in `release-please-config.json`).
+1. **The manifest's `uvx pkg@<version>` arg must match its `$.version`**,
+   so end users pull the correct MCP server version. Handled the same
+   way as `plugin/.claude-plugin/plugin.json`:
+   - `release-please` bumps `$.version` (configured via `extra-files`
+     in `release-please-config.json`).
    - `.github/workflows/sync-mcp-version.yml` rewrites `args[0]` to
      match on each release-please PR (it iterates over both manifests
      in a single commit).
    - `validate-mcp-version-pin` in presubmit fails any PR where the
      two fields diverge in this manifest.
-2. **End users install/update via `agy plugin install
-   <github-url>` (or `agy extensions update`), which fetches the
-   manifest at the latest released tag.**
-   - Because the manifest and the skills payload travel in the same
-     git tree at the same tag, version skew between them is impossible
-     — analogous to the single-archive guarantee that Gemini CLI's
-     bundled tarball provides.
-   - The only thing the tag can't bind is the PyPI wheel availability
-     — same caveat that motivates the `pin-marketplace-ref` gate for
-     Claude Code. Since Antigravity is installed at the git tag and
-     the tag is only cut after `release.yml` publishes the wheel, this
-     is naturally serialized: by the time a user can `agy plugin
-     update` to the new tag, the matching `uvx pkg@<version>` arg
-     resolves cleanly.
+2. **The (skills + uvx pin) pair installed on the user's machine must
+   originate from the same git revision.** This is *not* automatic —
+   `agy plugin install <github-url>` resolves the repo at the `main`
+   branch, not at the latest tag. Between a feature merge and the next
+   release, `main` carries skills authored against an unreleased MCP
+   server version while the manifest's `uvx pkg@<version>` still pins
+   the most recently published wheel — runtime mismatch.
+
+   We mitigate (2) by recommending **clone-at-tag + local install**
+   rather than the URL-install form:
+
+   ```sh
+   # Replace 0.5.1 with the desired [released version](https://github.com/GoogleCloudPlatform/db-context-enrichment/releases).
+   git clone --depth 1 --branch v0.5.1 \
+       https://github.com/GoogleCloudPlatform/db-context-enrichment.git \
+       db-context-enrichment-0.5.1
+   agy plugin install ./db-context-enrichment-0.5.1
+   ```
+
+   Cloning at a released tag pins skills to the same revision that
+   emitted the matching `uvx pin`, so the local-install path inherits
+   the same single-archive atomicity guarantee that Gemini CLI's
+   release tarball provides. To upgrade, clone the new tag into a
+   fresh directory and re-run `agy plugin install` against it
+   (uninstall the prior version first if the names collide).
+
+The contrast with Gemini CLI: Gemini CLI's `gemini extensions install
+<github-url>` fetches the release tarball assets attached to the
+latest GitHub Release (built by `release.yml`), which are tag-bound by
+construction. Antigravity's URL install reads the repo's default
+branch instead, which is why the clone-at-tag workaround is required.

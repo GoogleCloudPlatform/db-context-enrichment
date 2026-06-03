@@ -105,7 +105,6 @@ Both `src/` and `plugin/` edits are picked up on the next `agy` launch.
 
 ```bash
 agy plugin uninstall google-cloud-db-context-engineering-dev
-agy plugin install https://github.com/GoogleCloudPlatform/db-context-enrichment
 ```
 
 ### Notes

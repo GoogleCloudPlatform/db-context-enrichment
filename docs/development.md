@@ -1,8 +1,8 @@
 # Local development
 
-This project ships as both a Gemini CLI extension and a Claude Code
-plugin from a shared `plugin/` payload. Each client has its own
-local-dev flow.
+This project ships as a Gemini CLI extension, a Claude Code plugin,
+and an Antigravity CLI extension, all from a shared `plugin/` payload
+(skills/commands/`GEMINI.md`). Each client has its own local-dev flow.
 
 ## Gemini CLI extension
 
@@ -80,3 +80,51 @@ step — `--plugin-dir` only affects the session it's passed to.
   regardless of the `strict` setting.
 - See [releasing.md](releasing.md) for the production version-pinning
   mechanics that the dev flow sidesteps.
+
+## Antigravity CLI extension
+
+### Set up
+
+Edit `dev-plugin/gemini-extension.json` and replace the `<local-repo-path>`
+placeholder in `mcpServers.db-context-engineering.args` with the absolute
+path to this repo's root. Then install the dev extension:
+
+```bash
+agy plugin install /absolute/path/to/db-context-enrichment/dev-plugin
+```
+
+Verify:
+
+```bash
+agy plugin list
+```
+
+Both `src/` and `plugin/` edits are picked up on the next `agy` launch.
+
+### Revert
+
+```bash
+agy plugin uninstall google-cloud-db-context-engineering-dev
+```
+
+### Notes
+
+- `dev-plugin/gemini-extension.json` is a separate manifest from the
+  root `gemini-extension.json`. It runs the server via `uv run
+  --directory <local-repo-path>` instead of `uvx pkg@<version>`, so no
+  PyPI fetch and no version sync with `pyproject.toml` is required. It
+  uses `name: google-cloud-db-context-engineering-dev` so it can sit
+  side-by-side with a prod install without colliding.
+- The dev manifest takes a literal `<local-repo-path>` placeholder
+  rather than `${extensionPath}/..` so the working directory resolves
+  unambiguously regardless of how Antigravity launches the subprocess
+  — see the Q&A note in the commit history for the reasoning.
+- `dev-plugin/skills` is a symlink to `plugin/skills/`, and the root
+  `skills` symlink also targets `plugin/skills/`, so all three variants
+  (Gemini CLI, Claude Code, Antigravity) share skill files. The
+  manifests themselves are hand-maintained — when changing the prod
+  root manifest, mirror any structural change (e.g. adding an MCP
+  server entry) into the dev manifest.
+- See [releasing.md](releasing.md) for the version-pin atomicity that
+  the dev flow sidesteps; the agy root manifest shares the same
+  `uvx pkg@<version>` invariant as the Claude Code plugin manifest.

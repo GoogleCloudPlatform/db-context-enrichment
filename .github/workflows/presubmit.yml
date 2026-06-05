@@ -19,6 +19,17 @@ jobs:
             echo "::error file=$FILE::version pin mismatch: \$.version=$VERSION but args[0]=$ARG (expected $EXPECTED)"
             exit 1
           fi
+      - name: Check gemini-extension.json version matches uvx args pin
+        run: |
+          set -euo pipefail
+          FILE=gemini-extension.json
+          VERSION=$(jq -r '.version' "$FILE")
+          ARG=$(jq -r '.mcpServers["db-context-engineering"].args[0]' "$FILE")
+          EXPECTED="google-cloud-db-context-engineering@${VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::version pin mismatch: \$.version=$VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
 
   lint-and-format:
     runs-on: ubuntu-latest

@@ -36,10 +36,12 @@ sequenceDiagram
    - `release-please` bumps `$.version` directly via its `json` updater.
    - `.github/workflows/sync-mcp-version.yml` runs on each
      release-please PR and amends a follow-up commit that rewrites
-     `args[0]` to match.
+     `args[0]` to match. The same workflow also syncs the root
+     `gemini-extension.json` consumed by Antigravity — see the
+     [Antigravity section](#release-atomicity-antigravity-cli) below.
    - The `validate-mcp-version-pin` presubmit job fails any PR where
-     the two fields diverge — a guard in case the sync workflow
-     silently breaks.
+     the two fields diverge in either manifest — a guard in case the
+     sync workflow silently breaks.
 2. **`.claude-plugin/marketplace.json` `source.ref` points at the
    latest released tag.**
    - The `pin-marketplace-ref` job in `release.yml` waits for the PyPI
@@ -81,3 +83,51 @@ PyPI wheel (server) and a marketplace ref (skills), so atomicity has to
 be reconstructed by the `pin-marketplace-ref` gate. Gemini CLI bundles
 both into one archive, so the GitHub release tag itself is the atomic
 unit.
+
+## Release atomicity (Antigravity CLI)
+
+Antigravity reads the root `gemini-extension.json` and the root
+`skills/` symlink. There is no PyPI wheel resolution and no marketplace
+ref to coordinate, but two failure modes still exist:
+
+1. **The manifest's `uvx pkg@<version>` arg must match its `$.version`**,
+   so end users pull the correct MCP server version. Handled the same
+   way as `plugin/.claude-plugin/plugin.json`:
+   - `release-please` bumps `$.version` (configured via `extra-files`
+     in `release-please-config.json`).
+   - `.github/workflows/sync-mcp-version.yml` rewrites `args[0]` to
+     match on each release-please PR (it iterates over both manifests
+     in a single commit).
+   - `validate-mcp-version-pin` in presubmit fails any PR where the
+     two fields diverge in this manifest.
+2. **The (skills + uvx pin) pair installed on the user's machine must
+   originate from the same git revision.** This is *not* automatic —
+   `agy plugin install <github-url>` resolves the repo at the `main`
+   branch, not at the latest tag. Between a feature merge and the next
+   release, `main` carries skills authored against an unreleased MCP
+   server version while the manifest's `uvx pkg@<version>` still pins
+   the most recently published wheel — runtime mismatch.
+
+   We mitigate (2) by recommending **clone-at-tag + local install**
+   rather than the URL-install form:
+
+   ```sh
+   # Replace 0.5.1 with the desired [released version](https://github.com/GoogleCloudPlatform/db-context-enrichment/releases).
+   git clone --depth 1 --branch v0.5.1 \
+       https://github.com/GoogleCloudPlatform/db-context-enrichment.git \
+       db-context-enrichment-0.5.1
+   agy plugin install ./db-context-enrichment-0.5.1
+   ```
+
+   Cloning at a released tag pins skills to the same revision that
+   emitted the matching `uvx pin`, so the local-install path inherits
+   the same single-archive atomicity guarantee that Gemini CLI's
+   release tarball provides. To upgrade, clone the new tag into a
+   fresh directory and re-run `agy plugin install` against it
+   (uninstall the prior version first if the names collide).
+
+The contrast with Gemini CLI: Gemini CLI's `gemini extensions install
+<github-url>` fetches the release tarball assets attached to the
+latest GitHub Release (built by `release.yml`), which are tag-bound by
+construction. Antigravity's URL install reads the repo's default
+branch instead, which is why the clone-at-tag workaround is required.

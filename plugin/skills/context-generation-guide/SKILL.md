@@ -66,11 +66,11 @@ A **Facet** is a modular SQL fragment representing a specific filter or conditio
 {
     "facets": [
         {
-            "sql_snippet": "rating > 4.5",
+            "sql_snippet": "products.rating > 4.5",
             "intent": "highly rated products (above 4.5)",
             "manifest": "highly rated products (above a given number)",
             "parameterized": {
-                "parameterized_sql_snippet": "rating > $1",
+                "parameterized_sql_snippet": "products.rating > $1",
                 "parameterized_intent": "highly rated products (above $1)"
             }
         }

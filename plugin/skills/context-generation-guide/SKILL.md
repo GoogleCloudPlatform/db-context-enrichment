@@ -25,6 +25,8 @@ When asked to generate context items:
 5.  **Format Output**: Construct the final JSON object according to the examples in the reference files.
 6.  **Save Context**: Use the appropriate MCP tool (e.g., `mutate_context_set`) to save or update the context set.
 
+Note: Use the `mutate_context_set` tool for all ContextSet changes. It supports granular additions, updates, and deletions of ContextSet items without replacing the whole file. Pass mutation payloads directly — the tool handles all file I/O internally, so the agent should not read the target file beforehand.
+
 ## Context Type Definitions
 
 ### 1. Templates
@@ -35,6 +37,24 @@ A **Template** represents a complete mapping between a natural language query an
 *   **Manifest**: A generalized description of the template's purpose.
 *   **Parameterized Form**: The SQL and intent with specific values replaced by placeholders (e.g., `$1`).
 
+```json
+{
+    "templates": [
+        {
+            "nl_query": "How many accounts are in London?",
+            "sql": "SELECT count(*) FROM account WHERE city = 'London'",
+            "intent": "How many accounts are in London?",
+            "manifest": "How many accounts are in a given city?",
+            "parameterized": {
+                "parameterized_sql": "SELECT count(*) FROM account WHERE city = $1",
+                "parameterized_intent": "How many accounts are in $1?"
+            }
+        }
+    ]
+}
+```
+
+
 ### 2. Facets
 A **Facet** is a modular SQL fragment representing a specific filter or condition. It is composed of:
 *   **SQL Snippet**: The SQL fragment (usually a boolean expression or part of a WHERE clause). Every column reference **must** be qualified with its table name (e.g., `table.column`) so the fragment is unambiguous when injected into a query that joins multiple tables. Schema/database prefixes are not required.
@@ -42,12 +62,40 @@ A **Facet** is a modular SQL fragment representing a specific filter or conditio
 *   **Manifest**: A generalized description of the facet.
 *   **Parameterized Form**: The SQL snippet and intent with specific values replaced by placeholders.
 
+```json
+{
+    "facets": [
+        {
+            "sql_snippet": "rating > 4.5",
+            "intent": "highly rated products (above 4.5)",
+            "manifest": "highly rated products (above a given number)",
+            "parameterized": {
+                "parameterized_sql_snippet": "rating > $1",
+                "parameterized_intent": "highly rated products (above $1)"
+            }
+        }
+    ]
+}
+```
+
 ### 3. Value Searches
 A **Value Search** defines how to look up values that might not match exactly. It requires:
 *   **Target Concept**: The entity being searched (e.g., "City").
 *   **Database Location**: The specific Table and Column containing the values.
 *   **Match Strategy**: The function used for matching (e.g., Trigram, Semantic).
 *   **Dialect-Specific Configuration**: Any specific columns or parameters required by the dialect.
+
+```json
+{
+    "value_searches": [
+        {
+            "concept_type": "City",
+            "query": "SELECT T.\"location\" AS value, 'users.location' AS columns, 'City' AS concept_type, fuzzy_distance(T.\"location\", $value) AS distance FROM \"users\" T WHERE fuzzy_match(T.\"location\", $value)",
+            "description": "Fuzzy match for city in location column"
+        }
+    ]
+}
+```
 
 ## Best Practices
 

@@ -32,9 +32,9 @@ cp -r "/workspace/evals/${SUITE}" "${WORK_DIR}/"
 cp -r "/workspace/evals/model_configs" "${WORK_DIR}/"
 cd "${WORK_DIR}"
 
-# Repoint `skills_dir` at the in-repo marketplace checkout (/workspace/dev) so
-# we don't need to stage a copy inside WORK_DIR.
-sed -i "s|skills_dir: \"./dev\"|skills_dir: \"/workspace/dev\"|g" "model_configs/claude_code_model.yaml"
+# Repoint `skills_dir` at the in-repo plugin checkout (/workspace/dev-plugin)
+# so we don't need to stage a copy inside WORK_DIR.
+sed -i "s|skills_dir: \"./dev-plugin\"|skills_dir: \"/workspace/dev-plugin\"|g" "model_configs/claude_code_model.yaml"
 
 # Inject the Vertex project ID at the root level of claude_code_model.yaml
 # (kept out of the repo so the project ID isn't committed).

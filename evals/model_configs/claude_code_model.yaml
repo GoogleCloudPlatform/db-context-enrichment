@@ -7,4 +7,4 @@ use_vertex: true
 vertex_region: "global"
 
 setup:
-  skills_dir: "./dev"
+  skills_dir: "./dev-plugin"

@@ -1,0 +1,17 @@
+{
+  "name": "db-context-enrichment-marketplace-dev",
+  "owner": {
+    "name": "Google Cloud Platform",
+    "url": "https://cloud.google.com/"
+  },
+  "plugins": [
+    {
+      "name": "db-context-engineering",
+      "description": "Local-checkout variant of db-context-engineering for plugin development. Source points at the working tree instead of a PyPI-tagged git ref.",
+      "source": "./plugin",
+      "homepage": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
+      "repository": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
+      "license": "Apache-2.0"
+    }
+  ]
+}

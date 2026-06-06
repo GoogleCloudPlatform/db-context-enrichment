@@ -186,13 +186,16 @@ steps:
             continue
           fi
           # evalbench writes results/<job-uuid>/summary.csv per run; one row per scorer.
+          # Schema: metric_name,metric_score,correct_results_count,total_results_count,...
+          # metric_score (col 2) is a hard-coded per-item PASS threshold (always 100
+          # for goal_completion); the real pass rate is correct/total from cols 3 and 4.
           SUMMARY=$$(ls /workspace/eval-$$RUN/results/*/summary.csv 2>/dev/null | head -1)
           if [ -z "$$SUMMARY" ]; then
             echo "[FAIL] $$RUN: summary.csv not found under /workspace/eval-$$RUN/results/"
             FAILED=1
             continue
           fi
-          SCORE=$$(awk -F',' '$$1 == "goal_completion" { print $$2 }' "$$SUMMARY")
+          SCORE=$$(awk -F',' '$$1 == "goal_completion" { if ($$4+0 > 0) printf "%.2f", $$3/$$4*100; else print 0 }' "$$SUMMARY")
           if [ -z "$$SCORE" ]; then
             echo "[FAIL] $$RUN: goal_completion metric missing in $$SUMMARY"
             FAILED=1

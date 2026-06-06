@@ -1,1 +1,1 @@
-@plugin/GEMINI.md
+GEMINI.md

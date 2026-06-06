@@ -45,7 +45,7 @@ gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enri
 ### Set up
 
 ```bash
-claude --plugin-dir /absolute/path/to/db-context-enrichment/dev-plugin
+claude --plugin-dir /absolute/path/to/db-context-enrichment/dev-plugin/plugin
 ```
 
 Add a shell alias if you do this often. Skill edits pick up via
@@ -58,14 +58,14 @@ step — `--plugin-dir` only affects the session it's passed to.
 
 ### Notes
 
-- `dev-plugin/.claude-plugin/plugin.json` is a separate manifest from
+- `dev-plugin/plugin/.claude-plugin/plugin.json` is a separate manifest from
   `plugin/.claude-plugin/plugin.json`. It runs the server via `uv run
   --directory ${CLAUDE_PLUGIN_ROOT}/..` instead of `uvx pkg@<version>`,
   so no PyPI fetch and no version sync with `pyproject.toml` is
   required. It uses `name: db-context-engineering-dev` so its skills
   appear under `/db-context-engineering-dev:<skill>` and don't
   collide with a prod install.
-- `dev-plugin/skills` is a symlink to `plugin/skills/`, so the two
+- `dev-plugin/plugin/skills` is a symlink to `plugin/skills/`, so the two
   variants share skill files. The manifests themselves are
   hand-maintained — when changing the prod manifest, mirror any
   structural change (e.g. adding an MCP server entry) into the dev

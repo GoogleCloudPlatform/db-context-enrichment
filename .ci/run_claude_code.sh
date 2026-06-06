@@ -40,12 +40,6 @@ sed -i "s|skills_dir: \"./dev-plugin\"|skills_dir: \"/workspace/dev-plugin\"|g" 
 # (kept out of the repo so the project ID isn't committed).
 sed -i "/^vertex_region:/a\\vertex_project_id: \"${CLAUDE_GCP_VERTEX_PROJECT_ID}\"" "model_configs/claude_code_model.yaml"
 
-# Point the db-context-engineering MCP server at the local checkout instead of
-# `uvx <pkg>@latest`, so the eval exercises the PR's code rather than whatever
-# is published on PyPI. The mutation is idempotent — parallel Claude suites
-# write the same value to the shared /workspace/plugin tree.
-sed -i 's|"google-cloud-db-context-engineering@latest"|"--from", "/workspace", "google-cloud-db-context-engineering"|' "/workspace/plugin/.claude-plugin/plugin.json"
-
 # evalbench runtime
 export PYTHONPATH=/evalbench:/evalbench/evalproto
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python

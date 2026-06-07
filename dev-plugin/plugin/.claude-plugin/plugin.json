@@ -10,7 +10,7 @@
       "command": "uv",
       "args": [
         "run",
-        "--directory",
+        "--project",
         "${CLAUDE_PLUGIN_ROOT}/..",
         "google-cloud-db-context-engineering"
       ]

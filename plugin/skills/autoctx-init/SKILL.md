@@ -35,6 +35,7 @@ Conclude by providing a succinct summary to the user:
 - Instruct the user to reload the MCP toolbox so any new database connections take effect:
     - **Gemini CLI**: run `/mcp reload`.
     - **Claude Code**: run `/reload-plugins`.
+    - **Antigravity CLI**: run `/mcp`, select `toolbox`, and select `Restart`.
 - Inform them they are now ready to proceed to the next phase (e.g., the Bootstrap workflow).
 
 ---

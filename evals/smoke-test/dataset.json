@@ -1,6 +1,24 @@
 {
   "scenarios": [
     {
+      "id": "plugin:list-skills",
+      "starting_prompt": "Show the FULL list of Agent Skills you have available",
+      "conversation_plan": "Verify the db-context-engineering plugin loaded correctly. The agent should list its db-context-engineering skills (e.g., autoctx-init, autoctx-bootstrap, autoctx-dataset-generation, autoctx-evaluate, autoctx-hillclimb, context-generation-guide). Terminate the conversation immediately after the agent provides the list.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_init/",
+      "max_turns": 2
+    },
+    {
+      "id": "plugin:tool-registration",
+      "starting_prompt": "List the schemas in the database.",
+      "conversation_plan": "Verify the agent invokes the *-list-schemas tool from the `toolbox` MCP server and returns the resulting schema list. Terminate the conversation immediately after the agent provides the schemas.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_init/",
+      "max_turns": 2
+    },
+    {
       "id": "plugin:list-skills-and-mcp-tools",
       "starting_prompt": "Show the FULL list of Agent Skills and MCP tools you have available",
       "conversation_plan": "Verify the db-context-engineering plugin loaded correctly. The agent should list its db-context-engineering skills (e.g., autoctx-init, autoctx-bootstrap, autoctx-dataset-generation, autoctx-evaluate, autoctx-hillclimb, context-generation-guide) and the MCP tools provided by the two plugin-configured servers: the `db-context-engineering` MCP server (e.g., generate_dataset, generate_evalbench_configs, generate_upload_url, mutate_context_set, read_evaluation_result) and the `toolbox` MCP server (*-list-schemas, *-execute-sql). Terminate the conversation immediately after the agent provides the list.",

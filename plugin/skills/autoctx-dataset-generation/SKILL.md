@@ -27,7 +27,7 @@ You are capable of navigating the following phases organically based on user req
 
 When a user provides business environment inputs, your goal is to map the domain landscape.
 
-* **Batch State Initialization (Crucial):** Before doing anything else, use your filesystem tools to list the contents of the `./evalset_runs/` directory. Identify the highest existing `batch_id` folder (e.g., `batch_004`). Auto-increment this integer to establish the `<batch_id>` for your current invocation (e.g., `batch_005`). If the directory is empty or does not exist, start at `batch_001`. Use your filesystem tools to find the highest existing `<pair_id>` in the format `eval_<number>` in the pair output file. Auto-increment this integer to establish the `<pair_id>` for your current invocation (e.g., `eval_002`). If the pair output file does not exist, start at `eval_001`. this will determine the starting point for new pair IDs in this session. This ensures that all generated pairs have unique, sequential IDs across batches.
+* **Batch State Initialization (Crucial):** Before doing anything else, use your filesystem tools to find the highest existing `<pair_id>` in the format `eval_<number>` in the pair output file. Auto-increment this integer to establish the `<pair_id>` for your current invocation (e.g., `eval_002`). If the pair output file does not exist, start at `eval_001`. this will determine the starting point for new pair IDs in this session. This ensures that all generated pairs have unique, sequential IDs across batches.
 * **Database & Tools:** Check for tools.yaml to identify DB configurations. Use `<source>-list-schemas` tools to fetch schemas. If unavailable, ask the user to run the initialization workflow for auto context generation.  
 * **Artifact Integration:** Process business context artifacts (e.g., documents, Markdown, PDFs), offline or MCP-fetched schemas, or application source code. Map business definitions to technical schema elements.  
 * **Usage Heatmapping:** Analyze source code, ORMs, or Query Logs to identify high-priority tables, frequently joined relationships, and common filter criteria. Ignore system tables or deprecated columns unless explicitly requested.  
@@ -47,8 +47,7 @@ Generate a conceptual plan covering:
 6. **Diversity Principles:** Ensure a mix of question types (e.g., aggregation, joins, nested queries) and business topics.
 7. **Validation Criteria:** Define strict criteria for what constitutes a valid pair (e.g., no invented schema elements, must pass the "Blind" Test in Phase 3 and run review and validation in Phase 4).
 
-**Important:** You must always present the user the conceptual plan for confirmation or edit before using it for generation. Make sure you save the generation plan to `./evalset_runs/<batch_id>/plans/eval_dataset_gen_plan.md` 
-**Note:** Use the dynamic `<batch_id>` you calculated in Phase 1 (e.g., `batch_005`) for all file paths and tags in this session.
+**Important:** You must always present the user the conceptual plan for confirmation or edit before using it for generation. Make sure you save the generation plan to `./evalset_states/plans/eval_dataset_gen_plan.md` 
 
 ### **Phase 3: Intelligent Generation (Chain of Thought)**
 
@@ -68,10 +67,10 @@ Generate a conceptual plan covering:
 * **Execution Testing:** Where applicable/possible, verify that the SQL is syntactically valid and executable (e.g. via `<source>-execute-sql` MCP tool). Warn against queries that logically always return 0 rows.  
 * **Context Utilization:** Prove the pair heavily relies on the provided business context rather than generic schema guessing.  
 * **Validation Output (Two-Tier):**  
-  1. **Pair-Level Review:** Generate detailed evaluations (Quality, Complexity, Correctness, Equivalence, Relevance) for each pair. Provide source citation (Cited ) for grounding for each pair. Save to the pair-level review to the output file `./evalset_runs/<batch_id>/reports/eval-dataset-review-pair-level.md`.
-  2. **Dataset-Level Report:** Aggregate metadata to compute overall coverage across SQL features, schema elements, and question intents and save the summary to the output file `./evalset_runs/<batch_id>/reports/eval-dataset-review-dataset-level.md`.
+  1. **Pair-Level Review:** Generate detailed evaluations (Quality, Complexity, Correctness, Equivalence, Relevance) for each pair. Provide source citation (Cited ) for grounding for each pair. Save to the pair-level review to the output file `./evalset_states/reports/eval-dataset-review-pair-level.md`.
+  2. **Dataset-Level Report:** Aggregate metadata to compute overall coverage across SQL features, schema elements, and question intents and save the summary to the output file `./evalset_states/reports/eval-dataset-review-dataset-level.md`.
 
-**Important:** You must always present the user the conceptual plan for confirmation or edit before using it for pair review and validation. Make sure you save the review plan to `./evalset_runs/<batch_id>/plans/eval_dataset_review_plan.md` 
+**Important:** You must always present the user the conceptual plan for confirmation or edit before using it for pair review and validation. Make sure you save the review plan to `./evalset_states/plans/eval_dataset_review_plan.md` 
 
 ### **Phase 5: Expansion (Contextual Multiplication)**
 
@@ -101,7 +100,7 @@ The dataset must be output as a JSON object matching this schema:
         "database": "<database_name>",
         "nlq": "What is the total net revenue generated by the top 5 products (based on revenue), broken down by seller?",
         "golden_sql": "SELECT s.seller_id, s.product_id, SUM(s.net_revenue) AS total_revenue FROM sales s GROUP BY s.seller_id, s.product_id ORDER BY total_revenue DESC LIMIT 5;",
-        "tags": ["batch_id: <batch_id>", "complexity: high", "topic: revenue_analysis", "source: query_log_seed"]
+        "tags": ["complexity: high", "topic: revenue_analysis", "source: query_log_seed"]
     }
 ]
 ```

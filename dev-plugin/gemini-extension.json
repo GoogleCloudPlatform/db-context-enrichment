@@ -1,14 +1,14 @@
 {
   "name": "google-cloud-db-context-engineering-dev",
   "version": "0.0.0-dev",
-  "contextFileName": "${extensionPath}/../plugin/GEMINI.md",
+  "contextFileName": "../plugin/GEMINI.md",
   "mcpServers": {
     "db-context-engineering": {
       "command": "uv",
       "args": [
         "run",
         "--project",
-        "${extensionPath}",
+        "<local-repo-path>",
         "google-cloud-db-context-engineering"
       ]
     },

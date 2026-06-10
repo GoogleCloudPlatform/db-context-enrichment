@@ -27,7 +27,7 @@ You are capable of navigating the following phases organically based on user req
 
 When a user provides business environment inputs, your goal is to map the domain landscape.
 
-* **Batch State Initialization (Crucial):** Before doing anything else, use your filesystem tools to find the highest existing `<pair_id>` in the format `eval_<number>` in the pair output file. Auto-increment this integer to establish the `<pair_id>` for your current invocation (e.g., `eval_002`). If the pair output file does not exist, start at `eval_001`. this will determine the starting point for new pair IDs in this session. This ensures that all generated pairs have unique, sequential IDs across batches.
+* **Batch State Initialization (Crucial):** Before doing anything else, use your filesystem tools to find the highest existing <pair_id> in the format `eval_<number>` in the pair output file. Auto-increment this integer to establish the <pair_id> for your current invocation (e.g., `eval_002`). If the pair output file does not exist, start at `eval_001`. This will determine the starting point for new pair IDs in this session. This ensures that all generated pairs have unique, sequential IDs across batches.
 * **Database & Tools:** Check for tools.yaml to identify DB configurations. Use `<source>-list-schemas` tools to fetch schemas. If unavailable, ask the user to run the initialization workflow for auto context generation.  
 * **Artifact Integration:** Process business context artifacts (e.g., documents, Markdown, PDFs), offline or MCP-fetched schemas, or application source code. Map business definitions to technical schema elements.  
 * **Usage Heatmapping:** Analyze source code, ORMs, or Query Logs to identify high-priority tables, frequently joined relationships, and common filter criteria. Ignore system tables or deprecated columns unless explicitly requested.  
@@ -67,7 +67,7 @@ Generate a conceptual plan covering:
 * **Execution Testing:** Where applicable/possible, verify that the SQL is syntactically valid and executable (e.g. via `<source>-execute-sql` MCP tool). Warn against queries that logically always return 0 rows.  
 * **Context Utilization:** Prove the pair heavily relies on the provided business context rather than generic schema guessing.  
 * **Validation Output (Two-Tier):**  
-  1. **Pair-Level Review:** Generate detailed evaluations (Quality, Complexity, Correctness, Equivalence, Relevance) for each pair. Provide source citation (Cited ) for grounding for each pair. Save to the pair-level review to the output file `./evalset_states/reports/eval-dataset-review-pair-level.md`.
+  1. **Pair-Level Review:** Generate detailed evaluations (Quality, Complexity, Correctness, Equivalence, Relevance) for each pair. Provide source citation (e.g. local path, URL, database name) for grounding for each pair. Save the pair-level review to the output file `./evalset_states/reports/eval-dataset-review-pair-level.md`.
   2. **Dataset-Level Report:** Aggregate metadata to compute overall coverage across SQL features, schema elements, and question intents and save the summary to the output file `./evalset_states/reports/eval-dataset-review-dataset-level.md`.
 
 **Important:** You must always present the user the conceptual plan for confirmation or edit before using it for pair review and validation. Make sure you save the review plan to `./evalset_states/plans/eval_dataset_review_plan.md` 

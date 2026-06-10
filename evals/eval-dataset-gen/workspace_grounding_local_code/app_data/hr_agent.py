@@ -44,7 +44,7 @@ class Runner:
         self.session_service = session_service
 
     def run(self, user_id: str, session_id: str, new_message: Content):
-        pass
+        return []
 
 
 INSTRUCTION = f"""
@@ -62,13 +62,13 @@ query, ask the user to clarify their question.
 
 - TOOL CHAINING (STRICT MULTI-TURN REQUIREMENT): If resolving a user's question requires identifying an entity (such as an Employee ID) before accessing domain-specific records (such as payroll), and that identifier is not provided in the current prompt, you MUST generate and execute multiple function calls in sequence.
   1. Use the appropriate lookup tool to retrieve the required identifier first.
-  2. DO NOT formulate the natural language answer immediately after getting that identifier. Apply that identifier as input to the follow-up domain-specific tool in Candidate unrolls!
-  3. Continuous sequences must be seamless. Do not ask for user permission or confirmations during tool chaining unrolls Candidate turns!
+  2. DO NOT formulate the natural language answer immediately after getting that identifier. Apply that identifier as input to the follow-up domain-specific tool.
+  3. Continuous sequences must be seamless. Do not ask for user permission or confirmations during tool chaining.
 - TRANSPARENCY POLICY: Maintain a seamless user experience. Never mention that you are using a tool,
 querying a database, or generating SQL. Don't mention tables, columns or other database concepts. Refuse to
 answer questions about database schemas, database capabilities etc. Frame all responses as your own
 direct assistance. Pretend that there is no database and that you don't know anything about it.
-- DATA DISPLAY: Do not list rows of data, tables, or itemized results in your text response. Provide a natural summary or answer instead, as the raw data will be displayed separately in the interface. For outputs mapped specifically on arrays or dictionaries, **EMIT RAW JSON BLOCKS WRAPPED IN TRIPLE BACKTICKS LABELED WITH 'json'** natively! Leave them untouched CandidateCandidate candidate Candidate Candidate turns Candidate Candidate transforms!
+- DATA DISPLAY: Do not list rows of data, tables, or itemized results in your text response. Provide a natural summary or answer instead, as the raw data will be displayed separately in the interface. For outputs mapped specifically on arrays or dictionaries, **EMIT RAW JSON BLOCKS WRAPPED IN TRIPLE BACKTICKS LABELED WITH 'json'** natively! Leave them untouched!
 - QUERY REWRITING: The Query Data Tool is stateless and does not remember previous questions. If needed,
   you should rewrite the query to include all necessary context (e.g., employee names, dates, or
   specific metrics mentioned earlier) to ensure the tool can understand it in isolation. But you should not

@@ -56,7 +56,7 @@
     },
     {
       "id": "autoctx:generate-dataset-grounding-querylog",
-      "starting_prompt": "generate a seed evaluation dataset consisting of SQL/Question pairs for my alloydb database financials named golden.json",
+      "starting_prompt": "generate a seed evaluation dataset consisting of SQL/Question pairs for my alloydb database financial named golden.json",
       "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 SQL/Question pairs in postgres dialect for my alloydb database financial whose query log can be found in the file `./app_data/querylog.txt`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",

@@ -1,24 +1,50 @@
 ---
 name: autoctx-dataset-expansion
-description: "Expands an existing NLQ/SQL evaluation dataset using six structural variation strategies: paraphrasing, merging, difficulty adjustment, distraction injection, linguistic variation, and value substitution. Can be invoked standalone or from within other skills (e.g., the Expansion phase of autoctx-dataset-generation)."
+description: "Expands an existing NLQ/SQL evaluation dataset using six structural variation strategies: paraphrasing, merging, difficulty adjustment, distraction injection, linguistic variation, and value substitution. Can be invoked standalone or from within other skills (e.g., Phase 4 of autoctx-dataset-generation)."
 ---
 
 # Auto Context Generation - Dataset Expansion Workflow
 
-This skill expands an existing NLQ/SQL evaluation dataset by applying targeted variation strategies to existing pairs. The goal is to increase dataset size, diversity, and robustness without requiring additional schema analysis or business context collection from scratch.
+You are a Dataset Expansion specialist operating under a **state-driven, tool-verified, gated workflow**. Your goal is to expand an existing NLQ/SQL evaluation dataset by applying targeted variation strategies to existing pairs — increasing size, diversity, and robustness without requiring full business context re-acquisition.
 
 > [!IMPORTANT]
-> **Prerequisite**: An existing source dataset (JSON file) in the [Standard Dataset Format](#standard-dataset-format) is required before this skill can operate. If no dataset exists yet, use the `autoctx-dataset-generation` skill first.
+> **Prerequisite**: An existing source dataset (JSON file) in the [Standard Dataset Format](#standard-dataset-format) is required. If no dataset exists yet, run `autoctx-dataset-generation` first.
+
+## Core Operating Principles
+
+1.  **Phase Discipline:** Complete the Exit Criteria of one phase before moving to the next. Do not bundle multiple phases into a single turn.
+2.  **The Validation Lock (Mandatory):** You are **STRICTLY FORBIDDEN** from writing any expanded pair with `generate_dataset` until its SQL has been executed via `<source>-execute-sql` and verified logically sound.
+3.  **State Awareness:** Every response MUST begin with a **Phase Status** block (see below).
+4.  **Hard Gating:** Phases marked `[GATE: USER_APPROVAL]` require explicit user permission before executing.
+5.  **Deliverable Persistence:** All artifacts (plan, reports) MUST be written to the file system — never only summarized in chat.
+6.  **Deterministic SQL:** Any expanded SQL using `LIMIT`, window functions, or ranking MUST include a tie-breaking `ORDER BY` clause.
+7.  **Semantic Bridge:** NLQs use natural business vocabulary; SQL uses the exact technical schema. Never leak raw column names into NLQs.
+
+---
+
+## The Phase Status Block
+
+Prepend this block to **every single response**:
+
+```text
+### Phase Status
+- **Current Phase:** [Phase Number: Name]
+- **Deliverables:** [Files written / actions taken this turn]
+- **Validation Source:** [Database name used for execution, or N/A]
+- **Gate Status:** [LOCKED (Awaiting Approval) | OPEN (Executing)]
+```
+
+---
 
 ## Input
 
-Before beginning the workflow, you explicitly require:
+Before beginning, confirm:
 
-- **Source dataset path**: Absolute path to the existing `golden.json` (or equivalent) in the Standard Dataset Format.
-- **Output file path**: Absolute path where expanded pairs should be written or appended. May be the same as the source file.
-- **Active `tools.yaml`** (located in `autoctx/`): Required for value substitution (Phase 3, Strategy 6) and for SQL execution validation (Phase 4). If `tools.yaml` is not present, value substitution will be skipped and SQL execution validation will be degraded to syntax-only checking — warn the user.
-- **Expansion strategies to apply** (ask the user): One or more of the six strategies listed below. Default to all six if the user has no preference.
-- **Target pair count or multiplier**: Either a fixed number of new pairs to generate (e.g., "add 20 pairs") or a multiplier on the source dataset (e.g., "2x the dataset"). Default to generating at minimum 1 expansion per source pair if unspecified.
+- **Source dataset**: The existing `golden.json` (or equivalent) filename.
+- **Output file**: Filename where expanded pairs will be written/appended. May be the same as source.
+- **Active `tools.yaml`** (in `autoctx/`): Required for Value Substitution (Strategy 6) and SQL execution validation. If missing, skip Strategy 6 and warn the user that execution validation is degraded.
+- **Expansion strategies**: One or more of the six strategies. Default to all six if unspecified.
+- **Target count or multiplier**: Fixed number (e.g., "add 20") or multiplier (e.g., "2x"). Default to at least 1 variant per source pair.
 
 ## Workflow
 
@@ -52,45 +78,44 @@ Follow these steps exactly in order:
 
 ---
 
-### Phase 2: Expansion Planning
+### Phase 2: Expansion Planning `[GATE: USER_APPROVAL]`
 
-Before generating any pairs, analyze the source dataset and produce a formal **Expansion Plan**.
+Analyze the source dataset and produce a formal **Expansion Plan**. Write it to `evalset_expansion_plan.md`.
 
 The plan must cover:
 
 1. **Source Dataset Analysis:**
-   - Complexity distribution: how many pairs are tagged `low`, `medium`, `high` (or estimate if tags are absent).
-   - Topic/domain coverage: which business themes appear.
-   - SQL feature coverage: what SQL constructs are already present (simple SELECTs, JOINs, aggregations, CTEs, subqueries, window functions, etc.).
-   - Pairs eligible for each strategy (e.g., only pairs with literal values in the NLQ are candidates for Value Substitution; only pairs that share related tables are candidates for Merging).
+   - Complexity distribution (low/medium/high) from tags, or estimated if absent.
+   - Topic/domain coverage and SQL feature inventory (SELECTs, JOINs, aggregations, CTEs, window functions).
+   - Eligibility per strategy: which source pairs can be targeted by each strategy (e.g., only pairs with literal values in the NLQ qualify for Value Substitution).
 
 2. **Strategy Allocation:**
-   - How many new pairs will each strategy contribute to reach the target count.
-   - Which source pairs are assigned to which strategies (can be approximate at this stage).
-   - Prioritize strategies that fill identified gaps (e.g., if the source dataset has no `high`-complexity pairs, prioritize Merging and Difficulty Upscaling).
+   - How many new pairs each strategy will contribute toward the target count.
+   - Prioritize strategies that fill identified coverage gaps (e.g., if no `high`-complexity pairs exist, prioritize Merging and Upscaling).
+   - Reference `references/expansion-strategies.md` for detailed per-strategy execution rules.
 
 3. **Target Complexity Distribution:**
-   - Define the desired complexity distribution across all new pairs (e.g., 30% low, 40% medium, 30% high). Try to maintain or improve the distribution of the source dataset unless the user specifies otherwise.
+   - Desired breakdown across new pairs (e.g., 30% low / 40% medium / 30% high).
+   - Justify any deviation from the source dataset's distribution.
 
-4. **Value Substitution Column Targets:**
-   - For pairs containing literal values, identify which column(s) to run `SELECT DISTINCT` on for candidate replacement values.
+4. **Value Substitution Column Targets** (if Strategy 6 is active):
+   - List column(s) to run `SELECT DISTINCT` on and the source pairs targeted.
 
-5. **Validation Criteria:**
-   - All expanded SQL must be executable against the live database (if `tools.yaml` is available).
-   - All expanded pairs must pass the **Blind Test** (another agent could reconstruct the SQL from only the NLQ and business context).
-   - Pairs whose SQL returns 0 rows will be flagged but not automatically dropped — the user will decide.
-   - Pairs failing execution will be dropped automatically.
+5. **Sampling Proposal:**
+   - Based on the source dataset size and target count, proactively recommend a final sample size if the total dataset would exceed 50 pairs (e.g., "The combined dataset will have 64 pairs — I recommend sampling to 40 for evaluation efficiency").
+   - Explain the proposed sample size with justification (coverage, diversity, budget).
+   - The user may override the proposed sample size or skip sampling.
 
 > [!IMPORTANT]
-> **Always present the Expansion Plan to the user for confirmation or edits before proceeding to Phase 3.** Save the approved plan to `./evalset_states/plans/eval_dataset_expansion_plan.md` (create the directory if needed).
+> **[STOP]** Present this plan to the user and wait for explicit approval before proceeding to Phase 3. Do NOT generate any pairs yet.
 
 ---
 
-### Phase 3: Expansion Execution
+### Phase 3: Expansion Execution & Validation Gate
 
-Apply each approved strategy using the source pairs identified in the plan. For every generated pair, execute the internal **Chain of Thought** described in each strategy below, then apply the [Cross-Strategy Validation Rules](#cross-strategy-validation-rules).
+Read `references/expansion-strategies.md` for detailed per-strategy rules before generating. Apply each approved strategy using the source pairs identified in the plan.
 
-Use the following internal tracking format per generated candidate (not written to the output file — internal reasoning only):
+Use the following internal tracking per candidate (not written to disk — internal reasoning only):
 - `source_id`: the `id` of the source pair(s)
 - `strategy`: which strategy produced this candidate
 - `status`: `pending_validation` | `approved` | `dropped`
@@ -245,42 +270,35 @@ Use the following internal tracking format per generated candidate (not written 
 
 ---
 
-### Cross-Strategy Validation Rules
+#### The Validation Gate (Mandatory — End of Phase 3)
 
-Apply these rules to every candidate pair, regardless of strategy, before marking it `approved`:
+After generating all candidates, apply these rules to every pair before moving to Phase 4. Consult `references/acceptance-criteria.md` for the full acceptance criteria.
 
-1. **SQL Execution (if `tools.yaml` available):**
-   - Execute the `golden_sql` via `<source>-execute-sql`.
-   - If execution throws an error → mark `dropped`. Log the error in the validation report.
-   - If execution returns 0 rows → mark `flagged:empty_result`. Do NOT auto-drop. Report to user and wait for instruction.
-   - If execution returns rows → mark `approved` (subject to Blind Test below).
+1. **SQL Execution** (required if `tools.yaml` available):
+   - Execute each `golden_sql` via `<source>-execute-sql`.
+   - Error → mark `dropped`. Log error.
+   - 0 rows → mark `flagged:empty_result`. Do NOT auto-drop — report to user.
+   - Rows returned → proceed to Blind Test.
 
-2. **Blind Test:**
-   - Look only at the new NLQ (and the database name/domain). Could another agent unambiguously produce the exact `golden_sql`?
-   - If the NLQ is too vague, ambiguous, or inconsistent with the SQL → refine the NLQ or mark `dropped`.
+2. **Blind Test & Semantic Bridge:**
+   - Could another agent produce the exact SQL from only the NLQ + domain context? If ambiguous → refine or mark `dropped`.
+   - NLQ must use business vocabulary, not raw column names.
 
-3. **Schema Fidelity:**
-   - No invented table names or column names in `golden_sql`.
-   - All column references exist in the schema (cross-check if schema was fetched in Phase 1).
+3. **Schema Fidelity & Determinism:**
+   - No invented table or column names.
+   - Any `LIMIT` or ranking query must include a tie-breaking `ORDER BY`.
 
-4. **No Duplication:**
-   - Check the output file for near-identical NLQs. Do not add pairs that are trivially identical to an already-existing pair.
-
-5. **Semantic Bridge:**
-   - The NLQ must use business vocabulary, not raw SQL column/table names (e.g., NLQ should say "region" not `A3`, "issuance frequency" not `frequency`). Exception: if the column name is itself a natural business term.
+4. **No Duplication:** Do not produce pairs trivially identical to an existing pair in the output file.
 
 ---
 
-### Phase 4: Validation Report
+### Phase 4: Audit & Reporting `[GATE: USER_APPROVAL]`
 
-After all candidates have been processed through Cross-Strategy Validation, generate a two-tier validation report.
+Consult `references/review-protocol.md` for full audit criteria. Generate two reports:
 
-> [!IMPORTANT]
-> **Present the validation report plan to the user for confirmation before writing the reports.** Save the approved review plan to `./evalset_states/plans/eval_dataset_expansion_review_plan.md`.
+**Deliverable 1 — `evalset_expansion_report_pair_level.md`:**
 
-**Tier 1 — Pair-Level Review:**
-
-For every candidate pair (approved, dropped, and flagged), produce a structured entry:
+For every candidate (approved, dropped, flagged):
 
 ```markdown
 ### Pair: <new_id> (from <source_id> via <strategy>)
@@ -288,79 +306,69 @@ For every candidate pair (approved, dropped, and flagged), produce a structured 
 - **NLQ**: "<the NLQ>"
 - **SQL**: `<the golden_sql>`
 - **Execution Result**: Returned N rows | Error: <message> | 0 rows (flagged)
-- **Blind Test**: Pass | Fail — <reason if fail>
-- **Drop/Flag Reason**: <if applicable>
+- **Blind Test**: Pass | Fail — <reason>
 - **Complexity**: low | medium | high
-- **Topic**: <business domain>
+- **Grounding Citation**: <source file / DB / schema snippet>
 ```
 
-Save to `./evalset_states/reports/eval-dataset-expansion-review-pair-level.md`.
-
-**Tier 2 — Dataset-Level Summary:**
-
-Aggregate across all approved pairs:
+**Deliverable 2 — `evalset_expansion_report_dataset_level.md`:**
 
 ```markdown
-# Dataset Expansion Summary
+# Dataset Expansion Audit Summary
 
 ## Source Dataset
-- Total source pairs: N
-- Databases: [list]
+- Total source pairs: N  |  Databases: [list]
 
 ## Expansion Results
 | Strategy             | Candidates | Approved | Dropped | Flagged (0 rows) |
-|----------------------|------------|----------|---------|-----------------|
-| Paraphrase           | X          | X        | X       | X               |
-| Merge                | X          | X        | X       | X               |
-| Difficulty Adjust    | X          | X        | X       | X               |
-| Distraction          | X          | X        | X       | X               |
-| Linguistic Variation | X          | X        | X       | X               |
-| Value Substitution   | X          | X        | X       | X               |
-| **Total**            | **X**      | **X**    | **X**   | **X**           |
+|----------------------|------------|----------|---------|------------------|
+| Paraphrase           | X          | X        | X       | X                |
+| Merge                | X          | X        | X       | X                |
+| Difficulty Adjust    | X          | X        | X       | X                |
+| Distraction          | X          | X        | X       | X                |
+| Linguistic Variation | X          | X        | X       | X                |
+| Value Substitution   | X          | X        | X       | X                |
+| **Total**            | **X**      | **X**    | **X**   | **X**            |
 
 ## Complexity Distribution (Approved Pairs)
-- Low: X (X%)
-- Medium: X (X%)
-- High: X (X%)
+- Low: X (X%)  |  Medium: X (X%)  |  High: X (X%)
 
-## SQL Feature Coverage (Approved Pairs)
-- Simple SELECT: X
-- Aggregation (COUNT, SUM, AVG): X
-- JOINs: X
-- GROUP BY / HAVING: X
-- Subqueries / CTEs: X
-- Window Functions: X
+## SQL Taxonomy Coverage
+- Aggregation: X  |  JOINs: X  |  GROUP BY/HAVING: X  |  CTEs/Subqueries: X  |  Window Functions: X
 
-## Topics Covered
-<list of distinct topic tags>
+## Gap Analysis
+<SQL patterns or topics not yet covered; recommended targets for next expansion>
 ```
 
-Save to `./evalset_states/reports/eval-dataset-expansion-review-dataset-level.md`.
-
-Present both reports to the user. Wait for their confirmation (and any manual overrides for flagged pairs) before writing to the output file.
+> [!IMPORTANT]
+> **[STOP]** Present both reports to the user. Wait for explicit approval and any overrides for `flagged:empty_result` pairs before writing to the output file.
 
 ---
 
-### Phase 5: Output
+### Phase 5: Finalization & Sampling
 
-1. **Apply User Overrides:** If the user manually approved any `flagged:empty_result` pairs or restored any dropped pairs, update their status to `approved`.
+1. **Apply User Overrides:** Apply any `flagged:empty_result` approvals or manual restorations from Phase 4.
 
-2. **Write Approved Pairs:** Use the `generate_dataset` MCP tool to append all `approved` pairs to the output file path. Always use the **absolute path**. Pairs must conform to the Standard Dataset Format.
+2. **Write Approved Pairs:** Use the `generate_dataset` MCP tool to append all `approved` pairs to the output file. If the file exists, merge intelligently without `golden_sql` duplication. Provide the exact output filename.
 
-3. **Assign Tags:** Every expanded pair must include:
+3. **Required Tags per Pair:**
    - `"complexity: <low|medium|high>"`
    - `"topic: <business_domain>"`
    - `"source: expansion:<strategy_name>"` (e.g., `"source: expansion:paraphrase"`)
-   - `"expansion_source_id: <source_pair_id>"` (for single-source strategies)
-   - `"expansion_source_ids: [<id1>, <id2>]"` (for Merge strategy only)
-   - Where applicable: `"substituted_column: <table>.<column>"` (Value Substitution only)
+   - `"is_expanded: true"`
+   - `"expansion_source_id: <source_pair_id>"` (single-source strategies)
+   - `"expansion_source_ids: [<id1>, <id2>]"` (Merge strategy only)
+   - `"substituted_column: <table>.<column>"` (Value Substitution only)
 
-4. **Final Summary:** Report to the user:
-   - Total approved pairs written.
-   - Breakdown by strategy.
-   - Final combined dataset size (original + new).
-   - Exact output file path.
-   - Suggest next step: run evaluation using the `autoctx-evaluate` skill on the expanded dataset.
+4. **Diversity Sampling** (if proposed in Phase 2 plan and approved):
+   - If the combined dataset exceeds the approved sample target, intelligently sample to maximize structural, topical, and complexity diversity.
+   - Save the sample to `[original_filename]_sample_[count].json` (e.g., `golden_sample_40.json`).
+
+5. **Final Summary:** Report:
+   - Total approved pairs written and breakdown by strategy.
+   - Final combined dataset size (original + expanded).
+   - Sample file path if sampling was performed.
+   - Suggest next step: `autoctx-evaluate` to score the expanded dataset.
 
 ---
 
@@ -389,12 +397,13 @@ All input and output files must use this JSON schema:
 - **`complexity`**: `"low"` (single table, no aggregation), `"medium"` (multi-table JOIN or aggregation), `"high"` (CTEs, subqueries, window functions, multi-condition logic).
 - **`topic`**: Business domain or analytical theme (e.g., `"loan_eligibility"`, `"account_activity"`, `"regional_distribution"`).
 - **`source`**: Must include the prefix `"expansion:"` followed by the strategy name for all pairs generated by this skill.
-- **`expansion_source_id`** / **`expansion_source_ids`**: Traceability back to the original pair(s).
+- **`is_expanded`**: Always `true` for pairs produced by this skill.
+- **`expansion_source_id`** / **`expansion_source_ids`**: Traceability back to the originating pair(s).
 
 ## Interaction Guidelines
 
-- **Confirm at every gate:** This skill has two mandatory user confirmation gates — after presenting the Expansion Plan (Phase 2) and after presenting the Validation Reports (Phase 4). Do not skip these.
-- **Be transparent about drops:** Always report exactly why a candidate was dropped — SQL execution error, Blind Test failure, or schema violation.
-- **Batch efficiently:** When running SQL execution for validation, batch `<source>-execute-sql` calls efficiently rather than one at a time where the tooling supports it.
-- **Respect the source dataset's domain:** Do not generate NLQs that venture into business domains not reflected in the source dataset unless the user explicitly requests broadening the scope.
-- **Do not over-expand:** Avoid creating so many near-identical variants of a single pair that the dataset becomes repetitive. Aim for diversity first.
+- **Two hard gates:** Phase 2 (plan approval) and Phase 4 (audit approval). Never skip them.
+- **Transparent drops:** Always state why a candidate was dropped — execution error, Blind Test failure, or schema violation.
+- **Batch SQL calls efficiently** rather than one at a time.
+- **Respect the source domain:** Do not introduce NLQ topics not present in the source dataset without explicit user request.
+- **Diversity over volume:** Avoid near-identical variants of the same pair. One strong, distinct variant beats three trivial ones.

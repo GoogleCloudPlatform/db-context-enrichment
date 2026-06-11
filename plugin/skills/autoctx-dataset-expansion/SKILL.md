@@ -101,7 +101,7 @@ Use the following internal tracking format per generated candidate (not written 
 
 **Goal:** Reword the NLQ into a semantically equivalent question while keeping the SQL 100% unchanged.
 
-**When to apply:** Any pair in the source dataset. Highly recommended for pairs with `complexity: low` or `complexity: medium` as they have simpler, more universally rephrashable NLQs.
+**When to apply:** Any pair in the source dataset. Highly recommended for pairs with `complexity: low` or `complexity: medium` as they have simpler, more universally rephraseable NLQs.
 
 **Execution steps:**
 1. Read the source NLQ.

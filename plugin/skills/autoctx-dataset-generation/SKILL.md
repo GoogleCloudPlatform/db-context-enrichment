@@ -64,7 +64,7 @@ You must prepend this exact block to the very top of **every single response** y
 ### **PHASE 4: EXPANSION & DIVERSIFICATION**
 *   **Goal:** Increase volume and edge-case coverage.
 *   **Mandatory Actions:**
-    1.  Read `references/expansion-guidelines.md`.
+    1.  Read `references/expansion-guideline.md`.
     2.  Generate variations (Entity substitution, Temporal shifts, Logic inversion) following the **Validation Protocol** (Execute before Save).
 
 ### **PHASE 5: AUDIT & REPORTING**

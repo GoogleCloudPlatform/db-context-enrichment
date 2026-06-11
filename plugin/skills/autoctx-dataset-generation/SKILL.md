@@ -65,7 +65,9 @@ You must prepend this exact block to the very top of **every single response** y
 *   **Goal:** Increase volume and edge-case coverage.
 *   **Mandatory Actions:**
     1.  Read `references/expansion-guideline.md`.
-    2.  Generate variations (Entity substitution, Temporal shifts, Logic inversion) following the **Validation Protocol** (Execute before Save).
+    2.  There are two paths — ask the user which they want if not already specified:
+        - **Net-new pairs from context** (schema, docs, query logs): Generate additional pairs following the Strategic Plan from Phase 2, applying the Validation Protocol (Execute before Save).
+        - **Structural variations of existing pairs**: **Invoke the `autoctx-dataset-expansion` skill.** This skill handles all variation-based strategies (paraphrasing, merging, difficulty adjustment, distraction injection, linguistic variation, and value substitution), including SQL execution validation and audit reporting.
 
 ### **PHASE 5: AUDIT & REPORTING**
 *   **Goal:** Verify health and diversity.

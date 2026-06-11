@@ -6,7 +6,7 @@
       "conversation_plan": "Ask the agent to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the petstore application whose design doc and source codes can be found in the directory `./app_data`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
-      "work_dir": "workspace_grounding_resolve_biz_rule_shift/",
+      "work_dir": "workspace_resolve_biz_rule_shift/",
       "max_turns": 15
     },
     {

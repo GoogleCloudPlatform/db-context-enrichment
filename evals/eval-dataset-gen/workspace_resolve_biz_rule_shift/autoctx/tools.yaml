@@ -5,7 +5,7 @@ project: cloud-db-nl2sql
 region: us-central1
 cluster: whaoyu-test
 instance: whaoyu-test-primary
-database: db_dummy
+database: petstore
 ---
 kind: tool
 name: my-alloydb-list-schemas

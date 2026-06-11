@@ -29,7 +29,7 @@
 
 * **Rule:** The SQL must follow modern, readable engineering standards.
 * **Enforcement:**
-* Use explicit `JOIN ... ON` syntax instead of implicit, comma-separated `FROM` clauses.
-* Avoid accidental Cartesian products; all joins must have valid conditions.
-* Apply descriptive aliases (`AS`) for tables and aggregated columns.
-* Format queries with proper indentation and capitalized keywords for readability.
+  * Use explicit `JOIN ... ON` syntax instead of implicit, comma-separated `FROM` clauses.
+  * Avoid accidental Cartesian products; all joins must have valid conditions.
+  * Apply descriptive aliases (`AS`) for tables and aggregated columns.
+  * Format queries with proper indentation and capitalized keywords for readability.

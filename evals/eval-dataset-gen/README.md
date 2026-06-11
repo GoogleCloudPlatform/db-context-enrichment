@@ -1,30 +1,12 @@
+## CUJ: resolve_biz_rule_shift
 
-## CUJ: case_flights
+**Setup**: In this CUJs, the user provides a design doc and the application source codes. The design doc (with outdated business rules) uses `customers` as the target table, while the application source (with updated business rule) uses `customers_v2` as the target table. Both tables share the same table definition but their content defers. 
 
-**Setup**: In this CUJ, the user only provides the https://docs.cloud.google.com/alloydb/docs/ai/integrate-applications-data-agent documentation link. 
+**Source**: database is `petstore`, which contains both `customers` and `customers_v2` tables. 
 
-**Source**: database is `db_dummy`, which does not contain any table.
+**Expected Outcome**: The eval dataset generator needs to figure out that the SQL generated should always used `customers_v2` as the target table instead of `customers`, based on its inspection on the provided design doc and application source codes.
 
-**Expected Outcome**: The eval dataset generator needs to figure out based on the documentation at https://docs.cloud.google.com/alloydb/docs/ai/integrate-applications-data-agent what NL-SQL pairs to generate.
-
-
-## CUJ: case_property_search
-
-**Setup**: In this CUJ, the user only provides the github link https://github.com/kupp0/multi-db-property-search-data-agents.
-
-**Source**: database is `search`, which contains test data for the app.
-
-**Expected Outcome**: The eval dataset generator needs to figure out based on the application source codes at https://github.com/kupp0/multi-db-property-search-data-agents what NL-SQL pairs to generate.
-
-## CUJ: case_blog
-
-**Setup**: In this CUJ, the user provides the `app_data` folder containing a `ER_Diagram.jpg` which sketch the ER diagram for blog application as well as its `design_doc.pdf`. 
-
-**Source**: database is `db_dummy`, which does not contain any table.
-
-**Expected Outcome**: The eval dataset generator need to figure out that the `<source>-list-schemas` returns the empty schema (since the user did not create any table in the schema), infers the schema from the `ER_Diagram.jpg` and makes use of the content in the `design_doc.pdf` to generate NL-SQL pairs.
-
-## CUJ: case_ecommerce_cryptic
+## CUJ: resolve_cryptic_schema
 
 **Setup**: In this CUJ, the user provides a business context doc containing explaination over the cryptic column names in the database
 
@@ -32,15 +14,26 @@
 
 **Expected Outcome**: The eval dataset generator needs to figure out how to generate NL which leverage domain knowledge from the business context doc which explains the cryptic column names, and its corresponding SQL only knows the cryptic column names.
 
-## CUJ: case_financials
+
+
+## CUJ: grounding_github_code
+
+**Setup**: In this CUJ, the user only provides the github link https://github.com/kupp0/google-dach-summit26-database-labs/tree/main/labs/03_fullstack_ai_app_property_search.
+
+**Source**: database is `search`, which contains test data for the app.
+
+**Expected Outcome**: The eval dataset generator needs to figure out based on the application source codes at https://github.com/kupp0/google-dach-summit26-database-labs/tree/main/labs/03_fullstack_ai_app_property_search what NL-SQL pairs to generate.
+
+
+## CUJ: grounding_querylog
 
 **Setup**: In this CUJ, the user provides the querylog file `querylog.txt` which simulates the query log for the `financials` database.
 
 **Source**: database is `financials` from BIRD.
 
-**Expected Outcome**: The eval dataset generator needs to figure out how to extract the SQL from the query log, and then translate them to the corresponding NL while ensuring the NL is unambiguous and logically align with the SQL. In the case the number of pairs user ask is more than the SQLs in the querylog, the eval dataset generator needs to uses its knowledge and inspection of querylog to come up with more NL-SQL pairs.
+**Expected Outcome**: The eval dataset generator needs to figure out how to extract the SQL from the query log, and then translate them to seed pairs with the corresponding NL while ensuring the NL is unambiguous and logically align with the SQL. In the case the number of pairs user ask is more than the SQLs in the querylog, the eval dataset generator needs to uses its knowledge and inspection of querylog to come up with more NL-SQL pairs.
 
-## CUJ: case_hr
+## CUJ: grounding_local_code
 
 **Setup**: In this CUJ, the user provides the `app_data` directory containing the application codes.
 

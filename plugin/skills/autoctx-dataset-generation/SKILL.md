@@ -72,7 +72,7 @@ You must prepend this exact block to the very top of **every single response** y
 *   **Mandatory Actions:**
     1.  Read `references/review-protocol.md`.
     2.  Perform Tier 1 (Pair-Level) and Tier 2 (Dataset-Level) audits.
-    3.  Generate `evalset_report_pair_level.md` and `evalset_report_dataset_level.md`.
+    3.  Write/Update Tier 1 and Tier 2 reports: `evalset_report_pair_level.md` and `evalset_report_dataset_level.md`.
 *   **Constraint:** If audit reveals errors (e.g., missing ORDER BY), you **must** backtrack and fix the pairs.
 
 ### **PHASE 6: FINALIZATION & SAMPLING**

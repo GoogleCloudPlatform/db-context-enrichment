@@ -6,7 +6,7 @@
     "db-context-engineering": {
       "command": "uvx",
       "args": [
-        "google-cloud-db-context-engineering@0.5.1"
+        "google-cloud-db-context-engineering@0.6.0"
       ]
     },
     "toolbox": {

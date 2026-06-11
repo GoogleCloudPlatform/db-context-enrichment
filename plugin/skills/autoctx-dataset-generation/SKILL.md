@@ -61,13 +61,17 @@ You must prepend this exact block to the very top of **every single response** y
         - **Verify:** If execution fails or results are logically impossible, refine the SQL and retry.
 *   **Rule:** For every pair generated, you must state: *"Verified eval_XXX against [Source Name]."*
 
-### **PHASE 4: EXPANSION & DIVERSIFICATION**
+### **PHASE 4: EXPANSION & DIVERSIFICATION [GATE: USER_APPROVAL]**
 *   **Goal:** Increase volume and edge-case coverage.
 *   **Mandatory Actions:**
     1.  Read `references/expansion-guideline.md`.
-    2.  There are two paths — ask the user which they want if not already specified:
-        - **Net-new pairs from context** (schema, docs, query logs): Generate additional pairs following the Strategic Plan from Phase 2, applying the Validation Protocol (Execute before Save).
-        - **Structural variations of existing pairs**: **Invoke the `autoctx-dataset-expansion` skill.** This skill handles all variation-based strategies (paraphrasing, merging, difficulty adjustment, distraction injection, linguistic variation, and value substitution), including SQL execution validation and audit reporting.
+    2.  **ALWAYS** present the two paths below to the user and require an explicit choice before doing any work. Do NOT infer a path from the prior conversation:
+
+        **Option A — Net-new pairs from context** (schema, docs, query logs): Generate additional pairs following the Strategic Plan from Phase 2, applying the Validation Protocol (Execute before Save). Execute this path inline in the current skill.
+
+        **Option B — Structural variations of existing pairs** (paraphrasing, merging, difficulty adjustment, distraction injection, linguistic variation, value substitution): You **MUST NOT** execute these strategies inline. Instead, tell the user: *"Please re-invoke the `autoctx-dataset-expansion` skill for this task. That skill owns all variation-based expansion workflows."* Then stop and wait.
+
+    3.  After the user selects **Option A**, proceed with net-new generation. **Option B terminates this phase** — the work continues in the `autoctx-dataset-expansion` skill.
 
 ### **PHASE 5: AUDIT & REPORTING**
 *   **Goal:** Verify health and diversity.

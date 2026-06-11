@@ -46,6 +46,7 @@ Generate a conceptual plan covering:
 5. **Complexity Distribution:** Define what percentage of pairs should be simple, medium, vs. complex based on user goals and context.
 6. **Diversity Principles:** Ensure a mix of question types (e.g., aggregation, joins, nested queries) and business topics.
 7. **Validation Criteria:** Define strict criteria for what constitutes a valid pair (e.g., no invented schema elements, must pass the "Blind" Test in Phase 3 and run review and validation in Phase 4).
+8. **Sampling Strategy:** Always run the sampling phase towards the end of the workflow.
 
 **Important:** You must always present the user the conceptual plan for confirmation or edit before using it for generation. Make sure you save the generation plan to `./evalset_states/plans/eval_dataset_gen_plan.md` 
 
@@ -81,7 +82,9 @@ When requested to expand, you should gennerate new pairs by either of the follow
 
 ### **Phase 6: Sampling (Budgeting & Sub-setting)**
 
-When a user specifies an evaluation budget (e.g., "I only want 50 examples"), intelligently sample the dataset to maximize structural, topical, and complexity diversity rather than taking a random or sequential slice.
+Intelligently sample the dataset to maximize structural, topical, and complexity diversity. Write the sampled subset to a new JSON file. Naming convention: `[original_filename]_sample_[count].json` (e.g., `golden_sample_10.json` if the original output file name is `golden.json`).
+
+Infer the sample size if the user specifies a budget (e.g., "20 examples") or a subset for "eyeballing" or if the dataset is too large (e.g., exceeds 50 examples). Make sure to maintain the diversity principles defined in the generation plan when sampling and keep the sample size to no more than 50 examples (unless user specifies otherwise) to ensure quality and manageability.
 
 ## **INTERACTION GUIDELINES**
 

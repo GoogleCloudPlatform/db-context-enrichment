@@ -25,17 +25,27 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "package-name": "google-cloud-db-context-enrichment",
+      "package-name": "google-cloud-db-context-engineering",
       "extra-files": [
         {
           "type": "json",
-          "path": "gemini-extension.json",
+          "path": "plugin/gemini-extension.json",
           "jsonpath": "$.version"
         },
         {
           "type": "toml",
           "path": "pyproject.toml",
           "jsonpath": "$.project.version"
+        },
+        {
+          "type": "json",
+          "path": "plugin/.claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "gemini-extension.json",
+          "jsonpath": "$.version"
         }
       ]
     }

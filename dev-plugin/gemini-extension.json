@@ -1,0 +1,26 @@
+{
+  "name": "google-cloud-db-context-engineering-dev",
+  "version": "0.0.0-dev",
+  "contextFileName": "../plugin/GEMINI.md",
+  "mcpServers": {
+    "db-context-engineering": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "<local-repo-path>",
+        "google-cloud-db-context-engineering"
+      ]
+    },
+    "toolbox": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@toolbox-sdk/server",
+        "--config",
+        "autoctx/tools.yaml",
+        "--stdio"
+      ]
+    }
+  }
+}

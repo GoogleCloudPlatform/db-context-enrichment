@@ -31,3 +31,11 @@ All submissions, including submissions by project members, require review. We
 use GitHub pull requests for this purpose. Consult
 [GitHub Help](https://help.github.com/articles/about-pull-requests/) for more
 information on using pull requests.
+
+## Further reading
+
+- [docs/development.md](docs/development.md) — local dev setup and
+  edit-test loops for the Gemini CLI extension and the Claude Code
+  plugin.
+- [docs/releasing.md](docs/releasing.md) — release pipeline, version
+  pinning, and the (skills + server) atomicity invariant.

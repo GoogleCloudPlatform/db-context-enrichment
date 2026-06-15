@@ -30,6 +30,8 @@ steps:
           echo "No PR number provided. Assuming local/manual run — enabling all evals."
           touch /workspace/SHOULD_RUN_GEMINI_CLI
           touch /workspace/SHOULD_RUN_CLAUDE_CODE
+          # Release version for BQ reporting on manual/local runs.
+          printf '%s' "manual-$BUILD_ID" > /workspace/RELEASE_VERSION
           exit 0
         fi
 
@@ -42,6 +44,23 @@ steps:
           cat pr_data.json
           exit 1
         fi
+
+        # Derive the release version recorded alongside eval results in BigQuery.
+        # Release-please PRs carry the cut version in their title; other PRs are
+        # tagged with the PR number for traceability. Written to a marker file
+        # so the per-suite run scripts can pick it up.
+        PR_TITLE=$(jq -r '.title' pr_data.json)
+        if [[ "$_HEAD_BRANCH" == release-please-* ]]; then
+          if [[ "$$PR_TITLE" =~ release\ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            RELEASE_VERSION="$${BASH_REMATCH[1]}"
+          else
+            RELEASE_VERSION="pr-$_PR_NUMBER-release-unknown"
+          fi
+        else
+          RELEASE_VERSION="pr-$_PR_NUMBER-ci-run-evals"
+        fi
+        echo "Release version: $$RELEASE_VERSION"
+        printf '%s' "$$RELEASE_VERSION" > /workspace/RELEASE_VERSION
 
         if jq -e '.labels | any(.name == "ci:eval-gemini")' pr_data.json > /dev/null; then
           echo "ci:eval label detected — enabling Gemini CLI evals."
@@ -67,6 +86,7 @@ steps:
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'EVAL_REPORTING_PROJECT=$_EVAL_REPORTING_PROJECT'
     args: ['.ci/run_gemini_cli.sh', 'smoke-test']
 
   - id: eval-claude-code-smoke-test
@@ -77,6 +97,7 @@ steps:
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'EVAL_REPORTING_PROJECT=$_EVAL_REPORTING_PROJECT'
       - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
     args: ['.ci/run_claude_code.sh', 'smoke-test']
 
@@ -89,6 +110,7 @@ steps:
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'EVAL_REPORTING_PROJECT=$_EVAL_REPORTING_PROJECT'
     args: ['.ci/run_gemini_cli.sh', 'core-cujs']
 
   - id: eval-gemini-cli-freeform-input
@@ -99,6 +121,7 @@ steps:
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'EVAL_REPORTING_PROJECT=$_EVAL_REPORTING_PROJECT'
     args: ['.ci/run_gemini_cli.sh', 'freeform-input']
 
   # --- Claude Code eval steps (parallel, isolated per suite) ---
@@ -110,6 +133,7 @@ steps:
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'EVAL_REPORTING_PROJECT=$_EVAL_REPORTING_PROJECT'
       - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
     args: ['.ci/run_claude_code.sh', 'core-cujs']
 
@@ -121,6 +145,7 @@ steps:
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'EVAL_REPORTING_PROJECT=$_EVAL_REPORTING_PROJECT'
       - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
     args: ['.ci/run_claude_code.sh', 'freeform-input']
 
@@ -229,6 +254,10 @@ substitutions:
   # specific build; defaults to :latest.
   _EVALBENCH_IMAGE_TAG: 'latest'
   _PROJECT_LOCATION: 'global'
+  # GCP project whose `evalbench` BigQuery dataset receives eval results.
+  # Shared with the other cloud-db-nl2sql extensions; rows are distinguished
+  # by the extension_id / release_version fields from evals/ci_metadata.yaml.
+  _EVAL_REPORTING_PROJECT: 'cloud-db-nl2sql'
 
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

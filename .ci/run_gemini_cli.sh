@@ -43,6 +43,13 @@ sed -i \
   -e "/^  GEMINI_MODEL:/a\\  GOOGLE_CLOUD_LOCATION: \"${EVAL_GCP_PROJECT_REGION}\"" \
   "model_configs/gemini_cli_model.yaml"
 
+# Append the runtime release_version and resolve the reporting-project
+# placeholder so evalbench's BigQuery reporter records them.
+RELEASE_VERSION="$(cat /workspace/RELEASE_VERSION 2>/dev/null || echo unknown)"
+CONFIG="${SUITE}/run_gemini_cli.yaml"
+printf '\nrelease_version: %s\n' "${RELEASE_VERSION}" >> "${CONFIG}"
+sed -i "s|\${EVAL_REPORTING_PROJECT}|${EVAL_REPORTING_PROJECT:-}|g" "${CONFIG}"
+
 # evalbench runtime
 export PYTHONPATH=/evalbench:/evalbench/evalproto
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python

@@ -44,7 +44,7 @@ dev = [
 
 [tool.db-context-engineering]
 toolbox_version = "1.4.0"
-evalbench_version = "1.7.1"
+evalbench_version = "1.9.0"
 
 [tool.ruff]
 line-length = 88

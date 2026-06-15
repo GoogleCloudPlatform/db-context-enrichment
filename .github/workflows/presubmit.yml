@@ -30,6 +30,32 @@ jobs:
             echo "::error file=$FILE::version pin mismatch: \$.version=$VERSION but args[0]=$ARG (expected $EXPECTED)"
             exit 1
           fi
+      - name: Check plugin.json toolbox pin matches pyproject toolbox_version
+        run: |
+          set -euo pipefail
+          FILE=plugin/.claude-plugin/plugin.json
+          TOOLBOX_VERSION=$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
+          ARG=$(jq -r '.mcpServers["toolbox"].args[0]' "$FILE")
+          EXPECTED="toolbox-server==${TOOLBOX_VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::toolbox pin mismatch: pyproject toolbox_version=$TOOLBOX_VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
+      - name: Check autoctx-init SKILL.md toolbox pins match pyproject toolbox_version
+        run: |
+          set -euo pipefail
+          FILE=plugin/skills/autoctx-init/SKILL.md
+          EXPECTED="toolbox-server==$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)"
+          FOUND=$(grep -oE 'toolbox-server==[0-9]+\.[0-9]+\.[0-9]+' "$FILE" | sort -u || true)
+          if [ -z "$FOUND" ]; then
+            echo "::error file=$FILE::no 'toolbox-server==X.Y.Z' pin found; SKILL.md must pin to $EXPECTED"
+            exit 1
+          fi
+          MISMATCHES=$(echo "$FOUND" | grep -v "^${EXPECTED}$" || true)
+          if [ -n "$MISMATCHES" ]; then
+            echo "::error file=$FILE::SKILL.md toolbox pin(s) don't match pyproject (expected $EXPECTED): $MISMATCHES"
+            exit 1
+          fi
 
   lint-and-format:
     runs-on: ubuntu-latest

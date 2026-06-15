@@ -30,6 +30,17 @@ jobs:
             echo "::error file=$FILE::version pin mismatch: \$.version=$VERSION but args[0]=$ARG (expected $EXPECTED)"
             exit 1
           fi
+      - name: Check plugin.json toolbox pin matches pyproject toolbox_version
+        run: |
+          set -euo pipefail
+          FILE=plugin/.claude-plugin/plugin.json
+          TOOLBOX_VERSION=$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
+          ARG=$(jq -r '.mcpServers["toolbox"].args[0]' "$FILE")
+          EXPECTED="toolbox-server==${TOOLBOX_VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::toolbox pin mismatch: pyproject toolbox_version=$TOOLBOX_VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
 
   lint-and-format:
     runs-on: ubuntu-latest

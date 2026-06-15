@@ -34,7 +34,7 @@ Conclude by providing a succinct summary to the user:
 - State whether the workspace was initialized newly or if existing files were preserved.
 - Instruct the user to reload the MCP toolbox so any new database connections take effect:
     - **Gemini CLI**: run `/mcp reload`.
-    - **Claude Code**: run `/reload-plugins`.
+    - **Claude Code**: run `/mcp`, select `toolbox`, and select `Reconnect` — or `/quit` and relaunch Claude Code.
     - **Antigravity CLI**: run `/mcp`, select `toolbox`, and select `Restart`.
 - Inform them they are now ready to proceed to the next phase (e.g., the Bootstrap workflow).
 

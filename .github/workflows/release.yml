@@ -57,7 +57,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
-      # Extract the targeted genai-toolbox version from pyproject.toml
+      # Extract the targeted mcp-toolbox version from pyproject.toml
       - name: Get Toolbox Version
         shell: bash
         run: |
@@ -73,11 +73,11 @@ jobs:
           echo "Found evalbench version: ${EVALBENCH_VERSION}"
           echo "EVALBENCH_VERSION=${EVALBENCH_VERSION}" >> $GITHUB_ENV
 
-      # Download the pre-compiled genai-toolbox binary for the target platform
-      - name: Download genai-toolbox binary
+      # Download the pre-compiled mcp-toolbox binary for the target platform
+      - name: Download mcp-toolbox binary
         shell: bash
         run: |
-          DOWNLOAD_URL="https://storage.googleapis.com/genai-toolbox/v${{ env.TOOLBOX_VERSION }}/${{ matrix.toolbox_os }}/${{ matrix.toolbox_arch }}/toolbox${{ matrix.toolbox_ext }}"
+          DOWNLOAD_URL="https://storage.googleapis.com/mcp-toolbox-for-databases/v${{ env.TOOLBOX_VERSION }}/${{ matrix.toolbox_os }}/${{ matrix.toolbox_arch }}/toolbox${{ matrix.toolbox_ext }}"
           echo "Downloading toolbox from: ${DOWNLOAD_URL}"
           curl -L --fail -o "toolbox${{ matrix.toolbox_ext }}" "${DOWNLOAD_URL}"
           chmod +x "toolbox${{ matrix.toolbox_ext }}"

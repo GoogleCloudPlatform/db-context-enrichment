@@ -15,7 +15,7 @@
     "toolbox": {
       "command": "uvx",
       "args": [
-        "toolbox-server==1.4.0",
+        "toolbox-server@1.4.0",
         "--config",
         "autoctx/tools.yaml",
         "--stdio"

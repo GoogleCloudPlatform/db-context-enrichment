@@ -254,10 +254,6 @@ substitutions:
   # specific build; defaults to :latest.
   _EVALBENCH_IMAGE_TAG: 'latest'
   _PROJECT_LOCATION: 'global'
-  # GCP project whose `evalbench` BigQuery dataset receives eval results.
-  # Shared with the other cloud-db-nl2sql extensions; rows are distinguished
-  # by the extension_id / release_version fields from evals/ci_metadata.yaml.
-  _EVAL_REPORTING_PROJECT: 'cloud-db-nl2sql'
 
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

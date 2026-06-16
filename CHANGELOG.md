@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.6.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.5.1...v0.6.0) (2026-06-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* drop legacy /autoctx:* slash commands in favor of agent skills ([#142](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/142))
+
+### refactor
+
+* drop legacy /autoctx:* slash commands in favor of agent skills ([#142](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/142)) ([bb273e0](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/bb273e08ed772b4b5dc7d8e6007bdcae0957d77a))
+
+
+### Features
+
+* add Claude Code plugin support ([#136](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/136)) ([44ab514](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/44ab514c95a9a269f149141e005f34d019dcb5fe))
+* migrate MCP prompts and tools into Agent Skills ([#129](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/129)) ([bd8ff60](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/bd8ff603561f1dfd21c800b327eb07085ed088cf))
+* support agy ([#143](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/143)) ([64b2b63](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/64b2b63cb881543df6f7867df3d403a4a5d47cad))
+
+
+### Bug Fixes
+
+* **autoctx-init:** correct Claude Code MCP reload instruction ([#158](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/158)) ([0fc6c31](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/0fc6c3118708fe54cffaff67b57d4f31a1c9dfba))
+* dev setup for agy ([#146](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/146)) ([9f62481](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/9f62481dd3ea6a4c0ad219c4586afc07c91a6eb0))
+* ensure critical information are available to Claude Code ([#145](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/145)) ([4017b02](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/4017b02acf5cd3ae1f91203a068685ad498a3e1a))
+* gemini eval key ([#123](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/123)) ([1a24f6a](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/1a24f6a351aa7d6b6bf0af38501df1409edc980e))
+
 ## [0.5.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.5.0...v0.5.1) (2026-05-15)
 
 

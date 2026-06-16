@@ -10,10 +10,9 @@
       ]
     },
     "toolbox": {
-      "command": "npx",
+      "command": "uvx",
       "args": [
-        "-y",
-        "@toolbox-sdk/server",
+        "toolbox-server@1.4.0",
         "--config",
         "autoctx/tools.yaml",
         "--stdio"

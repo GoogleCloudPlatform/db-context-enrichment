@@ -1,7 +1,7 @@
 {
   "name": "db-context-engineering",
   "description": "Context Engineering Agent for generating natural language to SQL templates, facets, and value searches.",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "author": {
     "name": "Google Cloud Platform"
   },
@@ -9,14 +9,13 @@
     "db-context-engineering": {
       "command": "uvx",
       "args": [
-        "google-cloud-db-context-engineering@0.5.1"
+        "google-cloud-db-context-engineering@0.6.0"
       ]
     },
     "toolbox": {
-      "command": "npx",
+      "command": "uvx",
       "args": [
-        "-y",
-        "@toolbox-sdk/server",
+        "toolbox-server@1.4.0",
         "--config",
         "autoctx/tools.yaml",
         "--stdio"

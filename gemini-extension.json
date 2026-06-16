@@ -1,19 +1,18 @@
 {
   "name": "google-cloud-db-context-engineering",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "contextFileName": "./plugin/GEMINI.md",
   "mcpServers": {
     "db-context-engineering": {
       "command": "uvx",
       "args": [
-        "google-cloud-db-context-engineering@0.5.1"
+        "google-cloud-db-context-engineering@0.6.0"
       ]
     },
     "toolbox": {
-      "command": "npx",
+      "command": "uvx",
       "args": [
-        "-y",
-        "@toolbox-sdk/server",
+        "toolbox-server@1.4.0",
         "--config",
         "autoctx/tools.yaml",
         "--stdio"

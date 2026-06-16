@@ -23,8 +23,8 @@ EVALBENCH_VERSION=$(grep -o '^evalbench_version = "[^"]*"' pyproject.toml | cut 
 echo "Found toolbox version: ${TOOLBOX_VERSION}"
 echo "Found evalbench version: ${EVALBENCH_VERSION}"
 
-# 4. Download genai-toolbox binary (Linux amd64)
-DOWNLOAD_URL="https://storage.googleapis.com/genai-toolbox/v${TOOLBOX_VERSION}/linux/amd64/toolbox"
+# 4. Download mcp-toolbox binary (Linux amd64)
+DOWNLOAD_URL="https://storage.googleapis.com/mcp-toolbox-for-databases/v${TOOLBOX_VERSION}/linux/amd64/toolbox"
 echo "Downloading toolbox from: ${DOWNLOAD_URL}"
 curl -L --fail -o "toolbox" "${DOWNLOAD_URL}"
 chmod +x "toolbox"
@@ -47,7 +47,6 @@ uv run pyinstaller pyinstaller.spec
 # 8. Prepare distribution (Staging)
 mkdir -p staging
 cp -r plugin/skills/ staging/skills/
-cp -r plugin/commands/ staging/commands/
 mkdir -p staging/skills/autoctx-init/scripts/
 mkdir -p staging/skills/autoctx-evaluate/scripts/
 

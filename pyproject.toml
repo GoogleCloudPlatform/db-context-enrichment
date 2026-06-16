@@ -1,6 +1,6 @@
 [project]
 name = "google-cloud-db-context-engineering"
-version = "0.5.1"
+version = "0.6.0"
 description = "A FastMCP server for generating natural language to SQL templates from database schemas."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -43,8 +43,8 @@ dev = [
 ]
 
 [tool.db-context-engineering]
-toolbox_version = "0.31.0"
-evalbench_version = "1.7.1"
+toolbox_version = "1.4.0"
+evalbench_version = "1.9.0"
 
 [tool.ruff]
 line-length = 88

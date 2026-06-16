@@ -1,5 +1,5 @@
 ---
-name: skill-autoctx-evaluate
+name: autoctx-evaluate
 description: Guides the agent to execute an evaluation of a generated ContextSet against a golden dataset utilizing the Evalbench framework.
 ---
 
@@ -69,7 +69,7 @@ Follow these steps exactly in order:
 
 4. **Evalbench Run Integration:**
    - Trigger the `run_shell_command` natively to execute the evaluation from the ROOT of the workspace using the following exact command template:
-     `uvx google-evalbench --experiment_config=autoctx/experiments/<experiment_name>/eval_configs/run_config.yaml`
+     `uvx google-evalbench@1.9.0 --experiment_config=autoctx/experiments/<experiment_name>/eval_configs/run_config.yaml`
    - Check the command outputs to ensure the evaluation reports materialize in the respective `autoctx/experiments/<experiment_name>/eval_reports/` directory.
 
 ## Output

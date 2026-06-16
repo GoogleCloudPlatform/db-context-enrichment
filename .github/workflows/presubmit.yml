@@ -56,6 +56,21 @@ jobs:
             echo "::error file=$FILE::SKILL.md toolbox pin(s) don't match pyproject (expected $EXPECTED): $MISMATCHES"
             exit 1
           fi
+      - name: Check autoctx-evaluate SKILL.md evalbench pins match pyproject evalbench_version
+        run: |
+          set -euo pipefail
+          FILE=plugin/skills/autoctx-evaluate/SKILL.md
+          EXPECTED="google-evalbench==$(grep -o '^evalbench_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)"
+          FOUND=$(grep -oE 'google-evalbench==[0-9]+\.[0-9]+\.[0-9]+' "$FILE" | sort -u || true)
+          if [ -z "$FOUND" ]; then
+            echo "::error file=$FILE::no 'google-evalbench==X.Y.Z' pin found; SKILL.md must pin to $EXPECTED"
+            exit 1
+          fi
+          MISMATCHES=$(echo "$FOUND" | grep -v "^${EXPECTED}$" || true)
+          if [ -n "$MISMATCHES" ]; then
+            echo "::error file=$FILE::SKILL.md evalbench pin(s) don't match pyproject (expected $EXPECTED): $MISMATCHES"
+            exit 1
+          fi
 
   lint-and-format:
     runs-on: ubuntu-latest

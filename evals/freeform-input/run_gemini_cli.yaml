@@ -1,3 +1,6 @@
+# CI version-tracking metadata; release_version is appended at runtime by .ci.
+extension_id: db-context-enrichment
+
 ############################################################
 ### Dataset / Eval Items
 ############################################################
@@ -32,3 +35,5 @@ scorers:
 reporting:
   csv:
     output_directory: 'results'
+  bigquery:
+    gcp_project_id: "${EVAL_REPORTING_PROJECT}"

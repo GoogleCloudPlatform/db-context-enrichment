@@ -12,12 +12,18 @@
         "source": "git-subdir",
         "url": "GoogleCloudPlatform/db-context-enrichment",
         "path": "plugin",
-        "ref": "v0.5.1"
+        "ref": "v0.6.0"
       },
       "homepage": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
       "repository": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
       "license": "Apache-2.0",
-      "keywords": ["database", "sql", "nl2sql", "context-engineering", "mcp"],
+      "keywords": [
+        "database",
+        "sql",
+        "nl2sql",
+        "context-engineering",
+        "mcp"
+      ],
       "category": "data"
     }
   ]

@@ -4,6 +4,107 @@ on:
   pull_request:
 
 jobs:
+  validate-mcp-version-pin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check plugin.json version matches uvx args pin
+        run: |
+          set -euo pipefail
+          FILE=plugin/.claude-plugin/plugin.json
+          VERSION=$(jq -r '.version' "$FILE")
+          ARG=$(jq -r '.mcpServers["db-context-engineering"].args[0]' "$FILE")
+          EXPECTED="google-cloud-db-context-engineering@${VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::version pin mismatch: \$.version=$VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
+      - name: Check gemini-extension.json version matches uvx args pin
+        run: |
+          set -euo pipefail
+          FILE=gemini-extension.json
+          VERSION=$(jq -r '.version' "$FILE")
+          ARG=$(jq -r '.mcpServers["db-context-engineering"].args[0]' "$FILE")
+          EXPECTED="google-cloud-db-context-engineering@${VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::version pin mismatch: \$.version=$VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
+      - name: Check plugin.json toolbox pin matches pyproject toolbox_version
+        run: |
+          set -euo pipefail
+          FILE=plugin/.claude-plugin/plugin.json
+          TOOLBOX_VERSION=$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
+          ARG=$(jq -r '.mcpServers["toolbox"].args[0]' "$FILE")
+          EXPECTED="toolbox-server@${TOOLBOX_VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::toolbox pin mismatch: pyproject toolbox_version=$TOOLBOX_VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
+      - name: Check gemini-extension.json toolbox pin matches pyproject toolbox_version
+        run: |
+          set -euo pipefail
+          FILE=gemini-extension.json
+          TOOLBOX_VERSION=$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
+          ARG=$(jq -r '.mcpServers["toolbox"].args[0]' "$FILE")
+          EXPECTED="toolbox-server@${TOOLBOX_VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::toolbox pin mismatch: pyproject toolbox_version=$TOOLBOX_VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
+      - name: Check dev-plugin plugin.json toolbox pin matches pyproject toolbox_version
+        run: |
+          set -euo pipefail
+          FILE=dev-plugin/plugin/.claude-plugin/plugin.json
+          TOOLBOX_VERSION=$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
+          ARG=$(jq -r '.mcpServers["toolbox"].args[0]' "$FILE")
+          EXPECTED="toolbox-server@${TOOLBOX_VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::toolbox pin mismatch: pyproject toolbox_version=$TOOLBOX_VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
+      - name: Check dev-plugin gemini-extension.json toolbox pin matches pyproject toolbox_version
+        run: |
+          set -euo pipefail
+          FILE=dev-plugin/gemini-extension.json
+          TOOLBOX_VERSION=$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
+          ARG=$(jq -r '.mcpServers["toolbox"].args[0]' "$FILE")
+          EXPECTED="toolbox-server@${TOOLBOX_VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::toolbox pin mismatch: pyproject toolbox_version=$TOOLBOX_VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
+      - name: Check autoctx-init SKILL.md toolbox pins match pyproject toolbox_version
+        run: |
+          set -euo pipefail
+          FILE=plugin/skills/autoctx-init/SKILL.md
+          EXPECTED="toolbox-server@$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)"
+          FOUND=$(grep -oE 'toolbox-server@[0-9]+\.[0-9]+\.[0-9]+' "$FILE" | sort -u || true)
+          if [ -z "$FOUND" ]; then
+            echo "::error file=$FILE::no 'toolbox-server@X.Y.Z' pin found; SKILL.md must pin to $EXPECTED"
+            exit 1
+          fi
+          MISMATCHES=$(echo "$FOUND" | grep -v "^${EXPECTED}$" || true)
+          if [ -n "$MISMATCHES" ]; then
+            echo "::error file=$FILE::SKILL.md toolbox pin(s) don't match pyproject (expected $EXPECTED): $MISMATCHES"
+            exit 1
+          fi
+      - name: Check autoctx-evaluate SKILL.md evalbench pins match pyproject evalbench_version
+        run: |
+          set -euo pipefail
+          FILE=plugin/skills/autoctx-evaluate/SKILL.md
+          EXPECTED="google-evalbench@$(grep -o '^evalbench_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)"
+          FOUND=$(grep -oE 'google-evalbench@[0-9]+\.[0-9]+\.[0-9]+' "$FILE" | sort -u || true)
+          if [ -z "$FOUND" ]; then
+            echo "::error file=$FILE::no 'google-evalbench@X.Y.Z' pin found; SKILL.md must pin to $EXPECTED"
+            exit 1
+          fi
+          MISMATCHES=$(echo "$FOUND" | grep -v "^${EXPECTED}$" || true)
+          if [ -n "$MISMATCHES" ]; then
+            echo "::error file=$FILE::SKILL.md evalbench pin(s) don't match pyproject (expected $EXPECTED): $MISMATCHES"
+            exit 1
+          fi
+
   lint-and-format:
     runs-on: ubuntu-latest
     steps:
@@ -50,4 +151,4 @@ jobs:
         run: uv run pyinstaller pyinstaller.spec
 
       - name: Validate binary
-        run: ./dist/google-cloud-db-context-enrichment --help
+        run: ./dist/google-cloud-db-context-engineering --help

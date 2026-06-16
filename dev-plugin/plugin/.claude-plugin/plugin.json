@@ -1,0 +1,28 @@
+{
+  "name": "db-context-engineering-dev",
+  "description": "Local-dev variant. Loaded via `claude --plugin-dir`; MCP server runs from the working tree via `uv run`.",
+  "version": "0.0.0-dev",
+  "author": {
+    "name": "Google Cloud Platform"
+  },
+  "mcpServers": {
+    "db-context-engineering": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "${CLAUDE_PLUGIN_ROOT}/..",
+        "google-cloud-db-context-engineering"
+      ]
+    },
+    "toolbox": {
+      "command": "uvx",
+      "args": [
+        "toolbox-server@1.4.0",
+        "--config",
+        "autoctx/tools.yaml",
+        "--stdio"
+      ]
+    }
+  }
+}

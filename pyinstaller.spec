@@ -7,8 +7,6 @@ def collect_dynamic_resources():
     hiddenimports = []
 
     # 1. Project Assets
-    # Include default prompts directory. Paths are relative to this spec file.
-    datas.append(('src/google/cloud/db_context_enrichment/prompts', 'google/cloud/db_context_enrichment/prompts'))
     # Include README from the repo root
     datas.append(('README.md', '.'))
 
@@ -67,7 +65,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='google-cloud-db-context-enrichment',
+    name='google-cloud-db-context-engineering',
     debug=False,
     bootloader_ignore_signals=False,
     # Disable strip/upx to prevent Windows DLL corruption

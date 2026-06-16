@@ -1,23 +1,22 @@
 {
-  "name": "google-cloud-db-context-enrichment",
-  "version": "0.5.0",
-  "contextFileName": "./GEMINI.md",
+  "name": "google-cloud-db-context-engineering",
+  "version": "0.6.0",
+  "contextFileName": "./plugin/GEMINI.md",
   "mcpServers": {
-    "mcp_db_context_enrichment": {
-      "command": "uv",
+    "db-context-engineering": {
+      "command": "uvx",
       "args": [
-        "run",
-        "--directory",
-        "${extensionPath}",
-        "google-cloud-db-context-enrichment"
+        "google-cloud-db-context-engineering@0.6.0"
+      ]
+    },
+    "toolbox": {
+      "command": "uvx",
+      "args": [
+        "toolbox-server@1.4.0",
+        "--config",
+        "autoctx/tools.yaml",
+        "--stdio"
       ]
     }
-  },
-  "settings": [
-    {
-      "name": "Gemini API Key",
-      "description": "Your Gemini API key",
-      "envVar": "GEMINI_API_KEY"
-    }
-  ]
+  }
 }

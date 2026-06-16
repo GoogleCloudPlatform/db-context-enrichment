@@ -40,6 +40,13 @@ sed -i "s|skills_dir: \"./dev-plugin\"|skills_dir: \"/workspace/dev-plugin\"|g" 
 # (kept out of the repo so the project ID isn't committed).
 sed -i "/^vertex_region:/a\\vertex_project_id: \"${CLAUDE_GCP_VERTEX_PROJECT_ID}\"" "model_configs/claude_code_model.yaml"
 
+# Append the runtime release_version and resolve the reporting-project
+# placeholder so evalbench's BigQuery reporter records them.
+RELEASE_VERSION="$(cat /workspace/RELEASE_VERSION 2>/dev/null || echo unknown)"
+CONFIG="${SUITE}/run_claude.yaml"
+printf '\nrelease_version: %s\n' "${RELEASE_VERSION}" >> "${CONFIG}"
+sed -i "s|\${EVAL_REPORTING_PROJECT}|${EVAL_REPORTING_PROJECT:-}|g" "${CONFIG}"
+
 # evalbench runtime
 export PYTHONPATH=/evalbench:/evalbench/evalproto
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python

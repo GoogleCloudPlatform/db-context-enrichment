@@ -41,6 +41,39 @@ jobs:
             echo "::error file=$FILE::toolbox pin mismatch: pyproject toolbox_version=$TOOLBOX_VERSION but args[0]=$ARG (expected $EXPECTED)"
             exit 1
           fi
+      - name: Check gemini-extension.json toolbox pin matches pyproject toolbox_version
+        run: |
+          set -euo pipefail
+          FILE=gemini-extension.json
+          TOOLBOX_VERSION=$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
+          ARG=$(jq -r '.mcpServers["toolbox"].args[0]' "$FILE")
+          EXPECTED="toolbox-server==${TOOLBOX_VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::toolbox pin mismatch: pyproject toolbox_version=$TOOLBOX_VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
+      - name: Check dev-plugin plugin.json toolbox pin matches pyproject toolbox_version
+        run: |
+          set -euo pipefail
+          FILE=dev-plugin/plugin/.claude-plugin/plugin.json
+          TOOLBOX_VERSION=$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
+          ARG=$(jq -r '.mcpServers["toolbox"].args[0]' "$FILE")
+          EXPECTED="toolbox-server==${TOOLBOX_VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::toolbox pin mismatch: pyproject toolbox_version=$TOOLBOX_VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
+      - name: Check dev-plugin gemini-extension.json toolbox pin matches pyproject toolbox_version
+        run: |
+          set -euo pipefail
+          FILE=dev-plugin/gemini-extension.json
+          TOOLBOX_VERSION=$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
+          ARG=$(jq -r '.mcpServers["toolbox"].args[0]' "$FILE")
+          EXPECTED="toolbox-server==${TOOLBOX_VERSION}"
+          if [ "$ARG" != "$EXPECTED" ]; then
+            echo "::error file=$FILE::toolbox pin mismatch: pyproject toolbox_version=$TOOLBOX_VERSION but args[0]=$ARG (expected $EXPECTED)"
+            exit 1
+          fi
       - name: Check autoctx-init SKILL.md toolbox pins match pyproject toolbox_version
         run: |
           set -euo pipefail

@@ -33,12 +33,22 @@ The suite evaluates the agent across several dimensions using the following scor
 
 ## How to Run
 
-From the `evals/` directory, execute the evaluation using latest [evalbench](https://github.com/GoogleCloudPlatform/evalbench/releases):
-
+From the `evals/` directory, run the evaluation using `uvx`:
 ```bash
 cd evals/
-evalbench run core-cujs/run_gemini_cli.yaml      # Gemini CLI
-evalbench run core-cujs/run_claude.yaml          # Claude Code
+UV_CONFIG_FILE=uv.toml uvx --index-url https://pypi.org/simple/ google-evalbench@1.9.0 --experiment_config=core-cujs/run_gemini_cli.yaml
 ```
 
-Results will be generated in the `results/` directory as CSV reports.
+### Local Execution Caveats
+Unlike CI (which auto-injects values and queries the metadata server), running locally requires these specific alignments:
+
+1.  **SUT Environment Isolation**: The Gemini CLI SUT runs in an isolated subprocess. You must manually add `GOOGLE_CLOUD_PROJECT: "<your-gcp-project-id>"` and `GOOGLE_CLOUD_LOCATION: "global"` to the `env:` block in `evals/model_configs/gemini_cli_model.yaml` (CI does this dynamically via sed).
+2.  **Global Endpoint**: The preview model `gemini-3-flash-preview` is hosted on the global Vertex endpoint. The location in both `gemini_model.yaml` (`gcp_region`) and `gemini_cli_model.yaml` (`GOOGLE_CLOUD_LOCATION`) must be set to `global` (not standard regions like `us-central1`).
+3.  **Node Version**: Switch your active shell session to Node v20+ before running to support modern regular expressions:
+    ```bash
+    source ~/.nvm/nvm.sh && nvm use 20
+    ```
+4.  **Dirty State Cleanup**: If a run crashes midway, wipe the dirty extension installation before retrying:
+    ```bash
+    rm -rf evals/.venv/fake_home/.gemini/extensions/google-cloud-db-context-engineering
+    ```

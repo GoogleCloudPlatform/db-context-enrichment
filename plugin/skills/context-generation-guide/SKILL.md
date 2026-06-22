@@ -1,9 +1,10 @@
 ---
 name: context-generation-guide
-description: Guidelines and best practices for generating context items (Templates, Facets, Value Searches). Use this skill whenever the user asks to create, author, or generate context for database enrichment, or asks for examples and instructions on how to write templates, facets, or value searches. It helps bridge the gap between LLMs and structured databases.
+description: Guidelines and best practices for generating context items (Templates, Facets, Value Searches). Use this skill whenever the user asks to create, author, or generate context for database enrichment, or asks for examples and instructions on how to write templates, facets, or value searches. It helps bridge the gap between LLMs and structured databases. For running the automated generation, evaluation, and tuning lifecycle, see the context-engineering-workflow skill.
 ---
 
 # Context Generation Guide Skill
+
 
 This skill provides the agent with the necessary information, concepts, and best practices to generate high-quality context items for the "Context Engineering Agent". This context bridges the gap between LLMs and structured databases, enabling accurate Natural Language to SQL generation.
 
@@ -27,77 +28,81 @@ When asked to generate context items:
 
 Note: Use the `mutate_context_set` tool for all ContextSet changes. It supports granular additions, updates, and deletions of ContextSet items without replacing the whole file. Pass mutation payloads directly — the tool handles all file I/O internally, so the agent should not read the target file beforehand.
 
-## Context Type Definitions
+## Context Type Definitions & Rationale
 
-### 1. Templates
-A **Template** represents a complete mapping between a natural language query and an executable SQL query. It is composed of:
-*   **Natural Language Question**: An example question asking for specific data.
-*   **SQL Query**: The exact SQL query that correctly answers the question.
-*   **Intent**: The specific goal of the query.
-*   **Manifest**: A generalized description of the template's purpose.
-*   **Parameterized Form**: The SQL and intent with specific values replaced by placeholders (e.g., `$1`).
+A `ContextSet` is the central artifact managed by the Context Engineering Agent, containing structured knowledge to help the Gemini Data Analytics API understand your database and business logic. 
 
+The following are the currently supported context types:
+
+---
+
+## 1. Blueprints for Predictable SQL Generation: Templates & Facets
+
+**Templates** and **Facets** act as structural **blueprints** that use the pattern of ML tool selection and tool calling to constrain SQL generation. By providing the model with these pre-defined patterns, you ensure that generated queries are highly predictable, structurally sound, and adhere to established database join structures.
+
+### Templates
+* **Purpose**: A blueprint for a complete query lifecycle. It maps a representative natural language query to an executable SQL statement and a declarative intent, teaching the model the overarching operational logic and join paths for a common query pattern.
+* **Parameterization**: Templates are generalized by replacing literal values in both the intent and SQL with placeholders (e.g., `$1`, `$2`) to match query variations.
+* **Schema Layout**:
 ```json
 {
-    "templates": [
-        {
-            "nl_query": "How many accounts are in London?",
-            "sql": "SELECT count(*) FROM account WHERE city = 'London'",
-            "intent": "How many accounts are in London?",
-            "manifest": "How many accounts are in a given city?",
-            "parameterized": {
-                "parameterized_sql": "SELECT count(*) FROM account WHERE city = $1",
-                "parameterized_intent": "How many accounts are in $1?"
-            }
-        }
-    ]
+  "templates": [
+    {
+      "nl_query": "How many accounts are in London?",
+      "sql": "SELECT count(*) FROM account WHERE account.city = 'London'",
+      "intent": "How many accounts are in London?",
+      "manifest": "How many accounts are in a given city?",
+      "parameterized": {
+        "parameterized_sql": "SELECT count(*) FROM account WHERE account.city = $1",
+        "parameterized_intent": "How many accounts are in $1?"
+      }
+    }
+  ]
 }
 ```
 
-
-### 2. Facets
-A **Facet** is a modular SQL fragment representing a specific filter or condition. It is composed of:
-*   **SQL Snippet**: The SQL fragment (usually a boolean expression or part of a WHERE clause). Every column reference **must** be qualified with its table name (e.g., `table.column`) so the fragment is unambiguous when injected into a query that joins multiple tables. Schema/database prefixes are not required.
-*   **Intent**: The natural language expression corresponding to the snippet.
-*   **Manifest**: A generalized description of the facet.
-*   **Parameterized Form**: The SQL snippet and intent with specific values replaced by placeholders.
-
+### Facets
+* **Purpose**: A modular blueprint fragment representing a specific condition, filter, or specialized join predicate. They are dynamically injected filters linked to specific vocabulary, allowing the model to compose complex queries from smaller, validated fragments.
+* **Qualification Rule**: To prevent syntax and ambiguity errors during multi-table joins, **every column reference in a facet MUST be qualified with its table name** (e.g., `table_name.column_name`).
+* **Schema Layout**:
 ```json
 {
-    "facets": [
-        {
-            "sql_snippet": "products.rating > 4.5",
-            "intent": "highly rated products (above 4.5)",
-            "manifest": "highly rated products (above a given number)",
-            "parameterized": {
-                "parameterized_sql_snippet": "products.rating > $1",
-                "parameterized_intent": "highly rated products (above $1)"
-            }
-        }
-    ]
+  "facets": [
+    {
+      "sql_snippet": "products.rating > 4.5",
+      "intent": "highly rated products (above 4.5)",
+      "manifest": "highly rated products (above a given number)",
+      "parameterized": {
+        "parameterized_sql_snippet": "products.rating > $1",
+        "parameterized_intent": "highly rated products (above $1)"
+      }
+    }
+  ]
 }
 ```
 
-### 3. Value Searches
-A **Value Search** defines how to look up values that might not match exactly. It requires:
-*   **Target Concept**: The entity being searched (e.g., "City").
-*   **Database Location**: The specific Table and Column containing the values.
-*   **Match Strategy**: The function used for matching (e.g., Trigram, Semantic).
-*   **Dialect-Specific Configuration**: Any specific columns or parameters required by the dialect.
+---
 
+## 2. Resolving the Value Linking Problem: Value Search Queries
+
+When executing blueprint-driven SQL generation, the model inevitably runs into the **value linking problem**—where values in a user's natural language query (e.g., "Heathrow", "Lndn", "active") do not match the exact spelling, case, or formatting of stored records in the database (e.g., "London Heathrow", "London", "ACTIVE_STATUS"). 
+
+**Value Search Queries** are the developer-defined mechanism used to resolve the value linking problem, mapping user-supplied terms to their precise schema locations and database records using exact, trigram, or semantic match functions.
+
+* **Schema Layout**:
 ```json
 {
-    "value_searches": [
-        {
-            "concept_type": "City",
-            "query": "SELECT T.\"location\" AS value, 'users.location' AS columns, 'City' AS concept_type, fuzzy_distance(T.\"location\", $value) AS distance FROM \"users\" T WHERE fuzzy_match(T.\"location\", $value)",
-            "description": "Fuzzy match for city in location column"
-        }
-    ]
+  "value_searches": [
+    {
+      "query": "SELECT T.\"name\" AS value, 'airports.name' AS columns, 'Airport Name' AS concept_type, (T.\"name\" <-> $value::text) AS distance, '\{\}'::text AS context FROM \"airports\" T WHERE T.\"name\" % $value::text",
+      "concept_type": "Airport Name",
+      "description": "Fuzzy match using standard trigram for partial airport names"
+    }
+  ]
 }
 ```
 
-## Best Practices
+## 
 
 ### General
 *   **Focus on Quality**: Provide accurate and representative examples.

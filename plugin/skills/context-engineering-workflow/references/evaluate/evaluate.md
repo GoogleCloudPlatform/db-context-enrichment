@@ -1,11 +1,7 @@
----
-name: autoctx-evaluate
-description: Guides the agent to execute an evaluation of a generated ContextSet against a golden dataset utilizing the Evalbench framework.
----
+# Phase: Evaluation Scoring
 
-# Auto Context Generation - Evaluation Workflow
-
-This skill guides the process of rigorously evaluating an existing ContextSet against a specific golden truth dataset using Google's Evalbench architecture. It structures the evaluation experiments and executes the binaries.
+## Goal
+Run a structured Evalbench evaluation to score the accuracy of a specific context set against a golden truth dataset, identifying exact query failures.
 
 ## Input
 
@@ -88,4 +84,4 @@ Conclude by providing a succinct summary to the user:
 ## Templates & Reference
 
 When listing sources from `tools.yaml`, ensure you only present `kind: source` records to the user.
-The tool `generate_evalbench_configs` will find the selected block inside the file and validate its connection parameters deterministically using Python code. You do not need to manually parse or map individual properties such as `host`, `port`, or `database` yourself. If the tool indicates a verification failure for a specific database type, refer to the schema examples inside `references/` (e.g., `cloud-sql-postgres.md`) to guide the user on fixing their `tools.yaml` definition.
+The tool `generate_evalbench_configs` will find the selected block inside the file and validate its connection parameters deterministically using Python code. You do not need to manually parse or map individual properties such as `host`, `port`, or `database` yourself. If the tool indicates a verification failure for a specific database type, refer to the schema examples inside this directory (e.g., `cloud-sql-postgres.md`) to guide the user on fixing their `tools.yaml` definition.

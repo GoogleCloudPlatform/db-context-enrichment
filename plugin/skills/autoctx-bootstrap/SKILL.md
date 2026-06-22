@@ -18,7 +18,10 @@ Before beginning the workflow, you explicitly require:
 Follow these steps exactly in order:
 
 1. **Condition Check & Schema Retrieval:**
-   - You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`). A new dedicated subfolder will be created inside the `autoctx/experiments/` directory using this name to hold the entire tuning lifecycle and prevent any surprises. Do not proceed until you have their confirmation.
+   - You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`).
+     - **Duplicate Name Check**: You MUST check the `autoctx/experiments/` directory before proceeding. If a directory with the proposed name already exists, you must explicitly prompt the user:
+       > *"An experiment named `<experiment_name>` already exists. Do you want to resume it (update its baseline context), fork it (create a new version, e.g., `<experiment_name>_v2`), or overwrite it completely?"*
+     - A dedicated subfolder will be created or updated inside the `autoctx/experiments/` directory using this name to hold the entire tuning lifecycle and prevent any surprises. Do not proceed until you have their confirmation.
    - Use the available Toolbox MCP tools configured in the active `autoctx/tools.yaml` to fetch the schemas for the target database.
    - Present the retrieved schema summary **structurally and cleanly** to the user. Ask the user if they want to filter or focus on specific schemas or tables.
    - **Source Enrichment**: Prompt the user for any existing **Design Docs** or **Application Code** (e.g., ORM models, SQL queries) they wish to provide to enrich the context generation. Wait for the user's response before proceeding.

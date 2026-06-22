@@ -46,18 +46,18 @@
       "max_turns": 5
     },
     {
-      "id": "autoctx-expert-eval-confirm",
-      "starting_prompt": "create initial context set for my alloydb database",
-      "conversation_plan": "The workspace already has an active experiment 'my-alloydb-tuning-experiment' with existing context files on disk. When you ask to run eval, the agent must detect the existing experiment and ask if you are resuming it. You should respond yes, but that you want to add 1 facet to it before resuming. The agent should help you do so, and help you start the evaluation.",
+      "id": "autoctx-expert-resume",
+      "starting_prompt": "run eval",
+      "conversation_plan": "The workspace already has an active experiment 'my-alloydb-tuning-experiment' with eval inputs. When you ask to run eval, the agent must detect the existing experiment and ask if you would like to resume or start a new experiment, and the consequences of resuming. You should terminate the conversation at this point, before any evals are run.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_evaluation/",
-      "max_turns": 8
+      "max_turns": 5
     },
     {
-      "id": "autoctx-novice-resume",
-      "starting_prompt": "tune context",
-      "conversation_plan": "The workspace already has a database connection configured but no evaluation dataset exists. The agent must inspect the workspace and state file, inform you that the connection is active but no dataset has been created, and ask if you would like help generating one. You should respond yes, and the agent should guide you to the dataset prep phase.",
+      "id": "autoctx-novice-skip-step",
+      "starting_prompt": "I want a context set",
+      "conversation_plan": "The workspace already has a database connection configured but no evaluation dataset exists. The agent must inspect the workspace and state file, inform you that the connection is active but no dataset has been created, and ask if you would like help generating one. The agent should provide guidance as to why a dataset is needed. You should terminate the conversation at this point",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_init/",

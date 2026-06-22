@@ -1,11 +1,10 @@
----
-name: autoctx-bootstrap
-description: Guides the agent to bootstrap an initial context set (templates & facets) by deducing key information from the database schema and generating a ContextSet file.
----
+> [!NOTE]
+> For detailed schema specifications and explanation of context set types, see the central [Context Set Concept Types](../../../context-generation-guide/SKILL.md) guide.
 
-# Auto Context Generation - Bootstrap Workflow
+# Phase: Baseline Bootstrapping
 
-This skill guides the process of bootstrapping an initial ContextSet (baseline context) from the target database schema.
+## Goal
+Deduce query concepts and generate a baseline `ContextSet` (templates, facets, value searches) directly from database schemas and metadata to act as the starting point for optimization.
 
 ## Input
 
@@ -18,10 +17,14 @@ Before beginning the workflow, you explicitly require:
 Follow these steps exactly in order:
 
 1. **Condition Check & Schema Retrieval:**
-   - You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`).
-     - **Duplicate Name Check**: You MUST check the `autoctx/experiments/` directory before proceeding. If a directory with the proposed name already exists, you must explicitly prompt the user:
-       > *"An experiment named `<experiment_name>` already exists. Do you want to resume it (update its baseline context), fork it (create a new version, e.g., `<experiment_name>_v2`), or overwrite it completely?"*
-     - A dedicated subfolder will be created or updated inside the `autoctx/experiments/` directory using this name to hold the entire tuning lifecycle and prevent any surprises. Do not proceed until you have their confirmation.
+   - **Ask for Experiment Name & Handle Existing Folders**: You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`).
+     - **If the experiment folder already exists inside `autoctx/experiments/`**: You **MUST** detect it and explicitly ask the user for confirmation:
+       - *"An experiment named `<experiment_name>` already exists. Do you want to resume it (update its baseline context), fork it (create a new version, e.g., `<experiment_name>_v2`), or overwrite it completely?"*
+       - If the user selects **resume**: proceed with the bootstrap in the same folder, updating `bootstrap_context.json`.
+       - If the user selects **fork**: prompt for a new name or suggest `<experiment_name>_v2`, create the folder, and proceed there.
+       - If the user selects **overwrite**: clear the existing folder's contents and proceed.
+     - **If it does not exist**: Create a new dedicated subfolder inside `autoctx/experiments/` using this name.
+     - Do not proceed until the experiment folder structure is finalized.
    - Use the available Toolbox MCP tools configured in the active `autoctx/tools.yaml` to fetch the schemas for the target database.
    - Present the retrieved schema summary **structurally and cleanly** to the user. Ask the user if they want to filter or focus on specific schemas or tables.
    - **Source Enrichment**: Prompt the user for any existing **Design Docs** or **Application Code** (e.g., ORM models, SQL queries) they wish to provide to enrich the context generation. Wait for the user's response before proceeding.
@@ -54,3 +57,7 @@ Conclude by providing a succinct summary to the user:
    - Present the local file path to `bootstrap_context.json` and the generated console link together in a single clear message.
 3. **Instruct Next Step Evaluation**:
    - Instruct the user to upload the file to Database Studio and then run evaluation using the evaluating workflow on this new ContextSet to establish a baseline.
+
+
+> [!IMPORTANT]
+> **Tool Modification Rule**: Always use the `mutate_context_set` tool for all ContextSet changes. Pass mutation payloads directly to the tool — it handles all file I/O internally. **Do not read the target context set file beforehand**.

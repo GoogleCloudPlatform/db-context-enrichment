@@ -48,7 +48,7 @@ Unlike CI (which auto-injects values and queries the metadata server), running l
     ```
 2.  **Dirty State Cleanup**: If a run crashes midway, wipe the dirty extension installation before retrying:
     ```bash
-    rm -rf evals/.venv/fake_home/.gemini/extensions/google-cloud-db-context-engineering
+    rm -rf .venv/fake_home/.gemini/extensions/google-cloud-db-context-engineering
     ```
 3.  **Environment Variables**: Before executing a run, ensure you have exported your GCP project ID and the global endpoint location:
     ```bash

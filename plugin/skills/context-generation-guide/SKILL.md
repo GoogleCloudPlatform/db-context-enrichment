@@ -94,7 +94,7 @@ When executing blueprint-driven SQL generation, the model inevitably runs into t
 {
   "value_searches": [
     {
-      "query": "SELECT T.\"name\" AS value, 'airports.name' AS columns, 'Airport Name' AS concept_type, (T.\"name\" <-> $value::text) AS distance, '\{\}'::text AS context FROM \"airports\" T WHERE T.\"name\" % $value::text",
+      "query": "SELECT T.\"name\" AS value, 'airports.name' AS columns, 'Airport Name' AS concept_type, (T.\"name\" <-> $value::text) AS distance, '{}'::text AS context FROM \"airports\" T WHERE T.\"name\" % $value::text",
       "concept_type": "Airport Name",
       "description": "Fuzzy match using standard trigram for partial airport names"
     }

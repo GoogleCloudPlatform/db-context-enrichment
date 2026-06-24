@@ -65,9 +65,11 @@ Examples:
 | **revert** | Reverting a previous commit. | none |
 | **style** | Formatting and whitespace only (rare with auto-formatters). | none |
 
-Only `feat`, `fix`, `perf`, and breaking changes (`!`) appear in the user-facing
-changelog by default; other types are accepted but hidden. Use `chore` or
-`refactor` for internal-only PRs you do not want announced in release notes.
+By default, only `feat`, `fix`, `perf`, and `revert` appear in the user-facing
+changelog; other types are accepted but hidden. Breaking changes always appear
+in their own top section regardless of the underlying type — even `chore!:` or
+`refactor!:` will be announced. Use `chore` or `refactor` (without `!`) for
+internal-only PRs you do not want surfaced in release notes.
 
 Titles are enforced by
 [.github/workflows/lint-pr-title.yml](.github/workflows/lint-pr-title.yml).

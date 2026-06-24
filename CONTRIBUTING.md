@@ -71,6 +71,15 @@ in their own top section regardless of the underlying type — even `chore!:` or
 `refactor!:` will be announced. Use `chore` or `refactor` (without `!`) for
 internal-only PRs you do not want surfaced in release notes.
 
+The visible-vs-hidden mapping comes from the
+[`conventional-changelog-conventionalcommits` preset][preset-defaults] that
+Release-Please loads when [release-please-config.json](release-please-config.json)
+does not override `changelog-sections`. Check that file for the authoritative
+list; to change which types are visible, override `changelog-sections` in
+[release-please-config.json](release-please-config.json).
+
+[preset-defaults]: https://github.com/conventional-changelog/conventional-changelog/blob/master/packages/conventional-changelog-conventionalcommits/src/constants.js
+
 Titles are enforced by
 [.github/workflows/lint-pr-title.yml](.github/workflows/lint-pr-title.yml).
 PRs with malformed titles fail the check and cannot merge.

@@ -7,7 +7,9 @@ Analyze evaluation failures to perform a Gap Analysis and apply targeted context
 
 Follow these steps exactly in order:
 
-### 1. Setup & Loop Identification
+### 1. Setup & Loop 
+
+You must read [SKILL.md](../../SKILL.md) before starting this phase.
 
 1.  **Validation**:
     -   Check if `autoctx/experiments/` directory and `autoctx/state.md` exist. If missing, warn the user that the workspace might not be initialized (suggest running the Setup & Connection phase of this skill first).

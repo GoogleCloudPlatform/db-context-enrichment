@@ -5,6 +5,8 @@ Scaffold the local `autoctx/` workspace and establish verified database connecti
 
 ## Initialization Workflow
 
+You must read [SKILL.md](../../SKILL.md) before starting this phase.
+
 Follow these steps when the user asks to initialize the environment:
 
 1.  **Confirm Working Directory:** Explicitly state the current working directory to the user. Explain that the initialization will create an `autoctx/` folder in this directory to hold `tools.yaml`, `state.md`, and `experiments/`. Ask them to confirm if this is the correct location before proceeding.

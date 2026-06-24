@@ -11,18 +11,9 @@ Refer to [../context-generation-guide/SKILL.md](../context-generation-guide/SKIL
 
 ---
 
-## Skill Prerequisites & Troubleshooting
-If you encounter any environmental, connection, or execution errors, consult the `README.md` file to verify preconditions are met. Types of preconditions:
-*   *Google Cloud Service APIs enablement*
-*   *IAM Roles & Access*
-*   *Database Instance Permissions*
-*   *Development Environment*: Application Default Credentials (ADC) and Python package manager (`uv`) 
-
----
-
 ## The Optimization Lifecycle & Phase Flow
 
-To build high-performing data applications, you must follow a systematic, iterative optimization lifecycle (Hill-Climbing). 
+To build high-performing data applications, context engineers typically follow a systematic, iterative optimization lifecycle (Hill-Climbing). 
 
 ```mermaid
 flowchart TD
@@ -32,7 +23,7 @@ Scaffolds workspace & connections]
     
     Prep -- No --> DatasetPrep[Dataset Prep & Expansion
 Builds reference ground-truth]
-    DatasetPrep --> Bootstrap[Baseline Bootstrapping
+    DatasetPrep --> Bootstrap[Baseline Context Bootstrapping
 Generates initial context from schema]
     Prep -- Yes --> Bootstrap
     
@@ -56,7 +47,7 @@ Gap Analysis & Context Mutation]
 ### Setup & Connection Configuration Phase
 *   **Reference**: [references/init/init.md](references/init/init.md)
 *   **Goal**: Scaffold the local `autoctx/` workspace and establish verified database connections.
-*   **Rationale**: Readonly-database access is an input for dataset generation, context validation, and evaluation.
+*   **Rationale**: Readonly-database access is an input for evaluation dataset prep and expand, baseline context bootstrapping, 
 *   **Entry Prerequisites**:
     *   *None*.
 
@@ -71,7 +62,7 @@ Gap Analysis & Context Mutation]
 
 ---
 
-### Baseline Bootstrapping Phase
+### Baseline Context Bootstrapping Phase
 *   **Reference**: [references/bootstrap/bootstrap.md](references/bootstrap/bootstrap.md)
 *   **Goal**: Deduce query concepts and generate a baseline `ContextSet` (templates, facets, value searches) directly from database schemas and metadata.
 *   **Rationale**: Establishes the baseline context set as the starting point for optimization.
@@ -80,7 +71,7 @@ Gap Analysis & Context Mutation]
 
 ---
 
-### Evaluation Scoring Phase
+### Run Evaluation And Score
 *   **Reference**: [references/evaluate/evaluate.md](references/evaluate/evaluate.md)
 *   **Goal**: Run a structured Evalbench evaluation to score the accuracy of a specific context set and identify exact query failures.
 *   **Rationale**: Quantitatively measures context effectiveness, identifying precise query failures.
@@ -104,7 +95,7 @@ Gap Analysis & Context Mutation]
 
 ## Workspace Folder Structure & Evolution
 
-The Autoctx workflows generate and interact with a structured workspace to maintain state and trace progress across iterations.
+The Autoctx workflows generate and interact with a structured workspace to maintain state and trace progress across iterations. 
 
 ### Workspace Folder Layout
 *   `autoctx/`: The dedicated workspace directory.
@@ -126,18 +117,21 @@ The Autoctx workflows generate and interact with a structured workspace to maint
 4.  **Post-Hill-Climbing**: `hillclimb/` appears with `gap_analysis_vN.md` and `improved_context_vN.json` after the Optimization & Hill-Climbing phase, and `state.md` is updated.
 5.  **Tuning Loop**: Iteratively evaluates `improved_context_vN.json` and generates `improved_context_v(N+1).json` until target accuracy is achieved.
 
----
+## Safety & Protocol
 
-## Critical API Error Protocol
+*   **Missing Dataset**:
+    *   If the user's request requires **evaluating, scoring, or optimizing** a context set (e.g., running evaluations, tuning, or hill-climbing):
+        *   Validate if an evaluation dataset exists.
+        *   **Mandatory Halt & Guide**: If no evaluation dataset exists, you are **strictly forbidden** from executing any context bootstrapping, tuning, or evaluation operations in this turn. You must immediately halt, stop calling tools, and yield the turn. Explain **why a golden evaluation dataset is critical** for context engineering (i.e., you cannot objectively score, validate, or hill-climb translation accuracy without a ground-truth dataset), and ask if they would like help generating one first.
 
-Seek guidance from the user if you run into results where retrying is unlikely to solve the issue.
-*   Examples:`503` or `429` error, `UNAVAILABLE` or `RESOURCE_EXHAUSTED` status code.
-*   Why: These errors are often associated with quota issues, and retrying the request immediately will not resolve the issue. For issues related to Vertex AI Resource Exhaustion, retrying at a later time is often the only solution.
+*   **Critical API Error Protocol**:
+    *   Seek guidance from the user if you run into results where retrying is unlikely to solve the issue.
+    *   Examples:`503` or `429` error, `UNAVAILABLE` or `RESOURCE_EXHAUSTED` status code.
+    *   Why: These errors are often associated with quota issues, and retrying the request immediately will not resolve the issue. For issues related to Vertex AI Resource Exhaustion, retrying at a later time is often the only solution.
 
----
-
-## Assistive Modes
-
-Developers may be novices or experts when it comes to data agent developer platform and/or context engineering and the recursive optimization loop. 
-* For novice users, guide them through the typical flow and help them understand the platform's value and the agent's purpose. Ground your assistance by referencing user docs, either in the README or fetched by searching through public product documentation.
-* For expert users, assist them in going through the flow as they wish. Help them by pointing any unforeseen consequences, e.g. missing inputs, inputs of poor quality, or if they are insisting on something that will lead to a dead end.
+*   **Skill Prerequisites & Troubleshooting**:
+    *   If you encounter any environmental, connection, or execution errors, consult the `README.md` file to verify preconditions are met. Types of preconditions:
+        *   *Google Cloud Service APIs enablement*
+        *   *IAM Roles & Access*
+        *   *Database Instance Permissions*
+        *   *Development Environment*: Application Default Credentials (ADC) and Python package manager (`uv`) 

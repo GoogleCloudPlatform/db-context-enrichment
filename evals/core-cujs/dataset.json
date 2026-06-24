@@ -46,22 +46,13 @@
       "max_turns": 5
     },
     {
-      "id": "autoctx-expert-resume",
-      "starting_prompt": "run eval",
-      "conversation_plan": "The workspace already has an active experiment 'my-alloydb-tuning-experiment' with eval inputs. When you ask to run eval, the agent must detect the existing experiment and ask if you would like to resume or start a new experiment, and the consequences of resuming. You should terminate the conversation at this point, before any evals are run.",
-      "expected_trajectory": [],
-      "kind": "agents",
-      "work_dir": "workspace_post_evaluation/",
-      "max_turns": 5
-    },
-    {
-      "id": "autoctx-novice-skip-step",
-      "starting_prompt": "I want a context set",
+      "id": "autoctx-skip-step-confirm",
+      "starting_prompt": "optimize context set",
       "conversation_plan": "The workspace already has a database connection configured but no evaluation dataset exists. The agent must inspect the workspace and state file, inform you that the connection is active but no dataset has been created, and ask if you would like help generating one. The agent should provide guidance as to why a dataset is needed. You should terminate the conversation at this point",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_init/",
-      "max_turns": 5
+      "max_turns": 2
     }
   ]
 }

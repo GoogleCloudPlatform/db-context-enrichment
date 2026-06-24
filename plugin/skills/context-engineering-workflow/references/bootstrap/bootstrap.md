@@ -12,6 +12,8 @@ Before beginning the workflow, you explicitly require:
 - An active `tools.yaml` configuration (located in `autoctx/`) with database schema fetching tools configured (e.g., `<source>-list-schemas`).
 - Target database schemas to act upon.
 
+You must read [SKILL.md](../../SKILL.md) before starting this phase.
+
 ## Workflow
 
 Follow these steps exactly in order:

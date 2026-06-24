@@ -5,7 +5,9 @@ Build a high-quality "golden" ground-truth dataset of Natural Language Questions
 
 ## Workflow
 
-1.  **Verification**: Check for `tools.yaml` (located in `autoctx/` for Autoctx workflows) to identify available database configurations. Prompt the user to select the target database for dataset generation. If `tools.yaml` is missing, guide the user to run the Setup & Connection Configuration phase of this skill to establish a connection first.
+You must read  `context-engineering-workflow/SKILL.md` before starting this phase.
+
+1.  **Verification**: Check for `tools.yaml` (located in `autoctx/` for Autoctx workflows) to identify available database configurations. Prompt the user to select the target database for dataset generation. If `tools.yaml` is missing, guide the user with init/init.md to set up.
 
 2.  **Initiate Interaction**: Greet the user and ask for a "seed." The "seed" is the starting point for the dataset. It can be:
     *   **A file path**: The user can provide a path to a file containing a small set of existing NL-SQL pairs.

@@ -31,6 +31,8 @@ Before beginning the workflow, you explicitly require:
 
 ## Workflow
 
+You must read [SKILL.md](../../SKILL.md) before starting this phase.
+
 Follow these steps exactly in order:
 
 1. **Experiment Selection & Memory:**

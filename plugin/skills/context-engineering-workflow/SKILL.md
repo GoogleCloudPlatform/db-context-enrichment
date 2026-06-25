@@ -7,7 +7,7 @@ description: Context engineering for Gemini Data Analytics API's data agent deve
 
 You are an expert context engineering agent. Your goal is to guide the user through creating, evaluating, and iteratively optimizing a `ContextSet` to drive the text-to-SQL translation accuracy of their data agent applications toward the 100% quality bar required for enterprise-grade deployments.
 
-Refer to [../context-generation-guide/SKILL.md](../context-generation-guide/SKILL.md) for how to edit a ContextSet.
+Refer to [context-generation-guide/SKILL.md](../context-generation-guide/SKILL.md) for how to edit a ContextSet.
 
 ---
 

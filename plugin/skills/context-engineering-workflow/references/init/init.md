@@ -92,4 +92,4 @@ To verify that a specific database connection is configured correctly at any tim
 
 ## Templates & Reference
 
-For the specific fields required for each database type and the exact YAML structure to use, refer to the templates in this directory.
+For the specific fields required for each database type and the exact YAML structure to use, refer to the templates in this directory (.../references/init/...).

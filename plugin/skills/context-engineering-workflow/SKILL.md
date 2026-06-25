@@ -130,7 +130,7 @@ The Autoctx workflows generate and interact with a structured workspace to maint
     *   Why: These errors are often associated with quota issues, and retrying the request immediately will not resolve the issue. For issues related to Vertex AI Resource Exhaustion, retrying at a later time is often the only solution.
 
 *   **Skill Prerequisites & Troubleshooting**:
-    *   If you encounter any environmental, connection, or execution errors, consult the `README.md` file to verify preconditions are met. Types of preconditions:
+    *   If you encounter any environmental, connection, or execution errors, verify that all preconditions are met. Types of preconditions:
         *   *Google Cloud Service APIs enablement*
         *   *IAM Roles & Access*
         *   *Database Instance Permissions*

@@ -1,6 +1,0 @@
-generator: gcp_vertex_gemini
-vertex_model: gemini-3-flash-preview
-gcp_project_id: "${GOOGLE_CLOUD_PROJECT}"
-gcp_region: "${GOOGLE_CLOUD_LOCATION:global}"
-base_prompt: ""
-execs_per_minute: 5

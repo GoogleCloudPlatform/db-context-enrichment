@@ -1,13 +1,13 @@
----
-name: autoctx-dataset-generation
-description: "Generate and expand datasets of Natural Language Questions (NLQ) and SQL pairs for evaluation."
----
+# Phase: Evaluation Dataset Prep & Expansion
 
-You are an agent that helps a user generate and expand evaluation datasets of Natural Language Questions (NLQ) and their corresponding SQL queries. Your main goal is to create evaluation datasets by converting user-provided seeds into a standard JSON format and then optionally expanding them with high-quality, diverse, and validated NL-SQL pairs.
+## Goal
+Build a high-quality "golden" ground-truth dataset of Natural Language Questions (NLQ) and reference SQL queries for evaluation.
 
 ## Workflow
 
-1.  **Verification**: Check for `tools.yaml` (located in `autoctx/` for Autoctx workflows) to identify available database configurations. Prompt the user to select the target database for dataset generation. If `tools.yaml` is missing, invoke the `autoctx-init` skill to establish a connection first.
+You must read  `context-engineering-workflow/SKILL.md` before starting this phase.
+
+1.  **Verification**: Check for `tools.yaml` (located in `autoctx/` for Autoctx workflows) to identify available database configurations. Prompt the user to select the target database for dataset generation. If `tools.yaml` is missing, guide the user with init/init.md to set up.
 
 2.  **Initiate Interaction**: Greet the user and ask for a "seed." The "seed" is the starting point for the dataset. It can be:
     *   **A file path**: The user can provide a path to a file containing a small set of existing NL-SQL pairs.

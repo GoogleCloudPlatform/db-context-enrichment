@@ -39,7 +39,7 @@ You must prepend this exact block to the very top of **every single response** y
 ### **PHASE 1: ENVIRONMENT & CONTEXT ACQUISITION**
 *   **Goal:** Map the technical and business domain.
 *   **Mandatory Actions:**
-    1.  Read `references/environment-context-acquisition.md`.
+    1.  Read `environment-context-acquisition.md` inside this directory.
     2.  Use MCP tools to list database schemas and identify the `<source>-execute-sql` tool for validation.
     3.  Process artifacts to map business concepts to the schema.
     4.  Establish the output file name (default: `golden.json` if unspecified).
@@ -48,14 +48,14 @@ You must prepend this exact block to the very top of **every single response** y
 ### **PHASE 2: STRATEGIC PLANNING [GATE: USER_APPROVAL]**
 *   **Goal:** Define the rules of engagement.
 *   **Mandatory Actions:**
-    1.  Read `references/generation-plan-requirements.md`.
+    1.  Read `generation-plan-requirements.md` inside this directory.
     2.  Write/Update `evalset_gen_plan.md` (Structural Architecture, Semantic Mappings, Complexity Distribution).
 *   **[STOP]:** You MUST halt and wait for user approval of the plan. **DO NOT generate pairs yet.**
 
 ### **PHASE 3: INTELLIGENT GENERATION & THE VALIDATION GATE**
 *   **Goal:** Create the core "Seed" dataset with execution-guided proof.
 *   **Mandatory Actions:**
-    1.  Read `references/generation-cot.md` and `references/acceptance-criteria.md`.
+    1.  Read `generation-cot.md` and `acceptance-criteria.md` inside this directory.
     2.  **The Validation Protocol:**
         - **Draft:** Create SQL based on the CoT.
         - **Execute:** Run the SQL using `<source>-execute-sql`. 
@@ -76,7 +76,7 @@ You must prepend this exact block to the very top of **every single response** y
 ### **PHASE 5: AUDIT & REPORTING**
 *   **Goal:** Verify health and diversity.
 *   **Mandatory Actions:**
-    1.  Read `references/review-protocol.md`.
+    1.  Read `review-protocol.md` inside this directory.
     2.  Perform Tier 1 (Pair-Level) and Tier 2 (Dataset-Level) audits.
     3.  Write/Update Tier 1 and Tier 2 reports: `evalset_report_pair_level.md` and `evalset_report_dataset_level.md`.
 *   **Constraint:** If audit reveals errors (e.g., missing ORDER BY), you **must** backtrack and fix the pairs.

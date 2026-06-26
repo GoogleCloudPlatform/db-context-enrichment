@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.6.0...v0.6.1) (2026-06-26)
+
+
+### Features
+
+* Enable sheperding of users through context engineering workflow  ([#168](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/168)) ([3231e59](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/3231e5966ac305268929eaa5517ea2ea22194c3f))
+
 ## [0.6.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.5.1...v0.6.0) (2026-06-16)
 
 

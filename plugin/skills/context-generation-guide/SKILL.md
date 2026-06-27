@@ -25,6 +25,7 @@ When asked to generate context items:
 4.  **Parameterize**: Follow the [Phrase Extraction and Parameterization Guidelines](references/phrase_extraction/guidelines.md) to generalize the values.
 5.  **Format Output**: Construct the final JSON object according to the examples in the reference files.
 6.  **Save Context**: Use the appropriate MCP tool (e.g., `mutate_context_set`) to save or update the context set.
+7.  **Validate**: Call `validate_context_set` on the file you just modified. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
 
 Note: Use the `mutate_context_set` tool for all ContextSet changes. It supports granular additions, updates, and deletions of ContextSet items without replacing the whole file. Pass mutation payloads directly — the tool handles all file I/O internally, so the agent should not read the target file beforehand.
 

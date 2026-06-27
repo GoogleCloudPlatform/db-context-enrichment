@@ -1,7 +1,10 @@
 import json
 from pathlib import Path
 
-from google.cloud.db_context_enrichment.main import mutate_context_set
+from google.cloud.db_context_enrichment.main import (
+    mutate_context_set,
+    validate_context_set,
+)
 
 
 def test_mutate_context_set_success(tmp_path: Path):
@@ -54,3 +57,49 @@ def test_mutate_context_set_validation_error(tmp_path: Path):
     mutations = [{"operation": "invalid", "type": "template"}]
     result = mutate_context_set(str(file_path), json.dumps(mutations))
     assert "Error applying mutations" in result
+
+
+def test_validate_context_set_valid_file(tmp_path: Path):
+    file_path = tmp_path / "context.json"
+    file_path.write_text(
+        json.dumps(
+            {
+                "value_searches": [
+                    {
+                        "query": "SELECT name FROM cities WHERE name = $value",
+                        "concept_type": "City",
+                    }
+                ]
+            }
+        )
+    )
+    result = validate_context_set(str(file_path))
+    parsed = json.loads(result)
+    assert parsed["valid"] is True
+    assert parsed["issues"] == []
+
+
+def test_validate_context_set_reports_issues(tmp_path: Path):
+    file_path = tmp_path / "context.json"
+    file_path.write_text(
+        json.dumps(
+            {
+                "value_searches": [
+                    {"query": "SELECT 1", "concept_type": "City"},
+                ]
+            }
+        )
+    )
+    result = validate_context_set(str(file_path))
+    parsed = json.loads(result)
+    assert parsed["valid"] is False
+    assert any("$value" in i["message"] for i in parsed["issues"])
+
+
+def test_validate_context_set_missing_file(tmp_path: Path):
+    # End-to-end: wrapper returns a parseable JSON response for I/O errors
+    # rather than raising. Error-case coverage lives in context_validator_test.
+    result = validate_context_set(str(tmp_path / "missing.json"))
+    parsed = json.loads(result)
+    assert parsed["valid"] is False
+    assert "missing.json" in parsed["issues"][0]["message"]

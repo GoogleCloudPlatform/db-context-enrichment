@@ -2,7 +2,7 @@ import json
 
 from fastmcp import FastMCP
 
-from google.cloud.db_context_enrichment.common import context_mutator
+from google.cloud.db_context_enrichment.common import context_mutator, context_validator
 from google.cloud.db_context_enrichment.dataset import dataset_generator
 from google.cloud.db_context_enrichment.evaluate import (
     evaluate_generator,
@@ -174,6 +174,30 @@ def mutate_context_set(
         return f"Successfully applied {len(mutations)} mutations to {file_path}"
     except Exception as e:
         return f"Error applying mutations: {str(e)}"
+
+
+@mcp.tool
+def validate_context_set(file_path: str) -> str:
+    """
+    Validate a ContextSet JSON file for structural and convention issues. Reports issues only — does not fix them. The caller (agent) is expected to apply fixes via `mutate_context_set`, then re-run validation until `valid` is true.
+
+    Args:
+        file_path: Absolute path to the ContextSet file.
+
+    Returns:
+        A JSON string of the shape:
+          {
+            "valid": bool,
+            "issues": [
+              {
+                "location": {"type": "template" | "facet" | "value_search", "index": int} | null,
+                "message": str
+              },
+              ...
+            ]
+          }
+    """
+    return json.dumps(context_validator.validate_context_set(file_path), indent=2)
 
 
 @mcp.tool

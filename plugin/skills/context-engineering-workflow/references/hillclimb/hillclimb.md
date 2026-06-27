@@ -107,7 +107,8 @@ Refer to [../../../context-generation-guide/SKILL.md](../../../context-generatio
         -   **Templates**: Run generated SQL examples via `<source>-execute-sql` (use dummy values for placeholders) to verify syntax.
         -   **Others**: Cross-check table/column references against the schema via `<source>-list-schemas`.
     -   **Apply Mutations**: Call the `mutate_context_set` MCP tool passing the **new** file path as `file_path` and mutations as `mutations_json` to mutate the context set.
-3.  **Log in State Tracking**:
+4.  **Validate**: Call `validate_context_set` on `improved_context_vN.json`. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
+5.  **Log in State Tracking**:
     -   Update `autoctx/state.md` to include the output path of `improved_context_vN.json` for Loop `vN`.
 
 ---

@@ -42,6 +42,8 @@ Follow these steps exactly in order:
    - That skill will handle phrase extraction, parameterization, and constructing the final valid JSON structure according to dialect best practices for all context types.
    - Once generated, use the `mutate_context_set` MCP tool to save the context items to `bootstrap_context.json` inside the approved experiment folder. Since this is a new file, construct a list of `"operation": "add"` mutations for each generated item (Template, Facet, Value Search) and pass them to the tool.
 
+4. **Validate**: Call `validate_context_set` on `bootstrap_context.json`. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
+
 ## Output
 
 Upon successful completion, the workspace must contain:

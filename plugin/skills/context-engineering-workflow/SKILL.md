@@ -1,6 +1,6 @@
 ---
 name: context-engineering-workflow
-description: Context engineering for Gemini Data Analytics API's data agent developer platform tools. Generates, evaluates, and iteratively optimizes a ContextSet (Templates, Facets, Value Searches) to maximize Natural-Language-to-SQL translation accuracy. Use this skill to run the automated setup, bootstrapping, scoring, and optimization pipeline. For manual authoring standards and schema syntax rules, see the context-generation-guide skill.
+description: Context engineering for Gemini Data Analytics API's data agent developer platform tools. Generates, evaluates, and iteratively optimizes a ContextSet (Templates, Facets, Value Searches) to maximize Natural-Language-to-SQL translation accuracy. Use this skill to run the automated setup, NL-SQL pair evaluation dataset generation and expansion, bootstrapping, scoring, and optimization pipeline. For manual authoring standards and schema syntax rules, see the context-generation-guide skill.
 ---
 
 # Skill: Context Engineering Orchestrator

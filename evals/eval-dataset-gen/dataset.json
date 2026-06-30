@@ -3,7 +3,7 @@
     {
       "id": "autoctx:generate-dataset-resolve-biz-rule-shift",
       "starting_prompt": "generate a evaluation dataset of SQL/Question pairs for petstore application named golden.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the petstore application whose design doc and source codes can be found in the directory `./app_data`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "conversation_plan": "Ask the agent to use context engineering to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the petstore application whose design doc and source codes can be found in the directory `./app_data`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_resolve_biz_rule_shift/",
@@ -12,7 +12,7 @@
     {
       "id": "autoctx:generate-dataset-resolve-cryptic-schema",
       "starting_prompt": "generate a seed evaluation dataset of SQL/Question pairs for ecommerce application named golden.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the ecommerce application whose business context doc can be found in the directory `./app_data`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "conversation_plan": "Ask the agent to use context engineering to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the ecommerce application whose business context doc can be found in the directory `./app_data`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_resolve_cryptic_schema/",
@@ -21,7 +21,7 @@
     {
       "id": "autoctx:generate-dataset-grounding-local-code",
       "starting_prompt": "generate a seed evaluation dataset of SQL/Question pairs for hr application named golden.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the hr application whose source codes can be found in the directory `./app_data`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "conversation_plan": "Ask the agent to use context engineering to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the hr application whose source codes can be found in the directory `./app_data`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_grounding_local_code/",
@@ -30,7 +30,7 @@
     {
       "id": "autoctx:generate-dataset-grounding-github-code",
       "starting_prompt": "generate a seed evaluation dataset of SQL/Question pairs for property search application named golden.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the application at https://github.com/kupp0/google-dach-summit26-database-labs/tree/main/labs/03_fullstack_ai_app_property_search, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "conversation_plan": "Ask the agent to use context engineering to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the application at https://github.com/kupp0/google-dach-summit26-database-labs/tree/main/labs/03_fullstack_ai_app_property_search, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_grounding_github_code/",
@@ -39,7 +39,7 @@
     {
       "id": "autoctx:generate-dataset-grounding-querylog",
       "starting_prompt": "generate a seed evaluation dataset consisting of SQL/Question pairs for my alloydb database financial named golden.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 SQL/Question pairs in postgres dialect for my alloydb database financial whose query log can be found in the file `./app_data/querylog.txt`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "conversation_plan": "Ask the agent to use context engineering to generate a evaluation dataset consisting of 5 SQL/Question pairs in postgres dialect for my alloydb database financial whose query log can be found in the file `./app_data/querylog.txt`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_grounding_querylog/",

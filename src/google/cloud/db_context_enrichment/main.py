@@ -18,7 +18,7 @@ async def generate_dataset(
     output_file_path: str,
 ) -> str:
     """
-    Validates a list of evaluation dataset entries and saves them to a JSON file.
+    Validates a list of evaluation dataset entries and saves them to a JSON file. This tool is called when the agent trigger the `context-engineering-workflow` skill to generate a dataset for evaluation.
 
     Args:
         dataset_entries_json: A JSON string representing a list of dataset items.

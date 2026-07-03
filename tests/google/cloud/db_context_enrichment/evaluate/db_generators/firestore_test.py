@@ -44,7 +44,8 @@ def test_generate_model_config(mock_params):
         "location": "global",
         "context": {
             "datasource_references": {
-                "firestore": {
+                "firestore_reference": {
+
                     "database_reference": {
                         "project_id": "cloud-db-nl2sql",
                         "database_id": "nl2sql-mflix",

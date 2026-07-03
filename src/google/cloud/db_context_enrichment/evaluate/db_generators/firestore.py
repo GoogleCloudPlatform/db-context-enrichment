@@ -42,6 +42,17 @@ class FirestoreConfigGenerator(BaseDBConfigGenerator):
             db_config, sort_keys=False, default_flow_style=False
         ).strip()
 
+    def generate_model_config(self, context_set_id: str) -> str:
+        model_config = {
+            "generator": "query_data_api",
+            "project_id": self.project,
+            "location": "us-central1",
+            "context": self.build_custom_query_context(context_set_id),
+        }
+        return yaml.safe_dump(
+            model_config, sort_keys=False, default_flow_style=False
+        ).strip()
+
     def build_datasource_reference(
         self, context_set_id: str
     ) -> gda.DatasourceReferences:
@@ -50,7 +61,7 @@ class FirestoreConfigGenerator(BaseDBConfigGenerator):
     def build_custom_query_context(self, context_set_id: str) -> dict[str, Any]:
         return {
             "datasource_references": {
-                "firestore": {
+                "firestore_reference": {
                     "database_reference": {
                         "project_id": self.project,
                         "database_id": self.database,

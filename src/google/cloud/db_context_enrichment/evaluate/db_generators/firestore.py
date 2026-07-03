@@ -34,6 +34,7 @@ class FirestoreConfigGenerator(BaseDBConfigGenerator):
             "dialect": self.DIALECT,
             "database_name": self.database,
             "database_path": "",
+            "firestore_database": f"projects/{self.project}/databases/{self.database}",
             "max_executions_per_minute": 120,
         }
         if self.connection_string:

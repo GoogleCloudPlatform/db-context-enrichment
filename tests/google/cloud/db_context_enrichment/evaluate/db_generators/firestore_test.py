@@ -27,8 +27,10 @@ def test_generate_db_config(mock_params):
         "dialect": "mongodb",
         "database_name": "nl2sql-mflix",
         "database_path": "",
+        "firestore_database": "projects/cloud-db-nl2sql/databases/nl2sql-mflix",
         "max_executions_per_minute": 120,
     }
+
 
 
 def test_generate_model_config(mock_params):
@@ -41,14 +43,20 @@ def test_generate_model_config(mock_params):
     assert m_config == {
         "generator": "query_data_api",
         "project_id": "cloud-db-nl2sql",
-        "location": "global",
+        "location": "us-central1",
         "context": {
             "datasource_references": {
                 "firestore_reference": {
-
                     "database_reference": {
                         "project_id": "cloud-db-nl2sql",
                         "database_id": "nl2sql-mflix",
+                        "collection_ids": [
+                            "movies",
+                            "users",
+                            "comments",
+                            "theaters",
+                            "sessions",
+                        ],
                     },
                     "agent_context_reference": {
                         "context_set_id": "projects/cloud-db-nl2sql/locations/us-central1/contextSets/mflix-context"
@@ -57,3 +65,4 @@ def test_generate_model_config(mock_params):
             }
         },
     }
+

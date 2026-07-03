@@ -24,6 +24,7 @@ class FirestoreConfigGenerator(BaseDBConfigGenerator):
         self.project = params.get("project")
         self.database = params.get("database", "nl2sql-mflix")
         self.connection_string = params.get("connection_string")
+        self.collection_ids = params.get("collection_ids") or params.get("table_ids") or ["movies", "users", "comments", "theaters", "sessions"]
 
     def generate_db_config(self) -> str:
         db_type = "mongodb"
@@ -59,16 +60,25 @@ class FirestoreConfigGenerator(BaseDBConfigGenerator):
         return gda.DatasourceReferences()
 
     def build_custom_query_context(self, context_set_id: str) -> dict[str, Any]:
+        db_ref: dict[str, Any] = {
+            "project_id": self.project,
+            "database_id": self.database,
+        }
+        if self.collection_ids:
+            db_ref["collection_ids"] = self.collection_ids
+
+        ctx_ref: dict[str, Any] = {}
+        if context_set_id:
+            ctx_ref["context_set_id"] = context_set_id
+
+        fs_ref: dict[str, Any] = {
+            "database_reference": db_ref
+        }
+        if ctx_ref:
+            fs_ref["agent_context_reference"] = ctx_ref
+
         return {
             "datasource_references": {
-                "firestore_reference": {
-                    "database_reference": {
-                        "project_id": self.project,
-                        "database_id": self.database,
-                    },
-                    "agent_context_reference": {
-                        "context_set_id": context_set_id
-                    },
-                }
+                "firestore_reference": fs_ref
             }
         }

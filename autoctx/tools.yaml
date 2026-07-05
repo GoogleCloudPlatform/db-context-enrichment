@@ -1,11 +1,12 @@
 kind: source
-name: my-firestore
+name: my-supplies-firestore
 type: firestore-mongodb
 project: cloud-db-nl2sql
-database: nl2sql-dart-ecommerce-firestore-mongodb
+database: nl2sql-supplies
 endpoint: firestore.googleapis.com
-collections: ["orders", "products", "customers"]
+collections: ["sales"]
 ---
+
 kind: tool
 name: my-firestore-list-schemas
 type: firestore-list-collections

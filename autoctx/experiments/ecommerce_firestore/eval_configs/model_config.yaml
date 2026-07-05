@@ -11,3 +11,6 @@ context:
         - orders
         - products
         - customers
+      agent_context_reference:
+        context_set_id: /Users/sichenliu/Developer/db-context-enrichment/autoctx/experiments/ecommerce_firestore/context_sets/tuned_context.json
+        context_set_path: /Users/sichenliu/Developer/db-context-enrichment/autoctx/experiments/ecommerce_firestore/context_sets/tuned_context.json

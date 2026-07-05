@@ -19,9 +19,8 @@ prompt_generator: 'NOOPGenerator'
 ### Evaluator Execution / Parallelism Tuning
 ############################################################
 runners:
-  eval_runners: 1
-  sqlgen_runners: 2
-
+  eval_runners: 4
+  sqlgen_runners: 20
 
 ############################################################
 ### Scorer Related Configs

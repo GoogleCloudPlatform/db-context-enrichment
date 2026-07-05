@@ -61,6 +61,7 @@ class FirestoreConfigGenerator(BaseDBConfigGenerator):
         return gda.DatasourceReferences()
 
     def build_custom_query_context(self, context_set_id: str) -> dict[str, Any]:
+        import os
         db_ref: dict[str, Any] = {
             "project_id": self.project,
             "database_id": self.database,
@@ -71,6 +72,8 @@ class FirestoreConfigGenerator(BaseDBConfigGenerator):
         ctx_ref: dict[str, Any] = {}
         if context_set_id:
             ctx_ref["context_set_id"] = context_set_id
+            if os.path.exists(context_set_id):
+                ctx_ref["context_set_path"] = os.path.abspath(context_set_id)
 
         fs_ref: dict[str, Any] = {
             "database_reference": db_ref
@@ -83,3 +86,4 @@ class FirestoreConfigGenerator(BaseDBConfigGenerator):
                 "firestore_reference": fs_ref
             }
         }
+

@@ -1,0 +1,13 @@
+generator: query_data_api
+project_id: cloud-db-nl2sql
+location: us-central1
+context:
+  datasource_references:
+    firestore_reference:
+      database_reference:
+        project_id: cloud-db-nl2sql
+        database_id: nl2sql-dart-ecommerce-firestore-mongodb
+        collection_ids:
+        - orders
+        - products
+        - customers

@@ -24,7 +24,7 @@ class FirestoreConfigGenerator(BaseDBConfigGenerator):
         self.project = params.get("project")
         self.database = params.get("database", "nl2sql-mflix")
         self.connection_string = params.get("connection_string")
-        self.collection_ids = params.get("collection_ids") or params.get("table_ids") or ["movies", "users", "comments", "theaters", "sessions"]
+        self.collection_ids = params.get("collection_ids") or params.get("table_ids") or ["orders", "products", "customers"]
 
     def generate_db_config(self) -> str:
         db_type = "mongodb"

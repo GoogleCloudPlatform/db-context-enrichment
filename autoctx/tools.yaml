@@ -1,0 +1,21 @@
+kind: source
+name: my-firestore
+type: firestore-mongodb
+project: cloud-db-nl2sql
+database: nl2sql-dart-ecommerce-firestore-mongodb
+endpoint: firestore.googleapis.com
+collections: ["orders", "products", "customers"]
+---
+kind: tool
+name: my-firestore-list-schemas
+type: firestore-list-collections
+provider: local_mcp
+source: my-firestore
+description: Use this tool to list collections and sample document schemas from Firestore.
+---
+kind: tool
+name: my-firestore-execute-query
+type: firestore-execute-mongodb
+provider: local_mcp
+source: my-firestore
+description: Use this tool to execute MQL/MongoDB pipeline queries against Firestore.

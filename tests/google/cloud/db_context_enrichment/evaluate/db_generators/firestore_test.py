@@ -51,12 +51,11 @@ def test_generate_model_config(mock_params):
                         "project_id": "cloud-db-nl2sql",
                         "database_id": "nl2sql-mflix",
                         "collection_ids": [
-                            "movies",
-                            "users",
-                            "comments",
-                            "theaters",
-                            "sessions",
+                            "orders",
+                            "products",
+                            "customers",
                         ],
+
                     },
                     "agent_context_reference": {
                         "context_set_id": "projects/cloud-db-nl2sql/locations/us-central1/contextSets/mflix-context"

@@ -2,12 +2,13 @@ import json
 import os
 import sys
 
+
 def check_outputs(suite_path, dataset_file):
     if not os.path.exists(dataset_file):
         print(f"Dataset file not found: {dataset_file}")
         sys.exit(1)
 
-    with open(dataset_file, "r") as f:
+    with open(dataset_file) as f:
         data = json.load(f)
 
     scenarios = data.get("scenarios", [])
@@ -36,7 +37,7 @@ def check_outputs(suite_path, dataset_file):
             continue
 
         if not mandatory_files:
-            print(f"  [WARNING] No mandatory_output_files defined for this scenario.")
+            print("  [WARNING] No mandatory_output_files defined for this scenario.")
             continue
 
         for f in mandatory_files:

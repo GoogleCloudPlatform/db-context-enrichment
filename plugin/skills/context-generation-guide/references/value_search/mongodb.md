@@ -4,17 +4,17 @@ This reference provides best practices and ideal output definitions for Value Se
 
 ## Concepts
 
-Value Search queries map user-supplied terms in natural language queries (e.g. "school stationary", "Denver", "online") to stored field values in NoSQL document collections.
+Value Search queries map user-supplied terms in natural language queries (e.g. "black laptop", "electronics", "credit card") to stored field values in NoSQL document collections.
 
-## Schema Layout
+## Schema Layout (DART Ecommerce Dataset)
 
 ```json
 {
   "value_searches": [
     {
-      "query": "db.sales.find({ 'items.tags': { $regex: $value, $options: 'i' } }, { 'items.tags': 1, _id: 0 })",
-      "concept_type": "Product Tag Name",
-      "description": "Fuzzy case-insensitive search for product tag names in sales collection items"
+      "query": "db.products.find({ name: { $regex: $value, $options: 'i' } }, { name: 1, _id: 0 })",
+      "concept_type": "Product Name",
+      "description": "Fuzzy case-insensitive search for product names in products collection"
     }
   ]
 }

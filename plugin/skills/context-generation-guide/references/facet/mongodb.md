@@ -10,44 +10,44 @@ Facets are modular, reusable NoSQL filter fragments or field-value predicates (s
 
 Values in the NoSQL snippet and intent are parameterized using positional placeholders (e.g. `$1`), according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
 
-### Example
+### Example (DART Ecommerce Dataset - Payment Method)
 
 **Input**:
-*   **Term / Concept**: "In store purchase method"
-*   **NoSQL Snippet**: `sales.purchaseMethod = 'In store'`
-*   **Intent**: "In store purchase method string format without hyphen"
+*   **Term / Concept**: "Credit card payment method"
+*   **NoSQL Snippet**: `orders.payment_method = 'credit_card'`
+*   **Intent**: "Credit card payment method string literal credit_card"
 
 **Generated Output**:
 ```json
 {
-  "sql_snippet": "sales.purchaseMethod = 'In store'",
-  "intent": "in-store purchase method is literal string 'In store' (with space, no hyphen)",
-  "manifest": "In store purchase method string format without hyphen",
+  "sql_snippet": "orders.payment_method = 'credit_card'",
+  "intent": "credit card payment method is literal string 'credit_card'",
+  "manifest": "Credit card payment method",
   "parameterized": {
-    "parameterized_sql_snippet": "sales.purchaseMethod = '$1'",
-    "parameterized_intent": "purchase method is $1"
+    "parameterized_sql_snippet": "orders.payment_method = '$1'",
+    "parameterized_intent": "payment method is $1"
   }
 }
 ```
 
-### Example (Nested Tag Predicate)
+### Example (DART Ecommerce Dataset - Order Status)
 
 ```json
 {
-  "sql_snippet": "items.tags = 'office'",
-  "intent": "office supplies tag is exact string 'office'",
-  "manifest": "office supplies tag",
+  "sql_snippet": "orders.status = 'completed'",
+  "intent": "completed order status is exact string 'completed'",
+  "manifest": "completed order status filter",
   "parameterized": {
-    "parameterized_sql_snippet": "items.tags = '$1'",
-    "parameterized_intent": "items tag $1"
+    "parameterized_sql_snippet": "orders.status = '$1'",
+    "parameterized_intent": "order status is $1"
   }
 }
 ```
 
 ## Best Practices & NoSQL Caveats
 
-*   **Field Qualification**: Qualify fields using collection or subdocument path syntax (e.g., `sales.purchaseMethod`, `items.tags`, `customer.email`).
-*   **String Formatting**: Explicitly capture non-hyphenated string conventions (e.g. `'In store'` instead of `'In-store'`) or tag aliases.
+*   **Field Qualification**: Qualify fields using collection or subdocument path syntax (e.g., `orders.payment_method`, `orders.status`, `products.category`).
+*   **String Formatting**: Explicitly capture specific stored string conventions (e.g. `'credit_card'` instead of `'Credit Card'`).
 *   **Metric Formulas**: Provide operational snippets for NoSQL calculations:
-    *   `sales.totalSales = SUM(items.price * items.quantity)`
-    *   `sales.totalSalesVolume = SUM(items.quantity)`
+    *   `orders.totalRevenue = SUM(orders.total_amount)`
+    *   `products.totalSales = SUM(items.price * items.quantity)`

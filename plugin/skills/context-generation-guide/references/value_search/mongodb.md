@@ -1,6 +1,6 @@
-# Firestore (NoSQL MQL) Value Search Generation Reference
+# MongoDB (MQL / Firestore Native) Value Search Generation Reference
 
-This reference provides best practices and ideal output definitions for Value Search queries in Firestore Native Mode and MongoDB MQL (`firestore_mql`).
+This reference provides best practices and ideal output definitions for Value Search queries in MongoDB MQL (`firestore_mql`) and Firestore Native Mode.
 
 ## Concepts
 

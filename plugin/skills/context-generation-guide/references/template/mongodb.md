@@ -1,6 +1,6 @@
-# Firestore (NoSQL MQL) Template Generation Reference
+# MongoDB (MQL / Firestore Native) Template Generation Reference
 
-This reference provides best practices and ideal output definitions for generating Templates in Firestore Native Mode and MongoDB MQL (`firestore_mql`).
+This reference provides best practices and ideal output definitions for generating Templates in MongoDB MQL (`firestore_mql`) and Firestore Native Mode.
 
 ## Concepts
 

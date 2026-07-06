@@ -728,8 +728,10 @@ version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
+    { name = "google-auth" },
     { name = "google-cloud-geminidataanalytics" },
     { name = "google-genai" },
+    { name = "requests" },
     { name = "toolbox-core" },
 ]
 
@@ -749,10 +751,12 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastmcp", specifier = "==3.3.1" },
+    { name = "google-auth", specifier = "==2.41.1" },
     { name = "google-cloud-geminidataanalytics", specifier = "==0.11.0" },
     { name = "google-genai", specifier = "==1.46.0" },
     { name = "pytest", marker = "extra == 'test'" },
     { name = "pytest-asyncio", marker = "extra == 'test'" },
+    { name = "requests", specifier = "==2.33.0" },
     { name = "toolbox-core", specifier = "==0.5.2" },
 ]
 provides-extras = ["test"]

@@ -37,3 +37,8 @@ htmlcov/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Autoctx local experiment artifacts
+autoctx/experiments/
+autoctx/state.md
+

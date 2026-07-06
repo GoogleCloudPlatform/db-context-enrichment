@@ -1,6 +1,0 @@
-db_type: alloydb
-dialect: postgres
-database_name: postgres
-database_path: projects/cloud-db-nl2sql/locations/us-west1/clusters/sichenliu-test/instances/sichenliu-test-primary
-max_executions_per_minute: 180
-nl_config: ''

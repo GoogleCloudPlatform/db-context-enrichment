@@ -1,3 +1,0 @@
-comparator,comparison_error,comparison_logs,database,dialects,generated_error,generated_sql,id,job_id,score
-llmrater,,Skipped. Exact Match was found.,nl2sql-mflix,['mongodb'],,db.users.countDocuments({}),mflix_002_trial_0,49d447cd-9255-4037-ab49-191aa3bdd9a6,100
-llmrater,,Skipped. Exact Match was found.,nl2sql-mflix,['mongodb'],,"db.movies.find({ ""directors"": ""Christopher Nolan"" })",mflix_001_trial_0,49d447cd-9255-4037-ab49-191aa3bdd9a6,100

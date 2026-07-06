@@ -1,0 +1,223 @@
+{
+  "context_set_id": "projects/cloud-db-nl2sql/locations/us-central1/contextSets/supplies_firestore_tuned",
+  "description": "Hill-climbing optimized context templates and facets for Firestore supplies dataset iteration 4",
+  "templates": [
+    {
+      "nl_query": "What's the average number of items per sale for in-store purchases where customer satisfaction was above 4 in 2016?",
+      "sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('2016-01-01'), $lt: ISODate('2017-01-01') }, purchaseMethod: 'In store', 'customer.satisfaction': { $gt: 4 } } }, { $project: { totalItems: { $sum: '$items.quantity' } } }, { $group: { _id: null, averageItemsPerSale: { $avg: '$totalItems' } } }, { $project: { _id: 0, averageItemsPerSale: 1 } }])",
+      "intent": "average number of items per sale calculates totalItems as sum of items.quantity per transaction document then averages totalItems",
+      "manifest": "average number of items per sale formula",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('$1'), $lt: ISODate('$2') }, purchaseMethod: '$3', 'customer.satisfaction': { $gt: $4 } } }, { $project: { totalItems: { $sum: '$items.quantity' } } }, { $group: { _id: null, averageItemsPerSale: { $avg: '$totalItems' } } }, { $project: { _id: 0, averageItemsPerSale: 1 } }])",
+        "parameterized_intent": "average number of items per sale between $1 and $2 for purchaseMethod $3 with satisfaction above $4"
+      }
+    },
+    {
+      "nl_query": "What is the total sales volume for transactions with coupons used in December 2017?",
+      "sql": "db.sales.aggregate([{ $match: { couponUsed: true, saleDate: { $gte: ISODate('2017-12-01T00:00:00Z'), $lt: ISODate('2018-01-01T00:00:00Z') } } }, { $unwind: \"$items\" }, { $group: { _id: null, totalSalesVolume: { $sum: { $multiply: [\"$items.price\", \"$items.quantity\"] } } } }, { $project: { _id: 0, totalSalesVolume: 1 } }])",
+      "intent": "total sales volume for transactions with coupons used calculates totalSalesVolume as sum of items.price multiplied by items.quantity after unwinding items",
+      "manifest": "total sales volume for transactions with coupons used formula",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { couponUsed: true, saleDate: { $gte: ISODate('$1'), $lt: ISODate('$2') } } }, { $unwind: \"$items\" }, { $group: { _id: null, totalSalesVolume: { $sum: { $multiply: [\"$items.price\", \"$items.quantity\"] } } } }, { $project: { _id: 0, totalSalesVolume: 1 } }])",
+        "parameterized_intent": "total sales volume for coupon transactions between $1 and $2"
+      }
+    },
+    {
+      "nl_query": "What's the total sales revenue generated from 'office supplies' at the Denver store?",
+      "sql": "db.sales.aggregate([{ $match: { storeLocation: 'Denver' } }, { $unwind: '$items' }, { $match: { 'items.tags': 'office' } }, { $group: { _id: null, totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } } } }, { $project: { _id: 0, totalRevenue: 1 } }])",
+      "intent": "office supplies tag is 'office' (literal string office without supplies)",
+      "manifest": "office supplies tag is office",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { storeLocation: '$1' } }, { $unwind: '$items' }, { $match: { 'items.tags': '$2' } }, { $group: { _id: null, totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } } } }, { $project: { _id: 0, totalRevenue: 1 } }])",
+        "parameterized_intent": "total revenue for tag $2 at store $1"
+      }
+    },
+    {
+      "nl_query": "Show me the total sales volume for each month in Q4 2017.",
+      "sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('2017-10-01'), $lt: ISODate('2018-01-01') } } }, { $unwind: '$items' }, { $group: { _id: { month: { $month: '$saleDate' } }, totalSalesVolume: { $sum: '$items.quantity' } } }, { $project: { _id: 0, month: '$_id.month', totalSalesVolume: 1 } }])",
+      "intent": "total sales volume for each month in Q4 2017 measures total quantity sold by summing items.quantity",
+      "manifest": "total sales volume by month measures items.quantity sum",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('$1'), $lt: ISODate('$2') } } }, { $unwind: '$items' }, { $group: { _id: { month: { $month: '$saleDate' } }, totalSalesVolume: { $sum: '$items.quantity' } } }, { $project: { _id: 0, month: '$_id.month', totalSalesVolume: 1 } }])",
+        "parameterized_intent": "total sales volume by month between $1 and $2"
+      }
+    },
+    {
+      "nl_query": "What is the average sales volume per transaction for sales where coupons were used in December 2017?",
+      "sql": "db.sales.aggregate([{ $match: { couponUsed: true, saleDate: { $gte: ISODate('2017-12-01T00:00:00Z'), $lt: ISODate('2018-01-01T00:00:00Z') } } }, { $project: { totalSalesVolume: { $sum: '$items.quantity' } } }, { $group: { _id: null, averageSalesVolume: { $avg: '$totalSalesVolume' } } }, { $project: { _id: 0, averageSalesVolume: 1 } }])",
+      "intent": "average sales volume per transaction calculates totalSalesVolume as sum of items.quantity per document then averages totalSalesVolume",
+      "manifest": "average sales volume per transaction formula",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { couponUsed: true, saleDate: { $gte: ISODate('$1'), $lt: ISODate('$2') } } }, { $project: { totalSalesVolume: { $sum: '$items.quantity' } } }, { $group: { _id: null, averageSalesVolume: { $avg: '$totalSalesVolume' } } }, { $project: { _id: 0, averageSalesVolume: 1 } }])",
+        "parameterized_intent": "average sales volume per transaction between $1 and $2"
+      }
+    },
+    {
+      "nl_query": "What are the total sales for each purchase method like 'In store' and 'Online'?",
+      "sql": "db.sales.aggregate([{ $unwind: \"$items\" }, { $group: { _id: \"$purchaseMethod\", totalSales: { $sum: { $multiply: [\"$items.price\", \"$items.quantity\"] } } } }, { $project: { _id: 0, purchaseMethod: \"$_id\", totalSales: 1 } }])",
+      "intent": "Total sales revenue per purchase method requires unwinding items and calculating price multiplied by quantity",
+      "manifest": "Total sales revenue per purchase method",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $unwind: \"$items\" }, { $group: { _id: \"$purchaseMethod\", totalSales: { $sum: { $multiply: [\"$items.price\", \"$items.quantity\"] } } } }, { $project: { _id: 0, purchaseMethod: \"$_id\", totalSales: 1 } }])",
+        "parameterized_intent": "Total sales revenue per purchase method"
+      }
+    },
+    {
+      "nl_query": "What are the total sales and average customer satisfaction for 'In store' purchases at the Denver location?",
+      "sql": "db.sales.aggregate([{ $match: { purchaseMethod: 'In store', storeLocation: 'Denver' } }, { $unwind: '$items' }, { $group: { _id: null, totalSales: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }, averageSatisfaction: { $avg: '$customer.satisfaction' } } }, { $project: { _id: 0, totalSales: 1, averageSatisfaction: 1 } }])",
+      "intent": "Total sales revenue and average satisfaction for In store purchases at Denver location",
+      "manifest": "Total sales revenue and average satisfaction for In store purchases",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { purchaseMethod: '$1', storeLocation: '$2' } }, { $unwind: '$items' }, { $group: { _id: null, totalSales: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }, averageSatisfaction: { $avg: '$customer.satisfaction' } } }, { $project: { _id: 0, totalSales: 1, averageSatisfaction: 1 } }])",
+        "parameterized_intent": "Total sales revenue and average satisfaction for purchaseMethod $1 at storeLocation $2"
+      }
+    },
+    {
+      "nl_query": "Which top 3 store locations have the highest average satisfaction ratings for purchases that included school supplies?",
+      "sql": "db.sales.aggregate([{ $match: { 'items.tags': 'school' } }, { $group: { _id: '$storeLocation', averageSatisfaction: { $avg: '$customer.satisfaction' } } }, { $sort: { averageSatisfaction: -1 } }, { $limit: 3 }, { $project: { _id: 0, storeLocation: '$_id', averageSatisfaction: 1 } }])",
+      "intent": "School supplies refers to items.tags equal to 'school'",
+      "manifest": "Filter by items.tags equal to school for school supplies",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { 'items.tags': '$1' } }, { $group: { _id: '$storeLocation', averageSatisfaction: { $avg: '$customer.satisfaction' } } }, { $sort: { averageSatisfaction: -1 } }, { $limit: 3 }, { $project: { _id: 0, storeLocation: '$_id', averageSatisfaction: 1 } }])",
+        "parameterized_intent": "Filter by items.tags $1"
+      }
+    },
+    {
+      "nl_query": "What purchase methods were used in Austin in December 2017?",
+      "sql": "db.sales.aggregate([{ $match: { storeLocation: 'Austin', saleDate: { $gte: ISODate('2017-12-01'), $lt: ISODate('2018-01-01') } } }, { $group: { _id: '$purchaseMethod', count: { $sum: 1 } } }, { $project: { _id: 0, purchaseMethod: '$_id', count: 1 } }])",
+      "intent": "List purchase methods used and count how many times each method was used",
+      "manifest": "List purchase methods used and transaction counts",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { storeLocation: '$1', saleDate: { $gte: ISODate('$2'), $lt: ISODate('$3') } } }, { $group: { _id: '$purchaseMethod', count: { $sum: 1 } } }, { $project: { _id: 0, purchaseMethod: '$_id', count: 1 } }])",
+        "parameterized_intent": "Purchase methods used at storeLocation $1 between dates $2 and $3"
+      }
+    },
+    {
+      "nl_query": "What was the average customer satisfaction score across all store locations for December 2017?",
+      "sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('2017-12-01T00:00:00Z'), $lt: ISODate('2018-01-01T00:00:00Z') } } }, { $group: { _id: null, averageSatisfaction: { $avg: '$customer.satisfaction' } } }, { $project: { _id: 0, averageSatisfaction: 1 } }])",
+      "intent": "Average satisfaction across all store locations requires _id: null in $group stage",
+      "manifest": "Average satisfaction across all store locations combined",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('$1'), $lt: ISODate('$2') } } }, { $group: { _id: null, averageSatisfaction: { $avg: '$customer.satisfaction' } } }, { $project: { _id: 0, averageSatisfaction: 1 } }])",
+        "parameterized_intent": "Average satisfaction across all store locations between $1 and $2"
+      }
+    },
+    {
+      "nl_query": "How many items were sold with coupons at the Denver store over the last quarter of 2017?",
+      "sql": "db.sales.aggregate([{ $match: { couponUsed: true, storeLocation: 'Denver', saleDate: { $gte: ISODate('2017-10-01'), $lte: ISODate('2017-12-31') } } }, { $unwind: '$items' }, { $group: { _id: null, totalItemsSold: { $sum: '$items.quantity' } } }, { $project: { _id: 0, totalItemsSold: 1 } }])",
+      "intent": "Total items sold requires unwinding items array and summing items.quantity",
+      "manifest": "Total items sold by summing items.quantity",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { couponUsed: true, storeLocation: '$1', saleDate: { $gte: ISODate('$2'), $lte: ISODate('$3') } } }, { $unwind: '$items' }, { $group: { _id: null, totalItemsSold: { $sum: '$items.quantity' } } }, { $project: { _id: 0, totalItemsSold: 1 } }])",
+        "parameterized_intent": "Total items sold for storeLocation $1 between dates $2 and $3"
+      }
+    },
+    {
+      "nl_query": "Which product categories had the highest sales in October 2017?",
+      "sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('2017-10-01T00:00:00.000Z'), $lt: ISODate('2017-11-01T00:00:00.000Z') } } }, { $unwind: '$items' }, { $unwind: '$items.tags' }, { $group: { _id: '$items.tags', totalQuantity: { $sum: '$items.quantity' } } }, { $sort: { totalQuantity: -1 } }, { $project: { category: '$_id', totalQuantity: 1, _id: 0 } }])",
+      "intent": "Highest sales by product category refers to highest totalQuantity sold",
+      "manifest": "Highest sales by category measures totalQuantity sold",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('$1'), $lt: ISODate('$2') } } }, { $unwind: '$items' }, { $unwind: '$items.tags' }, { $group: { _id: '$items.tags', totalQuantity: { $sum: '$items.quantity' } } }, { $sort: { totalQuantity: -1 } }, { $project: { category: '$_id', totalQuantity: 1, _id: 0 } }])",
+        "parameterized_intent": "Highest sales category by totalQuantity between $1 and $2"
+      }
+    },
+    {
+      "nl_query": "I need a list of all items sold by store location in the last month of 2017.",
+      "sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('2017-12-01T00:00:00Z'), $lte: ISODate('2017-12-31T23:59:59Z') } } }, { $unwind: '$items' }, { $group: { _id: '$storeLocation', items: { $push: { name: '$items.name', quantity: '$items.quantity' } } } }, { $project: { _id: 0, storeLocation: '$_id', items: 1 } }])",
+      "intent": "List of all items sold by store location uses $push with name and quantity",
+      "manifest": "List all items sold by store location with push array",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('$1'), $lte: ISODate('$2') } } }, { $unwind: '$items' }, { $group: { _id: '$storeLocation', items: { $push: { name: '$items.name', quantity: '$items.quantity' } } } }, { $project: { _id: 0, storeLocation: '$_id', items: 1 } }])",
+        "parameterized_intent": "List all items sold by store location between $1 and $2"
+      }
+    },
+    {
+      "nl_query": "Provide a list of 8 top-selling items from Winter 2017.",
+      "sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('2016-12-01'), $lt: ISODate('2017-03-01') } } }, { $unwind: '$items' }, { $group: { _id: '$items.name', totalQuantity: { $sum: '$items.quantity' } } }, { $sort: { totalQuantity: -1 } }, { $limit: 8 }, { $project: { _id: 0, name: '$_id', quantity: '$totalQuantity' } }])",
+      "intent": "Winter 2017 date range is December 2016 through February 2017 (2016-12-01 to 2017-03-01)",
+      "manifest": "Winter 2017 date range",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('2016-12-01'), $lt: ISODate('2017-03-01') } } }, { $unwind: '$items' }, { $group: { _id: '$items.name', totalQuantity: { $sum: '$items.quantity' } } }, { $sort: { totalQuantity: -1 } }, { $limit: $1 }, { $project: { _id: 0, name: '$_id', quantity: '$totalQuantity' } }])",
+        "parameterized_intent": "Top $1 items from Winter 2017"
+      }
+    },
+    {
+      "nl_query": "I need a comparison of in-store and online sales for December 2017.",
+      "sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('2017-12-01T00:00:00Z'), $lte: ISODate('2017-12-31T23:59:59Z') } } }, { $group: { _id: '$purchaseMethod', count: { $sum: 1 } } }, { $project: { _id: 0, purchaseMethod: '$_id', count: 1 } }])",
+      "intent": "Comparison of in-store and online sales means transaction count per purchaseMethod",
+      "manifest": "Comparison of sales by purchaseMethod transaction count",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('$1'), $lte: ISODate('$2') } } }, { $group: { _id: '$purchaseMethod', count: { $sum: 1 } } }, { $project: { _id: 0, purchaseMethod: '$_id', count: 1 } }])",
+        "parameterized_intent": "Comparison of sales by purchaseMethod between $1 and $2"
+      }
+    },
+    {
+      "nl_query": "Give me the emails and satisfaction ratings of customers who bought items priced above $150, at least twice in December 2017.",
+      "sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('2017-12-01'), $lt: ISODate('2018-01-01') } } }, { $unwind: '$items' }, { $match: { 'items.price': { $gt: 150 } } }, { $group: { _id: { email: '$customer.email', satisfaction: '$customer.satisfaction' }, count: { $sum: 1 } } }, { $match: { count: { $gte: 2 } } }, { $project: { _id: 0, email: '$_id.email', satisfaction: '$_id.satisfaction' } }])",
+      "intent": "Buying items priced above threshold at least twice means grouping by customer and matching transaction count count >= 2",
+      "manifest": "Customers buying items above price threshold at least twice",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { saleDate: { $gte: ISODate('$1'), $lt: ISODate('$2') } } }, { $unwind: '$items' }, { $match: { 'items.price': { $gt: $3 } } }, { $group: { _id: { email: '$customer.email', satisfaction: '$customer.satisfaction' }, count: { $sum: 1 } } }, { $match: { count: { $gte: $4 } } }, { $project: { _id: 0, email: '$_id.email', satisfaction: '$_id.satisfaction' } }])",
+        "parameterized_intent": "Customers buying items above price $3 at least $4 times between $1 and $2"
+      }
+    },
+    {
+      "nl_query": "Can you give me the average price and quantity sold for stationary items in the New York store?",
+      "sql": "db.sales.aggregate([{ $match: { storeLocation: 'New York' } }, { $unwind: '$items' }, { $match: { 'items.tags': 'stationary' } }, { $group: { _id: null, averagePrice: { $avg: '$items.price' }, averageQuantity: { $avg: '$items.quantity' } } }, { $project: { _id: 0, averagePrice: 1, averageQuantity: 1 } }])",
+      "intent": "Stationary items tag is literal string 'stationary'",
+      "manifest": "Stationary items tag filter",
+      "parameterized": {
+        "parameterized_sql": "db.sales.aggregate([{ $match: { storeLocation: '$1' } }, { $unwind: '$items' }, { $match: { 'items.tags': '$2' } }, { $group: { _id: null, averagePrice: { $avg: '$items.price' }, averageQuantity: { $avg: '$items.quantity' } } }, { $project: { _id: 0, averagePrice: 1, averageQuantity: 1 } }])",
+        "parameterized_intent": "Average price and quantity for tag $2 at store $1"
+      }
+    }
+  ],
+  "facets": [
+    {
+      "sql_snippet": "items.tags = 'office'",
+      "intent": "office supplies tag is exact string 'office'",
+      "manifest": "office supplies tag is office",
+      "parameterized": {
+        "parameterized_sql_snippet": "items.tags = 'office'",
+        "parameterized_intent": "office supplies tag"
+      }
+    },
+    {
+      "sql_snippet": "sales.purchaseMethod = 'In store'",
+      "intent": "in-store purchase method is literal string 'In store' (with space, no hyphen)",
+      "manifest": "In store purchase method string format without hyphen",
+      "parameterized": {
+        "parameterized_sql_snippet": "sales.purchaseMethod = 'In store'",
+        "parameterized_intent": "In store purchase method"
+      }
+    },
+    {
+      "sql_snippet": "items.tags = 'stationary'",
+      "intent": "stationary items tag is exact string 'stationary'",
+      "manifest": "stationary items tag",
+      "parameterized": {
+        "parameterized_sql_snippet": "items.tags = 'stationary'",
+        "parameterized_intent": "stationary items tag"
+      }
+    },
+    {
+      "sql_snippet": "Winter 2017 saleDate = 2016-12-01 to 2017-03-01",
+      "intent": "Winter 2017 date range is December 2016 through February 2017 (2016-12-01 to 2017-03-01)",
+      "manifest": "Winter 2017 date range definition",
+      "parameterized": {
+        "parameterized_sql_snippet": "Winter 2017 saleDate = 2016-12-01 to 2017-03-01",
+        "parameterized_intent": "Winter 2017 date range"
+      }
+    },
+    {
+      "sql_snippet": "sales.totalSales = SUM(items.price * items.quantity)",
+      "intent": "total sales revenue is calculated as sum of items.price multiplied by items.quantity after unwinding items",
+      "manifest": "total sales revenue formula",
+      "parameterized": {
+        "parameterized_sql_snippet": "sales.totalSales = SUM(items.price * items.quantity)",
+        "parameterized_intent": "total sales revenue formula"
+      }
+    }
+  ]
+}

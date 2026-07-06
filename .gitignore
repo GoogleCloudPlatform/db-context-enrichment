@@ -38,7 +38,5 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Autoctx workspace directory
-autoctx/
 
 

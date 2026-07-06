@@ -1,0 +1,319 @@
+comparator,comparison_error,comparison_logs,database,dialects,generated_error,generated_sql,id,job_id,score
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.find({""items.name"": ""Laptop Stand""})",20_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.find({""items.product_id"": ""prod_001""})",19_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({""preferences.notifications.email"": true})",11_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({""attributes.brand"": ""TechBrand""})",13_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.find({ ""created_at"": { ""$lt"": ""2024-02-01"" } })",47_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({ ""stock"": { ""$lt"": 100 } })",44_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({""stats.last_order_date"": ""2024-03-10""})",12_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({ ""addresses"": { ""$elemMatch"": { ""state"": { ""$in"": [""New York"", ""NY""] } } } })",17_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({""addresses.type"": ""work""})",18_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({""stats.total_spent"": {""$gt"": 300}})",31_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({ ""ratings.average"": { ""$gte"": 4.5 }, ""price"": { ""$lt"": 50 } })",50_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.aggregate([{""$sort"": {""price"": -1}}, {""$skip"": 3}, {""$limit"": 3}])",53_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.aggregate([{ ""$group"": { ""_id"": null, ""average_price"": { ""$avg"": ""$price"" } } }])",40_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.aggregate([{""$sort"": {""stats.total_spent"": -1}}, {""$limit"": 1}])",42_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,db.products.find({ price: { $gt: 100 } }),27_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.find({""customer_id"": ""cust_001""})",3_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.aggregate([{""$lookup"": { ""from"": ""products"", ""localField"": ""items.product_id"", ""foreignField"": ""product_id"", ""as"": ""product_details"" }}, {""$match"": { ""product_details.name"": ""Mechanical Keyboard"" }}, {""$project"": { ""product_details"": 0 }}])",43_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.find({""payment.method"": {""$regex"": ""credit"", ""$options"": ""i""}})",33_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({""attributes.material"": ""Aluminum""})",25_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"**Thinking Process:**
+
+1.**Analyze the QUESTION:** The question asks for the ""total revenue from all orders."" It is a simple aggregation request with no specific sorting, limits, or formatting requirements.
+2.**Column Mapping:** OUTPUT #1 contains the column `total_revenue`. OUTPUT #2 contains the column `total_revenue` (matching) and an additional column `__id__`.
+3.**Data Comparison:** The value for `total_revenue` in both outputs is `2377.48`. They match perfectly.
+4.**Row Order:** Not applicable (single row).
+5.**Extra Columns:** OUTPUT #2 includes an `__id__` column with a value of `None`. Based on the relaxed evaluation criteria, extra columns that are not explicitly excluded are acceptable, provided they do not render the result incorrect. The core data requested is present and accurate.
+
+**FINAL ANSWER:**
+INFORMATION_MATCHES",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.aggregate([ { ""$group"": { ""_id"": null, ""total_revenue"": { ""$sum"": ""$total_amount"" } } } ])",7_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({""preferences.preferred_categories"": ""Electronics""})",15_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"**Step-by-step Analysis:**
+
+1.**Question Analysis:** The question asks for the count of silver customers. It does not specify any sorting order or limits.
+2.**Column Mapping:** OUTPUT #1 uses the column name `count`, while OUTPUT #2 uses the column name `n`. Per the rules, differences in column names are acceptable as long as the underlying data is the same.
+3.**Data Comparison:** Both outputs contain the value `3` (represented as `{'__int__': 3}`). The numerical result is identical.
+4.**Row Order:** Not applicable as there is only one row in both outputs.
+5.**Extra Rows:** Not applicable.
+
+**Conclusion:**
+The core information requested (the count of silver customers) is perfectly represented in both outputs. The difference in the column header is explicitly permitted under the ""Relaxed Evaluation Criteria.""
+
+**FINAL ANSWER:**
+INFORMATION_MATCHES",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.countDocuments({ ""tier"": { ""$regex"": ""^silver$"", ""$options"": ""i"" } })",28_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({ ""tags"": ""wireless"" })",38_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({""ratings.count"": {""$gt"": 500}})",46_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.aggregate([{""$group"": {""_id"": ""$category"", ""count"": {""$sum"": 1}}}])",37_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({""preferences.notifications.sms"": true})",39_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"Thinking step by step:
+
+1.**Analyze the QUESTION:** The question asks for ""all orders placed after 2024-03-01"". It does not specify sorting or a limit on the number of records.
+2.**Column Mapping:** Both outputs contain the core requested fields: `order_id`, `created_at`, `total_amount`, and `customer_id`.
+3.**Data Comparison:** 
+* OUTPUT #1 contains 6 orders: `ord_006`, `ord_009`, `ord_014`, `ord_011`, `ord_007`, and `ord_005`. 
+* OUTPUT #2 contains the exact same 6 orders, with the same dates, customer IDs, and total amounts. 
+* OUTPUT #2 contains additional information (shipping details, items, payment status, etc.) which is allowed under the relaxed evaluation criteria (Extra Columns).
+4.**Row Order:** The order is different, but the question did not specify a sorting requirement.
+5.**Conclusion:** OUTPUT #2 provides all the information found in the Gold Standard (OUTPUT #1), plus additional relevant metadata. Per the rules provided, the inclusion of extra columns is acceptable.
+
+FINAL ANSWER: INFORMATION_MATCHES",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.find({""created_at"": {""$gt"": ""2024-03-01""}})",6_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({""ratings.average"": {""$gt"": 4.5}})",23_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.aggregate([ { $match: { customer_id: ""cust_001"" } }, { $lookup: { from: ""products"", localField: ""items.product_id"", foreignField: ""product_id"", as: ""matched_products"" } }, { $match: { ""matched_products.category"": ""Electronics"" } }, { $project: { matched_products: 0 } } ])",22_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({ tags: ""portable"" })",16_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({""preferences.preferred_categories"": ""Clothing""})",34_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.find({ ""total_amount"": { ""$gte"": 50, ""$lte"": 150 } })",36_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.aggregate([{""$group"": {""_id"": ""$customer_id"", ""total_revenue"": {""$sum"": ""$total_amount""}}}, {""$project"": {""customer_id"": ""$_id"", ""total_revenue"": 1, ""_id"": 0}}])",49_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({ category: { $in: [""Home"", ""Sports""] } })",35_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"**Thinking Step-by-Step:**
+
+1.**Analyze the QUESTION:** The question asks for ""How many orders are there for each status?"" There is no explicit requirement for sorting or row limits.
+2.**Column Mapping:**
+* OUTPUT #1 uses `status` to identify the category and `count` for the aggregate.
+* OUTPUT #2 uses `__id__` (representing the status) and `count` for the aggregate.
+* The mapping is clear: `status` in #1 corresponds to `__id__` in #2.
+3.**Data Comparison:**
+* 'delivered': 7 (Matches)
+* 'shipped': 5 (Matches)
+* 'pending': 2 (Matches)
+* 'cancelled': 1 (Matches)
+* The underlying data values are identical.
+4.**Row Order:** The row order differs, but as there was no sorting requirement in the question, this is acceptable.
+5.**Extra Rows/Columns:** No extra rows are present. The use of `__id__` as a key instead of `status` falls under the ""Entity Representation"" and ""Column names"" criteria in the relaxed evaluation rules.
+
+**FINAL ANSWER:**
+
+INFORMATION_MATCHES -- OUTPUT #1 and OUTPUT #2 provide the same core information (or differences fall under the acceptable relaxed criteria).",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.aggregate([{""$group"": {""_id"": ""$status"", ""count"": {""$sum"": 1}}}])",2_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,db.products.find().sort({ price: -1 }).limit(5),30_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"To determine if OUTPUT #2 provides the same information as OUTPUT #1, let's follow the steps provided:
+
+1.**Analyze the QUESTION:** The question ""How many customers are in each tier?"" asks for an aggregation by tier. It does not specify a sorting order or a limit.
+2.**Column Mapping:** 
+* OUTPUT #1 uses `tier` and `count`.
+* OUTPUT #2 uses `__id__` (which contains the tier names: bronze, silver, gold) and `count`.
+* The mapping is clear: `__id__` corresponds to `tier`.
+3.**Data Comparison:**
+* Bronze: Both outputs show a count of 2.
+* Silver: Both outputs show a count of 3.
+* Gold: Both outputs show a count of 3.
+* The data is identical across both outputs.
+4.**Row Order:** The question did not request a specific order, so the difference in the sequence of rows is acceptable.
+5.**Extra Rows:** There are no extra rows in OUTPUT #2.
+
+**Conclusion:**
+The underlying data is identical, and the difference in column naming (`__id__` vs `tier`) is explicitly covered by the relaxed criteria (""The mapped column names might differ, do not make any assumptions based on them"").
+
+FINAL ANSWER: INFORMATION_MATCHES",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.aggregate([{ ""$group"": { ""_id"": ""$tier"", ""count"": { ""$sum"": 1 } } }])",9_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({ ""addresses"": { ""$elemMatch"": { ""state"": ""TX"", ""type"": ""home"" } } })",41_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"**Thinking Step by Step:**
+
+1.**Analyze the QUESTION:** The question asks to ""Find all products with a price greater than 40."" There is no sorting order or limit specified.
+2.**Column Mapping:** OUTPUT #1 provides a subset of fields (`product_id`, `category`, `price`, `name`). OUTPUT #2 contains these exact fields along with additional metadata (like `attributes`, `stock`, `tags`, etc.). The core data requested is present in both.
+3.**Data Comparison:** 
+* `prod_003`: 129.99 (Present in both)
+* `prod_004`: 89.99 (Present in both)
+* `prod_008`: 49.99 (Present in both)
+* `prod_001`: 45.99 (Present in both)
+* `prod_009`: 44.99 (Present in both)
+* All prices are > 40. All products present in the Gold Standard are present in the Generated Result.
+4.**Row Order:** No order was requested, so the difference in sequence is irrelevant.
+5.**Extra Rows/Columns:** OUTPUT #2 includes significant additional descriptive data (extra columns) for the products. This does not violate the prompt and provides a more detailed set of the information requested.
+
+**Conclusion:** OUTPUT #2 contains all the records found in the Gold Standard, all items satisfy the condition ""price greater than 40,"" and the inclusion of additional attributes is acceptable under the provided criteria.
+
+**FINAL ANSWER:** INFORMATION_MATCHES",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({ ""price"": { ""$gt"": 40 } })",5_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"Thinking step by step:
+
+1.**Analyze the QUESTION**: The question asks to ""Calculate the total quantity sold for each product across all orders."" It does not specify a sorting order or a limit.
+2.**Column Mapping**: OUTPUT #1 uses the column name `product_id`, while OUTPUT #2 uses `__id__`. Based on the Rule that mapped column names might differ and we should not make assumptions based on them, these columns represent the same information. The `total_quantity` column is present in both.
+3.**Data Comparison**: 
+* `prod_007`: 7 in both.
+* `prod_002`: 7 in both.
+* `prod_010`: 6 in both.
+* `prod_005`: 6 in both.
+* `prod_001`: 5 in both.
+* `prod_006`: 5 in both.
+* `prod_004`: 4 in both.
+* `prod_008`: 4 in both.
+* `prod_003`: 4 in both.
+* `prod_009`: 4 in both.
+The underlying values are identical.
+4.**Row Order**: The rows are in a different order, but since the question did not specify a sorting requirement, this is acceptable under the relaxed criteria.
+5.**Extra Rows**: There are no extra rows; both outputs contain exactly 10 entries.
+
+Conclusion: Both outputs contain the exact same set of data pairs, mapped to the same logical entities, merely presented with a different key name and order.
+
+FINAL ANSWER: INFORMATION_MATCHES",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.aggregate([{""$unwind"":""$items""},{""$group"":{""_id"":""$items.product_id"",""total_quantity"":{""$sum"":""$items.quantity""}}}])",52_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({ ""preferences.newsletter"": false })",24_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"Thinking step by step:
+
+1.**Analyze the QUESTION**: The question asks to find ""gold tier customers,"" ""in California,"" who ""like Sports."" It does not specify sorting or limits.
+2.**Compare SQL Logic**:
+* **Golden SQL**: Performs exact matches for `tier: ""gold""`, `addresses.state: ""CA""`, and `preferences.preferred_categories: ""Sports""`.
+* **Generated SQL**: Performs case-insensitive regex matches for the same fields. 
+* It handles variations like ""gold"", ""Gold"", ""GOLD"".
+* It handles both ""CA"" and ""California"".
+* It handles ""Sports"", ""sports"", ""SPORTS"".
+3.**Handle Variations**: The Generated SQL is a more robust implementation of the same logic. While the Golden SQL assumes specific casing and abbreviations (the ISO code ""CA""), the Generated SQL accounts for user input variability while still satisfying all the conditions requested in the prompt. Both queries filter on the exact same fields (`tier`, `addresses.state`, `preferences.preferred_categories`).
+
+The Generated SQL is functionally equivalent and arguably more robust for a real-world database scenario, fitting well within the relaxed evaluation criteria for logical consistency.
+
+FINAL ANSWER: EQUIVALENT",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({ ""tier"": { ""$regex"": ""^gold$"", ""$options"": ""i"" }, ""addresses.state"": { ""$regex"": ""^(CA|California)$"", ""$options"": ""i"" }, ""preferences.preferred_categories"": { ""$regex"": ""^sports$"", ""$options"": ""i"" } })",21_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({ ""tier"": ""silver"" })",26_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,Skipped. Exact Match was found.,nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.aggregate([{""$group"": {""_id"": ""$status""}}, {""$project"": {""status"": ""$_id"", ""_id"": 0}}])",29_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"Thinking step by step:
+
+1.**Analyze the QUESTION:** The question asks to ""Find all products that are black."" There is no sorting, limit, or specific field constraint mentioned.
+2.**Analyze OUTPUT #1 (Gold Standard):** This output contains three specific products (Mechanical Keyboard, USB-C Hub, and Wireless Mouse) that all have `attributes.color` set to ""Black"".
+3.**Analyze OUTPUT #2 (Generated Result):** The output is an empty list `[]`.
+4.**Comparison:** OUTPUT #2 fails to identify any of the products that meet the criteria defined in the question, whereas OUTPUT #1 successfully identifies three. Because OUTPUT #2 returns no data when data exists, it is functionally incorrect.
+
+FINAL ANSWER: INCORRECT_INFORMATION
+Error analysis:
+
+**Reasoning:**
+The Golden SQL uses the value ""Black"" (capitalized), while the Generated SQL uses ""black"" (lowercase). MongoDB queries are case-sensitive; therefore, the Generated SQL failed to retrieve any records because no documents in the database have the attribute color set to the lowercase string ""black"".
+
+**Tags & Explanations:**
+[ValueLinkingError]: The query used ""black"" instead of ""Black"", causing the filter to fail due to case sensitivity.",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({""attributes.color"": ""black""})",48_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,0
+llmrater,,"To determine if the generated output matches the gold standard, let's analyze the results:
+
+1.**Analyze the QUESTION:** The question asks to ""Find orders paid with PayPal."" There are no sorting, limiting, or specific formatting requirements.
+2.**Data Comparison:**
+* OUTPUT #1 contains 4 distinct records (orders `ord_010`, `ord_015`, `ord_002`, and `ord_008`) where the payment method is `'paypal'`.
+* OUTPUT #2 is an empty list `[]`.
+3.**Evaluation:**
+* Since the question asks to find specific orders and the database query returned no results, the generated output has failed to retrieve the information present in the gold standard.
+* The missing data is not due to a minor formatting difference, rounding error, or extra column; it is a complete failure to return the requested records.
+
+**FINAL ANSWER:** INCORRECT_INFORMATION
+Error analysis:
+
+**Reasoning:**
+The Golden SQL uses the lowercase string `""paypal""` to filter the `payment.method` field, which successfully returns the relevant order records. The Generated SQL uses the title-cased string `""PayPal""`. Because database queries are typically case-sensitive, the Generated SQL fails to match any records, resulting in an empty list (`[]`).
+
+**Tags & Explanations:**
+[ValueLinkingError]: The filter value ""PayPal"" is case-mismatched with the actual data ""paypal"", causing the query to return no results.",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.find({""payment.method"": ""PayPal""})",14_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,0
+llmrater,,"1. **Analyze the QUESTION**: The question asks to ""Find orders that are still processing."" There are no requirements for sorting, limits, or specific output columns.
+
+2. **Compare SQL Logic**: 
+ - Golden SQL: `db.orders.find({ ""status"": ""processing"" })`
+ - Generated SQL: `db.orders.find({ ""status"": ""processing"" })`
+ - Both queries use the exact same MongoDB collection (`orders`) and the exact same filter condition (`status: ""processing""`).
+
+3. **Handle Variations**: The queries are identical in syntax and logic.
+
+**FINAL ANSWER**: EQUIVALENT",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.find({ ""status"": ""processing"" })",32_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"Thinking step by step:
+
+1.**Analyze the QUESTION:** The question asks for ""the 3 most expensive products."" It implies a limit of 3 and a sorting requirement (price, descending).
+2.**Column Mapping:** 
+* OUTPUT #1 contains: `product_id`, `category`, `price`, `name`.
+* OUTPUT #2 contains: `product_id`, `price`, `name`.
+* OUTPUT #2 is missing the `category` column present in the Gold Standard.
+3.**Data Comparison:** The core data (`product_id`, `price`, and `name`) for the three items is identical between both outputs.
+4.**Row Order:** Both outputs present the same 3 products in the same descending order of price.
+5.**Extra/Missing Information:** OUTPUT #2 is missing the `category` column. However, per the rules, we must evaluate if this missing column constitutes ""MISSING_INFORMATION"" or if it falls under acceptable criteria. The rules state: ""Do NOT penalize OUTPUT #2 if... one output returns IDs and the other names"" (Entity Representation). While `category` is a column, the core identification of the ""3 most expensive products"" (which are defined by their ID, name, and price) is fully satisfied. The `category` is a descriptive attribute, not a core identifier for the product itself.
+
+Conclusion: The core requirement of identifying the 3 most expensive products has been met accurately. The absence of the `category` attribute is a minor variation that does not invalidate the answer to the specific question asked.
+
+FINAL ANSWER: INFORMATION_MATCHES",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({}, {name: 1, price: 1, product_id: 1, _id: 0}).sort({price: -1}).limit(3)",8_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"**Thinking Step-by-Step:**
+
+1.**Analyze the QUESTION:** The question asks for the total number of orders. It does not specify sorting, limits, or specific column naming conventions.
+2.**Column Mapping:** OUTPUT #1 uses the column label `'total_orders'`, while OUTPUT #2 uses `'n'`. Per the rules, column name differences are acceptable.
+3.**Data Comparison:** Both outputs contain the integer `15`. The core data value is identical.
+4.**Row Order:** Only one row exists, so row order is not a factor.
+5.**Extra Rows:** There are no extra rows.
+
+**Final Conclusion:**
+OUTPUT #2 provides the same numerical result as the gold standard. The difference in the column header is permissible under the provided rules.
+
+**FINAL ANSWER:**
+INFORMATION_MATCHES",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,db.orders.countDocuments({}),1_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"**Thinking step by step:**
+
+1.**Analyze the QUESTION:** The question asks for a list of products with stock less than 150. It specifies no sorting, no limit, and no specific set of columns to be returned.
+2.**Column Mapping:** All information present in OUTPUT #1 (product_id, category, stock, name) is present in OUTPUT #2. OUTPUT #2 contains additional metadata (ratings, tags, attributes, price, etc.), which is permitted under the provided rules.
+3.**Data Comparison:** 
+* `prod_003` (Mechanical Keyboard): Stock is 75 in both outputs. Category is 'Electronics' in both.
+* `prod_008` (Desk Lamp): Stock is 120 in both outputs. Category is 'Home' in both.
+* Both entries correctly satisfy the condition of ""stock less than 150"".
+4.**Row Order:** Row order does not matter as no sorting was requested.
+5.**Extra Rows/Columns:** OUTPUT #2 contains additional columns (metadata), but no additional rows that would violate the logic of the question. The core set of requested entities is identical.
+
+**Conclusion:**
+OUTPUT #2 correctly identifies the same set of products meeting the criteria established in the gold standard, while providing additional descriptive columns that do not contradict or invalidate the answer.
+
+FINAL ANSWER: INFORMATION_MATCHES",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({ ""stock"": { ""$lt"": 150 } })",10_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"Thinking step by step:
+
+1.**Analyze the QUESTION**: The question asks for a count of delivered orders. It does not specify a sorting order or a limit.
+2.**Column Mapping**: OUTPUT #1 uses the column name `count`, while OUTPUT #2 uses the column name `n`. Per the rules, differences in column names are acceptable as long as the information represents the same result.
+3.**Data Comparison**: Both outputs contain the integer value `7`. The data is identical.
+4.**Row Order**: Not applicable (single row).
+5.**Extra Rows/Columns**: There are no extra rows or columns in OUTPUT #2 that deviate from the core requirement.
+
+The core data (the count of 7) is preserved in both outputs. The difference in the key name (`count` vs `n`) is covered by the ""Relaxed Evaluation Criteria,"" which states that mapped column names might differ and should not be penalized.
+
+FINAL ANSWER: INFORMATION_MATCHES",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.countDocuments({ ""status"": ""delivered"" })",45_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"Thinking step by step:
+
+1.**Analyze the QUESTION:** The question asks for ""all products in the Electronics category."" There is no requested sorting order or limit specified.
+2.**Column Mapping:** OUTPUT #1 provides `product_id`, `price`, and `name`. OUTPUT #2 contains these exact fields (though they are nested or accompanied by metadata), confirming the core data is present.
+3.**Data Comparison:** 
+* `prod_001` (Laptop Stand): $45.99 in both.
+* `prod_002` (USB-C Hub): $34.99 in both.
+* `prod_003` (Mechanical Keyboard): $129.99 in both.
+* `prod_009` (Wireless Mouse): $44.99 in both.
+* All products are correctly identified as belonging to the ""Electronics"" category.
+4.**Row Order:** No sorting was requested, so the order differences are irrelevant.
+5.**Extra Information:** OUTPUT #2 contains additional metadata (tags, stock levels, ratings, object IDs, etc.). Per the relaxed evaluation criteria, the presence of these extra columns is acceptable as they do not render the result incorrect and the core requirement is satisfied.
+
+**Conclusion:** OUTPUT #2 provides all the information requested in OUTPUT #1, plus additional relevant metadata. According to the criteria, this falls under a match, with the understanding that extra columns are acceptable.
+
+FINAL ANSWER: INFORMATION_MATCHES",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.products.find({ ""category"": ""Electronics"" })",4_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,100
+llmrater,,"To determine if the generated output matches the gold standard, we evaluate the results based on the provided instructions:
+
+1.**Question Analysis:** The question ""Find all orders with a priority of 1"" is a retrieval request for a set of records. It does not specify a sort order or a limit.
+2.**Gold Standard (OUTPUT #1):** Contains 4 records where the `priority` is 1 (noting that the data includes both integer `1` and string `'1'`).
+3.**Generated Result (OUTPUT #2):** Contains only 2 of the 4 records present in the gold standard (specifically, the two records where `priority` is the string `'1'`). It misses the two records where `priority` is the integer `1`.
+4.**Data Comparison:** 
+* OUTPUT #1: 4 records (IDs: `ord_001`, `ord_005`, `ord_006`, `ord_002`).
+* OUTPUT #2: 2 records (IDs: `ord_006`, `ord_002`).
+* Because OUTPUT #2 failed to retrieve the records where the priority was stored as an integer (`1`), it is missing half of the requested dataset.
+
+**Conclusion:**
+OUTPUT #2 failed to retrieve all records that meet the criteria. By missing rows that represent valid matches, it provides incomplete information relative to the gold standard.
+
+FINAL ANSWER: INCORRECT_INFORMATION
+Error analysis:
+
+**Reasoning:**
+The user requested all orders with a priority of 1. The database contains entries where the `priority` field is stored as both an integer (`1`) and a string (`""1""`). The Golden SQL correctly handles this by using an `$or` operator to filter for both data types. The Generated SQL only filters for the string `""1""`, resulting in the omission of records where the priority is stored as an integer. This represents a failure to account for data type variance.
+
+**Tags & Explanations:**
+[DataTypesError]: The query fails to account for the fact that the priority field is stored as both an integer and a string, leading to incomplete results.
+[FilterError]: The filter condition is too restrictive because it uses an equality check on only one data type instead of handling both variations required to capture all relevant records.",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.orders.find({ ""priority"": ""1"" })",51_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,0
+llmrater,,"To determine if the generated output matches the gold standard, let's analyze the requirements and the data provided.
+
+1.**Analyze the QUESTION:** The question asks to ""Find the customers who are active."" It does not specify a limit or sorting order. Therefore, we expect the output to contain all customers who qualify as ""active.""
+2.**Data Comparison:**
+* **OUTPUT #1 (Gold Standard):** Contains 8 records (Carol, Grace, Frank, Bob, David, Henry, Eva, Alice).
+* **OUTPUT #2 (Generated Result):** Contains only 1 record (Carol).
+3.**Evaluation:**
+* The prompt implies that the query should return all active customers. Based on the gold standard, there are 8 such customers.
+* OUTPUT #2 only returns one customer. It is missing the other 7 records that are present in the gold standard.
+* Since OUTPUT #2 is missing the majority of the expected records, it fails to answer the question comprehensively.
+
+The difference is not due to sorting, rounding, or extra/missing columns; it is a failure to retrieve the complete dataset requested.
+
+FINAL ANSWER: INCORRECT_INFORMATION
+Error analysis:
+
+**Reasoning:**
+The user requested to find ""active"" customers. According to the Golden SQL, an ""active"" customer is defined as one who has placed an order on or after ""2024-02-05"". The Generated SQL instead interprets ""active"" as ""verified: true"". This is a fundamental misunderstanding of the business logic defined by the database schema and golden reference, leading to an incorrect result set.
+
+**Tags & Explanations:**
+[IntentError]: The query incorrectly assumes ""active"" means ""verified"" rather than based on the `last_order_date` as specified in the ground truth.
+[FilterError]: Used the wrong filtering criteria (`verified: true`) instead of the required date range filter on `stats.last_order_date`.",nl2sql-dart-ecommerce-firestore-mongodb,['mongodb'],,"db.customers.find({ ""verified"": true })",54_trial_0,625b2180-150a-464e-9b50-f16f67b367f0,0

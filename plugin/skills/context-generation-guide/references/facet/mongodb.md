@@ -10,7 +10,7 @@ Facets are modular, reusable NoSQL filter fragments or field-value predicates (s
 
 Values in the NoSQL snippet and intent are parameterized using positional placeholders (e.g. `$1`), according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
 
-### Example (DART Ecommerce Dataset - Payment Method)
+### Example
 
 **Input**:
 *   **Term / Concept**: "Credit card payment method"
@@ -30,7 +30,7 @@ Values in the NoSQL snippet and intent are parameterized using positional placeh
 }
 ```
 
-### Example (DART Ecommerce Dataset - Order Status)
+### Example (Order Status)
 
 ```json
 {

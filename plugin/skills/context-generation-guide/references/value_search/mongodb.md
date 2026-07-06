@@ -6,7 +6,7 @@ This reference provides best practices and ideal output definitions for Value Se
 
 Value Search queries map user-supplied terms in natural language queries (e.g. "black laptop", "electronics", "credit card") to stored field values in NoSQL document collections.
 
-## Schema Layout (DART Ecommerce Dataset)
+## Schema Layout
 
 ```json
 {

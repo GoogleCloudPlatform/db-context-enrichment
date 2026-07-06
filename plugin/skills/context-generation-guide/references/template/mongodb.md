@@ -10,7 +10,7 @@ Templates map full natural language questions to complete NoSQL MQL queries (`db
 
 Values in the NoSQL query and the intent are parameterized using positional placeholders (e.g. `$1`, `$2`), according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
 
-### Example (DART Ecommerce Dataset)
+### Example
 
 **Input**:
 *   **Question**: "What is the total revenue for completed orders?"

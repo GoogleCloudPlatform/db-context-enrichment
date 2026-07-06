@@ -55,8 +55,8 @@ Gap Analysis & Context Mutation]
 
 ### Evaluation Dataset Prep & Expansion Phase
 *   **Reference**: [references/dataset_generation/dataset_generation.md](references/dataset_generation/dataset_generation.md)
-*   **Mandatory Deliverables**: `golden.json`, `evalset_gen_plan.md`, `evalset_report_pair_level.md`, and `evalset_report_dataset_level.md`.
-*   **Action**: You MUST read the reference file above before starting this phase.
+*   **Mandatory Deliverables**: `evalset_environment_inputs.md`, `evalset_gen_plan.md`, `evalset_report_pair_level.md`, and `evalset_report_dataset_level.md`.
+*   **Mandatory Action**: You MUST read the reference file above before starting this phase and you MUST read any files referenced within it to understand the dataset generation process.
 *   **Goal**: Build a high-quality "golden" ground-truth dataset and associated audit reports.
 *   **Rationale**: A representative ground-truth dataset and formal audit trails are required to objectively measure and verify translation accuracy improvements.
 *   **Entry Prerequisites**:

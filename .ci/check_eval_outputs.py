@@ -54,17 +54,20 @@ def check_outputs(suite_path, dataset_file):
                     print(f"  [SUCCESS] Found {f} ({os.path.getsize(file_path)} bytes)")
 
     if failed:
-        print("\n[ERROR] Output validation failed! One or more mandatory files are missing or empty.")
+        print(
+            "\n[ERROR] Output validation failed! One or more mandatory files are missing or empty."
+        )
         sys.exit(1)
     else:
         print("\n[INFO] All mandatory outputs verified successfully.")
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python3 check_eval_outputs.py <suite_path> <dataset_file>")
         sys.exit(1)
-    
+
     suite_path_arg = sys.argv[1]
     dataset_file_arg = sys.argv[2]
-    
+
     check_outputs(suite_path_arg, dataset_file_arg)

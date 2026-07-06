@@ -1,0 +1,6 @@
+db_type: mongodb
+dialect: mongodb
+database_name: nl2sql-mflix
+database_path: ''
+firestore_database: projects/cloud-db-nl2sql/databases/nl2sql-mflix
+max_executions_per_minute: 120

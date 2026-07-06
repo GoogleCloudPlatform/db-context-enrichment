@@ -56,13 +56,14 @@ class BaseDBConfigGenerator(ABC):
         """
         Standardized Model Builder converting the strictly typed GDA object into an EvalBench model dict.
         """
-        datasource_ref = self.build_datasource_reference(context_set_id)
-
-        query_context = gda.QueryDataContext(datasource_references=datasource_ref)
-
-        query_context_dict = MessageToDict(
-            query_context._pb, preserving_proto_field_name=True
-        )
+        if hasattr(self, "build_custom_query_context"):
+            query_context_dict = self.build_custom_query_context(context_set_id)
+        else:
+            datasource_ref = self.build_datasource_reference(context_set_id)
+            query_context = gda.QueryDataContext(datasource_references=datasource_ref)
+            query_context_dict = MessageToDict(
+                query_context._pb, preserving_proto_field_name=True
+            )
 
         model_config = {
             "generator": "query_data_api",
@@ -70,6 +71,7 @@ class BaseDBConfigGenerator(ABC):
             "location": self.params.get("region") or "global",
             "context": query_context_dict,
         }
+
 
         return yaml.safe_dump(
             model_config, sort_keys=False, default_flow_style=False

@@ -1,0 +1,23 @@
+job_id,run_time,config,value
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.dataset_config,autoctx/experiments/context_tuning/eval_configs/golden_queries.json
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.dataset_format,evalbench-standard-format
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.database_configs,['autoctx/experiments/context_tuning/eval_configs/db_config.yaml']
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.dialect,postgres
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.query_types,['dql']
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.model_config,autoctx/experiments/context_tuning/eval_configs/model_config.yaml
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.prompt_generator,NOOPGenerator
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.runners.eval_runners,4
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.runners.sqlgen_runners,20
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.scorers.llmrater.model_config,autoctx/experiments/context_tuning/eval_configs/llmrater_config.yaml
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.reporting.csv.output_directory,autoctx/experiments/context_tuning/eval_reports/
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,experiment_config.orchestrator,oneshot
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,model_config.generator,query_data_api
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,model_config.project_id,cloud-db-nl2sql
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,model_config.location,us-west1
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,model_config.context.datasource_references.alloydb.database_reference.project_id,cloud-db-nl2sql
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,model_config.context.datasource_references.alloydb.database_reference.region,us-west1
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,model_config.context.datasource_references.alloydb.database_reference.cluster_id,sichenliu-test
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,model_config.context.datasource_references.alloydb.database_reference.instance_id,sichenliu-test-primary
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,model_config.context.datasource_references.alloydb.database_reference.database_id,postgres
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,model_config.context.datasource_references.alloydb.agent_context_reference.context_set_id,projects/cloud-db-nl2sql/locations/us-east1/contextSets/context-tuning
+c60fad39-91dc-4d2a-831d-2a41c87c5bf2,2026-06-29 09:22:06.782090,db_configs.postgres,"[{'db_type': 'alloydb', 'dialect': 'postgres', 'database_name': 'postgres', 'database_path': 'projects/cloud-db-nl2sql/locations/us-west1/clusters/sichenliu-test/instances/sichenliu-test-primary', 'max_executions_per_minute': 180, 'nl_config': ''}]"

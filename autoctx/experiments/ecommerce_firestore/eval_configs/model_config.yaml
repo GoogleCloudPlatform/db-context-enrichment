@@ -1,0 +1,16 @@
+generator: query_data_api
+project_id: cloud-db-nl2sql
+location: us-central1
+context:
+  datasource_references:
+    firestore_reference:
+      database_reference:
+        project_id: cloud-db-nl2sql
+        database_id: nl2sql-dart-ecommerce-firestore-mongodb
+        collection_ids:
+        - orders
+        - products
+        - customers
+      agent_context_reference:
+        context_set_id: /Users/sichenliu/Developer/db-context-enrichment/autoctx/experiments/ecommerce_firestore/context_sets/tuned_context.json
+        context_set_path: /Users/sichenliu/Developer/db-context-enrichment/autoctx/experiments/ecommerce_firestore/context_sets/tuned_context.json

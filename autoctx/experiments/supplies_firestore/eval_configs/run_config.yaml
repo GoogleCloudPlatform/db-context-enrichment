@@ -1,0 +1,38 @@
+############################################################
+### Dataset / Eval Items
+############################################################
+dataset_config: autoctx/experiments/supplies_firestore/eval_configs/golden_queries.json
+dataset_format: evalbench-standard-format
+database_configs:
+ - autoctx/experiments/supplies_firestore/eval_configs/db_config.yaml
+dialect: mongodb    # DB connection mapping
+query_types:
+ - dql
+
+############################################################
+### Prompt and Generation Modules
+############################################################
+model_config: autoctx/experiments/supplies_firestore/eval_configs/model_config.yaml
+prompt_generator: 'NOOPGenerator'
+
+############################################################
+### Evaluator Execution / Parallelism Tuning
+############################################################
+runners:
+  eval_runners: 1
+  sqlgen_runners: 2
+
+
+############################################################
+### Scorer Related Configs
+############################################################
+scorers:
+  llmrater:
+    model_config: autoctx/experiments/supplies_firestore/eval_configs/llmrater_config.yaml
+
+############################################################
+### Reporting Related Configs
+############################################################
+reporting:
+  csv:
+    output_directory: 'autoctx/experiments/supplies_firestore/eval_reports/'

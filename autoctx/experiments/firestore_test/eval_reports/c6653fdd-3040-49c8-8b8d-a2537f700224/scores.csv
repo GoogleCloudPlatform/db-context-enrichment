@@ -1,0 +1,3 @@
+comparator,comparison_error,comparison_logs,database,dialects,generated_error,generated_sql,id,job_id,score
+llmrater,,,nl2sql-mflix,['mongodb'],,,mflix_002_trial_0,c6653fdd-3040-49c8-8b8d-a2537f700224,0
+llmrater,,,nl2sql-mflix,['mongodb'],,,mflix_001_trial_0,c6653fdd-3040-49c8-8b8d-a2537f700224,0

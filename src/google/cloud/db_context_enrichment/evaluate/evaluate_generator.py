@@ -10,9 +10,11 @@ from google.cloud.db_context_enrichment.common import config
 
 from .db_generators.alloydb import AlloyDBConfigGenerator
 from .db_generators.base import BaseDBConfigGenerator
+from .db_generators.firestore import FirestoreConfigGenerator
 from .db_generators.mysql import MySQLConfigGenerator
 from .db_generators.postgres import PostgresConfigGenerator
 from .db_generators.spanner import SpannerConfigGenerator
+
 
 # Constants for EvalBench configuration filenames
 DB_CONFIG_NAME = "db_config.yaml"
@@ -129,7 +131,10 @@ def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
         PostgresConfigGenerator.SOURCE_TYPE: PostgresConfigGenerator,
         MySQLConfigGenerator.SOURCE_TYPE: MySQLConfigGenerator,
         SpannerConfigGenerator.SOURCE_TYPE: SpannerConfigGenerator,
+        FirestoreConfigGenerator.SOURCE_TYPE: FirestoreConfigGenerator,
+        "firestore": FirestoreConfigGenerator,
     }
+
 
     if source_type not in generators:
         supported = ", ".join(generators.keys())
@@ -199,7 +204,7 @@ def _generate_llmrater_config(project_id: str) -> str:
 
 
 def _convert_dataset(dataset_path: str, dialect: str) -> str:
-    """Reads simplified dataset and converts to EvalBench standard format."""
+    """Reads simplified or standard EvalBench dataset and converts/normalizes to EvalBench standard format."""
     try:
         with open(dataset_path) as f:
             data = json.load(f)
@@ -207,33 +212,56 @@ def _convert_dataset(dataset_path: str, dialect: str) -> str:
         if not isinstance(data, list):
             raise ValueError("Dataset must be a JSON list.")
 
-        required_keys = {"id", "nlq", "database", "golden_sql"}
+        converted = []
         for i, entry in enumerate(data):
             if not isinstance(entry, dict):
                 raise ValueError(f"Dataset entry at index {i} is not a dictionary.")
-            missing = required_keys - set(entry.keys())
-            if missing:
-                raise ValueError(
-                    f"Dataset entry at index {i} is missing required keys: {missing}"
-                )
 
-        converted = []
-        for entry in data:
-            converted_entry = {
-                "id": entry.get("id"),
-                "nl_prompt": entry.get("nlq"),
-                "query_type": "DQL",
-                "database": entry.get("database"),
-                "dialects": [dialect],
-                "golden_sql": {dialect: [entry.get("golden_sql")]},
-                "eval_query": {},
-                "setup_sql": {},
-                "cleanup_sql": {},
-                "other": {},
-                "tags": [],
-            }
+            # If already in EvalBench format
+            if "nl_prompt" in entry:
+                nl_prompt = entry.get("nl_prompt")
+                golden_sql_raw = entry.get("golden_sql", {})
+                if isinstance(golden_sql_raw, dict):
+                    # Ensure dialect key matches the generator's expected dialect (e.g. mongodb)
+                    golden_sql_dict = {}
+                    for d_key, val in golden_sql_raw.items():
+                        golden_sql_dict[dialect] = val
+                else:
+                    golden_sql_dict = {dialect: [golden_sql_raw]}
+
+                converted_entry = {
+                    "id": entry.get("id"),
+                    "nl_prompt": nl_prompt,
+                    "query_type": entry.get("query_type", "DQL").upper(),
+                    "database": entry.get("database"),
+                    "dialects": [dialect],
+                    "golden_sql": golden_sql_dict,
+                    "eval_query": entry.get("eval_query", {}),
+                    "setup_sql": entry.get("setup_sql", {}),
+                    "cleanup_sql": entry.get("cleanup_sql", {}),
+                    "other": entry.get("other", {}),
+                    "tags": entry.get("tags", []),
+                }
+            elif "nlq" in entry:
+                converted_entry = {
+                    "id": entry.get("id"),
+                    "nl_prompt": entry.get("nlq"),
+                    "query_type": "DQL",
+                    "database": entry.get("database"),
+                    "dialects": [dialect],
+                    "golden_sql": {dialect: [entry.get("golden_sql")]},
+                    "eval_query": {},
+                    "setup_sql": {},
+                    "cleanup_sql": {},
+                    "other": {},
+                    "tags": [],
+                }
+            else:
+                raise ValueError(f"Dataset entry at index {i} missing 'nl_prompt' or 'nlq'")
+
             converted.append(converted_entry)
 
         return json.dumps(converted, indent=2)
     except Exception as e:
         raise ValueError(f"Failed to convert dataset at {dataset_path}: {e}")
+

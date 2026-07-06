@@ -1,0 +1,14 @@
+[
+  {
+    "id": "mflix_001",
+    "database": "nl2sql-mflix",
+    "nlq": "Find movies directed by Christopher Nolan",
+    "golden_sql": "{\"find\": \"movies\", \"filter\": {\"directors\": \"Christopher Nolan\"}}"
+  },
+  {
+    "id": "mflix_002",
+    "database": "nl2sql-mflix",
+    "nlq": "Count how many users exist in the database",
+    "golden_sql": "{\"count\": \"users\"}"
+  }
+]

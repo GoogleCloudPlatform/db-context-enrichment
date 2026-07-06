@@ -1,0 +1,25 @@
+{
+  "templates": [
+    {
+      "nl_query": "Find movies directed by Christopher Nolan",
+      "sql": "{\"find\": \"movies\", \"filter\": {\"directors\": \"Christopher Nolan\"}}",
+      "intent": "Find movies directed by Christopher Nolan",
+      "manifest": "Find movies directed by a given director",
+      "parameterized": {
+        "parameterized_sql": "{\"find\": \"movies\", \"filter\": {\"directors\": \"\"}}",
+        "parameterized_intent": "Find movies directed by "
+      }
+    }
+  ],
+  "facets": [
+    {
+      "sql_snippet": "{\"tomatoes.viewer.rating\": {\"\": 4.0}}",
+      "intent": "highly rated movies on Rotten Tomatoes (above 4.0)",
+      "manifest": "highly rated movies on Rotten Tomatoes (above a given number)",
+      "parameterized": {
+        "parameterized_sql_snippet": "{\"tomatoes.viewer.rating\": {\"\": }}",
+        "parameterized_intent": "highly rated movies on Rotten Tomatoes (above )"
+      }
+    }
+  ]
+}

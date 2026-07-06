@@ -1,8 +1,11 @@
 import json
+import os
+import yaml
 
 from fastmcp import FastMCP
 
 from google.cloud.db_context_enrichment.common import context_mutator
+from google.cloud.db_context_enrichment.custom_tools import firestore_driver
 from google.cloud.db_context_enrichment.dataset import dataset_generator
 from google.cloud.db_context_enrichment.evaluate import (
     evaluate_generator,
@@ -10,6 +13,41 @@ from google.cloud.db_context_enrichment.evaluate import (
 )
 
 mcp = FastMCP("Context Engineering Agent MCP")
+
+
+def load_dynamic_mcp_tools():
+    """Scans tools.yaml for 'provider: local_mcp' annotations and registers dynamic local MCP tools."""
+    config_path = "autoctx/tools.yaml"
+    if not os.path.exists(config_path):
+        return
+
+    try:
+        with open(config_path, "r") as f:
+            docs = list(yaml.safe_load_all(f))
+
+        sources = {d["name"]: d for d in docs if isinstance(d, dict) and d.get("kind") == "source"}
+
+        for doc in docs:
+            if not isinstance(doc, dict) or doc.get("kind") != "tool":
+                continue
+
+            if doc.get("provider") == "local_mcp":
+                source_name = doc.get("source")
+                source_info = sources.get(source_name, {})
+                tool_type = doc.get("type")
+
+                if tool_type in ("firestore-list-collections", "firestore-list-tables", "firestore-list-schemas"):
+                    tool_func = firestore_driver.make_list_collections_tool(doc, source_info)
+                    mcp.add_tool(tool_func)
+                elif tool_type in ("firestore-execute-mongodb", "firestore-execute-query", "firestore-execute-sql"):
+                    tool_func = firestore_driver.make_execute_mongodb_tool(doc, source_info)
+                    mcp.add_tool(tool_func)
+    except Exception as e:
+        print(f"Warning: Could not load dynamic MCP tools from {config_path}: {e}")
+
+
+load_dynamic_mcp_tools()
+
 
 
 @mcp.tool

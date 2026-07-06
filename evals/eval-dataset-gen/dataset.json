@@ -2,7 +2,7 @@
   "scenarios": [
     {
       "id": "autoctx:generate-dataset-resolve-biz-rule-shift",
-      "starting_prompt": "Use context engineering, generate a evaluation dataset of SQL/Question pairs for petstore application named golden.json",
+      "starting_prompt": "Use context engineering, generate a seed evaluation dataset of SQL/Question pairs for petstore application named golden.json",
       "conversation_plan": "Ask the agent to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the petstore application whose design doc and source codes can be found in the directory `./app_data`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps. At the end of the conversation, verify that the agent produced the following output files: golden.json, evalset_gen_plan.md, evalset_report_pair_level.md, evalset_report_dataset_level.md.",
       "expected_trajectory": [],
       "kind": "agents",

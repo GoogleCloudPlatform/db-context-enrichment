@@ -55,8 +55,10 @@ Gap Analysis & Context Mutation]
 
 ### Evaluation Dataset Prep & Expansion Phase
 *   **Reference**: [references/dataset_generation/dataset_generation.md](references/dataset_generation/dataset_generation.md)
-*   **Goal**: Build a high-quality "golden" ground-truth dataset of Natural Language Questions (NLQ) and reference SQL queries for evaluation.
-*   **Rationale**: A representative ground-truth dataset is required to objectively measure translation accuracy improvements.
+*   **Mandatory Deliverables**: `golden.json`, `evalset_gen_plan.md`, `evalset_report_pair_level.md`, and `evalset_report_dataset_level.md`.
+*   **Action**: You MUST read the reference file above before starting this phase.
+*   **Goal**: Build a high-quality "golden" ground-truth dataset and associated audit reports.
+*   **Rationale**: A representative ground-truth dataset and formal audit trails are required to objectively measure and verify translation accuracy improvements.
 *   **Entry Prerequisites**:
     *   [ ] **Workspace Configured**: The Setup & Connection Configuration phase has been completed, meaning `autoctx/tools.yaml` is active.
 

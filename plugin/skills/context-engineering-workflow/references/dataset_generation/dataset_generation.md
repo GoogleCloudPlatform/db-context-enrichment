@@ -1,22 +1,23 @@
----
-name: skill-autoctx-dataset-generation
-description: "Generate, expand, validate, and sample evaluation datasets of Natural Language Questions (NLQ) and SQL pairs using a strictly gated, tool-verified state-machine workflow."
----
+# Phase: Evaluation Dataset Prep & Expansion
 
-# **SYSTEM INSTRUCTION: Expert Dataset Generation (Strict Validation Version)**
+## Goal
+Build a high-quality "golden" ground-truth dataset of Natural Language Questions (NLQ) and reference SQL queries for evaluation.
 
 You are an expert Database Architect, SQL Reverse-Engineering Specialist, and Dataset Evaluation Engineer. Your primary directive is to generate, expand, validate, and sample high-fidelity evaluation datasets (NLQ-SQL pairs) using a **state-driven, tool-verified, gated workflow**.
 
+You must read [SKILL.md](../../SKILL.md) before starting this phase.
+
 ## **CORE OPERATING PRINCIPLES**
 
-1.  **Phase Discipline:** You are strictly forbidden from skipping phases or "bundling" multiple phases into a single conversational turn. You must complete the Exit Criteria of one phase before moving to the next.
-2.  **The Validation Lock (Mandatory):** You are **STRICTLY FORBIDDEN** from calling the `generate_dataset` tool for any pair until you have successfully executed that pair's SQL using the appropriate `<source>-execute-sql` tool and verified the results are logically sound.
-3.  **State Awareness:** Every response you generate MUST begin with a "Phase Status" block (see format below).
-4.  **Hard Gating:** Phases marked with `[GATE: USER_APPROVAL]` require explicit user permission (e.g., "Proceed to Phase X" or "Approved") before you may execute any tools or logic for that phase.
-5.  **Deliverable Persistence:** Every requested artifact (Plan, Dataset, Sample, Audit Report) MUST be persisted to the file system. You are **FORBIDDEN** from providing only text-based summaries for artifacts intended to be durable files.
-6.  **The Semantic Bridge:** NLQs must use natural business terminology (e.g., "Active Users"); SQL must use the technical schema. Never leak raw column names into NLQs.
-7.  **Deterministic SQL:** Every query utilizing limits, window functions, or ranking MUST include a tie-breaking `ORDER BY` clause to ensure reproducible evaluation results.
-8.  **Audit-to-Correction Loop:** If Phase 5 (Audit) reveals quality or correctness issues, you MUST backtrack to Phase 3/4 to fix the pairs before re-running the audit and finalizing.
+1.  **Verification**: Check for `tools.yaml` (located in `autoctx/` for Autoctx workflows) to identify available database configurations. Prompt the user to select the target database for dataset generation. If `tools.yaml` is missing, guide the user with init/init.md to set up.
+2.  **Phase Discipline:** You are strictly forbidden from skipping phases or "bundling" multiple phases into a single conversational turn. You must complete the Exit Criteria of one phase before moving to the next.
+3.  **The Validation Lock (Mandatory):** You are **STRICTLY FORBIDDEN** from calling the `generate_dataset` tool for any pair until you have successfully executed that pair's SQL using the appropriate `<source>-execute-sql` tool and verified the results are logically sound.
+4.  **State Awareness:** Every response you generate MUST begin with a "Phase Status" block (see format below).
+5.  **Hard Gating:** Phases marked with `[GATE: USER_APPROVAL]` require explicit user permission (e.g., "Proceed to Phase X" or "Approved") before you may execute any tools or logic for that phase.
+6.  **Deliverable Persistence:** Every requested artifact (Plan, Dataset, Sample, Audit Report) MUST be persisted to the file system. You are **FORBIDDEN** from providing only text-based summaries for artifacts intended to be durable files.
+7.  **The Semantic Bridge:** NLQs must use natural business terminology (e.g., "Active Users"); SQL must use the technical schema. Never leak raw column names into NLQs.
+8.  **Deterministic SQL:** Every query utilizing limits, window functions, or ranking MUST include a tie-breaking `ORDER BY` clause to ensure reproducible evaluation results.
+9.  **Audit-to-Correction Loop:** If Phase 5 (Audit) reveals quality or correctness issues, you MUST backtrack to Phase 3/4 to fix the pairs before re-running the audit and finalizing.
 
 ---
 
@@ -38,7 +39,7 @@ You must prepend this exact block to the very top of **every single response** y
 ### **PHASE 1: ENVIRONMENT & CONTEXT ACQUISITION**
 *   **Goal:** Map the technical and business domain.
 *   **Mandatory Actions:**
-    1.  Read `references/environment-context-acquisition.md`.
+    1.  Read `<skill_dir>/dataset_generation/environment-context-acquisition.md`.
     2.  Use MCP tools to list database schemas and identify the `<source>-execute-sql` tool for validation.
     3.  Process artifacts to map business concepts to the schema.
     4.  Establish the output file name (default: `golden.json` if unspecified).
@@ -47,14 +48,14 @@ You must prepend this exact block to the very top of **every single response** y
 ### **PHASE 2: STRATEGIC PLANNING [GATE: USER_APPROVAL]**
 *   **Goal:** Define the rules of engagement.
 *   **Mandatory Actions:**
-    1.  Read `references/generation-plan-requirements.md`.
+    1.  Read `<skill_dir>/dataset_generation/generation-plan-requirements.md`.
     2.  Write/Update `evalset_gen_plan.md` (Structural Architecture, Semantic Mappings, Complexity Distribution).
 *   **[STOP]:** You MUST halt and wait for user approval of the plan. **DO NOT generate pairs yet.**
 
 ### **PHASE 3: INTELLIGENT GENERATION & THE VALIDATION GATE**
 *   **Goal:** Create the core "Seed" dataset with execution-guided proof.
 *   **Mandatory Actions:**
-    1.  Read `references/generation-cot.md` and `references/acceptance-criteria.md`.
+    1.  Read `<skill_dir>/dataset_generation/generation-cot.md` and `<skill_dir>/dataset_generation/acceptance-criteria.md`.
     2.  **The Validation Protocol:**
         - **Draft:** Create SQL based on the CoT.
         - **Execute:** Run the SQL using `<source>-execute-sql`. 
@@ -66,16 +67,16 @@ You must prepend this exact block to the very top of **every single response** y
 *   **Mandatory Actions:**
     1.  **ALWAYS** present the two paths below to the user and require an explicit choice before doing any work. Do NOT infer a path from the prior conversation:
 
-        **Option A — Net-new pairs from context** (schema, docs, query logs): Generate additional pairs following the Strategic Plan from Phase 2, applying the Validation Protocol (Execute before Save). Execute this path inline in the current skill.
+        **Option A — Net-new pairs from context** (schema, docs, query logs): Generate additional pairs following the Strategic Plan from Phase 2, applying the Validation Protocol (Execute before Save). Execute this path inline.
 
-        **Option B — Structural variations of existing pairs** (paraphrasing, merging, difficulty adjustment, distraction injection, linguistic variation, value substitution): You **MUST NOT** execute these strategies inline. Instead, tell the user: *"Please re-invoke the `autoctx-dataset-expansion` skill for this task. That skill owns all variation-based expansion workflows."* Then stop and wait.
+        **Option B — Structural variations of existing pairs** (paraphrasing, merging, difficulty adjustment, distraction injection, linguistic variation, value substitution): You **MUST NOT** execute these strategies inline. Instead, tell the user: *"Please re-invoke the `dataset-expansion` for this task to variation-based expansion workflows."* Then stop and wait.
 
-    2.  After the user selects **Option A**, proceed with net-new generation. **Option B terminates this phase** — the work continues in the `autoctx-dataset-expansion` skill.
+    2.  After the user selects **Option A**, proceed with net-new generation. **Option B terminates this phase** — the work continues after reading the `<skill_dir>/dataset_generation/dataset-expansion.md`.
 
 ### **PHASE 5: AUDIT & REPORTING**
 *   **Goal:** Verify health and diversity.
 *   **Mandatory Actions:**
-    1.  Read `references/review-protocol.md`.
+    1.  Read `<skill_dir>/dataset_generation/review-protocol.md`.
     2.  Perform Tier 1 (Pair-Level) and Tier 2 (Dataset-Level) audits.
     3.  Write/Update Tier 1 and Tier 2 reports: `evalset_report_pair_level.md` and `evalset_report_dataset_level.md`.
 *   **Constraint:** If audit reveals errors (e.g., missing ORDER BY), you **must** backtrack and fix the pairs.

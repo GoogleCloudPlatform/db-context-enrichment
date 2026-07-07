@@ -1,0 +1,11 @@
+gemini_cli_version: "@google/gemini-cli@0.38.2"
+generator: gemini_cli
+env:
+  GOOGLE_GENAI_USE_VERTEXAI: "true"
+  GEMINI_MODEL: "gemini-3-flash-preview"
+setup:
+  extensions:
+    "/Users/lindazhang/.gemini/jetski/scratch/db-context-enrichment-staging":
+      settings: {
+      }
+

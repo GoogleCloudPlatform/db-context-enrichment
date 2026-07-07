@@ -1,13 +1,11 @@
----
-name: autoctx-init
-description: Orchestrates the initialization workflow for auto context generation, and provides helper workflow for setting up dataset connection by creating or updating tools.yaml configurations.
----
+# Phase: Setup & Connection Configuration
 
-# Auto Context Generation Initialization
-
-This skill guides the user through scaffolding a new environment for the DB Data Agent auto context generation. It handles creating tracking files, output directories, and configuring database connections.
+## Goal
+Scaffold the local `autoctx/` workspace and establish verified database connections to prepare the environment for context engineering.
 
 ## Initialization Workflow
+
+You must read [SKILL.md](../../SKILL.md) before starting this phase.
 
 Follow these steps when the user asks to initialize the environment:
 
@@ -67,7 +65,7 @@ When collecting information from the user, inform the user that only Application
     - Cloud SQL MySQL
     - AlloyDB Postgres
     - Spanner
-2.  **Collect Information:** Request all **Required Information** based on the templates inside the `references/` folder. Do NOT assume missing fields; ask the user for them explicitly.
+2.  **Collect Information:** Request all **Required Information** based on the templates inside this directory. Do NOT assume missing fields; ask the user for them explicitly.
 3.  **Generate Configuration:** Replace all placeholders with the user's provided values and generate the complete `tools.yaml` content. Save it to the target location (e.g., `autoctx/tools.yaml` for Autoctx workflows, or `tools.yaml` in the current directory for standalone use).
 4.  **Validate:** After saving, validate the new connection using the toolbox script, replacing `<config_path>` with the actual path to the file:
     `uvx toolbox-server@1.4.0 --config <config_path> invoke <data_source_name>-list-schemas`
@@ -94,4 +92,4 @@ To verify that a specific database connection is configured correctly at any tim
 
 ## Templates & Reference
 
-For the specific fields required for each database type and the exact YAML structure to use, refer to the `references/` directory.
+For the specific fields required for each database type and the exact YAML structure to use, refer to the templates in this directory (.../references/init/...).

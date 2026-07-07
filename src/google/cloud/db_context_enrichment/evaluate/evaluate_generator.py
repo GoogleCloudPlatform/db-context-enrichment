@@ -23,7 +23,7 @@ GOLDEN_QUERIES_NAME = "golden_queries.json"
 
 
 def generate_evalbench_configs(
-    experiment_name: str,
+    output_dir: str,
     dataset_path: str,
     context_set_id: str,
     toolbox_config_path: str,
@@ -32,6 +32,10 @@ def generate_evalbench_configs(
     """
     Main entrypoint: Generates Evalbench-compatible YAML configurations natively using
     private DB format converters and the google-cloud-geminidataanalytics API validations.
+
+    All output files land under `<output_dir>/eval_configs/`. The generated
+    `run_config.yaml` also points evalbench at `<output_dir>/eval_reports/`
+    for its results.
     """
     params = _extract_toolbox_params(toolbox_config_path, toolbox_source_name)
     generator = _get_db_generator(params)
@@ -39,13 +43,13 @@ def generate_evalbench_configs(
     db_config_yaml = generator.generate_db_config()
     model_config_yaml = generator.generate_model_config(context_set_id)
     llmrater_config_yaml = _generate_llmrater_config(params.get("project"))
-    run_config_yaml = _generate_run_config(experiment_name, generator.DIALECT)
+    run_config_yaml = _generate_run_config(output_dir, generator.DIALECT)
 
     # Convert simplified dataset to EvalBench standard format
     golden_queries_json = _convert_dataset(dataset_path, generator.DIALECT)
 
     # Write all files directly
-    eval_configs_dir = f"autoctx/experiments/{experiment_name}/eval_configs"
+    eval_configs_dir = os.path.join(output_dir, "eval_configs")
     os.makedirs(eval_configs_dir, exist_ok=True)
 
     with open(os.path.join(eval_configs_dir, DB_CONFIG_NAME), "w") as f:
@@ -140,10 +144,17 @@ def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
     return generators[source_type](params)
 
 
-def _generate_run_config(experiment_name: str, dialect: str) -> str:
-    """Generates the main EvalBench Run Experiment scaffolding."""
-    configs_dir = f"autoctx/experiments/{experiment_name}/eval_configs"
-    reports_dir = f"autoctx/experiments/{experiment_name}/eval_reports"
+def _generate_run_config(output_dir: str, dialect: str) -> str:
+    """Generates the main EvalBench Run Experiment scaffolding.
+
+    Path values embedded in the YAML are normalized to POSIX separators so
+    the generated file is consistent across platforms (avoids mixed
+    `C:\\out\\eval_configs/db_config.yaml` on Windows and keeps string
+    assertions in tests portable).
+    """
+    output_dir_posix = output_dir.replace(os.sep, "/")
+    configs_dir = f"{output_dir_posix}/eval_configs"
+    reports_dir = f"{output_dir_posix}/eval_reports"
 
     return textwrap.dedent(f"""\
         ############################################################

@@ -1,18 +1,23 @@
-# Phase: Optimization & Hill-Climbing
+---
+name: autoctx-hillclimb
+description: Guides the agent to perform hill-climbing iterations to improve a ContextSet based on evaluation results.
+---
 
-## Goal
-Analyze evaluation failures to perform a Gap Analysis and apply targeted context mutations (refinements) to iteratively improve translation accuracy.
+# Auto Context Generation - Hill-Climbing Workflow
+
+This skill guides the process of improving a ContextSet iteratively by analyzing evaluation failures (Gap Analysis) and applying automated structural refinements (Mutations).
+
+> [!IMPORTANT]
+> **Constraint**: In this workflow, you are ONLY allowed use context types `templates` and `facets`. Do not attempt to use other context types.
 
 ## Workflow
 
 Follow these steps exactly in order:
 
-### 1. Setup & Loop 
-
-You must read [SKILL.md](../../SKILL.md) before starting this phase.
+### 1. Setup & Loop Identification
 
 1.  **Validation**:
-    -   Check if `autoctx/experiments/` directory and `autoctx/state.md` exist. If missing, warn the user that the workspace might not be initialized (suggest running the Setup & Connection phase of this skill first).
+    -   Check if `autoctx/experiments/` directory and `autoctx/state.md` exist. If missing, warn the user that the workspace might not be initialized (suggest activating the `autoctx-init` skill).
     -   Once an experiment is selected, verify it contains an `eval_reports/` folder. If missing, suggest running the Evaluation workflow first.
 2.  **Identify Experiment**:
     -   Read the local `autoctx/state.md` to identify the active experiment.
@@ -88,8 +93,6 @@ You must read [SKILL.md](../../SKILL.md) before starting this phase.
 
 ### 3. Phase 2: Context Mutation
 
-Refer to [../../../context-generation-guide/SKILL.md](../../../context-generation-guide/SKILL.md) for how to edit a ContextSet.
-
 1.  **Validation**: Verify that `gap_analysis_vN.md` exists and contains findings. Verify the base ContextSet file exists. If missing, STOP and inform the user.
 2.  **Analyze Gap Report & Determine Fixing Strategy**:
     -   Read `gap_analysis_vN.md` to identify what needs to be fixed.
@@ -150,7 +153,3 @@ When updating `autoctx/state.md`, please append or update the `Hill-Climbing Run
 - **Gap Analysis**: `autoctx/experiments/my-exp-1/hillclimb/gap_analysis_v1.md`
 - **Mutated Context**: `autoctx/experiments/my-exp-1/hillclimb/improved_context_v1.json`
 ```
-
-
-> [!IMPORTANT]
-> **Tool Modification Rule**: Always use the `mutate_context_set` tool for all ContextSet changes. Pass mutation payloads directly to the tool — it handles all file I/O internally. **Do not read the target context set file beforehand**.

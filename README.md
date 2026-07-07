@@ -96,14 +96,11 @@ All workflows are exposed as Agent Skills. Activate them by asking the agent in 
 
 ### Automated Iterative Optimization (Autoctx)
 
-All optimization lifecycle phases are managed and orchestrated by the single **`context-engineering-workflow`** skill:
-
-1.  **Initialize**: Sets up your local workspace by creating an `autoctx/` directory. It checks for the presence of a valid `tools.yaml` configuration inside it. If missing, the agent will interactively prompt you for your database connection details and generate the file for you. It also creates the `state.md` file to track experiment progress and an `experiments/` directory, all within `autoctx/`.
-2.  **Generate Dataset**: Rapidly creates or expands a baseline of evaluation questions (golden dataset). It asks you for sample queries or descriptions of what users might ask, and generates a JSON file with Natural Language Queries (NLQs) and Golden SQL statements.
-3.  **Bootstrap**: Generates an initial context set. It performs progressive schema discovery to understand your database structure and qualified tables. It then generates starting Templates and Facets based on the schema and any user-provided documentation or sample queries.
-4.  **Evaluate**: Measures context effectiveness against your golden dataset. This step automatically generates all necessary Evalbench configuration files (`db_config.yaml`, `model_config.yaml`, `run_config.yaml`, `llmrater_config.yaml`) inside the experiment folder and runs the evaluation pipeline to produce accuracy scores and identify failure cases.
-5.  **Hill-Climb**: Performs gap analysis on failures identified in the evaluation step. It reads the failure cases, determines why the LLM failed to generate correct SQL, and proposes updates or new additions to the context set (Templates or Facets) to improve performance in the next iteration.
-
+1.  **Initialize (`autoctx-init`)**: Sets up your local workspace by creating an `autoctx/` directory. It checks for the presence of a valid `tools.yaml` configuration inside it. If missing, the agent will interactively prompt you for your database connection details and generate the file for you. It also creates the `state.md` file to track experiment progress and an `experiments/` directory, all within `autoctx/`.
+2.  **Generate Dataset (`autoctx-dataset-generation`)**: Rapidly creates or expands a baseline of evaluation questions (golden dataset). It asks you for sample queries or descriptions of what users might ask, and generates a JSON file with Natural Language Queries (NLQs) and Golden SQL statements.
+3.  **Bootstrap (`autoctx-bootstrap`)**: Generates an initial context set. It performs progressive schema discovery to understand your database structure and qualified tables. It then generates starting Templates and Facets based on the schema and any user-provided documentation or sample queries.
+4.  **Evaluate (`autoctx-evaluate`)**: Measures context effectiveness against your golden dataset. This step automatically generates all necessary Evalbench configuration files (`db_config.yaml`, `model_config.yaml`, `run_config.yaml`, `llmrater_config.yaml`) inside the experiment folder and runs the evaluation pipeline to produce accuracy scores and identify failure cases.
+5.  **Hill-Climb (`autoctx-hillclimb`)**: Performs gap analysis on failures identified in the evaluation step. It reads the failure cases, determines why the LLM failed to generate correct SQL, and proposes updates or new additions to the context set (Templates or Facets) to improve performance in the next iteration.
 
 ### Targeted Manual Generation
 

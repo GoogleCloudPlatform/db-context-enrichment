@@ -39,7 +39,7 @@ You must prepend this exact block to the very top of **every single response** y
 ### **PHASE 1: ENVIRONMENT & CONTEXT ACQUISITION**
 *   **Goal:** Map the technical and business domain.
 *   **Mandatory Actions:**
-    1.  Read `<skill_dir>/dataset_generation/environment-context-acquisition.md`.
+    1.  Read `<skill_dir>/references/dataset_generation/environment-context-acquisition.md`.
     2.  Use MCP tools to list database schemas and identify the `<source>-execute-sql` tool for validation.
     3.  Process artifacts to map business concepts to the schema.
     4.  Establish the output file name (default: `golden.json` if unspecified).
@@ -48,14 +48,14 @@ You must prepend this exact block to the very top of **every single response** y
 ### **PHASE 2: STRATEGIC PLANNING [GATE: USER_APPROVAL]**
 *   **Goal:** Define the rules of engagement.
 *   **Mandatory Actions:**
-    1.  Read `<skill_dir>/dataset_generation/generation-plan-requirements.md`.
+    1.  Read `<skill_dir>/references/dataset_generation/generation-plan-requirements.md`.
     2.  Write/Update `evalset_gen_plan.md` (Structural Architecture, Semantic Mappings, Complexity Distribution).
 *   **[STOP]:** You MUST halt and wait for user approval of the plan. **DO NOT generate pairs yet.**
 
 ### **PHASE 3: INTELLIGENT GENERATION & THE VALIDATION GATE**
 *   **Goal:** Create the core "Seed" dataset with execution-guided proof.
 *   **Mandatory Actions:**
-    1.  Read `<skill_dir>/dataset_generation/generation-cot.md` and `<skill_dir>/dataset_generation/acceptance-criteria.md`.
+    1.  Read `<skill_dir>/references/dataset_generation/generation-cot.md` and `<skill_dir>/references/dataset_generation/acceptance-criteria.md`.
     2.  **The Validation Protocol:**
         - **Draft:** Create SQL based on the CoT.
         - **Execute:** Run the SQL using `<source>-execute-sql`. 
@@ -71,12 +71,12 @@ You must prepend this exact block to the very top of **every single response** y
 
         **Option B — Structural variations of existing pairs** (paraphrasing, merging, difficulty adjustment, distraction injection, linguistic variation, value substitution): You **MUST NOT** execute these strategies inline. Instead, tell the user: *"Please re-invoke the `dataset-expansion` for this task to variation-based expansion workflows."* Then stop and wait.
 
-    2.  After the user selects **Option A**, proceed with net-new generation. **Option B terminates this phase** — the work continues after reading the `<skill_dir>/dataset_generation/dataset-expansion.md`.
+    2.  After the user selects **Option A**, proceed with net-new generation. **Option B terminates this phase** — the work continues after reading the `<skill_dir>/references/dataset_generation/dataset-expansion.md`.
 
 ### **PHASE 5: AUDIT & REPORTING**
 *   **Goal:** Verify health and diversity.
 *   **Mandatory Actions:**
-    1.  Read `<skill_dir>/dataset_generation/review-protocol.md`.
+    1.  Read `<skill_dir>/references/dataset_generation/review-protocol.md`.
     2.  Perform Tier 1 (Pair-Level) and Tier 2 (Dataset-Level) audits.
     3.  Write/Update Tier 1 and Tier 2 reports: `evalset_report_pair_level.md` and `evalset_report_dataset_level.md`.
 *   **Constraint:** If audit reveals errors (e.g., missing ORDER BY), you **must** backtrack and fix the pairs.

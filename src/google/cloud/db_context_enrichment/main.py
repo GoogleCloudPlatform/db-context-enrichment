@@ -41,7 +41,7 @@ async def generate_dataset(
 
 @mcp.tool
 def generate_evalbench_configs(
-    experiment_name: str,
+    output_dir: str,
     dataset_path: str,
     context_set_id: str,
     toolbox_config_path: str,
@@ -50,17 +50,20 @@ def generate_evalbench_configs(
     """
     Generates Evalbench YAML configurations and converts the user-facing golden dataset to be compatible for evaluation, saving all files directly to disk.
 
-    This tool writes the following files inside `experiments/<experiment_name>/eval_configs/`:
+    This tool writes the following files inside `<output_dir>/eval_configs/`:
     - `db_config.yaml`
     - `model_config.yaml`
     - `run_config.yaml`
     - `llmrater_config.yaml`
     - `golden_queries.json` (converted to EvalBench internal format)
 
+    The generated `run_config.yaml` also points evalbench at
+    `<output_dir>/eval_reports/` for its results.
+
     Args:
-        experiment_name: The name of the target experiment folder.
+        output_dir: Directory (absolute or workspace-relative) where the eval configs and reports should live. Created if missing.
         dataset_path: The absolute path to the golden dataset file in the simplified user-facing format (JSON list of objects with keys: "id", "database", "nlq", "golden_sql").
-        context_set_id: The specific context_set_id inside the experiment.
+        context_set_id: Full ContextSet resource name to evaluate against.
         toolbox_config_path: The absolute path to the tools.yaml configuration file.
         toolbox_source_name: The name of the database source to use inside tools.yaml. The underlying source block must use a supported 'type' (cloud-sql-postgres, cloud-sql-mysql, spanner, alloydb-postgres).
 
@@ -68,13 +71,13 @@ def generate_evalbench_configs(
         A message indicating that the configuration files were successfully created.
     """
     evaluate_generator.generate_evalbench_configs(
-        experiment_name,
+        output_dir,
         dataset_path,
         context_set_id,
         toolbox_config_path,
         toolbox_source_name,
     )
-    return f"Successfully generated all configs for evaluation in experiments/{experiment_name}/eval_configs/"
+    return f"Successfully generated all configs for evaluation in {output_dir}/eval_configs/"
 
 
 @mcp.tool

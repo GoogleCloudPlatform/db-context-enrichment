@@ -1,4 +1,5 @@
 import json
+import os
 import textwrap
 from unittest.mock import mock_open, patch
 
@@ -117,7 +118,7 @@ def test_generate_evalbench_configs():
                 "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
             ) as mock_makedirs:
                 configs = generate_evalbench_configs(
-                    experiment_name="test-exp",
+                    output_dir="/test/out",
                     dataset_path="/local/path/data.json",
                     context_set_id="context-123",
                     toolbox_config_path="/fake/tools.yaml",
@@ -125,22 +126,17 @@ def test_generate_evalbench_configs():
                 )
 
     assert configs is None
-    mock_makedirs.assert_called_once_with(
-        "autoctx/experiments/test-exp/eval_configs", exist_ok=True
-    )
+    # Filesystem operations use native separators (backslash on Windows) —
+    # match with os.path.join so assertions are platform-portable.
+    eval_configs_dir = os.path.join("/test/out", "eval_configs")
+    mock_makedirs.assert_called_once_with(eval_configs_dir, exist_ok=True)
 
     # Verify all file writes
-    m.assert_any_call("autoctx/experiments/test-exp/eval_configs/db_config.yaml", "w")
-    m.assert_any_call(
-        "autoctx/experiments/test-exp/eval_configs/model_config.yaml", "w"
-    )
-    m.assert_any_call("autoctx/experiments/test-exp/eval_configs/run_config.yaml", "w")
-    m.assert_any_call(
-        "autoctx/experiments/test-exp/eval_configs/llmrater_config.yaml", "w"
-    )
-    m.assert_any_call(
-        "autoctx/experiments/test-exp/eval_configs/golden_queries.json", "w"
-    )
+    m.assert_any_call(os.path.join(eval_configs_dir, "db_config.yaml"), "w")
+    m.assert_any_call(os.path.join(eval_configs_dir, "model_config.yaml"), "w")
+    m.assert_any_call(os.path.join(eval_configs_dir, "run_config.yaml"), "w")
+    m.assert_any_call(os.path.join(eval_configs_dir, "llmrater_config.yaml"), "w")
+    m.assert_any_call(os.path.join(eval_configs_dir, "golden_queries.json"), "w")
 
     expected_db_config = textwrap.dedent("""\
         db_type: postgres
@@ -182,10 +178,10 @@ def test_generate_evalbench_configs():
         ############################################################
         ### Dataset / Eval Items
         ############################################################
-        dataset_config: autoctx/experiments/test-exp/eval_configs/golden_queries.json
+        dataset_config: /test/out/eval_configs/golden_queries.json
         dataset_format: evalbench-standard-format
         database_configs:
-         - autoctx/experiments/test-exp/eval_configs/db_config.yaml
+         - /test/out/eval_configs/db_config.yaml
         dialect: postgres    # DB connection mapping
         query_types:
          - dql
@@ -193,7 +189,7 @@ def test_generate_evalbench_configs():
         ############################################################
         ### Prompt and Generation Modules
         ############################################################
-        model_config: autoctx/experiments/test-exp/eval_configs/model_config.yaml
+        model_config: /test/out/eval_configs/model_config.yaml
         prompt_generator: 'NOOPGenerator'
 
         ############################################################
@@ -208,14 +204,14 @@ def test_generate_evalbench_configs():
         ############################################################
         scorers:
           llmrater:
-            model_config: autoctx/experiments/test-exp/eval_configs/llmrater_config.yaml
+            model_config: /test/out/eval_configs/llmrater_config.yaml
 
         ############################################################
         ### Reporting Related Configs
         ############################################################
         reporting:
           csv:
-            output_directory: 'autoctx/experiments/test-exp/eval_reports/'
+            output_directory: '/test/out/eval_reports/'
     """).strip()
 
     # Verify content written
@@ -249,7 +245,7 @@ def test_generate_evalbench_configs_env_interpolation():
                     "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
                 ):
                     configs = generate_evalbench_configs(
-                        experiment_name="test-exp",
+                        output_dir="/test/out",
                         dataset_path="/local/path/data.json",
                         context_set_id="context-123",
                         toolbox_config_path="/fake/tools.yaml",
@@ -285,7 +281,7 @@ def test_generate_evalbench_configs_env_fallback():
                     "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
                 ):
                     configs = generate_evalbench_configs(
-                        experiment_name="test-exp",
+                        output_dir="/test/out",
                         dataset_path="/local/path/data.json",
                         context_set_id="context-123",
                         toolbox_config_path="/fake/tools.yaml",

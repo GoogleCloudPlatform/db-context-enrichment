@@ -1,11 +1,16 @@
+---
+name: context-engineering-init
+description: Orchestrates the initialization workflow for context engineering, and provides helper workflow for setting up database connections by creating or updating tools.yaml configurations.
+---
+
+> **Load the `context-engineering-workflow` skill first.** It holds the shared context this phase depends on: workspace layout, state file conventions, phase order, and safety protocol. Do not proceed with this phase without reading it.
+
 # Phase: Setup & Connection Configuration
 
 ## Goal
 Scaffold the local `autoctx/` workspace and establish verified database connections to prepare the environment for context engineering.
 
 ## Initialization Workflow
-
-You must read [SKILL.md](../../SKILL.md) before starting this phase.
 
 Follow these steps when the user asks to initialize the environment:
 

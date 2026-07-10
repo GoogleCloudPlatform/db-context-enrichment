@@ -87,7 +87,7 @@ The plan must cover:
 2. **Strategy Allocation:**
    - How many new pairs each strategy will contribute toward the target count.
    - Prioritize strategies that fill identified coverage gaps (e.g., if no `high`-complexity pairs exist, prioritize Merging and Upscaling).
-   - Reference `<skill_dir>/references/dataset_generation/expansion-strategies.md` for detailed per-strategy execution rules.
+   - Reference `<skill_dir>/references/expansion-strategies.md` for detailed per-strategy execution rules.
 
 3. **Target Complexity Distribution:**
    - Desired breakdown across new pairs (e.g., 30% low / 40% medium / 30% high).
@@ -108,7 +108,7 @@ The plan must cover:
 
 ### Phase 3: Expansion Execution & Validation Gate
 
-Read `<skill_dir>/references/dataset_generation/expansion-strategies.md` for detailed per-strategy rules before generating. Apply each approved strategy using the source pairs identified in the plan.
+Read `<skill_dir>/references/expansion-strategies.md` for detailed per-strategy rules before generating. Apply each approved strategy using the source pairs identified in the plan.
 
 Use the following internal tracking per candidate (not written to disk — internal reasoning only):
 - `source_id`: the `id` of the source pair(s)
@@ -267,7 +267,7 @@ Use the following internal tracking per candidate (not written to disk — inter
 
 #### The Validation Gate (Mandatory — End of Phase 3)
 
-After generating all candidates, apply these rules to every pair before moving to Phase 4. Consult `<skill_dir>/references/dataset_generation/acceptance-criteria.md` for the full acceptance criteria.
+After generating all candidates, apply these rules to every pair before moving to Phase 4. Consult `<skill_dir>/references/acceptance-criteria.md` for the full acceptance criteria.
 
 1. **SQL Execution** (required if `tools.yaml` available):
    - Execute each `golden_sql` via `<source>-execute-sql`.
@@ -289,7 +289,7 @@ After generating all candidates, apply these rules to every pair before moving t
 
 ### Phase 4: Audit & Reporting `[GATE: USER_APPROVAL]`
 
-Consult `<skill_dir>/references/dataset_generation/review-protocol.md` for full audit criteria. Generate two reports:
+Consult `<skill_dir>/references/review-protocol.md` for full audit criteria. Generate two reports:
 
 **Deliverable 1 — `evalset_expansion_report_pair_level.md`:**
 

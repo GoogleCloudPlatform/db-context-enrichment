@@ -1,10 +1,3 @@
----
-name: context-engineering-evaluate
-description: Guides the agent to execute an evaluation of a ContextSet against a golden NLQ+SQL dataset using the Evalbench framework.
----
-
-> **Load the `context-engineering-workflow` skill first.** It holds the shared context this phase depends on: workspace layout, state file conventions, phase order, and safety protocol. Do not proceed with this phase without reading it.
-
 # Phase: Evaluation Scoring
 
 ## Goal
@@ -37,6 +30,8 @@ Before beginning the workflow, you explicitly require:
 - The `context_set_id` (the Data Agent's authored context configuration identifier, retrievable by the user directly from the GCP Database Studio console; e.g., `projects/<project_id>/locations/<region>/contextSets/<context_set_name>`).
 
 ## Workflow
+
+You must read [SKILL.md](../../SKILL.md) before starting this phase.
 
 Follow these steps exactly in order:
 

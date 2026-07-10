@@ -1,10 +1,3 @@
----
-name: context-engineering-hillclimb
-description: Guides the agent to perform hill-climbing iterations to improve a ContextSet based on Evalbench evaluation results.
----
-
-> **Load the `context-engineering-workflow` skill first.** It holds the shared context this phase depends on: workspace layout, state file conventions, phase order, and safety protocol. Do not proceed with this phase without reading it.
-
 # Phase: Optimization & Hill-Climbing
 
 ## Goal
@@ -15,6 +8,8 @@ Analyze evaluation failures to perform a Gap Analysis and apply targeted context
 Follow these steps exactly in order:
 
 ### 1. Setup & Loop 
+
+You must read [SKILL.md](../../SKILL.md) before starting this phase.
 
 1.  **Validation**:
     -   Check if `autoctx/experiments/` directory and `autoctx/state.md` exist. If missing, warn the user that the workspace might not be initialized (suggest running the Setup & Connection phase of this skill first).
@@ -93,7 +88,7 @@ Follow these steps exactly in order:
 
 ### 3. Phase 2: Context Mutation
 
-Refer to [context-generation-guide](../context-generation-guide/SKILL.md) for how to edit a ContextSet.
+Refer to [../../../context-generation-guide/SKILL.md](../../../context-generation-guide/SKILL.md) for how to edit a ContextSet.
 
 1.  **Validation**: Verify that `gap_analysis_vN.md` exists and contains findings. Verify the base ContextSet file exists. If missing, STOP and inform the user.
 2.  **Analyze Gap Report & Determine Fixing Strategy**:

@@ -1,12 +1,5 @@
----
-name: context-engineering-bootstrap
-description: Guides the agent to bootstrap an initial ContextSet (templates, facets, and value searches) by deducing key information from the database schema and generating a ContextSet file.
----
-
-> **Load the `context-engineering-workflow` skill first.** It holds the shared context this phase depends on: workspace layout, state file conventions, phase order, and safety protocol. Do not proceed with this phase without reading it.
-
 > [!NOTE]
-> For detailed schema specifications and explanation of context set types, see the central [Context Set Concept Types](../context-generation-guide/SKILL.md) guide.
+> For detailed schema specifications and explanation of context set types, see the central [Context Set Concept Types](../../../context-generation-guide/SKILL.md) guide.
 
 # Phase: Baseline Bootstrapping
 
@@ -18,6 +11,8 @@ Deduce query concepts and generate a baseline `ContextSet` (templates, facets, v
 Before beginning the workflow, you explicitly require:
 - An active `tools.yaml` configuration (located in `autoctx/`) with database schema fetching tools configured (e.g., `<source>-list-schemas`).
 - Target database schemas to act upon.
+
+You must read [SKILL.md](../../SKILL.md) before starting this phase.
 
 ## Workflow
 

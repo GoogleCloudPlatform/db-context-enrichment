@@ -45,7 +45,7 @@ Gap Analysis & Context Mutation]
 ---
 
 ### Setup & Connection Configuration Phase
-*   **Reference**: [context-engineering-init](../context-engineering-init/SKILL.md)
+*   **Reference**: [references/init/init.md](references/init/init.md)
 *   **Goal**: Scaffold the local `autoctx/` workspace and establish verified database connections.
 *   **Rationale**: Readonly-database access is an input for evaluation dataset prep and expand, baseline context bootstrapping, 
 *   **Entry Prerequisites**:
@@ -54,7 +54,7 @@ Gap Analysis & Context Mutation]
 ---
 
 ### Evaluation Dataset Prep & Expansion Phase
-*   **Reference**: [context-engineering-dataset-generation](../context-engineering-dataset-generation/SKILL.md)
+*   **Reference**: [references/dataset_generation/dataset_generation.md](references/dataset_generation/dataset_generation.md)
 *   **Mandatory Deliverables**: `evalset_environment_inputs.md`, `evalset_gen_plan.md`, `evalset_report_pair_level.md`, and `evalset_report_dataset_level.md`.
 *   **Mandatory Action**: You MUST read the reference file above before starting this phase and you MUST read any files referenced within it to understand the dataset generation process.
 *   **Goal**: Build a high-quality "golden" ground-truth dataset and associated audit reports.
@@ -65,7 +65,7 @@ Gap Analysis & Context Mutation]
 ---
 
 ### Baseline Context Bootstrapping Phase
-*   **Reference**: [context-engineering-bootstrap](../context-engineering-bootstrap/SKILL.md)
+*   **Reference**: [references/bootstrap/bootstrap.md](references/bootstrap/bootstrap.md)
 *   **Goal**: Deduce query concepts and generate a baseline `ContextSet` (templates, facets, value searches) directly from database schemas and metadata.
 *   **Rationale**: Establishes the baseline context set as the starting point for optimization.
 *   **Entry Prerequisites**:
@@ -74,7 +74,7 @@ Gap Analysis & Context Mutation]
 ---
 
 ### Run Evaluation And Score
-*   **Reference**: [context-engineering-evaluate](../context-engineering-evaluate/SKILL.md)
+*   **Reference**: [references/evaluate/evaluate.md](references/evaluate/evaluate.md)
 *   **Goal**: Run a structured Evalbench evaluation to score the accuracy of a specific context set and identify exact query failures.
 *   **Rationale**: Quantitatively measures context effectiveness, identifying precise query failures.
 *   **Entry Prerequisites**:
@@ -86,7 +86,7 @@ Gap Analysis & Context Mutation]
 ---
 
 ### Optimization & Hill-Climbing Phase
-*   **Reference**: [context-engineering-hillclimb](../context-engineering-hillclimb/SKILL.md)
+*   **Reference**: [references/hillclimb/hillclimb.md](references/hillclimb/hillclimb.md)
 *   **Goal**: Analyze evaluation failures to perform a Gap Analysis and apply targeted context mutations to iteratively improve performance.
 *   **Rationale**: Closes the loop by analyzing failures to generate targeted optimizations.
 *   **Entry Prerequisites**:

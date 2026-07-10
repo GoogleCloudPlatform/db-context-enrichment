@@ -77,7 +77,7 @@ jobs:
       - name: Check autoctx-init SKILL.md toolbox pins match pyproject toolbox_version
         run: |
           set -euo pipefail
-          FILE=plugin/skills/context-engineering-workflow/references/init/init.md
+          FILE=plugin/skills/context-engineering-init/SKILL.md
           EXPECTED="toolbox-server@$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)"
           FOUND=$(grep -oE 'toolbox-server@[0-9]+\.[0-9]+\.[0-9]+' "$FILE" | sort -u || true)
           if [ -z "$FOUND" ]; then
@@ -92,7 +92,7 @@ jobs:
       - name: Check autoctx-evaluate SKILL.md evalbench pins match pyproject evalbench_version
         run: |
           set -euo pipefail
-          FILE=plugin/skills/context-engineering-workflow/references/evaluate/evaluate.md
+          FILE=plugin/skills/context-engineering-evaluate/SKILL.md
           EXPECTED="google-evalbench@$(grep -o '^evalbench_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)"
           FOUND=$(grep -oE 'google-evalbench@[0-9]+\.[0-9]+\.[0-9]+' "$FILE" | sort -u || true)
           if [ -z "$FOUND" ]; then

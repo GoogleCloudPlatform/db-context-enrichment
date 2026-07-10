@@ -1,6 +1,6 @@
 ---
 name: context-engineering-workflow
-description: Context engineering for Gemini Data Analytics API's data agent developer platform tools. Generates, evaluates, and iteratively optimizes a ContextSet (Templates, Facets, Value Searches) to maximize Natural-Language-to-SQL translation accuracy. Use this skill to run the automated setup, bootstrapping, scoring, and optimization pipeline. For manual authoring standards and schema syntax rules, see the context-generation-guide skill.
+description: Context engineering for Gemini Data Analytics API's data agent developer platform tools. Generates, evaluates, and iteratively optimizes a ContextSet (Templates, Facets, Value Searches) to maximize Natural-Language-to-SQL translation accuracy. Use this skill to run the automated setup, NL-SQL pair evaluation dataset generation and expansion, bootstrapping, scoring, and optimization pipeline. For manual authoring standards and schema syntax rules, see the context-generation-guide skill.
 ---
 
 # Skill: Context Engineering Orchestrator
@@ -55,8 +55,10 @@ Gap Analysis & Context Mutation]
 
 ### Evaluation Dataset Prep & Expansion Phase
 *   **Reference**: [references/dataset_generation/dataset_generation.md](references/dataset_generation/dataset_generation.md)
-*   **Goal**: Build a high-quality "golden" ground-truth dataset of Natural Language Questions (NLQ) and reference SQL queries for evaluation.
-*   **Rationale**: A representative ground-truth dataset is required to objectively measure translation accuracy improvements.
+*   **Mandatory Deliverables**: `evalset_environment_inputs.md`, `evalset_gen_plan.md`, `evalset_report_pair_level.md`, and `evalset_report_dataset_level.md`.
+*   **Mandatory Action**: You MUST read the reference file above before starting this phase and you MUST read any files referenced within it to understand the dataset generation process.
+*   **Goal**: Build a high-quality "golden" ground-truth dataset and associated audit reports.
+*   **Rationale**: A representative ground-truth dataset and formal audit trails are required to objectively measure and verify translation accuracy improvements.
 *   **Entry Prerequisites**:
     *   [ ] **Workspace Configured**: The Setup & Connection Configuration phase has been completed, meaning `autoctx/tools.yaml` is active.
 

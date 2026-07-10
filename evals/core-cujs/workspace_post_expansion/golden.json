@@ -1,0 +1,82 @@
+[
+  {
+    "id": "eval_001",
+    "database": "financial",
+    "nlq": "How many accounts who choose issuance after transaction are staying in East Bohemia region? A3 contains the data of region; 'POPLATEK PO OBRATU' represents for 'issuance after transaction'.",
+    "golden_sql": "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'east Bohemia' AND \"T1\".\"frequency\" = 'POPLATEK PO OBRATU'"
+  },
+  {
+    "id": "eval_002",
+    "database": "financial",
+    "nlq": "How many accounts who have region in Prague are eligible for loans? A3 contains the data of region",
+    "golden_sql": "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'Prague'"
+  },
+  {
+    "id": "eval_003",
+    "database": "financial",
+    "nlq": "How many accounts who choose monthly issuance are staying in south Moravia region? 'POPLATEK MESICNE' represents for 'monthly issuance'.",
+    "golden_sql": "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'south Moravia' AND \"T1\".\"frequency\" = 'POPLATEK MESICNE'"
+  },
+  {
+    "id": "eval_004",
+    "database": "financial",
+    "nlq": "How many accounts who have region in south Bohemia are eligible for loans?",
+    "golden_sql": "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'south Bohemia'"
+  },
+  {
+    "id": "eval_005",
+    "database": "financial",
+    "nlq": "Count the accounts in the East Bohemia region that opted for issuance after transaction as their payment type. A3 contains the data of region; 'POPLATEK PO OBRATU' represents for 'issuance after transaction'.",
+    "golden_sql": "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'east Bohemia' AND \"T1\".\"frequency\" = 'POPLATEK PO OBRATU'",
+    "tags": ["complexity: medium", "topic: account_frequency", "source: expansion:paraphrase", "expansion_source_id: eval_001"]
+  },
+  {
+    "id": "eval_006",
+    "database": "financial",
+    "nlq": "Give me the total number of accounts in Prague that qualify for loans. A3 contains the data of region",
+    "golden_sql": "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'Prague'",
+    "tags": ["complexity: medium", "topic: loan_eligibility", "source: expansion:paraphrase", "expansion_source_id: eval_002"]
+  },
+  {
+    "id": "eval_007",
+    "database": "financial",
+    "nlq": "How many accounts with issuance after transaction as their payment type and located in Prague are also eligible for loans? A3 contains the data of region; 'POPLATEK PO OBRATU' represents for 'issuance after transaction'.",
+    "golden_sql": "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"loan\" AS \"T3\" ON \"T1\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T2\".\"A3\" = 'Prague' AND \"T1\".\"frequency\" = 'POPLATEK PO OBRATU'",
+    "tags": ["complexity: high", "topic: loan_eligibility", "source: expansion:merge", "expansion_source_ids: [eval_001, eval_002]"]
+  },
+  {
+    "id": "eval_008",
+    "database": "financial",
+    "nlq": "How many accounts in each region are eligible for loans, listed from highest to lowest count? A3 contains the data of region",
+    "golden_sql": "SELECT \"T3\".\"A3\" AS region, COUNT(\"T1\".\"account_id\") AS eligible_accounts FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" GROUP BY \"T3\".\"A3\" ORDER BY eligible_accounts DESC",
+    "tags": ["complexity: high", "topic: regional_loan_distribution", "source: expansion:upscale", "expansion_source_id: eval_002"]
+  },
+  {
+    "id": "eval_009",
+    "database": "financial",
+    "nlq": "How many accounts are located in the East Bohemia region? A3 contains the data of region",
+    "golden_sql": "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'east Bohemia'",
+    "tags": ["complexity: low", "topic: regional_accounts", "source: expansion:simplify", "expansion_source_id: eval_001"]
+  },
+  {
+    "id": "eval_010",
+    "database": "financial",
+    "nlq": "How many accounts who have region in north Moravia are eligible for loans? A3 contains the data of region",
+    "golden_sql": "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'north Moravia'",
+    "tags": ["complexity: medium", "topic: loan_eligibility", "source: expansion:value_substitution", "expansion_source_id: eval_002", "substituted_column: district.A3"]
+  },
+  {
+    "id": "eval_011",
+    "database": "financial",
+    "nlq": "I was looking at the payment transactions table, but what I actually need is: how many accounts who choose monthly issuance are staying in south Moravia region? 'POPLATEK MESICNE' represents for 'monthly issuance'.",
+    "golden_sql": "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'south Moravia' AND \"T1\".\"frequency\" = 'POPLATEK MESICNE'",
+    "tags": ["complexity: medium", "topic: account_frequency", "source: expansion:distraction", "expansion_source_id: eval_003"]
+  },
+  {
+    "id": "eval_012",
+    "database": "financial",
+    "nlq": "Hw many acocunts who have their area in south Bohemia are eligible for credits?",
+    "golden_sql": "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'south Bohemia'",
+    "tags": ["complexity: medium", "topic: loan_eligibility", "source: expansion:linguistic", "expansion_source_id: eval_004"]
+  }
+]

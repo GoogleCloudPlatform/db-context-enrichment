@@ -23,7 +23,15 @@ async def generate_dataset(
     output_file_path: str,
 ) -> str:
     """
-    Validates a list of evaluation dataset entries and saves them to a JSON file.
+    Validates a list of evaluation dataset entries and saves them to a JSON file. This is the REQUIRED tool for generating 'golden' datasets.
+
+    CRITICAL: Any request to generate an evaluation dataset MUST follow the "context-engineering-workflow" skill.
+    Do NOT use generic file-writing tools to save the golden dataset. Using this tool is the final step of the dataset generation workflow.
+
+    The workflow REQUIRES the following steps BEFORE calling this tool:
+    1. Activate the `context-engineering-workflow` skill.
+    2. Read `<skill-dir>/references/dataset_generation/dataset_generation.md` for the full procedure.
+    3. Generate mandatory audit reports (evalset_environment_inputs.md, evalset_gen_plan.md, evalset_report_pair_level.md, evalset_report_dataset_level.md) as specified in the workflow. These files are required for the verification process to pass.
 
     Args:
         dataset_entries_json: A JSON string representing a list of dataset items.

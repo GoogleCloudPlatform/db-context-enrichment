@@ -1,13 +1,18 @@
 import json
+import pathlib
 
 from fastmcp import FastMCP
 
-from google.cloud.db_context_enrichment.common import context_mutator
+from google.cloud.db_context_enrichment.common import (
+    context_mutator,
+    context_store_client,
+)
 from google.cloud.db_context_enrichment.dataset import dataset_generator
 from google.cloud.db_context_enrichment.evaluate import (
     evaluate_generator,
     result_reader,
 )
+from google.cloud.db_context_enrichment.model import context
 
 mcp = FastMCP("Context Engineering Agent MCP")
 
@@ -36,7 +41,7 @@ async def generate_dataset(
 
 @mcp.tool
 def generate_evalbench_configs(
-    experiment_name: str,
+    output_dir: str,
     dataset_path: str,
     context_set_id: str,
     toolbox_config_path: str,
@@ -45,17 +50,20 @@ def generate_evalbench_configs(
     """
     Generates Evalbench YAML configurations and converts the user-facing golden dataset to be compatible for evaluation, saving all files directly to disk.
 
-    This tool writes the following files inside `experiments/<experiment_name>/eval_configs/`:
+    This tool writes the following files inside `<output_dir>/eval_configs/`:
     - `db_config.yaml`
     - `model_config.yaml`
     - `run_config.yaml`
     - `llmrater_config.yaml`
     - `golden_queries.json` (converted to EvalBench internal format)
 
+    The generated `run_config.yaml` also points evalbench at
+    `<output_dir>/eval_reports/` for its results.
+
     Args:
-        experiment_name: The name of the target experiment folder.
+        output_dir: Directory (absolute or workspace-relative) where the eval configs and reports should live. Created if missing.
         dataset_path: The absolute path to the golden dataset file in the simplified user-facing format (JSON list of objects with keys: "id", "database", "nlq", "golden_sql").
-        context_set_id: The specific context_set_id inside the experiment.
+        context_set_id: Full ContextSet resource name to evaluate against.
         toolbox_config_path: The absolute path to the tools.yaml configuration file.
         toolbox_source_name: The name of the database source to use inside tools.yaml. The underlying source block must use a supported 'type' (cloud-sql-postgres, cloud-sql-mysql, spanner, alloydb-postgres).
 
@@ -63,13 +71,13 @@ def generate_evalbench_configs(
         A message indicating that the configuration files were successfully created.
     """
     evaluate_generator.generate_evalbench_configs(
-        experiment_name,
+        output_dir,
         dataset_path,
         context_set_id,
         toolbox_config_path,
         toolbox_source_name,
     )
-    return f"Successfully generated all configs for evaluation in experiments/{experiment_name}/eval_configs/"
+    return f"Successfully generated all configs for evaluation in {output_dir}/eval_configs/"
 
 
 @mcp.tool
@@ -115,6 +123,72 @@ def generate_upload_url(
             return "Error: Missing instance_id, database_id, or project_id for spanner."
     else:
         return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', or 'spanner'."
+
+
+# NOTE: `@mcp.tool` is intentionally NOT applied to upload_context_set /
+# download_context_set. The Context Store client library ships in this
+# release, but the MCP tool wrappers are held back until the Context Store
+# API is stable in production. Re-add the decorator to expose these to
+# agents when ready.
+def upload_context_set(
+    local_file_path: str,
+    project_id: str,
+    csg_id: str,
+    cs_id: str,
+    version: str,
+) -> str:
+    """
+    Upload a local ContextSet JSON file to the Context Store.
+
+    Resource hierarchy: a ContextSetGroup (CSG) is a logical container that
+    holds versioned ContextSets — typically one CSG per experiment, one
+    cs_id per lineage (eg. "autoctx"), and versions like "v0", "v1", "v2".
+
+    The CSG and the (cs_id, version) ContextSet resource are created if they
+    don't already exist; then the file contents are written as the
+    ContextSet body. Re-uploading the same (csg_id, cs_id, version)
+    overwrites the body.
+
+    Args:
+        local_file_path: Absolute path to a ContextSet JSON file.
+        project_id: GCP project where the CSG / CS should live. Typically
+            the same project the target DB lives in.
+        csg_id: ContextSetGroup ID (eg. an experiment name).
+        cs_id: ContextSet ID (eg. "autoctx"). Stable across versions.
+        version: Version label (eg. "baseline", "v1").
+
+    Returns:
+        Full ContextSet resource name, eg.
+        `projects/<p>/locations/<l>/contextSetGroups/<csg_id>/contextSets/<cs_id>@<version>`.
+    """
+    text = pathlib.Path(local_file_path).read_text()
+    ctx = context.ContextSet.model_validate_json(text)
+    client = context_store_client.ContextStoreClient()
+    cs_resource_name = client.ensure_context_set(project_id, csg_id, cs_id, version)
+    client.upload_context_set(cs_resource_name, ctx)
+    return cs_resource_name
+
+
+def download_context_set(cs_resource_name: str, output_file_path: str) -> str:
+    """
+    Download a ContextSet from the Context Store and write it to a local
+    JSON file. Parent directories are created as needed; the output file
+    is overwritten if it exists.
+
+    Args:
+        cs_resource_name: Full ContextSet resource name, eg.
+            `projects/<p>/locations/<l>/contextSetGroups/<csg_id>/contextSets/<cs_id>@<version>`.
+        output_file_path: Absolute path where the JSON file should be written.
+
+    Returns:
+        The output file path.
+    """
+    client = context_store_client.ContextStoreClient()
+    ctx = client.download_context_set(cs_resource_name)
+    out = pathlib.Path(output_file_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(ctx.model_dump_json(exclude_none=True, indent=2))
+    return output_file_path
 
 
 @mcp.tool

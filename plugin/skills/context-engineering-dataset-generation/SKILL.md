@@ -51,7 +51,7 @@ You must prepend this exact block to the very top of every single response you g
 *   **Goal:** Create `evalset_gen_plan.md` and get explicit user approval on the dataset requirements.
 *   **Mandatory Actions:**
     1.  Read `<skill_dir>/references/generation-plan-requirements.md`.
-    2.  **Ensure Robust Dataset Size:** Unless the user has explicitly specified a custom target, the minimum target volumn for a NL2SQL dataset is **at least 50 questions**.
+    2.  **Ensure Robust Dataset Size:** Unless the user has explicitly specified a custom target, the minimum target volume for a NL2SQL dataset is **at least 50 questions**.
     3.  **Compose and Update Plan (`evalset_gen_plan.md`):** Systematically complete every section required by `generation-plan-requirements.md`. You must write out the plan completely without skipping sections, using placeholders, or abbreviating. Place the main decisions requiring user-review at the top of the plan.
     4. **[USER APPROVAL GATE]:** STOP. You MUST halt and wait for user approval of `evalset_gen_plan.md`. **DO NOT proceed to the next phase until explicitly given permission.**
 *   **Exit Criteria:** User explicitly approved `evalset_gen_plan.md` and indicated we may proceed to the next phase.

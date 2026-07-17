@@ -1,6 +1,6 @@
 # Dataset Format Requirements
 
-All evaluation example and dataset file must use the following schema:
+All evaluation examples and dataset files must use the following schema:
 
 ```json
 [

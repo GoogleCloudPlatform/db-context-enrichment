@@ -19,7 +19,7 @@ This protocol serves as a guide to build a comprehensive, grounded understanding
 *   **Action:** If query logs are provided, filter out DML/administrative queries. Translate meaningful analytical SELECT statements into business NLQs to serve as "Seed Pairs".
 *   **Required State:** A curated set of "Seed Pairs", which are written to the `evalset_environment_inputs.md`.
 
-**4.  Expected Natural Language Translation**
+**4. Expected Natural Language Translation**
 *   **Objective:** Extract expected natural language terminology and their definition from the provided artifacts.
 *   **Action:** Analyze usage artifacts such as product requirement, glossary, to extract key natural language terms and their definition as the expected terminology.
 *   **Required State:** A curated set of "Expected Natural Language Terminology", which is written to the `evalset_environment_inputs.md`.

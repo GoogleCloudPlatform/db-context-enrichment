@@ -1,10 +1,10 @@
 import json
-from pathlib import Path
+import pathlib
 
 from google.cloud.db_context_enrichment.main import mutate_context_set
 
 
-def test_mutate_context_set_success(tmp_path: Path):
+def test_mutate_context_set_success(tmp_path: pathlib.Path):
     file_path = tmp_path / "context.json"
     mutations = [
         {
@@ -33,14 +33,14 @@ def test_mutate_context_set_success(tmp_path: Path):
     assert data["templates"][0]["nl_query"] == "Test query"
 
 
-def test_mutate_context_set_invalid_json(tmp_path: Path):
+def test_mutate_context_set_invalid_json(tmp_path: pathlib.Path):
     file_path = tmp_path / "context.json"
     result = mutate_context_set(str(file_path), "invalid json")
     assert "Error applying mutations" in result
     assert "JSONDecodeError" in result or "invalid json" in result or "Error" in result
 
 
-def test_mutate_context_set_non_list_json(tmp_path: Path):
+def test_mutate_context_set_non_list_json(tmp_path: pathlib.Path):
     file_path = tmp_path / "context.json"
     result = mutate_context_set(
         str(file_path), json.dumps({"operation": "add", "type": "template"})
@@ -48,7 +48,7 @@ def test_mutate_context_set_non_list_json(tmp_path: Path):
     assert "must be a JSON list" in result
 
 
-def test_mutate_context_set_validation_error(tmp_path: Path):
+def test_mutate_context_set_validation_error(tmp_path: pathlib.Path):
     file_path = tmp_path / "context.json"
     # Invalid operation
     mutations = [{"operation": "invalid", "type": "template"}]

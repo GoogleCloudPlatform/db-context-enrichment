@@ -1,5 +1,5 @@
 import json
-from pathlib import Path
+import pathlib
 
 import pytest
 
@@ -11,7 +11,7 @@ from google.cloud.db_context_enrichment.model.context import ContextSet
 
 
 # Helper to load existing JSON from disk to assert correctness
-def load_context_from_file(path: Path) -> dict:
+def load_context_from_file(path: pathlib.Path) -> dict:
     with open(path) as f:
         return json.load(f)
 
@@ -19,7 +19,7 @@ def load_context_from_file(path: Path) -> dict:
 # === TEST ADD / CREATE CASES ===
 
 
-def test_add_to_new_file(tmp_path: Path):
+def test_add_to_new_file(tmp_path: pathlib.Path):
     """Test creating a new context set file automatically when path doesn't exist."""
     file_path = tmp_path / "new_context.json"
 
@@ -51,7 +51,7 @@ def test_add_to_new_file(tmp_path: Path):
     )
 
 
-def test_add_to_existing_file(tmp_path: Path):
+def test_add_to_existing_file(tmp_path: pathlib.Path):
     """Test appending to an existing initialized context set file."""
     file_path = tmp_path / "exist_context.json"
 
@@ -95,7 +95,7 @@ def test_add_to_existing_file(tmp_path: Path):
 # === TEST DELETE CASES ===
 
 
-def test_delete_full_match(tmp_path: Path):
+def test_delete_full_match(tmp_path: pathlib.Path):
     """Test deleting an item using an exact matching identifier."""
     file_path = tmp_path / "delete_context.json"
 
@@ -121,7 +121,7 @@ def test_delete_full_match(tmp_path: Path):
     assert data["value_searches"][0]["query"] == "Q2"
 
 
-def test_delete_partial_match(tmp_path: Path):
+def test_delete_partial_match(tmp_path: pathlib.Path):
     """Test deleting an item using a subset partial match on the identifier."""
     file_path = tmp_path / "delete_context.json"
 
@@ -146,7 +146,7 @@ def test_delete_partial_match(tmp_path: Path):
     assert data["value_searches"][0]["query"] == "Q2"
 
 
-def test_delete_no_match(tmp_path: Path):
+def test_delete_no_match(tmp_path: pathlib.Path):
     """Test that a non-matching identifier leaves the list unchanged."""
     file_path = tmp_path / "delete_context.json"
     initial_context = {"value_searches": [{"query": "Q1", "concept_type": "City"}]}
@@ -167,7 +167,7 @@ def test_delete_no_match(tmp_path: Path):
 # === TEST UPDATE CASES ===
 
 
-def test_update_partial_match(tmp_path: Path):
+def test_update_partial_match(tmp_path: pathlib.Path):
     """Test updating an item when identifier acts as a partial match selector."""
     file_path = tmp_path / "update_context.json"
 
@@ -199,7 +199,7 @@ def test_update_partial_match(tmp_path: Path):
 # === TEST VALIDATION CASES ===
 
 
-def test_invalid_mutation_raises_validation_error(tmp_path: Path):
+def test_invalid_mutation_raises_validation_error(tmp_path: pathlib.Path):
     """Test that pushing an invalid payload for Add raises a ValueError immediately."""
     file_path = tmp_path / "valid_context.json"
 

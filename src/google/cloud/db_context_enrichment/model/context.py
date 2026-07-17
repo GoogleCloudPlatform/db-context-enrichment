@@ -1,7 +1,20 @@
-from pydantic import AliasChoices, BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
 
-class ParameterizedTemplate(BaseModel):
+class _BaseContextModel(BaseModel):
+    """Shared base for all ContextSet models.
+
+    Accepts both snake_case field names and their camelCase aliases on
+    validation — needed because the Context Store API returns camelCase for
+    proto-known fields on download. Serialization stays snake_case by default
+    (Pydantic's `by_alias` defaults to False), so upload output is unchanged.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+
+class ParameterizedTemplate(_BaseContextModel):
     """Defines the parameterized version of a SQL query and intent."""
 
     parameterized_sql: str = Field(
@@ -12,7 +25,7 @@ class ParameterizedTemplate(BaseModel):
     )
 
 
-class Template(BaseModel):
+class Template(_BaseContextModel):
     """Represents a single, complete template."""
 
     nl_query: str = Field(
@@ -26,15 +39,19 @@ class Template(BaseModel):
     parameterized: ParameterizedTemplate
 
 
-class ParameterizedFacet(BaseModel):
+class ParameterizedFacet(_BaseContextModel):
     """Defines the parameterized version of a SQL facet and intent."""
 
     parameterized_sql_snippet: str = Field(
         ...,
         description="The SQL facet with placeholders (eg., ).",
-        # "fragment" is deprecated, keep alias for backward compatibility
+        # "fragment" is deprecated, keep alias for backward compatibility.
+        # camelCase form is listed explicitly because validation_alias
+        # overrides the model-level alias_generator.
         validation_alias=AliasChoices(
-            "parameterized_sql_snippet", "parameterized_fragment"
+            "parameterized_sql_snippet",
+            "parameterizedSqlSnippet",
+            "parameterized_fragment",
         ),
     )
     parameterized_intent: str = Field(
@@ -42,14 +59,16 @@ class ParameterizedFacet(BaseModel):
     )
 
 
-class Facet(BaseModel):
+class Facet(_BaseContextModel):
     """Represents a single, complete facet."""
 
     sql_snippet: str = Field(
         ...,
         description="The corresponding, complete SQL facet.",
-        # "fragment" is deprecated, keep alias for backward compatibility
-        validation_alias=AliasChoices("sql_snippet", "fragment"),
+        # "fragment" is deprecated, keep alias for backward compatibility.
+        # camelCase form is listed explicitly because validation_alias
+        # overrides the model-level alias_generator.
+        validation_alias=AliasChoices("sql_snippet", "sqlSnippet", "fragment"),
     )
     intent: str = Field(..., description="The user's specific intent.")
     manifest: str = Field(
@@ -58,7 +77,7 @@ class Facet(BaseModel):
     parameterized: ParameterizedFacet
 
 
-class ValueSearch(BaseModel):
+class ValueSearch(_BaseContextModel):
     """Represents a single, complete value search."""
 
     query: str = Field(..., description="The parameterized SQL query (using $value).")
@@ -68,7 +87,7 @@ class ValueSearch(BaseModel):
     description: str | None = Field(None, description="Optional description.")
 
 
-class ContextSet(BaseModel):
+class ContextSet(_BaseContextModel):
     """A set of templates, facets and value searches."""
 
     templates: list[Template] | None = Field(
@@ -77,7 +96,8 @@ class ContextSet(BaseModel):
     facets: list[Facet] | None = Field(
         None,
         description="A list of SQL facets.",
-        # "fragments" is deprecated, keep alias for backward compatibility
+        # "fragments" is deprecated, keep alias for backward compatibility.
+        # No camelCase entry needed — to_camel("facets") == "facets".
         validation_alias=AliasChoices("facets", "fragments"),
     )
     value_searches: list[ValueSearch] | None = Field(

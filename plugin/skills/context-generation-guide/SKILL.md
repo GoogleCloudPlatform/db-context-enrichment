@@ -102,7 +102,7 @@ When executing blueprint-driven SQL generation, the model inevitably runs into t
 }
 ```
 
-## 
+## Best Practices
 
 ### General
 *   **Focus on Quality**: Provide accurate and representative examples.

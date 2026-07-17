@@ -29,6 +29,6 @@ This protocol serves as a guide to build a comprehensive, grounded understanding
 *   **Action:** Analyze the schemas and artifacts (source codes, query logs, documents, etc) to detect any inconsistency and mismatched information which represent a business rule shift (e.g., document mentions use of `table_a` while application code use `table_b` for the same entity and similar logic). If yes, inspect the content and reason for the most updated business rules to resolve the conflicts. 
 *   **Required State:** A detected set of shifted business rules and the single source of truth for each business rule shift that should be used for the grounded understanding, which are written to the `evalset_environment_inputs.md`.
 
-**5. Input Dataset Ingestion**
+**6. Input Dataset Ingestion**
 *   **Objective:** Identify and confirm usage of existing evaluation dataset brought by the user.
 *   **Action:** If we identify existing datasets, confirm usage of these datasets by recording the dataset filename and the number of examples provided in `evalset_environment_inputs.md`.

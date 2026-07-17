@@ -24,7 +24,7 @@ This protocol serves as a guide to build a comprehensive, grounded understanding
 *   **Action:** Analyze usage artifacts such as product requirement, glossary, to extract key natural language terms and their definition as the expected terminology.
 *   **Required State:** A curated set of "Expected Natural Language Terminology", which is written to the `evalset_environment_inputs.md`.
 
-**4. Business Rule Shift Resolution**
+**5. Business Rule Shift Resolution**
 *   **Objective:** Resolve the source of truth in the ingested schemas and artfacts when some of them contains outdated business rules or mismatched information.
 *   **Action:** Analyze the schemas and artifacts (source codes, query logs, documents, etc) to detect any inconsistency and mismatched information which represent a business rule shift (e.g., document mentions use of `table_a` while application code use `table_b` for the same entity and similar logic). If yes, inspect the content and reason for the most updated business rules to resolve the conflicts. 
 *   **Required State:** A detected set of shifted business rules and the single source of truth for each business rule shift that should be used for the grounded understanding, which are written to the `evalset_environment_inputs.md`.

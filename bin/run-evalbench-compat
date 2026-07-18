@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+import sys
+import os
+import multiprocessing
+
+try:
+    multiprocessing.set_start_method("fork", force=True)
+except Exception:
+    pass
+
+# Ensure local src/ is in the PYTHONPATH so python can locate our helper module
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
+
+from google.cloud.db_context_enrichment.common.gda_rest import query_data_via_rest
+import evalbench.generators.models.query_data_api as qd_api
+
+print("[DEBUG] qd_api module path:", qd_api.__file__)
+print("[DEBUG] qd_api class ID:", id(qd_api.QueryDataAPIGenerator))
+
+# Defensive version guard: ensure QueryDataAPIGenerator has expected attributes
+if not hasattr(qd_api.QueryDataAPIGenerator, "generate_internal"):
+    raise RuntimeError(
+        "google-evalbench version mismatch: 'QueryDataAPIGenerator' has no attribute 'generate_internal'. "
+        "Please check bin/run-evalbench-compat compatibility."
+    )
+
+# Define monkey-patched __init__ to capture api_endpoint configuration parameter
+original_init = qd_api.QueryDataAPIGenerator.__init__
+original_generate_internal = qd_api.QueryDataAPIGenerator.generate_internal
+
+# Exceptions caused by unreleased/private proto fields failing SDK serialization
+PROTO_SERIALIZATION_ERRORS = (AttributeError, ValueError, TypeError)
+
+def patched_init(self, querygenerator_config):
+    original_init(self, querygenerator_config)
+    self.api_endpoint = querygenerator_config.get("api_endpoint")
+
+# Define the monkey-patch function for generate_internal with automatic REST fallback
+def patched_generate_internal(self, prompt: str):
+    try:
+        return original_generate_internal(self, prompt)
+    except PROTO_SERIALIZATION_ERRORS as e:
+        print(f"[INFO] Proto serialization failed for unreleased fields ({e}). Falling back to GDA REST API...")
+        return query_data_via_rest(
+            project_id=self.project_id,
+            location=self.location,
+            prompt=prompt,
+            context_dict=self.context,
+            api_endpoint=self.api_endpoint or "staging-geminidataanalytics.sandbox.googleapis.com"
+        )
+
+# Apply both patches to the class object
+qd_api.QueryDataAPIGenerator.__init__ = patched_init
+qd_api.QueryDataAPIGenerator.generate_internal = patched_generate_internal
+
+# Seed sys.modules to prevent Python from loading the module twice
+sys.modules["evalbench.generators.models.query_data_api"] = qd_api
+sys.modules["generators.models.query_data_api"] = qd_api
+
+# Run the standard Evalbench main CLI entrypoint
+from evalbench.evalbench import run
+# Monkey-patch get_generator in both namespaces to inspect the instantiated generator object
+import evalbench.generators.models as g_models
+original_get_generator = g_models.get_generator
+
+def patched_get_generator(global_models, model_config_path: str, db=None):
+    generator = original_get_generator(global_models, model_config_path, db)
+    print(f"[DEBUG] get_generator instantiated: {generator}")
+    print(f"[DEBUG]   - Class: {generator.__class__}")
+    print(f"[DEBUG]   - Class ID: {id(generator.__class__)}")
+    print(f"[DEBUG]   - generate_internal method: {generator.generate_internal}")
+    print(f"[DEBUG]   - generate_internal name: {getattr(generator.generate_internal, '__name__', None)}")
+    sys.stdout.flush()
+    return generator
+
+g_models.get_generator = patched_get_generator
+
+try:
+    import generators.models as g_models2
+    g_models2.get_generator = patched_get_generator
+    print("[DEBUG] Successfully patched generators.models.get_generator")
+except ImportError:
+    print("[DEBUG] Could not import generators.models to patch get_generator")
+
+sys.stdout.flush()
+
+if __name__ == "__main__":
+    run()
+

@@ -11,12 +11,21 @@
     },
     {
       "id": "autoctx-dataset-generation",
-      "starting_prompt": "generate a evaluation dataset for my alloydb database financial named golden.json, based on my seed dataset to be provided.",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset for my alloydb database financial named golden.json. The 'seed' includes the following two golden NL-SQL pair:\n\nHow many accounts who choose issuance after transaction are staying in East Bohemia region? A3 contains the data of region; 'POPLATEK PO OBRATU' represents for 'issuance after transaction'.\nSELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'east Bohemia' AND \"T1\".\"frequency\" = 'POPLATEK PO OBRATU'\n\nHow many accounts who have region in Prague are eligible for loans? A3 contains the data of region\nSELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'Prague'. If prompted for validating the query, reply yes to the agent. Once the initial golden dataset is generated, ask the agent to expand it with 2 additional examples in the same file. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
+      "starting_prompt": "Use context engineering, generate an evaluation dataset consisting of 5 questions for my alloydb database financial named golden.json, based on my seed dataset to be provided.",
+      "conversation_plan": "Ask the agent to generate an evaluation dataset for my alloydb database financial named golden.json. The 'seed' includes the following two golden NL-SQL pair:\n\nHow many accounts who choose issuance after transaction are staying in East Bohemia region? A3 contains the data of region; 'POPLATEK PO OBRATU' represents for 'issuance after transaction'.\nSELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'east Bohemia' AND \"T1\".\"frequency\" = 'POPLATEK PO OBRATU'\n\nHow many accounts who have region in Prague are eligible for loans? A3 contains the data of region\nSELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'Prague'. If prompted for validating the query, reply yes to the agent. Once the initial golden dataset is generated, ask the agent to expand it with 2 additional examples in the same file. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_init/",
       "max_turns": 5
+    },
+    {
+      "id": "autoctx-dataset-expansion",
+      "starting_prompt": "Use context engineering, generate an evaluation dataset consisting of 5 questions by expanding my evaluation dataset golden.json with more diverse examples using variation strategies.",
+      "conversation_plan": "Ask the agent to expand the existing golden.json evaluation dataset by applying variation strategies to the existing pairs. The agent should apply all six strategies: paraphrasing, merging, difficulty adjustment (both upscaling and simplification), distraction injection, linguistic variation (typos and synonyms), and value substitution (which requires running SELECT DISTINCT queries on the database). When the agent presents an expansion plan, confirm it and approve all strategies. When the agent runs SQL execution validation or asks for approval of the validation reports, approve them. You should terminate the conversation immediately after the agent successfully writes the expanded pairs to golden.json, even if the agent prompts you to perform evaluation or take next steps. At the end of the conversation, verify that the agent produced the following output files: golden.json, evalset_expansion_report_pair_level.md, evalset_expansion_report_dataset_level.md.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_post_dataset_generation/",
+      "max_turns": 8
     },
     {
       "id": "autoctx-bootstrap",
@@ -24,7 +33,7 @@
       "conversation_plan": "Ask the agent to create initial context set for my alloydb database. Need to have at least 2 templates and 2 facets. If prompted for experiment name, use 'my-alloydb-tuning-experiment'. You should terminate the conversation immediately after the agent successfully created the context set, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
-      "work_dir": "workspace_post_dataset_generation/",
+      "work_dir": "workspace_post_expansion/",
       "max_turns": 5
     },
     {

@@ -57,4 +57,7 @@ export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 echo "Launching ${SUT}/${SUITE} evaluation..."
 uv run --no-sync --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config="${SUITE}/run_gemini_cli.yaml"
 
+echo "Validating mandatory output files for ${SUITE}..."
+python3 /workspace/.ci/check_eval_outputs.py "${WORK_DIR}/${SUITE}" "${WORK_DIR}/${SUITE}/dataset.json"
+
 touch "/workspace/EVAL_RAN_${SUT}-${SUITE}"

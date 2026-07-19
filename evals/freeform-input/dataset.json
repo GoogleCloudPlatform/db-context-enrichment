@@ -3,7 +3,7 @@
     {
       "id": "freeform:explain:capabilities",
       "starting_prompt": "What kind of context can you generate for me?",
-      "conversation_plan": "Verify that the agent explains Templates, Facets, and Value Searches based on the `context-generation-guide` skill. Terminate after the agent provides the explanation.",
+      "conversation_plan": "Verify that the agent explains Templates, Facets, and Value Searches based on the `context-engineering-generation-guide` skill. Terminate after the agent provides the explanation.",
       "kind": "agents",
       "work_dir": "workspace_explain_capabilities/",
       "max_turns": 5
@@ -35,7 +35,7 @@
     {
       "id": "freeform:targeted:template",
       "starting_prompt": "Create a template for: 'How many accounts are in region Prague?' with SQL: 'SELECT count(*) FROM account AS T1 INNER JOIN district AS T2 ON T1.district_id = T2.district_id WHERE T2.A3 = ''Prague'''",
-      "conversation_plan": "Verify that the agent uses the `context-generation-guide` skill. Check that it correctly parameterizes the query (e.g., using `$1` for 'Prague') and returns a valid Template JSON object with nl_query, sql, intent, manifest, and parameterized fields. Terminate after the agent provides the JSON.",
+      "conversation_plan": "Verify that the agent uses the `context-engineering-generation-guide` skill. Check that it correctly parameterizes the query (e.g., using `$1` for 'Prague') and returns a valid Template JSON object with nl_query, sql, intent, manifest, and parameterized fields. Terminate after the agent provides the JSON.",
       "kind": "agents",
       "work_dir": "workspace_targeted_template/",
       "max_turns": 5
@@ -43,7 +43,7 @@
     {
       "id": "freeform:targeted:facet",
       "starting_prompt": "Create a facet for: 'issuance after transaction' with SQL snippet: `account.frequency = 'POPLATEK PO OBRATU'`",
-      "conversation_plan": "Verify that the agent uses the `context-generation-guide` skill. Check that it returns a valid Facet JSON object with sql_snippet: \"account.frequency = 'POPLATEK PO OBRATU'\" (column reference must be table-qualified as `account.frequency`, not bare `frequency`), intent: \"issuance after transaction\", manifest: \"issuance after transaction frequency\", and appropriate parameterized fields (e.g., `account.frequency = $1`). Terminate after the agent provides the JSON.",
+      "conversation_plan": "Verify that the agent uses the `context-engineering-generation-guide` skill. Check that it returns a valid Facet JSON object with sql_snippet: \"account.frequency = 'POPLATEK PO OBRATU'\" (column reference must be table-qualified as `account.frequency`, not bare `frequency`), intent: \"issuance after transaction\", manifest: \"issuance after transaction frequency\", and appropriate parameterized fields (e.g., `account.frequency = $1`). Terminate after the agent provides the JSON.",
       "kind": "agents",
       "work_dir": "workspace_targeted_facet/",
       "max_turns": 5
@@ -51,7 +51,7 @@
     {
       "id": "freeform:targeted:value-search",
       "starting_prompt": "Create a value search for 'Region' in `district.A3` table using Trigram match.",
-      "conversation_plan": "Verify that the agent uses the `context-generation-guide` skill. Check that it returns a valid ValueSearch JSON object. Terminate after the agent provides the JSON.",
+      "conversation_plan": "Verify that the agent uses the `context-engineering-generation-guide` skill. Check that it returns a valid ValueSearch JSON object. Terminate after the agent provides the JSON.",
       "kind": "agents",
       "work_dir": "workspace_targeted_value_search/",
       "max_turns": 5

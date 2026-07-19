@@ -5,6 +5,11 @@ import google.cloud.geminidataanalytics_v1beta as gda
 import yaml
 from google.protobuf.json_format import MessageToDict
 
+# Pinned to the QueryData autopush sandbox to match the Context Store endpoint
+# used by `context_store_client`. When both APIs land on production, drop this
+# and let evalbench default to the production QueryData endpoint.
+_QUERY_DATA_API_ENDPOINT = "autopush-geminidataanalytics.sandbox.googleapis.com"
+
 
 class BaseDBConfigGenerator(ABC):
     """
@@ -68,6 +73,7 @@ class BaseDBConfigGenerator(ABC):
             "generator": "query_data_api",
             "project_id": self.params.get("project"),
             "location": self.params.get("region") or "global",
+            "api_endpoint": _QUERY_DATA_API_ENDPOINT,
             "context": query_context_dict,
         }
 

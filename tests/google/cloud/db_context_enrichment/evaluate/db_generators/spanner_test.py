@@ -44,6 +44,7 @@ def test_generate_model_config(mock_params):
         "generator": "query_data_api",
         "project_id": "test-project",
         "location": "global",
+        "api_endpoint": "autopush-geminidataanalytics.sandbox.googleapis.com",
         "context": {
             "datasource_references": {
                 "spanner_reference": {

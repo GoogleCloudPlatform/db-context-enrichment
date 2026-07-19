@@ -3,25 +3,22 @@ name: context-engineering-evaluate
 description: Guides the agent to execute an evaluation of a ContextSet against a golden NLQ+SQL dataset using the Evalbench framework.
 ---
 
-> **Load the `context-engineering-workflow` skill first.** It holds the shared context this phase depends on: workspace layout, state file conventions, phase order, and safety protocol. Do not proceed with this phase without reading it.
+> **Load [`context-engineering-workflow`](../context-engineering-workflow/SKILL.md) first** for shared terminology, lifecycle overview, and safety protocol.
 
-# Phase: Evaluation Scoring
+# Skill: Evaluation Scoring
 
 ## Goal
-Run a structured Evalbench evaluation to score the accuracy of a specific context set against a golden truth dataset, identifying exact query failures.
+Score a ContextSet against a golden dataset by running Evalbench, and return a scored report — overall accuracy plus dominant failure categories.
 
-## Input
+## Prerequisites
 
-Before beginning the workflow, you explicitly require:
-- A `tools.yaml` file securely located in the workspace root directory containing the target database connection details.
-- A golden evaluation dataset (`golden_dataset_path`), formatted as an absolute system path. The file must be in the **simplified user-facing format**.
-
-  **Simplified User-Facing Dataset Format**:
-  A JSON list of objects, where each object must have the following keys:
-  - `id`: Unique string identifier (e.g., `eval_001`).
-  - `database`: Target database name.
-  - `nlq`: Natural language question.
-  - `golden_sql`: The correct reference SQL query.
+- A working DB connection (`tools.yaml` configured for the Toolbox MCP server — see `context-engineering-init` if missing).
+- ADC configured and the Gemini Data Analytics + Dataplex APIs enabled on the project (see `context-engineering-init` for preflight).
+- A golden evaluation dataset (absolute path) in the **simplified user-facing format** — a JSON list of objects, each with:
+  - `id`: unique identifier (e.g., `eval_001`).
+  - `database`: target database name.
+  - `nlq`: natural language question.
+  - `golden_sql`: correct reference SQL query.
 
   Example:
   ```json
@@ -34,61 +31,56 @@ Before beginning the workflow, you explicitly require:
     }
   ]
   ```
-- The `context_set_id` (the Data Agent's authored context configuration identifier, retrievable by the user directly from the GCP Database Studio console; e.g., `projects/<project_id>/locations/<region>/contextSets/<context_set_name>`).
 
-## Workflow
+- A ContextSet, supplied as **exactly one of**:
+  - **`cs_resource_name`** — a full Context Store resource name (e.g., `projects/<p>/locations/<l>/contextSetGroups/<g>/contextSets/<c>@<v>`). Used directly.
+  - **Local ContextSet JSON file** + the coordinates required by `upload_context_set` — the skill uploads it (with explicit user consent) to obtain a `cs_resource_name` for the run.
 
-Follow these steps exactly in order:
+- An `output_dir` (absolute or workspace-relative) where the eval configs and reports should live. If the user hasn't specified one, prompt them; a sensible suggestion is `./eval-runs/<name>/`.
 
-1. **Experiment Selection & Memory:**
-   - Scan the local `autoctx/experiments/` directory and list the available tuning workflows/subfolders to the user.
-   - **If no experiment folders exist** (or the user wants to create a new one without running Bootstrap):
-     - **Ask the user to choose** between 2 paths (do not assume):
-       1. **Bootstrap a basic context**: Guide them to trigger the Bootstrap workflow.
-       2. **Use an existing context**:
-          - > [!IMPORTANT]
-            > Inform the user that if they have an existing context, it must be uploaded to GCP Database Studio to obtain a `context_set_id` for evaluation.
-          - Ask the user for a name for this new experiment folder (similar to how Bootstrap does).
-          - Create the folder under `autoctx/experiments/`.
-          - Ask the user to provide the local file path of their existing context.
-          - Record the local file path as the Base Context for this experiment in `autoctx/state.md` for long-term memory.
-          - Continue with the evaluation flow below.
-   - Wait for the user to explicitly select an experiment folder to evaluate (or use the newly created one).
-   - Once selected, explicitly record their chosen experiment name into the local `autoctx/state.md` file to act as long-term memory so you don't forget it during subsequent evaluations.
+## Guidance
 
-2. **Parameter Collection:**
-   - **User Inputs:** Prompt the user ONLY for the `golden_dataset_path` and the `context_set_id` (if they haven't provided them already). Do NOT ask them to explain or verify database configurations.
-   - **Interactive DB Selection:** Read the `autoctx/tools.yaml` file to list available databases to the user:
-     1. Find all `kind: source` blocks with supported evaluation engines (consult the `generate_evalbench_configs` tool description for the exact list of supported types).
-     2. If there is exactly one *supported* source, inform the user and auto-select it.
-     3. If there are multiple *supported* sources, list their `name` and `type` and let the user select which database to evaluate.
+1. **Collect inputs.** Prompt only for what's missing from the Prerequisites. Trust `tools.yaml` values as-is — don't ask the user to re-verify them.
 
-3. **Config Generation (Core Execution):**
-   - Use the `generate_evalbench_configs` MCP tool. This is the **only** way to generate Evalbench configs. Never invent configs from scratch.
-   - If the tool fails, analyze the error and retry with corrected inputs. If it is an internal system error, STOP and inform the user.
-   - Provide the selected `output_dir` (must be `autoctx/experiments/<experiment_name>/`), `dataset_path`, `context_set_id`, absolute `toolbox_config_path` (e.g. `autoctx/tools.yaml`), and selected `toolbox_source_name`.
-   - The tool will automatically write all generated configuration files (including `golden_queries.json`) directly to the `eval_configs/` directory inside the chosen `autoctx/experiments/<experiment_name>/` folder.
-   - You do not need to manually write or extract file contents. Verify that the files have materialized if needed.
+2. **Prepare the ContextSet resource name.**
+   - If the user supplied a `cs_resource_name`, use it directly.
+   - If the user supplied a local file:
+     - Confirm every field required by `upload_context_set` is present. Ask for any missing values individually — do not guess.
+     - Ask for explicit consent before uploading. Summarize the target resource in the prompt so the user knows what will be written.
+     - On consent, call `upload_context_set`. The returned resource name becomes `cs_resource_name` for the rest of this run.
+     - On `upload_context_set` failure, surface the error verbatim and stop. Do not fall back to a manual upload URL.
 
-4. **Evalbench Run Integration:**
-   - Trigger the `run_shell_command` natively to execute the evaluation from the ROOT of the workspace using the following exact command template:
-     `uvx google-evalbench@1.9.0 --experiment_config=autoctx/experiments/<experiment_name>/eval_configs/run_config.yaml`
-   - Check the command outputs to ensure the evaluation reports materialize in the respective `autoctx/experiments/<experiment_name>/eval_reports/` directory.
+3. **Select the DB source from `tools.yaml`.**
+   - Find all `kind: source` blocks whose `type` is a supported evaluation engine (consult `generate_evalbench_configs` for the current list).
+   - If exactly one supported source exists, inform the user and auto-select it.
+   - If multiple, list their `name` + `type` and let the user pick.
 
-## Output
+4. **Generate the Evalbench configs.** Call `generate_evalbench_configs`. The tool writes configs under `<output_dir>/eval_configs/`. This is the only supported way to produce Evalbench configs — never author them by hand.
 
-Upon successful completion, the workspace must contain:
-- The generated Evalbench config files successfully written to the `eval_configs/` folder.
-- Evaluating reports built successfully by the external Evalbench runner process.
+5. **Run Evalbench.** Shell out from the caller's cwd:
+   `uvx google-evalbench@1.10.0 --experiment_config=<output_dir>/eval_configs/run_config.yaml`
+   Reports materialize under `<output_dir>/eval_reports/<job_id>/` (the job_id appears in the tool's stdout). The run can take many minutes for larger datasets — let it complete; do not kill or restart on apparent stalls. Treat a non-zero exit code as a hard failure and surface stderr verbatim.
 
-## Final Summary & Next Steps
+6. **Read and summarize results.** Call `read_evaluation_result` on the run folder `<output_dir>/eval_reports/<job_id>/`. Report to the user: overall score, dominant failure categories, and the absolute path to the full reports. Suggest hillclimb as a natural next step if the user wants to iteratively improve.
 
-Conclude by providing a succinct summary to the user:
-- Confirm that the context set has been scored and point out exactly where the final metrics CSV/results are located.
-- Share top-level performance summaries.
-- Suggest actionable next steps (e.g., transition to a refinement workflow to hill-climb and improve the metrics based on failed evaluations).
+## Rules
 
-## Templates & Reference
+- Never upload a ContextSet without explicit user consent.
+- Never invoke bootstrap or hillclimb from within this skill.
+- If both `cs_resource_name` and a local file are provided, ask the user which to use — do not silently pick.
+- On `generate_evalbench_configs` errors, surface the error and stop; do not retry blindly.
+- This skill is stateless. Every path comes from the caller — do not assume a workspace layout or write cross-phase state files.
+- Use the caller's Context Store coordinates (`project_id`, `csg_id`, `cs_id`, `version`) verbatim when supplied. If any are missing, ask the user explicitly — do not infer from filenames, paths, or `tools.yaml` without their confirmation.
 
-When listing sources from `tools.yaml`, ensure you only present `kind: source` records to the user.
-The tool `generate_evalbench_configs` will find the selected block inside the file and validate its connection parameters deterministically using Python code. You do not need to manually parse or map individual properties such as `host`, `port`, or `database` yourself. If the tool indicates a verification failure for a specific database type, refer to the schema examples inside this directory (e.g., `cloud-sql-postgres.md`) to guide the user on fixing their `tools.yaml` definition.
+## Tools
+
+**MCP:**
+- `upload_context_set` → `cs_resource_name` — used only when the caller supplies a local file instead of a resource name.
+- `generate_evalbench_configs` — produces Evalbench YAML configs on disk.
+- `read_evaluation_result` — parses `scores.csv` / `summary.csv` into a markdown summary.
+
+**Shell:**
+- `uvx google-evalbench@1.10.0 --experiment_config=<path>` — runs the eval job against the published release.
+
+**References:**
+- `references/<db_type>.md` (`alloydb-postgres.md`, `cloud-sql-mysql.md`, `cloud-sql-postgres.md`, `spanner.md`) — per-engine schema examples for fixing `tools.yaml` source blocks if `generate_evalbench_configs` reports a validation failure.

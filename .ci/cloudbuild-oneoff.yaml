@@ -1,0 +1,62 @@
+# One-off Cloud Build config for running a single evalbench scenario against
+# the Gemini CLI SUT. Bypasses PR-label gating, preflight, and pass-rate
+# checks — intended for ad-hoc developer runs.
+#
+# Usage:
+#   gcloud builds submit --config=.ci/cloudbuild-oneoff.yaml \
+#     --substitutions=_SUITE=core-cujs,_SCENARIOS=autoctx-init \
+#     --project=cloud-db-nl2sql
+steps:
+  # --- Build extension (same as the main pipeline) ---
+  - id: build-extension
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        apt-get update && apt-get install -y binutils
+        chmod +x .ci/build.sh
+        .ci/build.sh
+
+  # --- Marker + release-version files (replacing preflight for manual runs) ---
+  - id: preflight-oneoff
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    waitFor: ['-']
+    args:
+      - '-c'
+      - |
+        set -e
+        touch /workspace/SHOULD_RUN_GEMINI_CLI
+        printf 'manual-oneoff-%s' "$BUILD_ID" > /workspace/RELEASE_VERSION
+
+  # --- The scoped eval ---
+  - id: eval-gemini-cli-oneoff
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight-oneoff']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'EVAL_REPORTING_PROJECT=$_EVAL_REPORTING_PROJECT'
+      - 'EVAL_SCENARIOS=$_SCENARIOS'
+    args: ['.ci/run_gemini_cli.sh', '$_SUITE']
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-adc-credentials/versions/latest
+    env: 'ADC_KEY'
+
+serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/crema-eval@cloud-db-nl2sql.iam.gserviceaccount.com'
+
+substitutions:
+  _EVALBENCH_IMAGE_TAG: 'latest'
+  _PROJECT_LOCATION: 'global'
+  _EVAL_REPORTING_PROJECT: 'cloud-db-nl2sql'
+  _SUITE: 'core-cujs'
+  _SCENARIOS: 'autoctx-init'
+
+options:
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

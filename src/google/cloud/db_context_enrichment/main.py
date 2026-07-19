@@ -133,11 +133,7 @@ def generate_upload_url(
         return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', or 'spanner'."
 
 
-# NOTE: `@mcp.tool` is intentionally NOT applied to upload_context_set /
-# download_context_set. The Context Store client library ships in this
-# release, but the MCP tool wrappers are held back until the Context Store
-# API is stable in production. Re-add the decorator to expose these to
-# agents when ready.
+@mcp.tool
 def upload_context_set(
     local_file_path: str,
     project_id: str,
@@ -177,6 +173,7 @@ def upload_context_set(
     return cs_resource_name
 
 
+@mcp.tool
 def download_context_set(cs_resource_name: str, output_file_path: str) -> str:
     """
     Download a ContextSet from the Context Store and write it to a local
@@ -215,7 +212,7 @@ def mutate_context_set(
       - 'type': "template", "facet", or "value_search"
       - 'identifier' (dict): Required for "delete" and "update" to find the target item (e.g., {"nl_query": "What are all users?"}).
       - 'value' (dict): Required for "add" and "update".
-        - For "add": Must be the FULL item body. Follow the formatting guidance in the `context-generation-guide` skill to produce well-formed content.
+        - For "add": Must be the FULL item body. Follow the formatting guidance in the `context-engineering-generation-guide` skill to produce well-formed content.
         - For "update": Can be a PARTIAL body containing only the fields to change (it will be merged with the existing item).
 
     Example 'mutations_json':

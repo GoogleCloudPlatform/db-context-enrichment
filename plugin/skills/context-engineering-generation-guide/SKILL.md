@@ -1,10 +1,9 @@
 ---
-name: context-generation-guide
+name: context-engineering-generation-guide
 description: Guidelines and best practices for generating context items (Templates, Facets, Value Searches). Use this skill whenever the user asks to create, author, or generate context for database enrichment, or asks for examples and instructions on how to write templates, facets, or value searches. It helps bridge the gap between LLMs and structured databases. For running the automated generation, evaluation, and tuning lifecycle, see the context-engineering-workflow skill.
 ---
 
-# Context Generation Guide Skill
-
+# Skill: Context Generation Guide
 
 This skill provides the agent with the necessary information, concepts, and best practices to generate high-quality context items for the "Context Engineering Agent". This context bridges the gap between LLMs and structured databases, enabling accurate Natural Language to SQL generation.
 

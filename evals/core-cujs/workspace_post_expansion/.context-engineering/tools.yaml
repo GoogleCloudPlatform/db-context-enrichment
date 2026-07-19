@@ -1,0 +1,33 @@
+kind: source
+name: my-alloydb
+type: alloydb-postgres
+project: astana-transformation
+region: us-east4
+cluster: juexinw-test
+instance: juexinw-test-primary
+database: financial
+---
+kind: tool
+name: my-alloydb-list-schemas
+type: postgres-list-tables
+source: my-alloydb
+description: |
+  Use this tool to list tables and their schemas in the my-alloydb database.
+
+  Progressive Schema Discovery (Recommended):
+  1) Fetch structure first (output_format='simple'),
+  2) Go deep on specific parts if interested,
+  3) Use batching if info is too large.
+
+  Scope:
+  - The tool can fetch system/extension schemas. Agents should ignore them and focus on user data.
+
+  Behavior:
+  - Omit 'table_names' to fetch all tables.
+  - Omit 'output_format' for detailed schema (default).
+---
+kind: tool
+name: my-alloydb-execute-sql
+type: postgres-execute-sql
+source: my-alloydb
+description: Use this tool to execute SQL statements against the my-alloydb database.

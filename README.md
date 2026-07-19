@@ -100,7 +100,7 @@ All optimization lifecycle phases are managed and orchestrated by the single **`
 
 ### Targeted Manual Generation
 
-These are more basic workflows for context engineering to manually author specific context elements, each exposed via the `context-generation-guide` skill scoped to the relevant context type:
+These are more basic workflows for context engineering to manually author specific context elements, each exposed via the `context-engineering-generation-guide` skill scoped to the relevant context type:
 
 *   **Generate Templates**: Initiates a guided workflow where you provide a sample question and SQL, and the agent helps you parameterize and save it as a template.
 *   **Generate Facets**: Guides you to define a specific intent and the corresponding SQL snippet (e.g., filter condition) to save as a facet.

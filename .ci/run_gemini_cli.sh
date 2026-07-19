@@ -54,8 +54,15 @@ sed -i "s|\${EVAL_REPORTING_PROJECT}|${EVAL_REPORTING_PROJECT:-}|g" "${CONFIG}"
 export PYTHONPATH=/evalbench:/evalbench/evalproto
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
-echo "Launching ${SUT}/${SUITE} evaluation..."
-uv run --no-sync --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config="${SUITE}/run_gemini_cli.yaml"
+# Optional scenario filter: set EVAL_SCENARIOS=<id>[,<id>...] to run a subset.
+SCENARIO_ARG=""
+[ -n "${EVAL_SCENARIOS:-}" ] && SCENARIO_ARG="--scenarios=${EVAL_SCENARIOS}"
+
+echo "Launching ${SUT}/${SUITE} evaluation${SCENARIO_ARG:+ (scenarios: ${EVAL_SCENARIOS})}..."
+uv run --no-sync --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config="${SUITE}/run_gemini_cli.yaml" ${SCENARIO_ARG}
+
+echo "Validating mandatory output files for ${SUITE}..."
+python3 /workspace/.ci/check_eval_outputs.py "${WORK_DIR}/${SUITE}" "${WORK_DIR}/${SUITE}/dataset.json"
 
 echo "Validating mandatory output files for ${SUITE}..."
 python3 /workspace/.ci/check_eval_outputs.py "${WORK_DIR}/${SUITE}" "${WORK_DIR}/${SUITE}/dataset.json"

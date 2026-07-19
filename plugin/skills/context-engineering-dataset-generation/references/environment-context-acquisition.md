@@ -19,16 +19,16 @@ This protocol serves as a guide to build a comprehensive, grounded understanding
 *   **Action:** If query logs are provided, filter out DML/administrative queries. Translate meaningful analytical SELECT statements into business NLQs to serve as "Seed Pairs".
 *   **Required State:** A curated set of "Seed Pairs", which are written to the `evalset_environment_inputs.md`.
 
-**4.  Expected Natural Language Translation**
+**4. Expected Natural Language Translation**
 *   **Objective:** Extract expected natural language terminology and their definition from the provided artifacts.
 *   **Action:** Analyze usage artifacts such as product requirement, glossary, to extract key natural language terms and their definition as the expected terminology.
 *   **Required State:** A curated set of "Expected Natural Language Terminology", which is written to the `evalset_environment_inputs.md`.
 
-**4. Business Rule Shift Resolution**
+**5. Business Rule Shift Resolution**
 *   **Objective:** Resolve the source of truth in the ingested schemas and artfacts when some of them contains outdated business rules or mismatched information.
 *   **Action:** Analyze the schemas and artifacts (source codes, query logs, documents, etc) to detect any inconsistency and mismatched information which represent a business rule shift (e.g., document mentions use of `table_a` while application code use `table_b` for the same entity and similar logic). If yes, inspect the content and reason for the most updated business rules to resolve the conflicts. 
 *   **Required State:** A detected set of shifted business rules and the single source of truth for each business rule shift that should be used for the grounded understanding, which are written to the `evalset_environment_inputs.md`.
 
-**5. Input Dataset Ingestion**
+**6. Input Dataset Ingestion**
 *   **Objective:** Identify and confirm usage of existing evaluation dataset brought by the user.
 *   **Action:** If we identify existing datasets, confirm usage of these datasets by recording the dataset filename and the number of examples provided in `evalset_environment_inputs.md`.

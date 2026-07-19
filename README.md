@@ -1,11 +1,4 @@
-This is not an officially supported Google product. This project is not eligible for the [Google Open Source Software Vulnerability Rewards Program](https://bughunters.google.com/open-source-security), [Google Cloud Platform/SecOps Terms of Service](https://cloud.google.com/terms), [How Gemini for Google Cloud uses your data](https://cloud.google.com/gemini/docs/discover/data-governance). This tool is provided "as is" without warranty of any kind. Users are solely responsible for understanding and managing the tool's interaction with their databases. Use of this tool constitutes acceptance of all risks associated with database access, reading, usage, and modifications.
-
 # Context Engineering Agent
-
-> [!IMPORTANT]
-> **Repository Reorganization**
-> The original Go-based **DB Schema Enricher CLI** has been archived and moved to the [legacy/go-enricher/](legacy/go-enricher/) directory. This repository root is now dedicated to the Python-based **Context Engineering Agent (MCP Server)**.
-
 This project is a Gemini CLI extension that bridges the gap between Large Language Models (LLMs) and structured databases by generating and managing tailored context. This context helps the LLM understand database schema, business logic, and terminology, enabling more accurate Natural Language to SQL generation.
 
 ## Core Concepts

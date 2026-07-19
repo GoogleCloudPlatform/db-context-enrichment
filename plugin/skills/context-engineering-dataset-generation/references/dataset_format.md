@@ -1,6 +1,6 @@
 # Dataset Format Requirements
 
-All evaluation example and dataset file must use the following schema:
+All evaluation examples and dataset files must use the following schema:
 
 ```json
 [
@@ -22,7 +22,7 @@ All evaluation example and dataset file must use the following schema:
 ```
 
 - **id** `<example_id>`: unique identifier for each example, follows the `eval_<number>` format and is used to establish a collision-free generation environment. If using optional user-provided input dataset, retain the id of the original dataset (e.g., eval_001, eval_002, etc.) in the generated dataset.
-- **`complexity`**: Query execution complexity:`"low"` (single table, no aggregation), `"medium"` (multi-table JOIN or aggregation), `"high"` (CTEs, subqueries, window functions, multi-condition logic).
+- **`complexity`**: Query execution complexity: `"low"` (single table, no aggregation), `"medium"` (multi-table JOIN or aggregation), `"high"` (CTEs, subqueries, window functions, multi-condition logic).
 - **`topic`**: Business domain or analytical theme (e.g., `"loan_eligibility"`, `"account_activity"`, `"regional_distribution"`).
 - **`source`**:
   - If from user provided inputs, must be "user_provided:file_name", e.g. `"user_provided:input-dataset.json"`.

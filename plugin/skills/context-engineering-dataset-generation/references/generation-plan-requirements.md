@@ -12,7 +12,7 @@ A dataset is composed of two types of questions: seed questions and augmented qu
 You must iteratively update this plan until you have a detailed requirement of what a target dataset should look like that adheres to all the meta requirements laid out here.
 
 ## Overall Plan
-1. **Dataset Size Targets:** Propose the minimal dataset set needed to cover the target application's NL2SQL needs, and can be used for hillclimbing tuning. Unless the user has explicitly specified a custom target, a minimal natural language dataset benchmark starts at **at least 50 questions**. Complex application and data domains will need more questions. 
+1. **Dataset Size Targets:** Propose the minimal dataset needed to cover the target application's NL2SQL needs, and can be used for hillclimbing tuning. Unless the user has explicitly specified a custom target, a minimal natural language dataset benchmark starts at **at least 50 questions**. Complex application and data domains will need more questions.
 2. **Key Decisions Needing Human Review**: Identify key assumptions and choices that require user input (e.g., this subset of schema should be out-of-scope, key personas of the application's end users, etc.) 
 
 ## Seed Pairs Plan

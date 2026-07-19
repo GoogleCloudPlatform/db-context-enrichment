@@ -1,6 +1,8 @@
 import json
+import logging
 import os
 import re
+import subprocess
 import textwrap
 from typing import Any
 
@@ -237,3 +239,120 @@ def _convert_dataset(dataset_path: str, dialect: str) -> str:
         return json.dumps(converted, indent=2)
     except Exception as e:
         raise ValueError(f"Failed to convert dataset at {dataset_path}: {e}")
+
+
+_STAGING_API_ENDPOINT = "staging-geminidataanalytics.sandbox.googleapis.com"
+
+
+_PROTO_FIELD_ERROR_PATTERNS = (
+    "attributeerror",
+    "typeerror",
+    "valueerror",
+    "protocol message",
+    "unknown field",
+    "invalid field",
+    "has no attribute",
+    "querydatacontext",
+    "datasourcereferences",
+)
+
+
+def _exec_evalbench(cmd: list[str]) -> tuple[int, str]:
+    """Executes EvalBench command and returns (returncode, combined_output)."""
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    out = (res.stderr or "") + (res.stdout or "")
+    return res.returncode, out
+
+
+def _is_proto_field_error(output: str) -> bool:
+    """Returns True if the output contains errors related to missing/unreleased proto fields."""
+    out_lower = output.lower()
+    return any(pattern in out_lower for pattern in _PROTO_FIELD_ERROR_PATTERNS)
+
+
+def _update_model_config(
+    model_config_path: str,
+    use_rest_api: bool = True,
+    api_endpoint: str | None = None,
+) -> None:
+    """Updates model_config.yaml with REST API transport flags."""
+    with open(model_config_path) as f:
+        cfg = yaml.safe_load(f) or {}
+
+    cfg["use_rest_api"] = use_rest_api
+    if api_endpoint:
+        cfg["api_endpoint"] = api_endpoint
+
+    with open(model_config_path, "w") as f:
+        yaml.safe_dump(cfg, f, sort_keys=False, default_flow_style=False)
+
+
+def run_evaluation(experiment_name: str) -> None:
+    """
+    Executes EvalBench evaluation for an experiment, using standard SDK gRPC client
+    and falling back to REST (supports nonpublic fields).
+    """
+    logger = logging.getLogger(__name__)
+    eval_configs_dir = f"autoctx/experiments/{experiment_name}/eval_configs"
+    run_config_path = os.path.join(eval_configs_dir, RUN_CONFIG_NAME)
+    model_config_path = os.path.join(eval_configs_dir, MODEL_CONFIG_NAME)
+
+    cmd = [
+        "uvx",
+        "google-evalbench@1.9.0",
+        f"--experiment_config={run_config_path}",
+    ]
+
+    # 1. Standard SDK gRPC Execution
+    logger.info(
+        f"Running EvalBench evaluation for experiment: {experiment_name}"
+    )
+    code, output = _exec_evalbench(cmd)
+    if code == 0 and not _is_proto_field_error(output):
+        logger.info("EvalBench completed successfully via gRPC SDK.")
+        return
+
+    if not _is_proto_field_error(output):
+        logger.error(
+            f"EvalBench execution failed with non-proto error:\n{output[:500]}"
+        )
+        raise RuntimeError(
+            f"EvalBench execution failed with exit code {code}:\n{output}"
+        )
+
+    # 2. REST API Fallback Tiers (Production REST, then Staging REST)
+    rest_tiers = [
+        ("Production REST API", True, None),
+        (f"Staging REST API ({_STAGING_API_ENDPOINT})", True, _STAGING_API_ENDPOINT),
+    ]
+
+    for tier_name, use_rest, endpoint in rest_tiers:
+        logger.info(f"Attempting evaluation fallback via {tier_name}...")
+        try:
+            _update_model_config(
+                model_config_path, use_rest_api=use_rest, api_endpoint=endpoint
+            )
+            code, output = _exec_evalbench(cmd)
+            if code == 0:
+                logger.info(f"Evaluation completed successfully via {tier_name}.")
+                return
+        except Exception as err:
+            logger.debug(f"{tier_name} execution failed: {err}")
+
+    logger.error(f"Evaluation failed across all transport modes:\n{output[:500]}")
+    raise RuntimeError(
+        f"EvalBench evaluation failed for experiment '{experiment_name}'.\n"
+        "You may be attempting to use an unreleased or non-public QueryData feature. Please reach out to your accounts team on for access."
+    )
+
+
+def cli_main() -> None:
+    """CLI entrypoint for autoctx-eval command."""
+    import sys
+
+    if len(sys.argv) < 2:
+        print("Usage: autoctx-eval <experiment_name>")
+        sys.exit(1)
+
+    experiment_name = sys.argv[1]
+    run_evaluation(experiment_name)

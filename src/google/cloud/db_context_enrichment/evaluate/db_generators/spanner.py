@@ -45,25 +45,7 @@ class SpannerConfigGenerator(BaseDBConfigGenerator):
 
     def build_datasource_reference(
         self, context_set_id: str
-    ) -> gda.DatasourceReferences | dict[str, Any]:
-        if self.params.get("graph"):
-            spanner_ref: dict[str, Any] = {
-                "database_reference": {
-                    "engine": "GOOGLE_SQL",
-                    "project_id": self.project,
-                    "instance_id": self.instance,
-                    "database_id": self.database,
-                    "graph_ids": [self.params.get("graph")],
-                }
-            }
-            if context_set_id:
-                spanner_ref["agent_context_reference"] = {
-                    "context_set_id": context_set_id
-                }
-            return {
-                "spanner_reference": spanner_ref
-            }
-
+    ) -> gda.DatasourceReferences:
         datasource_ref = gda.DatasourceReferences()
 
         datasource_ref.spanner_reference = gda.SpannerReference(

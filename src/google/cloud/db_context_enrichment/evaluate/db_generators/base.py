@@ -58,17 +58,11 @@ class BaseDBConfigGenerator(ABC):
         """
         datasource_ref = self.build_datasource_reference(context_set_id)
 
-        if isinstance(datasource_ref, dict):
-            query_context_dict = {
-                "datasource_references": datasource_ref
-            }
-        else:
-            query_context = gda.QueryDataContext(
-                datasource_references=datasource_ref
-            )
-            query_context_dict = MessageToDict(
-                query_context._pb, preserving_proto_field_name=True
-            )
+        query_context = gda.QueryDataContext(datasource_references=datasource_ref)
+
+        query_context_dict = MessageToDict(
+            query_context._pb, preserving_proto_field_name=True
+        )
 
         model_config = {
             "generator": "query_data_api",
@@ -76,12 +70,6 @@ class BaseDBConfigGenerator(ABC):
             "location": self.params.get("region") or "global",
             "context": query_context_dict,
         }
-
-        if self.params.get("use_rest_api"):
-            model_config["use_rest_api"] = True
-
-        if self.params.get("api_endpoint"):
-            model_config["api_endpoint"] = self.params.get("api_endpoint")
 
         return yaml.safe_dump(
             model_config, sort_keys=False, default_flow_style=False

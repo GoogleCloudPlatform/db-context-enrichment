@@ -64,7 +64,4 @@ uv run --no-sync --project /evalbench python /evalbench/evalbench/evalbench.py -
 echo "Validating mandatory output files for ${SUITE}..."
 python3 /workspace/.ci/check_eval_outputs.py "${WORK_DIR}/${SUITE}" "${WORK_DIR}/${SUITE}/dataset.json"
 
-echo "Validating mandatory output files for ${SUITE}..."
-python3 /workspace/.ci/check_eval_outputs.py "${WORK_DIR}/${SUITE}" "${WORK_DIR}/${SUITE}/dataset.json"
-
 touch "/workspace/EVAL_RAN_${SUT}-${SUITE}"

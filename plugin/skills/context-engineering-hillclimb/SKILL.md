@@ -26,9 +26,9 @@ Load `references/workspace.md` before any workspace interaction — it describes
 2. **Fresh start — seed v0.** Resolve the base context per Prerequisites:
    - **None** → invoke `context-engineering-bootstrap` to generate a local file, then upload as `v0` via `upload_context_set`.
    - **Local file** → upload as `v0` via `upload_context_set`.
-   - **Existing Context Store resource name** → treat the resource as `v0`; skip the upload and start the loop at `v1` (step 1 will seed `context_set_v1.json` via `download_context_set`).
+   - **Existing Context Store resource name** → download the body to `v0/context_set_v0.json` via `download_context_set`; treat the resource as `v0` (no re-upload).
 
-   Record the `v0` resource name and write initial `state.md`.
+   Record the `v0` resource name and write initial `state.md`. Then seed `v0/`: ensure `context_set_v0.json` is on disk, evaluate into `v0/eval/`, record the baseline score. Iteration loop starts at `v1`.
 
 ### Per-iteration loop (`vN`)
 1. **Prepare `vN/`**: append the `## In-Progress: vN` marker to `state.md`, create the iteration directory, and seed `context_set_vN.json`:

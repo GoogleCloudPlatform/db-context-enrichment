@@ -26,7 +26,7 @@ The hill-climbing skill maintains an internal workspace to track iterations, eva
 
 `state.md` is the single source of truth for iteration progress. It must contain:
 
-- **Metadata** — experiment name, workspace root, golden dataset path, DB source (from `tools.yaml`), Context Store coordinates (`project_id`, `csg_id`, `cs_id`).
+- **Metadata** — experiment name, workspace root, golden dataset path, DB source (from `tools.yaml`), Context Store coordinates. By convention: `csg_id = experiment_name`, `cs_id = "autoctx"`, `version = vN` per iteration.
 - **Iteration Log** — one entry per completed iteration, in order.
 
 Example:

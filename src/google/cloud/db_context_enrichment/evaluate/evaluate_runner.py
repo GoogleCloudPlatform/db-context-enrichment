@@ -109,9 +109,7 @@ def run_evaluation(experiment_name: str) -> None:
 
     try:
         # 1. Standard SDK gRPC Execution
-        logger.info(
-            f"Running EvalBench evaluation for experiment: {experiment_name}"
-        )
+        logger.info(f"Running EvalBench evaluation for experiment: {experiment_name}")
         code, output = _exec_evalbench(cmd)
         if code == 0 and not _is_proto_field_error(output):
             logger.info("EvalBench completed successfully via gRPC SDK.")
@@ -149,19 +147,13 @@ def run_evaluation(experiment_name: str) -> None:
                 )
                 code, output = _exec_evalbench(cmd)
                 if code == 0:
-                    logger.info(
-                        f"Evaluation completed successfully via {tier.name}."
-                    )
+                    logger.info(f"Evaluation completed successfully via {tier.name}.")
                     return
-                logger.warning(
-                    f"{tier.name} failed with code {code}:\n{output[:300]}"
-                )
+                logger.warning(f"{tier.name} failed with code {code}:\n{output[:300]}")
             except Exception as err:
                 logger.debug(f"{tier.name} execution failed: {err}")
 
-        logger.error(
-            f"Evaluation failed across all transport modes:\n{output[:500]}"
-        )
+        logger.error(f"Evaluation failed across all transport modes:\n{output[:500]}")
         raise RuntimeError(
             f"EvalBench evaluation failed for experiment '{experiment_name}'.\n"
             "You may be attempting to use an unreleased or non-public QueryData feature. Please reach out to your accounts team for access."

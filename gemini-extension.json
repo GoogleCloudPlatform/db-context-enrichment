@@ -1,7 +1,6 @@
 {
   "name": "google-cloud-db-context-engineering",
   "version": "0.6.0",
-  "contextFileName": "./plugin/GEMINI.md",
   "mcpServers": {
     "db-context-engineering": {
       "command": "uvx",

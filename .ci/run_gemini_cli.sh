@@ -32,15 +32,15 @@ cp -r "/workspace/evals/${SUITE}" "${WORK_DIR}/"
 cp -r "/workspace/evals/model_configs" "${WORK_DIR}/"
 cd "${WORK_DIR}"
 
-# Point the Gemini CLI extension installer at the locally built extension
-# instead of pulling from GitHub.
-sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' "model_configs/gemini_cli_model.yaml"
+# Point the Gemini CLI extension installer at the locally built extension.
+sed -i "s|<extension-source>|/workspace/staging|g" "model_configs/gemini_cli_model.yaml"
 
-# Inject Vertex project/location into the CLI env block so the extension can
-# talk to the right GCP project without the values being committed to the repo.
+# Substitute Vertex project/location placeholders in the CLI env block so the
+# extension can talk to the right GCP project without the values being
+# committed to the repo.
 sed -i \
-  -e "/^  GEMINI_MODEL:/a\\  GOOGLE_CLOUD_PROJECT: \"${EVAL_GCP_PROJECT_ID}\"" \
-  -e "/^  GEMINI_MODEL:/a\\  GOOGLE_CLOUD_LOCATION: \"${EVAL_GCP_PROJECT_REGION}\"" \
+  -e "s|<gcp-project>|${EVAL_GCP_PROJECT_ID}|g" \
+  -e "s|<gcp-location>|${EVAL_GCP_PROJECT_REGION}|g" \
   "model_configs/gemini_cli_model.yaml"
 
 # Append the runtime release_version and resolve the reporting-project

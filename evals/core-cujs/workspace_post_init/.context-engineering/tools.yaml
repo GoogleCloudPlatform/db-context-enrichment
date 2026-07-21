@@ -1,10 +1,10 @@
 kind: source
 name: my-alloydb
 type: alloydb-postgres
-project: astana-transformation
-region: us-east4
-cluster: juexinw-test
-instance: juexinw-test-primary
+project: cloud-db-nl2sql
+region: us-central1
+cluster: whaoyu-test
+instance: whaoyu-test-primary
 database: financial
 ---
 kind: tool

@@ -1,10 +1,10 @@
 ############################################################
 ### Dataset / Eval Items
 ############################################################
-dataset_config: autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/golden_queries.json
+dataset_config: autoctx/experiments/crema-eval-experiment/eval_configs/golden_queries.json
 dataset_format: evalbench-standard-format
 database_configs:
- - autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/db_config.yaml
+ - autoctx/experiments/crema-eval-experiment/eval_configs/db_config.yaml
 dialect: postgres    # DB connection mapping
 query_types:
  - dql
@@ -12,7 +12,7 @@ query_types:
 ############################################################
 ### Prompt and Generation Modules
 ############################################################
-model_config: autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/model_config.yaml
+model_config: autoctx/experiments/crema-eval-experiment/eval_configs/model_config.yaml
 prompt_generator: 'NOOPGenerator'
 
 ############################################################
@@ -27,11 +27,11 @@ runners:
 ############################################################
 scorers:
   llmrater:
-    model_config: autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/llmrater_config.yaml
+    model_config: autoctx/experiments/crema-eval-experiment/eval_configs/llmrater_config.yaml
 
 ############################################################
 ### Reporting Related Configs
 ############################################################
 reporting:
   csv:
-    output_directory: 'autoctx/experiments/my-alloydb-tuning-experiment/eval_reports/'
+    output_directory: 'autoctx/experiments/crema-eval-experiment/eval_reports/'

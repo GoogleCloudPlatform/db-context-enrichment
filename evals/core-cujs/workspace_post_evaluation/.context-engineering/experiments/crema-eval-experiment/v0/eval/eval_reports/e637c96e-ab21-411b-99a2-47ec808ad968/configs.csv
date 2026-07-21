@@ -1,15 +1,15 @@
 job_id,run_time,config,value
-e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.dataset_config,autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/golden_queries.json
+e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.dataset_config,autoctx/experiments/crema-eval-experiment/eval_configs/golden_queries.json
 e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.dataset_format,evalbench-standard-format
-e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.database_configs,['autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/db_config.yaml']
+e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.database_configs,['autoctx/experiments/crema-eval-experiment/eval_configs/db_config.yaml']
 e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.dialect,postgres
 e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.query_types,['dql']
-e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.model_config,autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/model_config.yaml
+e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.model_config,autoctx/experiments/crema-eval-experiment/eval_configs/model_config.yaml
 e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.prompt_generator,NOOPGenerator
 e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.runners.eval_runners,4
 e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.runners.sqlgen_runners,20
-e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.scorers.llmrater.model_config,autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/llmrater_config.yaml
-e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.reporting.csv.output_directory,autoctx/experiments/my-alloydb-tuning-experiment/eval_reports/
+e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.scorers.llmrater.model_config,autoctx/experiments/crema-eval-experiment/eval_configs/llmrater_config.yaml
+e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.reporting.csv.output_directory,autoctx/experiments/crema-eval-experiment/eval_reports/
 e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,experiment_config.orchestrator,oneshot
 e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,model_config.generator,query_data_api
 e637c96e-ab21-411b-99a2-47ec808ad968,2026-05-07 19:52:28.203633,model_config.project_id,cloud-db-nl2sql

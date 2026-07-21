@@ -3,7 +3,7 @@
     {
       "id": "core-cujs:init",
       "starting_prompt": "setup context generation for my database.",
-      "conversation_plan": "Ask the agent to setup the auto context generation for my alloydb database. Connection information: datasource name as my-alloydb, project id is astana-transformation, region us-east4, cluster juexinw-test, instance juexinw-test-primary, database financial. Verify the agent generate a valid tools.yaml. Explicitly ask the agent to perform validation. You should terminate the conversation immediately after the agent successfully set up the files and performed the validation.",
+      "conversation_plan": "Ask the agent to setup the auto context generation for my alloydb database. Connection information: datasource name as my-alloydb, project id is cloud-db-nl2sql, region us-central1, cluster whaoyu-test, instance whaoyu-test-primary, database financial. Verify the agent generate a valid tools.yaml. Explicitly ask the agent to perform validation. You should terminate the conversation immediately after the agent successfully set up the files and performed the validation.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_empty/",
@@ -30,7 +30,7 @@
     {
       "id": "core-cujs:bootstrap",
       "starting_prompt": "create initial context set for my alloydb database",
-      "conversation_plan": "Ask the agent to create initial context set for my alloydb database. Need to have at least 2 templates and 2 facets. If prompted for experiment name, use 'my-alloydb-tuning-experiment'. You should terminate the conversation immediately after the agent successfully created the context set, even if the agent prompts you to perform evaluation or take next steps.",
+      "conversation_plan": "Ask the agent to create initial context set for my alloydb database. Need to have at least 2 templates and 2 facets. If prompted for experiment name, use 'crema-eval-experiment'. You should terminate the conversation immediately after the agent successfully created the context set, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_expansion/",
@@ -39,7 +39,7 @@
     {
       "id": "core-cujs:evaluate",
       "starting_prompt": "evaluate my context set against the golden dataset. If you need any details, stop and ask before proceeding.",
-      "conversation_plan": "Ask the agent to evaluate the golden dataset at ./golden.json against the local ContextSet at ./bootstrap_context.json. If prompted for Context Store coordinates, use project_id=astana-transformation, csg_id=my-alloydb-tuning-experiment, cs_id=autoctx, version=v0. Terminate immediately after the agent presents evaluation results, even if it prompts to continue.",
+      "conversation_plan": "Ask the agent to evaluate the golden dataset at ./golden.json against the local ContextSet at ./bootstrap_context.json. If prompted for Context Store coordinates, use project_id=cloud-db-nl2sql, csg_id=crema-eval-experiment, cs_id=autoctx, version=v0. Terminate immediately after the agent presents evaluation results, even if it prompts to continue.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_bootstrap/",
@@ -48,7 +48,7 @@
     {
       "id": "core-cujs:hillclimb-continue",
       "starting_prompt": "improve the context set based on eval failure. If you need any details, stop and ask before proceeding.",
-      "conversation_plan": "Ask the agent to perform the hillclimbing to improve the context set based on eval failure. The workspace already contains an in-progress experiment at .context-engineering/experiments/my-alloydb-tuning-experiment/ with a v0 baseline. If prompted for experiment name, use 'my-alloydb-tuning-experiment'. You should terminate the conversation immediately after the agent successfully performed the hillclimbing task, even if the agent prompts you to perform evaluation or take next steps.",
+      "conversation_plan": "Ask the agent to perform the hillclimbing to improve the context set based on eval failure. The workspace already contains an in-progress experiment at .context-engineering/experiments/crema-eval-experiment/ with a v0 baseline. If prompted for experiment name, use 'crema-eval-experiment'. You should terminate the conversation immediately after the agent successfully performed the hillclimbing task, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_evaluation/",
@@ -57,7 +57,7 @@
     {
       "id": "core-cujs:hillclimb-fresh",
       "starting_prompt": "improve my context set from scratch using the golden dataset. If you need any details, stop and ask before proceeding.",
-      "conversation_plan": "Ask the agent to run hillclimb using the local base context at ./bootstrap_context.json and the golden dataset at ./golden.json. If prompted for experiment name, use 'my-alloydb-tuning-experiment'. Terminate immediately after the agent successfully performs the hillclimbing task, even if the agent prompts you to continue.",
+      "conversation_plan": "Ask the agent to run hillclimb using the local base context at ./bootstrap_context.json and the golden dataset at ./golden.json. If prompted for experiment name, use 'crema-eval-experiment'. Terminate immediately after the agent successfully performs the hillclimbing task, even if the agent prompts you to continue.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_fresh_hillclimb/",

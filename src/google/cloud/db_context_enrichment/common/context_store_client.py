@@ -15,7 +15,7 @@ from google.auth.transport import requests as auth_requests
 
 from google.cloud.db_context_enrichment.model import context
 
-CONTEXT_STORE_ENDPOINT = "https://autopush-dataplex.sandbox.googleapis.com"
+CONTEXT_STORE_ENDPOINT = "https://dataplex.googleapis.com"
 CONTEXT_STORE_LOCATION = "us-central1"
 API_VERSION = "v1"
 DEFAULT_OAUTH_SCOPES = ("https://www.googleapis.com/auth/cloud-platform",)
@@ -36,25 +36,29 @@ class ContextStoreClient:
     path from IDs (`ensure_*`) take `project_id` as an explicit argument;
     operations that take a fully-qualified resource name don't need it.
 
-    The quota project (billing / quota) is always taken from ADC's
-    `quota_project_id` and sent as `X-Goog-User-Project` on every request.
+    The quota project (billing / quota) is taken from ADC's
+    `quota_project_id` if set, else the project ADC returns alongside the
+    credentials (user default via `gcloud config get-value project`, or the
+    SA key's `project_id`). Sent as `X-Goog-User-Project` on every request.
+    Omitted if neither is available.
     """
 
     def __init__(self):
         try:
-            credentials, _ = google.auth.default(scopes=DEFAULT_OAUTH_SCOPES)
+            credentials, default_project = google.auth.default(
+                scopes=DEFAULT_OAUTH_SCOPES
+            )
         except google.auth.exceptions.DefaultCredentialsError as e:
             raise RuntimeError(
                 "No Application Default Credentials found. Run "
                 "'gcloud auth application-default login' first."
             ) from e
-        if not credentials.quota_project_id:
-            raise RuntimeError(
-                "No quota project set. Run "
-                "'gcloud auth application-default set-quota-project <PROJECT_ID>'."
-            )
+        # Matches how the generated Google SDKs pick a billing project:
+        # explicit ADC quota project first, then ADC's default project.
+        quota_project = credentials.quota_project_id or default_project
         self._session = auth_requests.AuthorizedSession(credentials)
-        self._session.headers["X-Goog-User-Project"] = credentials.quota_project_id
+        if quota_project:
+            self._session.headers["X-Goog-User-Project"] = quota_project
 
     def ensure_context_set_group(self, project_id: str, csg_id: str) -> str:
         """Return a CSG's full resource name, creating it if absent.

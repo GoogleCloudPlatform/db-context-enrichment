@@ -7,7 +7,7 @@
       "args": [
         "run",
         "--project",
-        "/Users/juexinw/Workspace/nla/db-context-enrichment",
+        "<local-repo-path>",
         "google-cloud-db-context-engineering"
       ]
     },

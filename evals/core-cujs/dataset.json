@@ -20,7 +20,7 @@
     },
     {
       "id": "core-cujs:dataset-expansion",
-      "starting_prompt": "Use context engineering, generate an evaluation dataset consisting of 5 questions by expanding my evaluation dataset golden.json with more diverse examples using variation strategies.",
+      "starting_prompt": "Use context engineering, generate an evaluation dataset consisting of 5 questions by expanding my evaluation dataset golden.json with more diverse examples using variation strategies. Name the audit report files 'evalset_expansion_report_pair_level.md' and 'evalset_expansion_report_dataset_level.md'.",
       "conversation_plan": "Ask the agent to expand the existing golden.json evaluation dataset by applying variation strategies to the existing pairs. The agent should apply all six strategies: paraphrasing, merging, difficulty adjustment (both upscaling and simplification), distraction injection, linguistic variation (typos and synonyms), and value substitution (which requires running SELECT DISTINCT queries on the database). When the agent presents an expansion plan, confirm it and approve all strategies. When the agent runs SQL execution validation or asks for approval of the validation reports, approve them. You should terminate the conversation immediately after the agent successfully writes the expanded pairs to golden.json, even if the agent prompts you to perform evaluation or take next steps. At the end of the conversation, verify that the agent produced the following output files: golden.json, evalset_expansion_report_pair_level.md, evalset_expansion_report_dataset_level.md.",
       "expected_trajectory": [],
       "kind": "agents",
@@ -38,7 +38,7 @@
     },
     {
       "id": "core-cujs:evaluate",
-      "starting_prompt": "evaluate my context set against the golden dataset. If you need any details, stop and ask before proceeding.",
+      "starting_prompt": "evaluate the golden dataset at ./golden.json against the local ContextSet at ./bootstrap_context.json. Use project 'cloud-db-nl2sql', experiment 'crema-eval-experiment', cs_id 'autoctx', version 'v0'.",
       "conversation_plan": "Ask the agent to evaluate the golden dataset at ./golden.json against the local ContextSet at ./bootstrap_context.json. If prompted for Context Store coordinates, use project_id=cloud-db-nl2sql, csg_id=crema-eval-experiment, cs_id=autoctx, version=v0. Terminate immediately after the agent presents evaluation results, even if it prompts to continue.",
       "expected_trajectory": [],
       "kind": "agents",
@@ -47,7 +47,7 @@
     },
     {
       "id": "core-cujs:hillclimb-continue",
-      "starting_prompt": "improve the context set based on eval failure. If you need any details, stop and ask before proceeding.",
+      "starting_prompt": "improve the context set based on eval failure. Resume the in-progress experiment 'crema-eval-experiment' at .context-engineering/experiments/crema-eval-experiment/ (already has a v0 baseline). Use project 'cloud-db-nl2sql'.",
       "conversation_plan": "Ask the agent to perform the hillclimbing to improve the context set based on eval failure. The workspace already contains an in-progress experiment at .context-engineering/experiments/crema-eval-experiment/ with a v0 baseline. If prompted for experiment name, use 'crema-eval-experiment'. You should terminate the conversation immediately after the agent successfully performed the hillclimbing task, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",

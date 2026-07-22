@@ -56,7 +56,7 @@
     },
     {
       "id": "core-cujs:hillclimb-fresh",
-      "starting_prompt": "improve my context set from scratch using the golden dataset. If you need any details, stop and ask before proceeding.",
+      "starting_prompt": "improve my context set from scratch using the local base context at ./bootstrap_context.json and the golden dataset at ./golden.json. Use experiment name 'crema-eval-experiment' and project 'cloud-db-nl2sql'.",
       "conversation_plan": "Ask the agent to run hillclimb using the local base context at ./bootstrap_context.json and the golden dataset at ./golden.json. If prompted for experiment name, use 'crema-eval-experiment'. Terminate immediately after the agent successfully performs the hillclimbing task, even if the agent prompts you to continue.",
       "expected_trajectory": [],
       "kind": "agents",

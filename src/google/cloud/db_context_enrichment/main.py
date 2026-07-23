@@ -73,7 +73,7 @@ def generate_evalbench_configs(
         dataset_path: The absolute path to the golden dataset file in the simplified user-facing format (JSON list of objects with keys: "id", "database", "nlq", "golden_sql").
         context_set_id: Full ContextSet resource name to evaluate against.
         toolbox_config_path: The absolute path to the tools.yaml configuration file.
-        toolbox_source_name: The name of the database source to use inside tools.yaml. The underlying source block must use a supported 'type' (cloud-sql-postgres, cloud-sql-mysql, spanner, alloydb-postgres).
+        toolbox_source_name: The name of the database source to use inside tools.yaml. The underlying source block must use a supported 'type' (cloud-sql-postgres, cloud-sql-mysql, spanner, alloydb-postgres, bigquery).
 
     Returns:
         A message indicating that the configuration files were successfully created.

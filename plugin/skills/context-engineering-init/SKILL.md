@@ -84,6 +84,7 @@ When collecting information from the user, inform the user that only Application
     - Spanner PostgreSQL (no Graph support)
     - Cloud Bigtable
     - Firestore (MongoDB API)
+    - BigQuery
 
     *Spanner Dialect Disambiguation Rule:* If the user specifies Spanner without indicating whether it is GoogleSQL or PostgreSQL, the agent **MUST explicitly ask**: *"Is your Spanner database configured with GoogleSQL (default) or PostgreSQL dialect?"* Alternatively, if `gcloud` is authenticated, the agent can inspect the database dialect using `gcloud spanner databases describe <database_name> --instance=<instance_id> --project=<project_id> --format="value(databaseDialect)"`. Do not silently assume GoogleSQL.
 2.  **Collect Information:**

@@ -1,7 +1,7 @@
 """REST client for the Context Store API.
 
 Hand-rolled because the service is GOOGLE_INTERNAL and has no public SDK.
-All calls target the autopush sandbox endpoint pinned in this module.
+All calls target the prod Dataplex endpoint pinned in this module.
 """
 
 import json
@@ -30,7 +30,7 @@ _REQUEST_TIMEOUT_SECONDS = 30
 
 
 class ContextStoreClient:
-    """REST client for the Context Store API (autopush sandbox).
+    """REST client for the Context Store API (prod Dataplex).
 
     The client is stateless w.r.t. project. Operations that build a resource
     path from IDs (`ensure_*`) take `project_id` as an explicit argument;

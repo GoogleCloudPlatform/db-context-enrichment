@@ -49,7 +49,6 @@ def test_generate_model_config(mock_params):
         "generator": "query_data_api",
         "project_id": "test-project",
         "location": "us-west1",
-        "api_endpoint": "autopush-geminidataanalytics.sandbox.googleapis.com",
         "context": {
             "datasource_references": {
                 "alloydb": {

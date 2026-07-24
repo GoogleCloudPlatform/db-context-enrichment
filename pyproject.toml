@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 google-cloud-db-context-engineering = "google.cloud.db_context_enrichment.main:mcp.run"
+autoctx-eval = "google.cloud.db_context_enrichment.evaluate.evaluate_runner:cli_main"
 
 [project.optional-dependencies]
 test = [

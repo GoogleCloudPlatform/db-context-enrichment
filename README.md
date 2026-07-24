@@ -2,7 +2,7 @@ This is not an officially supported Google product. This project is not eligible
 
 # Context Engineering Agent
 
-The **Context Engineering Agent** is an AI coding agent plugin designed to run in developer agent harnesses (such as Claude Code, Antigravity, or Gemini CLI). It generates, evaluates, and iteratively tunes tailored context artifacts (`ContextSets` comprising `Templates`, `Facets`, and `Value Searches`) to enrich database schemas for **Gemini Data Analytics's data agent developer platform tools**, such as QueryData ([AlloyDB](https://cloud.google.com/gemini/docs/data-agents/querydata/alloydb/data-agent-overview) | Cloud SQL: [PostgreSQL](https://cloud.google.com/gemini/docs/data-agents/querydata/cloud-sql-postgres/data-agent-overview) / [MySQL](https://cloud.google.com/gemini/docs/data-agents/querydata/cloud-sql-mysql/data-agent-overview) | [Spanner (GoogleSQL)](https://cloud.google.com/gemini/docs/data-agents/querydata/spanner/data-agent-overview)).
+The **Context Engineering Agent** is an AI coding agent plugin designed to run in developer agent harnesses (such as Claude Code, Antigravity, or Gemini CLI). It generates, evaluates, and iteratively tunes tailored context artifacts (`ContextSets` comprising `Templates`, `Facets`, and `Value Searches`) to enrich database schemas for **Gemini Data Analytics's data agent developer platform tools**, such as QueryData ([AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/data-agent-overview) | Cloud SQL: [PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/data-agent-overview) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/data-agent-overview) | [Spanner (GoogleSQL)](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/data-agent-overview)).
 
 ---
 
@@ -10,7 +10,7 @@ The **Context Engineering Agent** is an AI coding agent plugin designed to run i
 
 When building data agents and natural language analytics interfaces, accurately translating user intent into database queries is critical. 
 
-As outlined in the **QueryData Data Agent Overview** ([AlloyDB](https://cloud.google.com/gemini/docs/data-agents/querydata/alloydb/data-agent-overview) | Cloud SQL: [PostgreSQL](https://cloud.google.com/gemini/docs/data-agents/querydata/cloud-sql-postgres/data-agent-overview) / [MySQL](https://cloud.google.com/gemini/docs/data-agents/querydata/cloud-sql-mysql/data-agent-overview) | [Spanner (GoogleSQL)](https://cloud.google.com/gemini/docs/data-agents/querydata/spanner/data-agent-overview)), by optimizing a `ContextSet` to match your application's expected query stream, the **QueryData API** acts as a data agent tool capable of achieving **~100% NL-to-SQL translation accuracy with low latency**.
+As outlined in **Build Context with Context Engineering Agent** ([AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/build-context-gemini-cli) | Cloud SQL: [PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/build-context-gemini-cli) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/build-context-gemini-cli) | [Spanner (GoogleSQL)](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/build-context-gemini-cli)), by optimizing a `ContextSet` to match your application's expected query stream, the **QueryData API** acts as a data agent tool capable of achieving **~100% NL-to-SQL translation accuracy with low latency**.
 
 ---
 
@@ -18,11 +18,11 @@ As outlined in the **QueryData Data Agent Overview** ([AlloyDB](https://cloud.go
 
 A `ContextSet` is the central artifact generated and managed by the agent, containing structured knowledge in three primary forms:
 
-* **Templates**: Links a natural language query pattern to a complete query statement.
+* **Templates**: Link natural language query patterns to complete query statements.
 * **Facets**: Reusable, modular query fragments (e.g., parameterized `WHERE` clauses or specialized join filters) linked to domain vocabulary.
 * **Value Searches**: Specialized mapping queries that dynamically resolve user-supplied values (e.g., *"Lndn"*) to database records (*"London"*) via the capabilities of the underlying database, such as embedding search, AI operators, or simple trigram search.
 
-For full schema details, structure specifications, and dialect-specific JSON representations of `ContextSets`, see the official **Context Sets Overview** ([AlloyDB](https://cloud.google.com/gemini/docs/data-agents/querydata/alloydb/context-sets-overview) | Cloud SQL: [PostgreSQL](https://cloud.google.com/gemini/docs/data-agents/querydata/cloud-sql-postgres/context-sets-overview) / [MySQL](https://cloud.google.com/gemini/docs/data-agents/querydata/cloud-sql-mysql/context-sets-overview) | [Spanner (GoogleSQL)](https://cloud.google.com/gemini/docs/data-agents/querydata/spanner/context-sets-overview)).
+For full schema details, structure specifications, and dialect-specific JSON representations of `ContextSets`, see the official **Context Sets Overview** ([AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/context-sets-overview) | Cloud SQL: [PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/context-sets-overview) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/context-sets-overview) | [Spanner (GoogleSQL)](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/context-sets-overview)).
 
 ---
 
@@ -31,13 +31,13 @@ For full schema details, structure specifications, and dialect-specific JSON rep
 Before getting started, prepare your GCP environment, required APIs (Data Analytics API, Gemini for Google Cloud API, Dataplex Universal Catalog API), IAM permissions, and database Data API settings.
 
 Follow the step-by-step setup guide in the official documentation:
-👉 **Prepare Your Environment**: ([AlloyDB](https://cloud.google.com/gemini/docs/data-agents/querydata/alloydb/build-context-gemini-cli#prepare-your-environment) | Cloud SQL: [PostgreSQL](https://cloud.google.com/gemini/docs/data-agents/querydata/cloud-sql-postgres/build-context-gemini-cli#prepare-your-environment) / [MySQL](https://cloud.google.com/gemini/docs/data-agents/querydata/cloud-sql-mysql/build-context-gemini-cli#prepare-your-environment) | [Spanner (GoogleSQL)](https://cloud.google.com/gemini/docs/data-agents/querydata/spanner/build-context-gemini-cli#prepare-your-environment))
+👉 **Prepare Your Environment**: ([AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/build-context-gemini-cli#prepare-your-environment) | Cloud SQL: [PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/build-context-gemini-cli#prepare-your-environment) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/build-context-gemini-cli#prepare-your-environment) | [Spanner (GoogleSQL)](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/build-context-gemini-cli#prepare-your-environment))
 
 ---
 
 ## Primary Workflow Phases
 
-The extension enables you to craft an optimized context for QueryData API through three primary phases:
+The agent enables you to craft an optimized context for QueryData API through three primary phases:
 
 ### Phase 1: Artifact Ingestion
 *Why it matters: Without broader context on the application's goals and scope, AI models generate sterile queries based solely on database column names, missing how your users actually ask for information.*
@@ -51,7 +51,7 @@ The extension enables you to craft an optimized context for QueryData API throug
 
 1. **Dataset Planning**: Set goals for your dataset, deciding on question difficulty, business topics to cover, and total dataset size.
 2. **Initial Question Generation**: Create a core set of natural language questions grounded in your business documents, verifying that each question's corresponding query runs accurately on your database.
-3. **Dataset Expansion**: Scale up the question set by adding real-world variations, such as different human phrasing, complex combinations such as joins and measures, and realistic values—to cover ambiguity of language. 
+3. **Dataset Expansion**: Scale up the question set by adding real-world variations, such as different human phrasing, complex combinations of joins and measures, and realistic values—to cover the ambiguity of natural language.
 4. **Dataset Validation**: Audit the full dataset against your original plan and ask for your approval before proceeding. 
 
 ### Phase 3: Context Optimization via Recursive Hill-Climbing
@@ -65,13 +65,13 @@ The optimization loop creates an initial `ContextSet` and then iteratively refin
 4. **Iterate**: Apply the improved context and re-run evaluation to continuously improve quality.
 5. **Final Validation** (Optional): Verify mutations against a separated test set to ensure generalization and prevent overfitting.
 
-*Note: While there is a typical ordering for these CUJs, the agent is flexible to how you want to execute. You can run the full pipeline end-to-end, trigger any individual phase, or ask for targeted changes to the `ContextSet`.*
+*Note: While there is a typical ordering for these CUJs, the agent is flexible in how you want to execute. You can run the full pipeline end-to-end, trigger any individual phase, or ask for targeted changes to the `ContextSet`.*
 
 ---
 
 ## Bring Artifacts via Filesystem or MCP
 
-To prevent the AI from generating trivial schema-only questions (e.g., *"What is the count of users?"*), the agent bridges the semantic gap by grounding generation with real-world business documents—such as **product glossaries**, **business wikis**, **SOPs**, **ORM data models**, **emails**, or **application or database logs**.
+To prevent the AI from generating trivial schema-only questions (e.g., *"What is the count of users?"*), the agent bridges the semantic gap by grounding context generation in real-world business documents—such as **product glossaries**, **business wikis**, **SOPs**, **ORM data models**, **emails**, or **application or database logs**.
 
 You can provide business artifacts directly to the agent from local filesystems or via **Model Context Protocol (MCP) Servers**.
 
@@ -84,7 +84,7 @@ Launch your agent harness (Gemini CLI, Claude Code, or Antigravity) in your work
 ### Example Natural Language Prompts
 * **End-to-End**: (From the app directory) *"Optimize context for my app."*
 * **Dataset Curation**: *"Expand my dataset with app changes in `<PULL_REQUEST_LINK>`."*
-* **Adhoc Evaluation**: *"Evaluate accuracy of QueryData with `ContextSet` `<context_set_id>` on dataset.json."*
+* **Ad-hoc Evaluation**: *"Evaluate accuracy of QueryData with `ContextSet` `<context_set_id>` on dataset.json."*
 * **Targeted Authoring**: *"Add a facet for active premium subscriptions."*
 
 ---

@@ -81,21 +81,44 @@ def test_constructor_raises_when_adc_missing(monkeypatch):
         ContextStoreClient()
 
 
-def test_constructor_raises_when_no_quota_project(monkeypatch):
+def test_constructor_omits_user_project_header_when_none_available(monkeypatch):
     fake_credentials = MagicMock()
     fake_credentials.quota_project_id = None
     monkeypatch.setattr(
         "google.auth.default",
         lambda scopes=None: (fake_credentials, None),
     )
+    fake_session = MagicMock()
+    fake_session.headers = {}
     monkeypatch.setattr(
         context_store_client.auth_requests,
         "AuthorizedSession",
-        lambda creds: MagicMock(),
+        lambda creds: fake_session,
     )
 
-    with pytest.raises(RuntimeError, match="No quota project"):
-        ContextStoreClient()
+    client = ContextStoreClient()
+
+    assert "X-Goog-User-Project" not in client._session.headers
+
+
+def test_constructor_falls_back_to_default_project_for_quota(monkeypatch):
+    fake_credentials = MagicMock()
+    fake_credentials.quota_project_id = None
+    monkeypatch.setattr(
+        "google.auth.default",
+        lambda scopes=None: (fake_credentials, "adc-default-project"),
+    )
+    fake_session = MagicMock()
+    fake_session.headers = {}
+    monkeypatch.setattr(
+        context_store_client.auth_requests,
+        "AuthorizedSession",
+        lambda creds: fake_session,
+    )
+
+    client = ContextStoreClient()
+
+    assert client._session.headers["X-Goog-User-Project"] == "adc-default-project"
 
 
 def test_constructor_sends_quota_project_header(monkeypatch):

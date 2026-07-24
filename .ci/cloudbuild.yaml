@@ -76,6 +76,16 @@ steps:
           echo "PR does not have 'ci:eval-claude' label. Skipping Claude Code evals."
         fi
 
+        echo "Checking changed files for documentation-only PR..."
+        curl -s -o pr_files.json -H "Authorization: token $$GITHUB_TOKEN" \
+          "https://api.github.com/repos/$REPO_FULL_NAME/pulls/$_PR_NUMBER/files"
+
+        NON_DOC_COUNT=$(jq '[.[]? | select(.filename | test("^(README\\.md|CHANGELOG\\.md|CONTRIBUTING\\.md|LICENSE|\\.gitignore|docs/)") | not)] | length' pr_files.json 2>/dev/null || echo 1)
+        if [ "$$NON_DOC_COUNT" -eq 0 ]; then
+          echo "Documentation-only PR detected (only README.md, docs/, etc. modified)."
+          touch /workspace/IS_DOCS_ONLY
+        fi
+
   # --- Smoke tests (always run, regardless of PR labels) ---
   # Cheap signal that the agent + plugin + MCP wiring loads at all.
   - id: eval-gemini-cli-smoke-test

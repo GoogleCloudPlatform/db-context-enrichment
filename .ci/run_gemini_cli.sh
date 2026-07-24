@@ -11,6 +11,12 @@ set -e
 SUITE="${1:?usage: run_gemini_cli.sh <suite-name>}"
 SUT="gemini-cli"
 
+# Documentation-only PRs skip smoke tests unless explicitly requested via ci:eval label.
+if [ -f /workspace/IS_DOCS_ONLY ] && [ ! -f /workspace/SHOULD_RUN_GEMINI_CLI ]; then
+  echo "Documentation-only PR without ci:eval label; skipping ${SUT}/${SUITE}."
+  exit 0
+fi
+
 # The smoke-test suite always runs regardless of PR labels; other suites are
 # gated by the ci:eval label (marker written by the preflight step).
 if [ "${SUITE}" != "smoke-test" ] && [ ! -f /workspace/SHOULD_RUN_GEMINI_CLI ]; then

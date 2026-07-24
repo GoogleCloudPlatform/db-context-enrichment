@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.6.0...v0.6.1) (2026-07-24)
+
+
+### Features
+
+* Enable sheperding of users through context engineering workflow  ([#168](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/168)) ([3231e59](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/3231e5966ac305268929eaa5517ea2ea22194c3f))
+* golden dataset generation and expansion ([#187](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/187)) ([694cc3c](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/694cc3cc2def917a31ca0cf64e01b9c56d5b1d81))
+* **mcp:** add upload_context_set and download_context_set tools ([#178](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/178)) ([b4f7b13](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/b4f7b131e1ebe96d12fe08d7ebd012f126b56486))
+
+
+### Bug Fixes
+
+* restore Best Practices heading in context-generation-guide ([#174](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/174)) ([5d111e7](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/5d111e77d64c32b0b0a74852470f8ecac6e20cb2))
+
 ## [0.6.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.5.1...v0.6.0) (2026-06-16)
 
 

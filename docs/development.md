@@ -36,9 +36,8 @@ gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enri
   at a time. Always uninstall before switching.
 - The MCP subprocess launches via `uv run --directory
   ${extensionPath}/..`, which resolves to the repo root.
-- For integration-testing the full PyInstaller-bundled release
-  (Evalbench + Toolbox binaries), see the "Development and Testing"
-  section in [README.md](../README.md).
+- The MCP subprocess launches via `uv run --directory
+  ${extensionPath}/..`, which resolves to the repo root.
 
 ## Claude Code plugin
 
@@ -128,3 +127,36 @@ agy plugin uninstall google-cloud-db-context-engineering-dev
 - See [releasing.md](releasing.md) for the version-pin atomicity that
   the dev flow sidesteps; the agy root manifest shares the same
   `uvx pkg@<version>` invariant as the Claude Code plugin manifest.
+
+ 
+## Running Tests
+
+### Unit Test and Linting
+
+```bash
+# Run code formatting and linter
+uv run ruff check --fix .
+
+# Run pytest unit test suite
+uv run --extra test pytest tests/
+```
+ 
+### Integration Testing (Fork & Release Workflow)
+
+To test a new feature with the full PyInstaller-bundled binaries (including Evalbench + Toolbox executables):
+
+1. **Create a fork** of the repository on GitHub.
+2. **Set up the fork/upstream remotes** in your local environment:
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/db-context-enrichment.git
+   git remote add upstream https://github.com/GoogleCloudPlatform/db-context-enrichment
+   ```
+3. **Develop changes** in a new branch and push them to your fork.
+4. **Create a new release tag** on your fork (e.g. `0.0.1-test`).
+5. Wait for the release assets build pipeline to complete in your fork.
+6. **Install the custom release** via Gemini CLI:
+   ```bash
+   gemini extensions install https://github.com/YOUR-USERNAME/db-context-enrichment --ref 0.0.1-test
+   ```
+   *Note: Use `gemini extensions uninstall google-cloud-db-context-engineering` before installing your test release.*
+

@@ -194,15 +194,15 @@ jobs:
           tag_name: ${{ github.event.release.tag_name }}
           files: release-assets/*
 
-  # After PyPI publishes the new wheel, open a PR to pin the Claude Code
-  # plugin marketplace ref to this release tag. The PR gate ensures users
-  # never install a marketplace version pointing at a missing PyPI wheel.
-  pin-marketplace-ref:
+  # After PyPI publishes the new wheel, move the `stable` tag to this release.
+  # The Claude Code plugin marketplace pins `ref: stable`, so advancing the tag
+  # advertises the new version — no PR, no manual step. Gated on the PyPI wait
+  # so `stable` never points at a version whose wheel isn't live yet.
+  advance-stable-tag:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -224,23 +224,7 @@ jobs:
           echo "::error::Timed out waiting for PyPI ${PKG}==${VERSION}"
           exit 1
 
-      # Must run after the PyPI wait above: the bumped marketplace ref points users at
-      # this tag's wheel via uvx, which would 404 if PyPI hasn't indexed it yet.
-      - name: Open PR to pin marketplace ref
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          BRANCH="chore/pin-marketplace-${TAG}"
-          jq --arg ref "$TAG" '.plugins[0].source.ref = $ref' \
-            .claude-plugin/marketplace.json > tmp && mv tmp .claude-plugin/marketplace.json
-          git config user.name "release-please[bot]"
-          git config user.email "55107282+release-please[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
-          git add .claude-plugin/marketplace.json
-          git commit -m "chore: pin marketplace ref to $TAG"
-          git push -u origin "$BRANCH"
-          gh pr create \
-            --title "chore: pin marketplace ref to $TAG" \
-            --body "Auto-generated after PyPI wheel for \`$TAG\` is live. Merging this updates the Claude Code plugin marketplace to install \`$TAG\`." \
-            --base main --head "$BRANCH"
+      # Point `stable` at this release commit (checkout leaves HEAD on the tagged
+      # commit for a release event). Force is required to move an existing tag.
+      - name: Advance `stable` tag to this release
+        run: git push -f origin HEAD:refs/tags/stable

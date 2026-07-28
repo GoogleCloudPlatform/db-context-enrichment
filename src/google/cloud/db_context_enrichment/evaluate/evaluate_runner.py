@@ -1,21 +1,28 @@
-"""Module for executing EvalBench evaluation runs with automatic transport fallback."""
+"""Module for executing EvalBench evaluation runs with REST transport."""
 
 import logging
 import os
 import subprocess
 import sys
+from typing import NamedTuple
+
 import yaml
 
 RUN_CONFIG_NAME = "run_config.yaml"
 MODEL_CONFIG_NAME = "model_config.yaml"
 
 
+class EvalBenchResult(NamedTuple):
+    """Result of an EvalBench execution."""
+
+    returncode: int
+    output: str
 
 
-def _exec_evalbench(cmd: list[str]) -> tuple[int, str]:
-    """Executes EvalBench command, streaming stdout/stderr in real-time to sys.stdout
+def _exec_evalbench(cmd: list[str]) -> EvalBenchResult:
+    """Executes EvalBench command, streaming stdout/stderr in real-time
 
-    for harness liveness heartbeats while capturing full output.
+    to sys.stdout for harness liveness heartbeats while capturing full output.
     """
     process = subprocess.Popen(
         cmd,
@@ -35,9 +42,7 @@ def _exec_evalbench(cmd: list[str]) -> tuple[int, str]:
 
     returncode = process.wait()
     combined_output = "".join(output_lines)
-    return returncode, combined_output
-
-
+    return EvalBenchResult(returncode, combined_output)
 
 
 def _update_model_config(
@@ -59,13 +64,21 @@ def _update_model_config(
         yaml.safe_dump(cfg, f, sort_keys=False, default_flow_style=False)
 
 
-def run_evaluation(experiment_name: str) -> None:
+def run_evaluation(target: str) -> None:
     """
-    Executes EvalBench evaluation for an experiment, strictly using REST transport
-    for QueryData API (supporting non-public fields).
+    Executes EvalBench evaluation for a target experiment name or path,
+    using REST transport for QueryData API (supporting non-public fields).
     """
     logger = logging.getLogger(__name__)
-    eval_configs_dir = f"autoctx/experiments/{experiment_name}/eval_configs"
+
+    if os.path.isdir(target):
+        if os.path.exists(os.path.join(target, "eval_configs")):
+            eval_configs_dir = os.path.join(target, "eval_configs")
+        else:
+            eval_configs_dir = target
+    else:
+        eval_configs_dir = f"autoctx/experiments/{target}/eval_configs"
+
     run_config_path = os.path.join(eval_configs_dir, RUN_CONFIG_NAME)
     model_config_path = os.path.join(eval_configs_dir, MODEL_CONFIG_NAME)
 
@@ -81,22 +94,26 @@ def run_evaluation(experiment_name: str) -> None:
             original_model_config = f.read()
 
     try:
-        # Strictly use REST transport (bypassing gRPC to allow unreleased proto fields).
-        logger.info(f"Attempting QueryData evaluation via REST API for experiment: {experiment_name}...")
+        # Use REST transport (bypassing gRPC to allow unreleased proto fields).
+        logger.info(
+            f"Attempting QueryData eval via REST API for target: {target}..."
+        )
         _update_model_config(
             model_config_path,
             use_rest_api=True,
             api_endpoint=None,
         )
-        code, output = _exec_evalbench(cmd)
-        if code == 0:
-            logger.info("Evaluation completed successfully via REST API.")
+        res = _exec_evalbench(cmd)
+        if res.returncode == 0:
+            logger.info("Evaluation completed successfully.")
             return
 
-        logger.error(f"Evaluation failed via REST API:\n{output[:500]}")
+        logger.error(f"Evaluation failed:\n{res.output[:500]}")
         raise RuntimeError(
-            f"EvalBench evaluation failed for experiment '{experiment_name}'.\n"
-            "You may be attempting to use an unreleased or non-public QueryData feature. Please reach out to your accounts team for access."
+            f"EvalBench evaluation failed for target '{target}'.\n"
+            "You may be attempting to use an unreleased or non-public QueryData"
+            " feature that your project does not have access to. Please reach"
+            " out to your accounts team for access."
         )
     except Exception:
         if original_model_config is not None:
@@ -108,8 +125,8 @@ def run_evaluation(experiment_name: str) -> None:
 def cli_main() -> None:
     """CLI entrypoint for autoctx-eval command."""
     if len(sys.argv) < 2:
-        print("Usage: autoctx-eval <experiment_name>")
+        print("Usage: autoctx-eval <experiment_name_or_path>")
         sys.exit(1)
 
-    experiment_name = sys.argv[1]
-    run_evaluation(experiment_name)
+    target = sys.argv[1]
+    run_evaluation(target)

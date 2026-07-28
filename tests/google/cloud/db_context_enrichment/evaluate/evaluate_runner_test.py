@@ -32,7 +32,7 @@ def test_update_model_config(tmp_path):
 @patch(
     "builtins.open",
     new_callable=mock_open,
-    read_data="generator: query_data_api\ncontext:\n  datasource_references:\n    firestore_reference:\n      database_id: nl2sql-supplies\n",
+    read_data="generator: query_data_api\ncontext:\n  datasource_references:\n    alloydb:\n      cluster: my-cluster\n",
 )
 @patch("google.cloud.db_context_enrichment.evaluate.evaluate_runner._exec_evalbench")
 @patch(
@@ -57,7 +57,7 @@ def test_run_evaluation_rest_production_success(
 @patch(
     "builtins.open",
     new_callable=mock_open,
-    read_data="generator: query_data_api\ncontext:\n  datasource_references:\n    firestore_reference:\n      database_id: nl2sql-supplies\n",
+    read_data="generator: query_data_api\ncontext:\n  datasource_references:\n    alloydb:\n      cluster: my-cluster\n",
 )
 @patch("google.cloud.db_context_enrichment.evaluate.evaluate_runner._exec_evalbench")
 @patch(
@@ -67,7 +67,9 @@ def test_run_evaluation_path_target_success(
     mock_update_cfg, mock_exec, mock_file, mock_exists, mock_isdir
 ):
     mock_exec.return_value = EvalBenchResult(0, "Success via REST")
-    run_evaluation("evals/core-cujs/workspace_post_evaluation/autoctx/experiments/my-alloydb-tuning-experiment")
+    run_evaluation(
+        "evals/core-cujs/workspace_post_evaluation/autoctx/experiments/my-alloydb-tuning-experiment"
+    )
 
     mock_exec.assert_called_once()
     mock_update_cfg.assert_called_once_with(
@@ -81,7 +83,7 @@ def test_run_evaluation_path_target_success(
 @patch(
     "builtins.open",
     new_callable=mock_open,
-    read_data="generator: query_data_api\ncontext:\n  datasource_references:\n    firestore_reference:\n      database_id: nl2sql-supplies\n",
+    read_data="generator: query_data_api\ncontext:\n  datasource_references:\n    alloydb:\n      unknown_future_field: test_value\n",
 )
 @patch("google.cloud.db_context_enrichment.evaluate.evaluate_runner._exec_evalbench")
 @patch(
@@ -90,7 +92,9 @@ def test_run_evaluation_path_target_success(
 def test_run_evaluation_rest_failure_raises(
     mock_update_cfg, mock_exec, mock_file, mock_exists
 ):
-    mock_exec.return_value = EvalBenchResult(1, "400 Bad Request: Unknown field firestore_reference")
+    mock_exec.return_value = EvalBenchResult(
+        1, "400 Bad Request: Unknown field unknown_future_field"
+    )
     with pytest.raises(
         RuntimeError, match="EvalBench evaluation failed for target 'test_exp'"
     ):

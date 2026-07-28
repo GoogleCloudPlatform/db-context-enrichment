@@ -95,9 +95,7 @@ def run_evaluation(target: str) -> None:
 
     try:
         # Use REST transport (bypassing gRPC to allow unreleased proto fields).
-        logger.info(
-            f"Attempting QueryData eval via REST API for target: {target}..."
-        )
+        logger.info(f"Attempting QueryData eval via REST API for target: {target}...")
         _update_model_config(
             model_config_path,
             use_rest_api=True,

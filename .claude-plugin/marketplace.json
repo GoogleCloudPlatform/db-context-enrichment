@@ -12,7 +12,7 @@
         "source": "git-subdir",
         "url": "GoogleCloudPlatform/db-context-enrichment",
         "path": "plugin",
-        "ref": "v0.6.0"
+        "ref": "v0.7.0"
       },
       "homepage": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
       "repository": "https://github.com/GoogleCloudPlatform/db-context-enrichment",

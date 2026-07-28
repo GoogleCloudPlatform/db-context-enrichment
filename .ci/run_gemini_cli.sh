@@ -32,15 +32,15 @@ cp -r "/workspace/evals/${SUITE}" "${WORK_DIR}/"
 cp -r "/workspace/evals/model_configs" "${WORK_DIR}/"
 cd "${WORK_DIR}"
 
-# Point the Gemini CLI extension installer at the locally built extension
-# instead of pulling from GitHub.
-sed -i 's|https://github.com/GoogleCloudPlatform/db-context-enrichment|/workspace/staging|g' "model_configs/gemini_cli_model.yaml"
+# Point the Gemini CLI extension installer at the locally built extension.
+sed -i "s|<extension-source>|/workspace/staging|g" "model_configs/gemini_cli_model.yaml"
 
-# Inject Vertex project/location into the CLI env block so the extension can
-# talk to the right GCP project without the values being committed to the repo.
+# Substitute Vertex project/location placeholders in the CLI env block so the
+# extension can talk to the right GCP project without the values being
+# committed to the repo.
 sed -i \
-  -e "/^  GEMINI_MODEL:/a\\  GOOGLE_CLOUD_PROJECT: \"${EVAL_GCP_PROJECT_ID}\"" \
-  -e "/^  GEMINI_MODEL:/a\\  GOOGLE_CLOUD_LOCATION: \"${EVAL_GCP_PROJECT_REGION}\"" \
+  -e "s|<gcp-project>|${EVAL_GCP_PROJECT_ID}|g" \
+  -e "s|<gcp-location>|${EVAL_GCP_PROJECT_REGION}|g" \
   "model_configs/gemini_cli_model.yaml"
 
 # Append the runtime release_version and resolve the reporting-project
@@ -54,8 +54,12 @@ sed -i "s|\${EVAL_REPORTING_PROJECT}|${EVAL_REPORTING_PROJECT:-}|g" "${CONFIG}"
 export PYTHONPATH=/evalbench:/evalbench/evalproto
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
-echo "Launching ${SUT}/${SUITE} evaluation..."
-uv run --no-sync --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config="${SUITE}/run_gemini_cli.yaml"
+# Optional scenario filter: set EVAL_SCENARIOS=<id>[,<id>...] to run a subset.
+SCENARIO_ARG=""
+[ -n "${EVAL_SCENARIOS:-}" ] && SCENARIO_ARG="--scenarios=${EVAL_SCENARIOS}"
+
+echo "Launching ${SUT}/${SUITE} evaluation${SCENARIO_ARG:+ (scenarios: ${EVAL_SCENARIOS})}..."
+uv run --no-sync --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config="${SUITE}/run_gemini_cli.yaml" ${SCENARIO_ARG}
 
 echo "Validating mandatory output files for ${SUITE}..."
 python3 /workspace/.ci/check_eval_outputs.py "${WORK_DIR}/${SUITE}" "${WORK_DIR}/${SUITE}/dataset.json"

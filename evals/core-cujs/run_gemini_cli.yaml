@@ -36,4 +36,4 @@ reporting:
   csv:
     output_directory: 'results'
   bigquery:
-    gcp_project_id: "${EVAL_REPORTING_PROJECT}"
+    gcp_project_id: !ENV "${EVAL_REPORTING_PROJECT}"

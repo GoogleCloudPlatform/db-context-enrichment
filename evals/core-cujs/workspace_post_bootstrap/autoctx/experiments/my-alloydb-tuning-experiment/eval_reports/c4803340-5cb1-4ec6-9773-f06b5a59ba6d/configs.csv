@@ -1,0 +1,23 @@
+job_id,run_time,config,value
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.dataset_config,autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/golden_queries.json
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.dataset_format,evalbench-standard-format
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.database_configs,['autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/db_config.yaml']
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.dialect,postgres
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.query_types,['dql']
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.model_config,autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/model_config.yaml
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.prompt_generator,NOOPGenerator
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.runners.eval_runners,4
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.runners.sqlgen_runners,20
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.scorers.llmrater.model_config,autoctx/experiments/my-alloydb-tuning-experiment/eval_configs/llmrater_config.yaml
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.reporting.csv.output_directory,autoctx/experiments/my-alloydb-tuning-experiment/eval_reports/
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,experiment_config.orchestrator,oneshot
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,model_config.generator,query_data_api
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,model_config.project_id,cloud-db-nl2sql
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,model_config.location,us-central1
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,model_config.context.datasource_references.alloydb.database_reference.project_id,cloud-db-nl2sql
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,model_config.context.datasource_references.alloydb.database_reference.region,us-central1
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,model_config.context.datasource_references.alloydb.database_reference.cluster_id,whaoyu-test
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,model_config.context.datasource_references.alloydb.database_reference.instance_id,whaoyu-test-primary
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,model_config.context.datasource_references.alloydb.database_reference.database_id,financial
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,model_config.context.datasource_references.alloydb.agent_context_reference.context_set_id,projects/cloud-db-nl2sql/locations/us-east1/contextSets/whaoyu-eval-contextset
+c4803340-5cb1-4ec6-9773-f06b5a59ba6d,2026-07-28 13:52:06.169306,db_configs.postgres,"[{'db_type': 'alloydb', 'dialect': 'postgres', 'database_name': 'financial', 'database_path': 'projects/cloud-db-nl2sql/locations/us-central1/clusters/whaoyu-test/instances/whaoyu-test-primary', 'max_executions_per_minute': 180, 'nl_config': ''}]"

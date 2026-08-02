@@ -32,3 +32,11 @@ This protocol serves as a guide to build a comprehensive, grounded understanding
 **6. Input Dataset Ingestion**
 *   **Objective:** Identify and confirm usage of existing evaluation dataset brought by the user.
 *   **Action:** If we identify existing datasets, confirm usage of these datasets by recording the dataset filename and the number of examples provided in `evalset_environment_inputs.md`.
+
+**7. Artifact Scope Cross-Validation Gate**
+*   **Objective:** Cross-validate the database scope extracted from application artifacts (tables, schemas, property graphs, engines) against the active `tools.yaml` configuration.
+*   **Action:** Compare the target tables, property graphs (e.g., Spanner Graph `FinGraph`), and database engines required by the ingested artifacts against the active `tools.yaml` definition. If a discrepancy is detected (e.g. artifacts require graph queries or tables not exposed in `tools.yaml`):
+    1. Highlight the exact mismatch clearly to the user.
+    2. Present actionable resolution options (e.g., update `tools.yaml` to include the required property graph/tables vs. limit the dataset scope to the current `tools.yaml` definition).
+    3. Wait for the user's explicit approval before proceeding to Phase 2 (Strategic Planning). If approved, update `tools.yaml` and `state.md`.
+*   **Required State:** Recorded confirmation in `evalset_environment_inputs.md` that the database scope in `tools.yaml` aligns with the artifact requirements.

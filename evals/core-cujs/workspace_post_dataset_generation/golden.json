@@ -22,5 +22,77 @@
     "database": "financial",
     "nlq": "How many accounts who have region in south Bohemia are eligible for loans?",
     "golden_sql": "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'south Bohemia'"
+  },
+  {
+    "id": "eval_005",
+    "database": "financial",
+    "nlq": "What is the average loan amount for accounts in the north Moravia region?",
+    "golden_sql": "SELECT AVG(\"T2\".\"amount\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'north Moravia'"
+  },
+  {
+    "id": "eval_006",
+    "database": "financial",
+    "nlq": "How many female clients have a 'gold' credit card?",
+    "golden_sql": "SELECT COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"client_id\" = \"T2\".\"client_id\" INNER JOIN \"card\" AS \"T3\" ON \"T2\".\"disp_id\" = \"T3\".\"disp_id\" WHERE \"T1\".\"gender\" = 'F' AND \"T3\".\"type\" = 'gold'"
+  },
+  {
+    "id": "eval_007",
+    "database": "financial",
+    "nlq": "Count the number of 'classic' cards issued for accounts in the Prague region.",
+    "golden_sql": "SELECT COUNT(\"T1\".\"card_id\") FROM \"card\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"disp_id\" = \"T2\".\"disp_id\" INNER JOIN \"account\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" INNER JOIN \"district\" AS \"T4\" ON \"T3\".\"district_id\" = \"T4\".\"district_id\" WHERE \"T1\".\"type\" = 'classic' AND \"T4\".\"A3\" = 'Prague'"
+  },
+  {
+    "id": "eval_008",
+    "database": "financial",
+    "nlq": "What is the total balance of all transactions of type 'PRIJEM' (credit) for accounts in the central Bohemia region?",
+    "golden_sql": "SELECT SUM(\"T1\".\"amount\") FROM \"trans\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T2\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T1\".\"type\" = 'PRIJEM' AND \"T3\".\"A3\" = 'central Bohemia'"
+  },
+  {
+    "id": "eval_009",
+    "database": "financial",
+    "nlq": "List the top 5 districts by the number of clients, showing the region name (A3) and the count.",
+    "golden_sql": "SELECT \"T2\".\"A3\", COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" GROUP BY \"T2\".\"A3\" ORDER BY COUNT(\"T1\".\"client_id\") DESC LIMIT 5"
+  },
+  {
+    "id": "eval_010",
+    "database": "financial",
+    "nlq": "Provide the count of women who possess a gold-tier credit card.",
+    "golden_sql": "SELECT COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"client_id\" = \"T2\".\"client_id\" INNER JOIN \"card\" AS \"T3\" ON \"T2\".\"disp_id\" = \"T3\".\"disp_id\" WHERE \"T1\".\"gender\" = 'F' AND \"T3\".\"type\" = 'gold'"
+  },
+  {
+    "id": "eval_011",
+    "database": "financial",
+    "nlq": "Find the total number of accounts in Prague that have both an active loan and a classic credit card.",
+    "golden_sql": "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"disp\" AS \"T3\" ON \"T1\".\"account_id\" = \"T3\".\"account_id\" INNER JOIN \"card\" AS \"T4\" ON \"T3\".\"disp_id\" = \"T4\".\"disp_id\" INNER JOIN \"district\" AS \"T5\" ON \"T1\".\"district_id\" = \"T5\".\"district_id\" WHERE \"T5\".\"A3\" = 'Prague' AND \"T4\".\"type\" = 'classic'"
+  },
+  {
+    "id": "eval_012",
+    "database": "financial",
+    "nlq": "Calculate the average loan amount for accounts in North Moravia, but only for those accounts that have performed more than 50 transactions.",
+    "golden_sql": "SELECT AVG(\"T2\".\"amount\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'north Moravia' AND \"T1\".\"account_id\" IN (SELECT \"account_id\" FROM \"trans\" GROUP BY \"account_id\" HAVING COUNT(*) > 50)"
+  },
+  {
+    "id": "eval_013",
+    "database": "financial",
+    "nlq": "Show me the IDs of all accounts located in the 'east Bohemia' region.",
+    "golden_sql": "SELECT \"T1\".\"account_id\" FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'east Bohemia'"
+  },
+  {
+    "id": "eval_014",
+    "database": "financial",
+    "nlq": "Given that the holiday season saw an increase in activity, what is the total sum of all credit (PRIJEM) transactions for accounts in Central Bohemia?",
+    "golden_sql": "SELECT SUM(\"T1\".\"amount\") FROM \"trans\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T2\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T1\".\"type\" = 'PRIJEM' AND \"T3\".\"A3\" = 'central Bohemia'"
+  },
+  {
+    "id": "eval_015",
+    "database": "financial",
+    "nlq": "Whitch are the top 5 districs by client count? Show the regoin (A3) and the total tally.",
+    "golden_sql": "SELECT \"T2\".\"A3\", COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" GROUP BY \"T2\".\"A3\" ORDER BY COUNT(\"T1\".\"client_id\") DESC LIMIT 5"
+  },
+  {
+    "id": "eval_016",
+    "database": "financial",
+    "nlq": "How many accounts in 'west Bohemia' have a loan with status 'A'?",
+    "golden_sql": "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'west Bohemia' AND \"T2\".\"status\" = 'A'"
   }
 ]

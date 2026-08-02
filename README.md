@@ -16,10 +16,8 @@ As outlined in **Build Context with Context Engineering Agent** ([AlloyDB](https
 
 ## Core Concepts
 
-A `ContextSet` is the central artifact generated and managed by the agent, containing structured knowledge in three primary forms:
-
-* **Templates**: Link natural language query patterns to complete query statements.
-* **Facets**: Reusable, modular query fragments (e.g., parameterized `WHERE` clauses or specialized join filters) linked to domain vocabulary.
+* **Templates**: Link natural language query patterns to complete query statements (supporting relational SQL, pure GQL, and hybrid `GRAPH_TABLE` queries for Spanner Graph).
+* **Facets**: Reusable, modular query fragments (e.g., parameterized `WHERE` clauses, specialized join filters, or graph MATCH patterns) linked to domain vocabulary.
 * **Value Searches**: Specialized mapping queries that dynamically resolve user-supplied values (e.g., *"Lndn"*) to database records (*"London"*) via the capabilities of the underlying database, such as embedding search, AI operators, or simple trigram search.
 
 For full schema details, structure specifications, and dialect-specific JSON representations of `ContextSets`, see the official **Context Sets Overview** ([AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/context-sets-overview) | Cloud SQL: [PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/context-sets-overview) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/context-sets-overview) | [Spanner (GoogleSQL)](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/context-sets-overview)).

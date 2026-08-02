@@ -1,0 +1,13 @@
+{
+  "scenarios": [
+    {
+      "id": "spanner-graph-e2e-bootstrap",
+      "starting_prompt": "Generate initial context for my Spanner database cloud-db-nl2sql/nl2sql-graph-test/nl2sql_graph_test using context engineering.",
+      "conversation_plan": "Ask the agent to generate an initial context set for my Spanner database. Connection details: project is cloud-db-nl2sql, instance is nl2sql-graph-test, database is nl2sql_graph_test. When the agent detects the property graph ResearchGraph and asks whether to include graph relationship queries in the context scope, confirm and approve enabling graph for ResearchGraph. When prompted for an experiment name, use 'spanner-graph-tuning-experiment'. When the agent presents candidates or prompts for verification, approve them. Verify that the agent sets up tools.yaml with graph: ResearchGraph, fetches both table and graph schemas, and produces a bootstrap_context.json containing both relational GoogleSQL templates and GQL/GRAPH_TABLE templates and facets. Terminate the conversation immediately after the context set is created.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_empty/",
+      "max_turns": 8
+    }
+  ]
+}

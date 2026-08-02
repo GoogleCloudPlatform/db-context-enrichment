@@ -1,0 +1,2016 @@
+[
+  {
+    "id": "example_001",
+    "nl_prompt": "How many accounts who choose issuance after transaction are staying in East Bohemia region?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'east Bohemia' AND \"T1\".\"frequency\" = 'POPLATEK PO OBRATU'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_002",
+    "nl_prompt": "How many accounts who have region in Prague are eligible for loans?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T1\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T3\".\"A3\" = 'Prague'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_003",
+    "nl_prompt": "The average unemployment ratio of 1995 and 1996, which one has higher percentage?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT DISTINCT CASE WHEN AVG(\"A13\") > AVG(\"A12\") THEN '1996' ELSE '1995' END FROM \"district\""
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_004",
+    "nl_prompt": "List out the no. of districts that have female average salary is more than 6000 but less than 10000?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(DISTINCT \"T1\".\"district_id\") FROM \"district\" AS \"T1\" INNER JOIN \"client\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"gender\" = 'F' AND \"T1\".\"A11\" BETWEEN 6000 AND 10000;"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_005",
+    "nl_prompt": "How many male customers who are living in North Bohemia have average salary greater than 8000?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T1\".\"gender\" = 'M' AND \"T2\".\"A3\" = 'north Bohemia' AND \"T2\".\"A11\" > 8000"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_006",
+    "nl_prompt": "List out the account numbers of female clients who are oldest and has lowest average salary, calculate the gap between this lowest average salary with the highest average salary?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"disp\".\"account_id\", (SELECT MAX(\"A11\") - MIN(\"A11\") FROM \"district\") as gap FROM \"disp\" INNER JOIN \"client\" ON \"disp\".\"client_id\" = \"client\".\"client_id\" WHERE \"client\".\"client_id\" IN ( SELECT \"c\".\"client_id\" FROM \"client\" AS \"c\" INNER JOIN \"district\" AS \"d\" ON \"c\".\"district_id\" = \"d\".\"district_id\" WHERE \"c\".\"gender\" = 'F' ORDER BY \"d\".\"A11\" ASC, \"c\".\"birth_date\" ASC LIMIT 1 )"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_007",
+    "nl_prompt": "List out the account numbers of clients who are youngest and have highest average salary?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT T1.account_id FROM account AS T1 INNER JOIN client AS T2 ON T1.district_id = T2.district_id INNER JOIN district AS T3 ON T2.district_id = T3.district_id WHERE T2.birth_date = (SELECT MAX(birth_date) FROM client) -- Youngest client(s) AND T3.A11 = (SELECT MAX(A11) FROM district); -- District with highest avg salary"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_008",
+    "nl_prompt": "How many customers who choose statement of weekly issuance are Owner?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(DISTINCT \"T1\".\"client_id\") FROM \"disp\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T2\".\"frequency\" = 'POPLATEK TYDNE' AND \"T1\".\"type\" = 'OWNER'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_009",
+    "nl_prompt": "List out the clients who choose statement of issuance after transaction are Disponent?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T2\".\"client_id\" FROM \"account\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T1\".\"frequency\" = 'POPLATEK PO OBRATU' AND \"T2\".\"type\" = 'DISPONENT'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_010",
+    "nl_prompt": "Among the accounts who have approved loan date in 1997, list out the accounts that have the lowest approved amount and choose weekly issuance statement.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T2\".\"account_id\" FROM loan AS \"T1\" INNER JOIN account AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE to_char(\"T1\".\"date\"::timestamp, 'YYYY') = '1997' AND \"T2\".\"frequency\" = 'POPLATEK TYDNE' ORDER BY \"T1\".\"amount\" NULLS LAST LIMIT 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_011",
+    "nl_prompt": "Among the accounts who have loan validity more than 12 months, list out the accounts that have the highest approved amount and have account opening date in 1993.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT T1.account_id FROM loan AS T1 INNER JOIN account AS T2 ON T1.account_id = T2.account_id WHERE T1.duration > 12 AND EXTRACT(YEAR FROM T2.date) = 1993 ORDER BY T1.amount DESC LIMIT 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_012",
+    "nl_prompt": "Among the account opened, how many female customers who were born before 1950 and stayed in Slokolov?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T2\".\"client_id\") FROM \"district\" AS \"T1\" INNER JOIN \"client\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"gender\" = 'F' AND to_char(\"T2\".\"birth_date\"::timestamp, 'YYYY') < '1950' AND \"T1\".\"A2\" = 'Slokolov'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_013",
+    "nl_prompt": "List out the accounts who have the earliest trading date in 1995 ?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"account_id\" FROM \"trans\" WHERE to_char(\"date\"::timestamp, 'YYYY') = '1995' ORDER BY \"date\" ASC LIMIT 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_014",
+    "nl_prompt": "State different accounts who have account opening date before 1997 and own an amount of money greater than 3000USD",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT DISTINCT \"T2\".\"account_id\" FROM \"trans\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE to_char(\"T2\".\"date\"::timestamp, 'YYYY') < '1997' AND \"T1\".\"amount\" > 3000"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_015",
+    "nl_prompt": "Which client issued his/her card in 1994/3/3, give his/her client id.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T2\".\"client_id\" FROM \"client\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"client_id\" = \"T2\".\"client_id\" INNER JOIN \"card\" AS \"T3\" ON \"T2\".\"disp_id\" = \"T3\".\"disp_id\" WHERE \"T3\".\"issued\" = '1994-03-03'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_016",
+    "nl_prompt": "The transaction of 840 USD happened in 1998/10/14, when was this account opened?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT T1.date FROM account AS T1 INNER JOIN trans AS T2 ON T1.account_id = T2.account_id WHERE T2.amount = 840 AND T2.date = '1998-10-14'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_017",
+    "nl_prompt": "There was a loan approved in 1994/8/25, where was that account opened, give the district Id of the branch.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"district_id\" FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T2\".\"date\" = '1994-08-25'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_018",
+    "nl_prompt": "What is the biggest amount of transaction that the client whose card was opened in 1996/10/21 made?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT MAX(\"T1\".\"amount\") FROM \"trans\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"card\" AS \"T3\" ON \"T2\".\"disp_id\" = \"T3\".\"disp_id\" WHERE \"T3\".\"issued\" = '1996-10-21'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_019",
+    "nl_prompt": "What is the gender of the oldest client who opened his/her account in the highest average salary branch?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T2\".\"gender\" FROM \"district\" AS \"T1\" INNER JOIN \"client\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" ORDER BY \"T1\".\"A11\" DESC, \"T2\".\"birth_date\" ASC LIMIT 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_020",
+    "nl_prompt": "For the client who applied the biggest loan, what was his/her first amount of transaction after opened the account?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T2\".\"amount\" FROM \"loan\" AS \"T1\" INNER JOIN \"trans\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" ORDER BY \"T1\".\"amount\" DESC, \"T2\".\"date\" ASC LIMIT 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_021",
+    "nl_prompt": "How many clients opened their accounts in Jesenik branch were women?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T1\".\"gender\" = 'F' AND \"T2\".\"A2\" = 'Jesenik'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_022",
+    "nl_prompt": "What is the disposition id of the client who made 5100 USD transaction in 1998/9/2?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"disp_id\" FROM \"disp\" AS \"T1\" INNER JOIN \"trans\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T2\".\"date\" = '1998-09-02' AND \"T2\".\"amount\" = 5100"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_023",
+    "nl_prompt": "How many accounts were opened in Litomerice in 1996?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T2\".\"account_id\") FROM \"district\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE to_char(\"T2\".\"date\"::timestamp, 'YYYY') = '1996' AND \"T1\".\"A2\" = 'Litomerice'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_024",
+    "nl_prompt": "For the female client who was born in 1976/1/29, which district did she opened her account?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"A2\" FROM \"district\" AS \"T1\" INNER JOIN \"client\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"birth_date\" = '1976-01-29' AND \"T2\".\"gender\" = 'F'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_025",
+    "nl_prompt": "For the client who applied 98832 USD loan in 1996/1/3, when was his/her birthday?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T3\".\"birth_date\" FROM \"loan\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"client\" AS \"T3\" ON \"T2\".\"client_id\" = \"T3\".\"client_id\" WHERE \"T1\".\"amount\" = 98832 AND \"T1\".\"date\" = '1996-01-03';"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_026",
+    "nl_prompt": "For the first client who opened his/her account in Prague, what is his/her account ID?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"account_id\" FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'Prague' ORDER BY \"T1\".\"date\" ASC LIMIT 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_027",
+    "nl_prompt": "For the branch which located in the south Bohemia with biggest number of inhabitants, what is the percentage of the male clients?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT (CAST(SUM(CASE WHEN \"T1\".\"gender\" = 'M' THEN 1 ELSE 0 END) AS REAL) * 100) / COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'south Bohemia' GROUP BY \"T2\".\"A4\" ORDER BY \"T2\".\"A4\" DESC LIMIT 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_028",
+    "nl_prompt": "For the client who first applied the loan in 1993/7/5, what is the increase rate of his/her account balance from 1993/3/22 to 1998/12/27?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "WITH client_account AS ( SELECT \"account_id\" FROM \"loan\" WHERE \"date\" = '1993-07-05' ORDER BY \"loan_id\" LIMIT 1 ) SELECT ((\"T1\".\"balance\" - \"T2\".\"balance\") / \"T2\".\"balance\") * 100 FROM \"trans\" AS \"T1\" INNER JOIN \"trans\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN client_account AS \"ca\" ON \"T1\".\"account_id\" = \"ca\".\"account_id\" WHERE \"T1\".\"date\" = '1998-12-27' AND \"T2\".\"date\" = '1993-03-22';"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_029",
+    "nl_prompt": "What is the percentage of loan amount that has been fully paid with no issue.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT (CAST(SUM(CASE WHEN \"status\" = 'A' THEN \"amount\" ELSE 0 END) AS NUMERIC) * 100) / SUM(\"amount\") FROM \"loan\""
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_030",
+    "nl_prompt": "For loan amount less than USD100,000, what is the percentage of accounts that is still running with no issue.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT CAST(SUM(CASE WHEN \"status\" = 'C' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(\"amount\") FROM loan WHERE \"amount\" < 100000"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_031",
+    "nl_prompt": "For accounts in 1993 with statement issued after transaction, list the account ID, district name and district region.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"account_id\", \"T2\".\"A2\", \"T2\".\"A3\" FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T1\".\"frequency\" = 'POPLATEK PO OBRATU' AND to_char(\"T1\".\"date\"::timestamp, 'YYYY') = '1993'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_032",
+    "nl_prompt": "From Year 1995 to 2000, who are the accounts holders from 'east Bohemia'. State the account ID the frequency of statement issuance.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"account_id\", \"T1\".\"frequency\" FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A3\" = 'east Bohemia' AND to_char(\"T1\".\"date\"::timestamp, 'YYYY') BETWEEN '1995' AND '2000'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_033",
+    "nl_prompt": "List account ID and account opening date for accounts from 'Prachatice'.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"account_id\", \"T1\".\"date\" FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A2\" = 'Prachatice'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_034",
+    "nl_prompt": "State the district and region for loan ID '4990'.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T2\".\"A2\", \"T2\".\"A3\" FROM account AS \"T1\" INNER JOIN district AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN loan AS \"T3\" ON \"T1\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T3\".\"loan_id\" = 4990"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_035",
+    "nl_prompt": "Provide the account ID, district and region for loan amount greater than USD300,000.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"account_id\", \"T2\".\"A2\", \"T2\".\"A3\" FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"loan\" AS \"T3\" ON \"T1\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T3\".\"amount\" > 300000"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_036",
+    "nl_prompt": "List the loan ID, district and average salary for loan with duration of 60 months.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"loan_id\", \"T3\".\"A3\", \"T3\".\"A11\" FROM \"loan\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T2\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T1\".\"duration\" = 60;"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_037",
+    "nl_prompt": "For loans contracts which are still running where client are in debt, list the district of the and the state the percentage unemployment rate increment from year 1995 to 1996.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT (CAST((\"T3\".\"A13\" - \"T3\".\"A12\") AS numeric) * 100) / \"T3\".\"A12\" FROM \"loan\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T2\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T1\".\"status\" = 'D'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_038",
+    "nl_prompt": "Calculate the percentage of account from 'Decin' district for all accounts are opened in 1993.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT CAST(SUM(CASE WHEN \"T1\".\"A2\" = 'Decin' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(\"account_id\") FROM \"district\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE to_char(\"T2\".\"date\"::timestamp, 'YYYY') = '1993'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_039",
+    "nl_prompt": "List the account IDs with monthly issuance of statements.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"account_id\" FROM \"account\" WHERE \"frequency\" = 'POPLATEK MESICNE'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_040",
+    "nl_prompt": "List the top ten districts, by descending order, from the highest to the lowest, the number of female account holders.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"A2\" FROM \"district\" AS \"T1\" INNER JOIN \"client\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"gender\" = 'F' GROUP BY \"T1\".\"A2\" ORDER BY COUNT(\"T2\".\"client_id\") DESC LIMIT 10"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_041",
+    "nl_prompt": "Which are the top ten withdrawals (non-credit card) by district names for the month of January 1996?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T2\".\"A2\", SUM(\"T1\".\"amount\") FROM \"trans\" AS \"T1\" INNER JOIN \"account\" AS \"T3\" ON \"T1\".\"account_id\" = \"T3\".\"account_id\" INNER JOIN \"district\" AS \"T2\" ON \"T3\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T1\".\"type\" = 'VYDAJ' AND EXTRACT(YEAR FROM \"T1\".\"date\") = 1996 AND EXTRACT(MONTH FROM \"T1\".\"date\") = 1 GROUP BY \"T2\".\"A2\" ORDER BY SUM(\"T1\".\"amount\") DESC LIMIT 10"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_042",
+    "nl_prompt": "How many of the account holders in South Bohemia still do not own credit cards?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T3\".\"account_id\") FROM \"district\" AS \"T1\" INNER JOIN \"client\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"disp\" AS \"T3\" ON \"T2\".\"client_id\" = \"T3\".\"client_id\" WHERE \"T1\".\"A3\" = 'south Bohemia' AND \"T3\".\"type\" != 'OWNER'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_043",
+    "nl_prompt": "Which district has highest active loan?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T2\".\"A3\" FROM account AS \"T1\" INNER JOIN district AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN loan AS \"T3\" ON \"T1\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T3\".\"status\" IN ('C', 'D') GROUP BY \"T2\".\"A3\" ORDER BY SUM(\"T3\".\"amount\") DESC NULLS LAST LIMIT 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_044",
+    "nl_prompt": "What is the average loan amount by male borrowers?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT AVG(l.amount) FROM loan AS l INNER JOIN disp AS d ON l.account_id = d.account_id INNER JOIN client AS c ON d.client_id = c.client_id WHERE c.gender = 'M'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_045",
+    "nl_prompt": "In 1996, which districts have the highest unemployment rate? List their branch location and district name.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"A2\", \"A3\" FROM \"district\" WHERE \"A13\" = (SELECT MAX(\"A13\") FROM \"district\")"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_046",
+    "nl_prompt": "In the branch where the largest number of crimes were committed in 1996, how many accounts were opened?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT count(\"T2\".\"account_id\") FROM \"district\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" GROUP BY \"T1\".\"A16\" ORDER BY \"T1\".\"A16\" DESC NULLS LAST LIMIT 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_047",
+    "nl_prompt": "After making a credit card withdrawal, how many account/s with monthly issuance has a negative balance?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"trans\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T1\".\"balance\" < 0 AND \"T1\".\"operation\" = 'VYBER KARTOU' AND \"T2\".\"frequency\" = 'POPLATEK MESICNE'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_048",
+    "nl_prompt": "Between 1/1/1995 and 12/31/1997, how many loans in the amount of at least 250,000 per account that chose monthly statement issuance were approved?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T2\".\"date\" BETWEEN '1995-01-01' AND '1997-12-31' AND \"T1\".\"frequency\" = 'POPLATEK MESICNE' AND \"T2\".\"amount\" >= 250000"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_049",
+    "nl_prompt": "How many accounts have running contracts in Branch location 1?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"loan\" AS \"T3\" ON \"T1\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T1\".\"district_id\" = 1 AND (\"T3\".\"status\" = 'C' OR \"T3\".\"status\" = 'D')"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_050",
+    "nl_prompt": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT count(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T1\".\"gender\" = 'M' AND \"T2\".\"A15\" = (SELECT \"T3\".\"A15\" FROM \"district\" AS \"T3\" ORDER BY \"T3\".\"A15\" DESC OFFSET 1 LIMIT 1)"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_051",
+    "nl_prompt": "How many high-level credit cards have \"disponent\" type of disposition?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"card_id\") FROM \"card\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"disp_id\" = \"T2\".\"disp_id\" WHERE \"T1\".\"type\" = 'gold' AND \"T2\".\"type\" = 'DISPONENT'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_052",
+    "nl_prompt": "How many accounts are there in the district of \"Pisek\"?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"A2\" = 'Pisek'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_053",
+    "nl_prompt": "Which districts have transactions greater than USS$10,000 in 1997?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"district_id\" FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"trans\" AS \"T3\" ON \"T1\".\"account_id\" = \"T3\".\"account_id\" WHERE to_char(\"T3\".\"date\"::timestamp, 'YYYY') = '1997' GROUP BY \"T1\".\"district_id\" HAVING SUM(\"T3\".\"amount\") > 10000"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_054",
+    "nl_prompt": "Which accounts placed orders for household payment in Pisek?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT DISTINCT \"T1\".\"account_id\" FROM \"order\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T2\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T1\".\"k_symbol\" = 'SIPO' AND \"T3\".\"A2\" = 'Pisek'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_055",
+    "nl_prompt": "What are the accounts that have both gold and junior credit cards?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT DISTINCT \"T1\".\"account_id\" FROM \"disp\" AS \"T1\" INNER JOIN \"card\" AS \"T2\" ON \"T1\".\"disp_id\" = \"T2\".\"disp_id\" INNER JOIN \"card\" AS \"T3\" ON \"T1\".\"disp_id\" = \"T3\".\"disp_id\" WHERE \"T2\".\"type\" = 'gold' AND \"T3\".\"type\" = 'junior'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_056",
+    "nl_prompt": "How much is the average amount in credit card made by account holders in a month, in year 2021?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT AVG(\"T3\".\"amount\") FROM \"card\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"disp_id\" = \"T2\".\"disp_id\" INNER JOIN \"trans\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" WHERE to_char(\"T3\".\"date\"::timestamp, 'YYYY') = '2021' AND \"T3\".\"operation\" = 'VYBER KARTOU'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_057",
+    "nl_prompt": "Who are the account holder identification numbers whose spent per month on the credit card is less than the average, in 1998?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "WITH MonthlySpending AS ( SELECT account_id, EXTRACT(MONTH FROM date) as month, SUM(amount) as monthly_amount FROM trans WHERE operation = 'VYBER KARTOU' AND EXTRACT(YEAR FROM date) = 1998 GROUP BY account_id, EXTRACT(MONTH FROM date) ) SELECT DISTINCT account_id FROM MonthlySpending WHERE monthly_amount < ( SELECT AVG(monthly_amount) FROM MonthlySpending )"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_058",
+    "nl_prompt": "Who are the female account holders who own credit cards and also have loans?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"client_id\" FROM \"client\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"client_id\" = \"T2\".\"client_id\" INNER JOIN \"loan\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" INNER JOIN \"card\" AS \"T4\" ON \"T2\".\"disp_id\" = \"T4\".\"disp_id\" WHERE \"T1\".\"gender\" = 'F'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_059",
+    "nl_prompt": "How many female clients' accounts are in the region of South Bohemia?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T1\".\"gender\" = 'F' AND \"T2\".\"A3\" = 'south Bohemia'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_060",
+    "nl_prompt": "Please list the accounts whose district is Tabor that are eligible for loans.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T2\".\"account_id\" FROM \"district\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"disp\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T3\".\"type\" = 'OWNER' AND \"T1\".\"A2\" = 'Tabor'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_061",
+    "nl_prompt": "Please list the account types that are not eligible for loans, and the average income of residents in the district where the account is located exceeds $8000 but is no more than $9000.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T3\".\"type\" FROM \"district\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"disp\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T3\".\"type\" != 'OWNER' AND \"T1\".\"A11\" BETWEEN 8000 AND 9000"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_062",
+    "nl_prompt": "How many accounts in North Bohemia has made a transaction with the partner's bank being AB?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"trans\" AS \"T3\" ON \"T1\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T2\".\"A3\" = 'north Bohemia' AND \"T3\".\"bank\" = 'AB'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_063",
+    "nl_prompt": "Please list the name of the districts with accounts that made withdrawal transactions.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT DISTINCT \"T1\".\"A2\" FROM \"district\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"trans\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T3\".\"type\" = 'VYDAJ'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_064",
+    "nl_prompt": "What is the average number of crimes committed in 1995 in regions where the number exceeds 4000 and the region has accounts that are opened starting from the year 1997?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT AVG(\"T1\".\"A15\") FROM \"district\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE to_char(\"T2\".\"date\"::timestamp, 'YYYY') >= '1997' AND \"T1\".\"A15\" > 4000"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_065",
+    "nl_prompt": "How many 'classic' cards are eligible for loan?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"card_id\") FROM \"card\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"disp_id\" = \"T2\".\"disp_id\" WHERE \"T1\".\"type\" = 'classic' AND \"T2\".\"type\" = 'OWNER'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_066",
+    "nl_prompt": "How many male clients in 'Hl.m. Praha' district?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T1\".\"gender\" = 'M' AND \"T2\".\"A2\" = 'Hl.m. Praha'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_067",
+    "nl_prompt": "How many percent of 'Gold' cards were issued prior to 1998?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT CAST(SUM(CASE WHEN \"type\" = 'gold' AND \"issued\" < '1998-01-01' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(*) FROM \"card\";"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_068",
+    "nl_prompt": "Who is the owner of the account with the largest loan amount?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"client_id\" FROM \"disp\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T1\".\"type\" = 'OWNER' ORDER BY \"T2\".\"amount\" DESC NULLS LAST LIMIT 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_069",
+    "nl_prompt": "What is the number of committed crimes in 1995 in the district of the account with the id 532?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"A15\" FROM district AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"account_id\" = 532"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_070",
+    "nl_prompt": "What is the district Id of the account that placed the order with the id 33333?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T3\".\"district_id\" FROM \"order\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"district\" AS \"T3\" ON \"T2\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T1\".\"order_id\" = 33333"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_071",
+    "nl_prompt": "List all the withdrawals in cash transactions that the client with the id 3356 makes.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T4\".\"trans_id\" FROM \"client\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"client_id\" = \"T2\".\"client_id\" INNER JOIN \"account\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" INNER JOIN \"trans\" AS \"T4\" ON \"T3\".\"account_id\" = \"T4\".\"account_id\" WHERE \"T1\".\"client_id\" = 3356 AND \"T4\".\"operation\" = 'VYBER'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_072",
+    "nl_prompt": "Among the weekly issuance accounts, how many have a loan of under 200000?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T1\".\"frequency\" = 'POPLATEK TYDNE' AND \"T2\".\"amount\" < 200000"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_073",
+    "nl_prompt": "What type of credit card does the client with the id 13539 own?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T3\".\"type\" FROM \"disp\" AS \"T1\" INNER JOIN \"client\" AS \"T2\" ON \"T1\".\"client_id\" = \"T2\".\"client_id\" INNER JOIN \"card\" AS \"T3\" ON \"T1\".\"disp_id\" = \"T3\".\"disp_id\" WHERE \"T2\".\"client_id\" = 13539"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_074",
+    "nl_prompt": "What is the region of the client with the id 3541 from?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"A3\" FROM \"district\" AS \"T1\" INNER JOIN \"client\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T2\".\"client_id\" = 3541"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_075",
+    "nl_prompt": "Which district has the most accounts with loan contracts finished with no problems?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"district_id\" FROM \"district\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"loan\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T3\".\"status\" = 'A' GROUP BY \"T1\".\"district_id\" ORDER BY count(\"T2\".\"account_id\") DESC NULLS LAST LIMIT 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_076",
+    "nl_prompt": "Who placed the order with the id 32423?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T3\".\"client_id\" FROM \"order\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"client\" AS \"T3\" ON \"T2\".\"client_id\" = \"T3\".\"client_id\" WHERE \"T1\".\"order_id\" = 32423"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_077",
+    "nl_prompt": "Please list all the transactions made by accounts from district 5.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T3\".\"trans_id\" FROM \"district\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"trans\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T1\".\"district_id\" = 5"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_078",
+    "nl_prompt": "How many of the accounts are from Jesenik district?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T2\".\"account_id\") FROM \"district\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T1\".\"A2\" = 'Jesenik'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_079",
+    "nl_prompt": "List all the clients' IDs whose junior credit cards were issued after 1996.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T2\".\"client_id\" FROM \"card\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"disp_id\" = \"T2\".\"disp_id\" WHERE \"T1\".\"type\" = 'junior' AND \"T1\".\"issued\" >= '1997-01-01'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_080",
+    "nl_prompt": "What percentage of clients who opened their accounts in the district with an average salary of over 10000 are women?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT CAST(SUM(CASE WHEN \"T2\".\"gender\" = 'F' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(\"T2\".\"client_id\") FROM \"district\" AS \"T1\" INNER JOIN \"client\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE \"T1\".\"A11\" > 10000"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_081",
+    "nl_prompt": "What was the growth rate of the total amount of loans across all accounts for a male client between 1996 and 1997?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT CAST(((SUM(CASE WHEN to_char(\"T1\".\"date\"::timestamp, 'YYYY') = '1997' THEN \"T1\".\"amount\" ELSE 0 END) - SUM(CASE WHEN to_char(\"T1\".\"date\"::timestamp, 'YYYY') = '1996' THEN \"T1\".\"amount\" ELSE 0 END)) * 100 / SUM(CASE WHEN to_char(\"T1\".\"date\"::timestamp, 'YYYY') = '1996' THEN \"T1\".\"amount\" ELSE 0 END)) AS REAL) FROM \"loan\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"disp\" AS \"T3\" ON \"T3\".\"account_id\" = \"T2\".\"account_id\" INNER JOIN \"client\" AS \"T4\" ON \"T4\".\"client_id\" = \"T3\".\"client_id\" WHERE \"T4\".\"gender\" = 'M' AND \"T3\".\"type\" = 'OWNER';"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_082",
+    "nl_prompt": "How many credit card withdrawals were recorded after 1995?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"account_id\") FROM \"trans\" WHERE to_char(\"date\"::timestamp, 'YYYY') > '1995' AND \"operation\" = 'VYBER KARTOU'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_083",
+    "nl_prompt": "What was the difference in the number of crimes committed in East and North Bohemia in 1996?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT SUM(CASE WHEN \"A3\" = 'north Bohemia' THEN \"A16\" ELSE 0 END) - SUM(CASE WHEN \"A3\" = 'east Bohemia' THEN \"A16\" ELSE 0 END) FROM \"district\""
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_084",
+    "nl_prompt": "How many owner and disponent dispositions are there from account number 1 to account number 10?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT SUM(CASE WHEN \"type\" = 'OWNER' THEN 1 ELSE 0 END) AS owner_count, SUM(CASE WHEN \"type\" = 'DISPONENT' THEN 1 ELSE 0 END) AS disponent_count FROM disp WHERE \"account_id\" BETWEEN 1 AND 10"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_085",
+    "nl_prompt": "How often does account number 3 request an account statement to be released? What was the aim of debiting 3539 in total?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT frequency FROM account WHERE account_id = 3; SELECT k_symbol FROM trans WHERE amount = 3539 AND type = 'VYDAJ';"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_086",
+    "nl_prompt": "What year was account owner number 130 born?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT to_char(\"T1\".\"birth_date\"::timestamp, 'YYYY') FROM \"client\" AS \"T1\" INNER JOIN \"disp\" AS \"T3\" ON \"T1\".\"client_id\" = \"T3\".\"client_id\" INNER JOIN \"account\" AS \"T2\" ON \"T3\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T2\".\"account_id\" = 130"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_087",
+    "nl_prompt": "How many accounts have an owner disposition and request for a statement to be generated upon a transaction?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T2\".\"type\" = 'OWNER' AND \"T1\".\"frequency\" = 'POPLATEK PO OBRATU'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_088",
+    "nl_prompt": "What is the amount of debt that client number 992 has, and how is this client doing with payments?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T3\".\"amount\", \"T3\".\"status\" FROM \"client\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"loan\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T1\".\"client_id\" = 992"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_089",
+    "nl_prompt": "What is the sum that client number 4's account has following transaction 851? Who owns this account, a man or a woman?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T3\".\"balance\", \"T1\".\"gender\" FROM \"client\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" INNER JOIN \"trans\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T1\".\"client_id\" = 4 AND \"T3\".\"trans_id\" = 851"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_090",
+    "nl_prompt": "Which kind of credit card does client number 9 possess?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T3\".\"type\" FROM \"client\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"client_id\" = \"T2\".\"client_id\" INNER JOIN \"card\" AS \"T3\" ON \"T2\".\"disp_id\" = \"T3\".\"disp_id\" WHERE \"T1\".\"client_id\" = 9"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_091",
+    "nl_prompt": "How much, in total, did client number 617 pay for all of the transactions in 1998?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT SUM(T1.amount) FROM trans AS T1 INNER JOIN disp AS T2 ON T1.account_id = T2.account_id WHERE T2.client_id = 617 AND EXTRACT(YEAR FROM T1.date) = 1998"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_092",
+    "nl_prompt": "Please provide a list of clients who were born between 1983 and 1987 and whose account branch is in East Bohemia, along with their IDs.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"client_id\" FROM \"client\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE EXTRACT(YEAR FROM \"T1\".\"birth_date\") BETWEEN 1983 AND 1987 AND \"T2\".\"A3\" = 'east Bohemia';"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_093",
+    "nl_prompt": "Please provide the IDs of the 3 female clients with the largest loans.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT T1.client_id FROM client AS T1 INNER JOIN disp AS T2 ON T1.client_id = T2.client_id INNER JOIN loan AS T3 ON T2.account_id = T3.account_id WHERE T1.gender = 'F' GROUP BY T1.client_id ORDER BY MAX(T3.amount) DESC LIMIT 3"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_094",
+    "nl_prompt": "How many male customers who were born between 1974 and 1976 have made a payment on their home in excess of $4000?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(DISTINCT T1.client_id) FROM client AS T1 INNER JOIN disp AS T2 ON T1.client_id = T2.client_id INNER JOIN trans AS T3 ON T2.account_id = T3.account_id WHERE T1.gender = 'M' AND T1.birth_date BETWEEN '1974-01-01' AND '1976-12-31' AND T3.k_symbol = 'SIPO' AND T3.amount > 4000"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_095",
+    "nl_prompt": "How many accounts in Beroun were opened after 1996?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE to_char(\"T1\".\"date\"::timestamp, 'YYYY') > '1996' AND \"T2\".\"A2\" = 'Beroun';"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_096",
+    "nl_prompt": "How many female customers have a junior credit card?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"client_id\" = \"T2\".\"client_id\" INNER JOIN \"card\" AS \"T3\" ON \"T2\".\"disp_id\" = \"T3\".\"disp_id\" WHERE \"T1\".\"gender\" = 'F' AND \"T3\".\"type\" = 'junior'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_097",
+    "nl_prompt": "What proportion of customers who have accounts at the Prague branch are female?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT CAST(SUM(CASE WHEN \"T1\".\"gender\" = 'F' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(*) FROM \"client\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"client_id\" = \"T2\".\"client_id\" INNER JOIN \"account\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" INNER JOIN \"district\" AS \"T4\" ON \"T3\".\"district_id\" = \"T4\".\"district_id\" WHERE \"T4\".\"A3\" LIKE '%Prague%';"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_098",
+    "nl_prompt": "What percentage of male clients request for weekly statements to be issued?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT CAST(SUM(CASE WHEN \"T1\".\"gender\" = 'M' THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T1\".\"client_id\" = \"T2\".\"client_id\" INNER JOIN \"account\" AS \"T3\" ON \"T2\".\"account_id\" = \"T3\".\"account_id\" WHERE \"T3\".\"frequency\" = 'POPLATEK TYDNE'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_099",
+    "nl_prompt": "How many clients who choose statement of weekly issuance are User?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T2\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"disp\" AS \"T2\" ON \"T2\".\"account_id\" = \"T1\".\"account_id\" WHERE \"T1\".\"frequency\" = 'POPLATEK TYDNE' AND \"T2\".\"type\" = 'USER'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_100",
+    "nl_prompt": "Among the accounts who have loan validity more than 24 months, list out the accounts that have the lowest approved amount and have account opening date before 1997.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"account_id\" FROM \"loan\" AS \"T1\" INNER JOIN \"account\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T1\".\"duration\" > 24 AND \"T2\".\"date\" < '1997-01-01' ORDER BY \"T1\".\"amount\" ASC LIMIT 1;"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_101",
+    "nl_prompt": "Name the account numbers of female clients who are oldest and have lowest average salary?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"account_id\" FROM \"disp\" AS \"T1\" INNER JOIN \"client\" AS \"T2\" ON \"T1\".\"client_id\" = \"T2\".\"client_id\" INNER JOIN \"district\" AS \"T3\" ON \"T2\".\"district_id\" = \"T3\".\"district_id\" WHERE \"T2\".\"gender\" = 'F' ORDER BY \"T2\".\"birth_date\" ASC, \"T3\".\"A11\" ASC LIMIT 1;"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_102",
+    "nl_prompt": "How many clients who were born in 1920 stay in east Bohemia?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(\"T1\".\"client_id\") FROM \"client\" AS \"T1\" INNER JOIN \"district\" AS \"T2\" ON \"T1\".\"district_id\" = \"T2\".\"district_id\" WHERE to_char(\"T1\".\"birth_date\"::timestamp, 'YYYY') = '1920' AND \"T2\".\"A3\" = 'east Bohemia'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_103",
+    "nl_prompt": "How many loan accounts are for pre-payment of duration of 24 months with weekly issuance of statement.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT COUNT(DISTINCT \"T1\".\"account_id\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T1\".\"frequency\" = 'POPLATEK TYDNE' AND \"T2\".\"duration\" = 24"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_104",
+    "nl_prompt": "What is the average amount of loan which are still on running contract with statement issuance after each transaction?",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT AVG(\"T2\".\"amount\") FROM \"account\" AS \"T1\" INNER JOIN \"loan\" AS \"T2\" ON \"T1\".\"account_id\" = \"T2\".\"account_id\" WHERE \"T2\".\"status\" IN ('C', 'D') AND \"T1\".\"frequency\" = 'POPLATEK PO OBRATU'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_105",
+    "nl_prompt": "List all ID and district for clients that can only have the right to issue permanent orders or apply for loans.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT client_id, district_id FROM client WHERE client_id IN (SELECT client_id FROM disp WHERE type = 'OWNER') EXCEPT SELECT client_id, district_id FROM client WHERE client_id IN (SELECT client_id FROM disp WHERE type != 'OWNER')"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "example_106",
+    "nl_prompt": "Provide the IDs and age of the client with high level credit card, which is eligible for loans.",
+    "query_type": "DQL",
+    "database": "financial",
+    "dialects": [
+      "postgres"
+    ],
+    "golden_sql": {
+      "postgres": [
+        "SELECT \"T1\".\"client_id\", (CAST(to_char(CURRENT_TIMESTAMP, 'YYYY') AS integer) - CAST(to_char(\"T3\".\"birth_date\"::timestamp, 'YYYY') AS integer)) AS age FROM \"disp\" AS \"T1\" INNER JOIN \"card\" AS \"T2\" ON \"T2\".\"disp_id\" = \"T1\".\"disp_id\" INNER JOIN \"client\" AS \"T3\" ON \"T1\".\"client_id\" = \"T3\".\"client_id\" WHERE \"T2\".\"type\" = 'gold' AND \"T1\".\"type\" = 'OWNER';"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  }
+]

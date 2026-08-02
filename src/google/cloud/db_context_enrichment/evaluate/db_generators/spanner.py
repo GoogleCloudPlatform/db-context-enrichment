@@ -1,6 +1,5 @@
 from typing import Any
 
-import google.cloud.geminidataanalytics_v1beta as gda
 import yaml
 
 from .base import BaseDBConfigGenerator
@@ -45,18 +44,21 @@ class SpannerConfigGenerator(BaseDBConfigGenerator):
 
     def build_datasource_reference(
         self, context_set_id: str
-    ) -> gda.DatasourceReferences:
-        datasource_ref = gda.DatasourceReferences()
+    ) -> dict[str, Any]:
+        database_ref: dict[str, Any] = {
+            "engine": "GOOGLE_SQL",
+            "project_id": self.project,
+            "instance_id": self.instance,
+            "database_id": self.database,
+        }
+        if graph := self.params.get("graph"):
+            database_ref["graph_ids"] = [graph]
 
-        datasource_ref.spanner_reference = gda.SpannerReference(
-            database_reference=gda.SpannerDatabaseReference(
-                engine=gda.SpannerDatabaseReference.Engine.GOOGLE_SQL,
-                project_id=self.project,
-                instance_id=self.instance,
-                database_id=self.database,
-            ),
-            agent_context_reference=gda.AgentContextReference(
-                context_set_id=context_set_id
-            ),
-        )
-        return datasource_ref
+        spanner_ref: dict[str, Any] = {
+            "database_reference": database_ref
+        }
+        if context_set_id:
+            spanner_ref["agent_context_reference"] = {
+                "context_set_id": context_set_id
+            }
+        return {"spanner_reference": spanner_ref}

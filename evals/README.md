@@ -8,9 +8,13 @@ The evaluation uses the [evalbench](https://github.com/GoogleCloudPlatform/evalb
 
 ## Configuration Files
 
-Each suite folder (`core-cujs/`, `freeform-input/`) contains only the things
-that are suite-specific:
+Each suite folder contains only the things that are suite-specific:
 
+- `core-cujs/`: Full lifecycle CUJ scenarios on relational databases (AlloyDB).
+- `spanner-graph-cujs/`: End-to-end Spanner Graph CUJ scenarios (schema discovery, human scope gating, GQL + SQL generation, and evaluation).
+- `freeform-input/`: Freeform user input and exploratory workflow tests.
+
+Within each suite directory:
 - `dataset.json`: test cases, prompts, and expected behaviors.
 - `run_gemini_cli.yaml`: orchestrator + scorer config for the Gemini CLI SUT.
 - `run_claude.yaml`: orchestrator + scorer config for the Claude Code SUT.
@@ -33,25 +37,34 @@ The suite evaluates the agent across several dimensions using the following scor
 
 ## How to Run
 
-From the `evals/` directory, run the evaluation using `uvx`:
+When running locally, you must align your Node environment, clean up any dirty extension state from previous runs, and export your GCP project variables. 
+
+Here is an easy-to-copy-and-paste block to run the evaluation from the root repository directory:
+
 ```bash
+# 1. Switch to Node v20+ and ensure npm is in PATH
+source ~/.nvm/nvm.sh && nvm use 20
+
+# 2. Clean up dirty extension state from any previous crashed runs
+rm -rf evals/.venv/fake_home/.gemini/extensions/google-cloud-db-context-engineering
+
+# 3. Export required GCP project and location variables
+export GOOGLE_CLOUD_PROJECT="your-gcp-project-id"
+export GOOGLE_CLOUD_LOCATION="global"
+export EVAL_GCP_PROJECT_ID="your-gcp-project-id"
+export EVAL_GCP_PROJECT_REGION="global"
+
+# 4. (Optional) Filter to specific test scenario IDs (comma-separated)
+# export EVAL_SCENARIOS="autoctx-dataset-expansion"
+
+# 5. Navigate to evals/ and run the evaluation with stable version pinning
 cd evals/
-UV_CONFIG_FILE=uv.toml uvx --index-url https://pypi.org/simple/ google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" --with "mcp<1.3.0" google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
 ```
 
 ### Local Execution Caveats
-Unlike CI (which auto-injects values and queries the metadata server), running locally requires these specific alignments:
+Unlike CI (which auto-injects values and queries the metadata server), running locally requires the specific alignments in the script above:
 
-1.  **Node Version**: Switch your active shell session to Node v20+ before running to support modern regular expressions:
-    ```bash
-    source ~/.nvm/nvm.sh && nvm use 20
-    ```
-2.  **Dirty State Cleanup**: If a run crashes midway, wipe the dirty extension installation before retrying:
-    ```bash
-    rm -rf .venv/fake_home/.gemini/extensions/google-cloud-db-context-engineering
-    ```
-3.  **Environment Variables**: Before executing a run, ensure you have exported your GCP project ID and the global endpoint location:
-    ```bash
-    export GOOGLE_CLOUD_PROJECT="your-gcp-project-id"
-    export GOOGLE_CLOUD_LOCATION="global"
-    ```
+1.  **Node & NPM Version**: The Gemini CLI harness requires Node v20+ and `npm` available in your `$PATH`.
+2.  **Dirty State Cleanup**: If a previous run crashed midway, `evals/.venv/fake_home/.gemini/extensions/` may contain partial installations that cause subsequent runs to fail.
+3.  **Environment Variables & Authentication**: Both standard GCP and EvalBench's simulated user model require explicit project ID and `"global"` location exports, alongside active `gcloud auth application-default login` credentials.

@@ -1,0 +1,14 @@
+generator: query_data_api
+project_id: cloud-db-nl2sql
+location: us-central1
+context:
+  datasource_references:
+    alloydb:
+      database_reference:
+        project_id: cloud-db-nl2sql
+        region: us-central1
+        cluster_id: whaoyu-test
+        instance_id: whaoyu-test-primary
+        database_id: financial
+      agent_context_reference:
+        context_set_id: projects/cloud-db-nl2sql/locations/us-east1/contextSets/whaoyu-eval-contextset

@@ -152,6 +152,7 @@ def test_generate_evalbench_configs():
         generator: query_data_api
         project_id: test-project
         location: us-central1
+        use_rest_api: true
         context:
           datasource_references:
             cloud_sql_reference:

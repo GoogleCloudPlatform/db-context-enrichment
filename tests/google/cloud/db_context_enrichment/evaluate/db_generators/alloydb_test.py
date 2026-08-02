@@ -49,6 +49,7 @@ def test_generate_model_config(mock_params):
         "generator": "query_data_api",
         "project_id": "test-project",
         "location": "us-west1",
+        "use_rest_api": True,
         "context": {
             "datasource_references": {
                 "alloydb": {

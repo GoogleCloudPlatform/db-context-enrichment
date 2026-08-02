@@ -68,6 +68,7 @@ class BaseDBConfigGenerator(ABC):
             "generator": "query_data_api",
             "project_id": self.params.get("project"),
             "location": self.params.get("region") or "global",
+            "use_rest_api": True,
             "context": query_context_dict,
         }
 

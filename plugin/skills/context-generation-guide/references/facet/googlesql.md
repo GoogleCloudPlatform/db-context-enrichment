@@ -14,7 +14,7 @@ Every column reference in a facet's SQL snippet **must** be qualified with its t
 
 Values in the SQL snippet and the intent must be replaced with positional parameters represented by `?`, according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
 
-### Example 1: Relational Column Filter
+### Example
 
 **Input**:
 *   **SQL Snippet**: `products.rating > 4.5`
@@ -33,31 +33,9 @@ Values in the SQL snippet and the intent must be replaced with positional parame
 }
 ```
 
-### Example 2: Spanner Graph Pattern & Traversal Facet
-
-For Spanner Graph, facets can represent reusable graph MATCH patterns, edge filter criteria, or traversal filters.
-
-**Input**:
-*   **SQL Snippet**: `MATCH (e:Expert)-[:HAS_EMPLOYMENT]->(emp:EmploymentRecord)-[:AT_COMPANY]->(c:Company) WHERE emp.jobtitle_normalised = 'Software Engineer'`
-*   **Intent**: "experts working as Software Engineer"
-
-**Generated Output** (Conceptual):
-```json
-{
-  "sql_snippet": "MATCH (e:Expert)-[:HAS_EMPLOYMENT]->(emp:EmploymentRecord)-[:AT_COMPANY]->(c:Company) WHERE emp.jobtitle_normalised = 'Software Engineer'",
-  "intent": "experts working as Software Engineer",
-  "manifest": "experts working as a given job title",
-  "parameterized": {
-    "parameterized_sql_snippet": "MATCH (e:Expert)-[:HAS_EMPLOYMENT]->(emp:EmploymentRecord)-[:AT_COMPANY]->(c:Company) WHERE emp.jobtitle_normalised = ?",
-    "parameterized_intent": "experts working as ?"
-  }
-}
-```
-
 ## Best Practices
 
-*   Provide clear and reusable SQL or GQL pattern snippets.
-*   **Always qualify relational columns as `table.column`** in relational SQL snippets.
-*   For graph pattern facets, specify the relevant node/edge labels and property filters.
-*   Ensure the SQL/GQL snippet follows Spanner (GoogleSQL) syntax.
+*   Provide clear and reusable SQL snippets.
+*   **Always qualify columns as `table.column`** in both the literal and parameterized SQL snippets. Never use bare column names or table aliases.
+*   Ensure the SQL snippet follows Spanner (GoogleSQL) syntax.
 *   The intent should clearly describe the condition or filter.

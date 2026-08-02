@@ -1,14 +1,16 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+import google.cloud.geminidataanalytics_v1beta as gda
 import yaml
+from google.protobuf.json_format import MessageToDict
 
 
 class BaseDBConfigGenerator(ABC):
     """
     Abstract Base Class enforcing the construction contract for Evalbench database topologies.
     Each distinct DB type (Spanner, Postgres, AlloyDB, MySQL) must inherit and implement
-    the mappings required by both the standard EvalBench framework and the GDA REST API.
+    the mappings required by both the standard EvalBench framework and the GDA SDK model.
     """
 
     SOURCE_TYPE = "unknown"
@@ -29,9 +31,9 @@ class BaseDBConfigGenerator(ABC):
     @abstractmethod
     def build_datasource_reference(
         self, context_set_id: str
-    ) -> dict[str, Any]:
+    ) -> gda.DatasourceReferences:
         """
-        Constructs the REST datasource_references dictionary required by the QueryDataAPI
+        Constructs the strict Protocol Buffer DatasourceReference required by the QueryDataAPI
         context generation flow.
         """
         raise NotImplementedError(
@@ -52,22 +54,23 @@ class BaseDBConfigGenerator(ABC):
 
     def generate_model_config(self, context_set_id: str) -> str:
         """
-        Standardized Model Builder converting the datasource reference dict into an EvalBench model dict.
+        Standardized Model Builder converting the strictly typed GDA object into an EvalBench model dict.
         """
         datasource_ref = self.build_datasource_reference(context_set_id)
+
+        query_context = gda.QueryDataContext(datasource_references=datasource_ref)
+
+        query_context_dict = MessageToDict(
+            query_context._pb, preserving_proto_field_name=True
+        )
 
         model_config = {
             "generator": "query_data_api",
             "project_id": self.params.get("project"),
             "location": self.params.get("region") or "global",
             "use_rest_api": True,
-            "context": {
-                "datasource_references": datasource_ref
-            },
+            "context": query_context_dict,
         }
-
-        if self.params.get("api_endpoint"):
-            model_config["api_endpoint"] = self.params.get("api_endpoint")
 
         return yaml.safe_dump(
             model_config, sort_keys=False, default_flow_style=False

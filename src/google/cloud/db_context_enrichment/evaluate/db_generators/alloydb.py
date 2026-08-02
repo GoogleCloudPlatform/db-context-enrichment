@@ -1,5 +1,6 @@
 from typing import Any
 
+import google.cloud.geminidataanalytics_v1beta as gda
 import yaml
 
 from .base import BaseDBConfigGenerator
@@ -53,20 +54,19 @@ class AlloyDBConfigGenerator(BaseDBConfigGenerator):
 
     def build_datasource_reference(
         self, context_set_id: str
-    ) -> dict[str, Any]:
-        ref: dict[str, Any] = {
-            "alloydb": {
-                "database_reference": {
-                    "project_id": self.project,
-                    "region": self.region,
-                    "cluster_id": self.cluster,
-                    "instance_id": self.instance,
-                    "database_id": self.database,
-                }
-            }
-        }
-        if context_set_id:
-            ref["alloydb"]["agent_context_reference"] = {
-                "context_set_id": context_set_id
-            }
-        return ref
+    ) -> gda.DatasourceReferences:
+        datasource_ref = gda.DatasourceReferences()
+
+        datasource_ref.alloydb = gda.AlloyDbReference(
+            database_reference=gda.AlloyDbDatabaseReference(
+                project_id=self.project,
+                region=self.region,
+                cluster_id=self.cluster,
+                instance_id=self.instance,
+                database_id=self.database,
+            ),
+            agent_context_reference=gda.AgentContextReference(
+                context_set_id=context_set_id
+            ),
+        )
+        return datasource_ref

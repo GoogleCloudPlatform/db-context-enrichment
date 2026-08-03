@@ -418,7 +418,9 @@ def test_generate_evalbench_configs_spanner_graph():
             "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
             return_value='[{"mock": "data"}]',
         ):
-            with patch("google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+            ):
                 generate_evalbench_configs(
                     output_dir="/test/out",
                     dataset_path="/fake/dataset.json",
@@ -439,6 +441,3 @@ def test_generate_evalbench_configs_spanner_graph():
     assert model_config["use_rest_api"] is True
     spanner_ref = model_config["context"]["datasource_references"]["spanner_reference"]
     assert spanner_ref["database_reference"]["graph_ids"] == ["ResearchGraph"]
-
-
-

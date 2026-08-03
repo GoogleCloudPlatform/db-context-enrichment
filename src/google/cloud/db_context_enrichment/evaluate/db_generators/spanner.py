@@ -42,9 +42,7 @@ class SpannerConfigGenerator(BaseDBConfigGenerator):
             db_config, sort_keys=False, default_flow_style=False
         ).strip()
 
-    def build_datasource_reference(
-        self, context_set_id: str
-    ) -> dict[str, Any]:
+    def build_datasource_reference(self, context_set_id: str) -> dict[str, Any]:
         database_ref: dict[str, Any] = {
             "engine": "GOOGLE_SQL",
             "project_id": self.project,
@@ -54,11 +52,7 @@ class SpannerConfigGenerator(BaseDBConfigGenerator):
         if graph_ids := self.params.get("graph_ids"):
             database_ref["graph_ids"] = graph_ids
 
-        spanner_ref: dict[str, Any] = {
-            "database_reference": database_ref
-        }
+        spanner_ref: dict[str, Any] = {"database_reference": database_ref}
         if context_set_id:
-            spanner_ref["agent_context_reference"] = {
-                "context_set_id": context_set_id
-            }
+            spanner_ref["agent_context_reference"] = {"context_set_id": context_set_id}
         return {"spanner_reference": spanner_ref}

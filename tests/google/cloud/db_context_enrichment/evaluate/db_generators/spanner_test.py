@@ -106,5 +106,3 @@ def test_generate_model_config_with_graph_list(mock_params):
     assert m_config["context"]["datasource_references"]["spanner_reference"][
         "database_reference"
     ]["graph_ids"] == ["ResearchGraph", "LogisticsNet"]
-
-

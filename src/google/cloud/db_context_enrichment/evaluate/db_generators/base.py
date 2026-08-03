@@ -27,9 +27,7 @@ class BaseDBConfigGenerator(ABC):
         raise NotImplementedError("Subclasses must implement generate_db_config")
 
     @abstractmethod
-    def build_datasource_reference(
-        self, context_set_id: str
-    ) -> dict[str, Any]:
+    def build_datasource_reference(self, context_set_id: str) -> dict[str, Any]:
         """
         Constructs the REST datasource_references dictionary required by the QueryDataAPI
         context generation flow.
@@ -61,9 +59,7 @@ class BaseDBConfigGenerator(ABC):
             "project_id": self.params.get("project"),
             "location": self.params.get("region") or "global",
             "use_rest_api": True,
-            "context": {
-                "datasource_references": datasource_ref
-            },
+            "context": {"datasource_references": datasource_ref},
         }
 
         if self.params.get("api_endpoint"):

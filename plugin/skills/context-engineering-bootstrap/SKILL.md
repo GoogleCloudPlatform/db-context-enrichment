@@ -35,10 +35,17 @@ Follow these steps exactly in order:
    - Use the available Toolbox MCP tools configured in the active `autoctx/tools.yaml` to fetch the schemas for the target database.
    - Present the retrieved schema summary **structurally and cleanly** to the user. Ask the user if they want to filter or focus on specific schemas or tables.
    - **Source Enrichment**: Prompt the user for any existing **Design Docs** or **Application Code** (e.g., ORM models, SQL queries) they wish to provide to enrich the context generation. Wait for the user's response before proceeding.
+   - **Artifact Scope Cross-Validation Gate**:
+     Compare the required database scope derived from the provided design docs, application code, or query patterns against the active `autoctx/tools.yaml` configuration.
+     - Check if the artifacts reference schemas, tables, or graphs that are not enabled or present in `tools.yaml`.
+     - If a discrepancy is detected between the artifact requirements and `tools.yaml`:
+       1. Pause execution and surface the exact mismatch clearly to the user.
+       2. Present actionable resolution options (e.g., update `tools.yaml` to include the required graph or missing tables vs. limit the context scope to the current `tools.yaml` definition).
+       3. Wait for the user's explicit decision before proceeding. If approved, update `tools.yaml` and `state.md`.
 
 2. **Deduce Key Info (Core Execution):**
-   - Perform a **deep analysis** of the retrieved **schema and any provided documentation or code** to identify important concepts, relationships, and likely query patterns.
-   - **Collect Candidates**: Identify representative natural language queries with their corresponding SQL, common filter conditions or business rules, and **columns that require specialized value searching** (e.g., names needing fuzzy match, descriptions needing semantic search).
+   - Perform a **deep analysis** of the retrieved **schema and any provided documentation or code** to identify important concepts, relationships, and likely query patterns (including both relational SQL queries and Graph GQL queries if graph is enabled).
+   - **Collect Candidates**: Identify representative natural language queries with their corresponding SQL/GQL, common filter conditions or business rules (and graph pattern facets), and **columns that require specialized value searching** (e.g., names needing fuzzy match, descriptions needing semantic search).
    - *Review Check:* Briefly display these candidates to the user for approval or modifications before proceeding.
 
 3. **Context Generation (Core Execution):**

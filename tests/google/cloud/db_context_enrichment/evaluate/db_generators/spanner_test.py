@@ -108,3 +108,17 @@ def test_generate_model_config_with_graph_list(mock_params):
     ]["graph_ids"] == ["ResearchGraph", "LogisticsNet"]
 
 
+def test_generate_model_config_invalid_graph_ids(mock_params):
+    mock_params["graph_ids"] = "not-a-list"
+    gen = SpannerConfigGenerator(mock_params)
+    with pytest.raises(ValueError, match="graph_ids must be a list of strings"):
+        gen.generate_model_config(
+            "projects/test-project/locations/us-west1/contextSets/my-context"
+        )
+
+    mock_params["graph_ids"] = [123]
+    gen = SpannerConfigGenerator(mock_params)
+    with pytest.raises(ValueError, match="graph_ids must be a list of strings"):
+        gen.generate_model_config(
+            "projects/test-project/locations/us-west1/contextSets/my-context"
+        )

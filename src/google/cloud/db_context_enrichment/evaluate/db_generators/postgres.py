@@ -48,9 +48,7 @@ class PostgresConfigGenerator(BaseDBConfigGenerator):
             db_config, sort_keys=False, default_flow_style=False
         ).strip()
 
-    def build_datasource_reference(
-        self, context_set_id: str
-    ) -> dict[str, Any]:
+    def build_datasource_reference(self, context_set_id: str) -> dict[str, Any]:
         ref: dict[str, Any] = {
             "cloud_sql_reference": {
                 "database_reference": {

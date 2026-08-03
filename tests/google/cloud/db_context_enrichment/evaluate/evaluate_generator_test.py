@@ -4,6 +4,7 @@ import textwrap
 from unittest.mock import mock_open, patch
 
 import pytest
+import yaml
 
 from google.cloud.db_context_enrichment.evaluate.evaluate_generator import (
     generate_evalbench_configs,
@@ -398,3 +399,46 @@ def test_convert_dataset_case_sensitive():
     with patch("builtins.open", mock_open(read_data=mock_dataset)):
         with pytest.raises(ValueError, match="is missing required keys"):
             _convert_dataset("/fake/dataset.json", "postgres")
+
+
+def test_generate_evalbench_configs_spanner_graph():
+    tools_yaml_content = textwrap.dedent("""\
+        kind: source
+        name: spanner-source
+        type: spanner
+        project: test-project
+        instance: test-instance
+        database: test-db
+        graph_ids:
+          - ResearchGraph
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=tools_yaml_content)) as m:
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
+            return_value='[{"mock": "data"}]',
+        ):
+            with patch("google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"):
+                generate_evalbench_configs(
+                    output_dir="/test/out",
+                    dataset_path="/fake/dataset.json",
+                    context_set_id="projects/test-project/locations/us-central1/contextSets/context-123",
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="spanner-source",
+                )
+
+    # Find the write call for model_config.yaml
+    written_data = {}
+    for call_args in m.mock_calls:
+        if call_args[0] == "().write":
+            content = call_args[1][0]
+            if "spanner_reference" in content:
+                written_data["model_config"] = content
+
+    model_config = yaml.safe_load(written_data["model_config"])
+    assert model_config["use_rest_api"] is True
+    spanner_ref = model_config["context"]["datasource_references"]["spanner_reference"]
+    assert spanner_ref["database_reference"]["graph_ids"] == ["ResearchGraph"]
+
+
+

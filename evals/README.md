@@ -94,9 +94,13 @@ rsync -av --exclude='.git' --exclude='evals/.venv' /path/to/db-context-enrichmen
 ```
 
 #### 2. Explicit Node Path in Non-Interactive Shells
-Non-interactive agent subshells do not source `~/.nvm/nvm.sh` automatically. Prepend the installed Node v20+ binary path:
+Non-interactive agent subshells do not source `~/.nvm/nvm.sh` automatically. Prepend the installed Node v20+ binary path (adjust the version number to match your local installation):
 ```bash
-export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH"
+# Automatically resolve active Node v20+ path:
+export PATH="$(dirname "$(nvm which 20 2>/dev/null || which node)"):$PATH"
+
+# Or specify your local installed Node version explicitly (e.g. v20.x.x):
+# export PATH="$HOME/.nvm/versions/node/<your-installed-version>/bin:$PATH"
 ```
 
 #### 3. Reset Workspace Fixtures

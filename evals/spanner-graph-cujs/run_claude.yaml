@@ -22,8 +22,6 @@ runners:
 ### Scorer Related Configs
 ############################################################
 scorers:
-  trajectory_matcher: {}
-
   goal_completion:
     model_config: model_configs/gemini_model.yaml
 

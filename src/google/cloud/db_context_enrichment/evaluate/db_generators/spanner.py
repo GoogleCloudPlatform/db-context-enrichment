@@ -50,6 +50,10 @@ class SpannerConfigGenerator(BaseDBConfigGenerator):
             "database_id": self.database,
         }
         if graph_ids := self.params.get("graph_ids"):
+            if not isinstance(graph_ids, list) or not all(
+                isinstance(g, str) for g in graph_ids
+            ):
+                raise ValueError("graph_ids must be a list of strings")
             database_ref["graph_ids"] = graph_ids
 
         spanner_ref: dict[str, Any] = {"database_reference": database_ref}

@@ -431,11 +431,10 @@ def test_generate_evalbench_configs_spanner_graph():
 
     # Find the write call for model_config.yaml
     written_data = {}
-    for call_args in m.mock_calls:
-        if call_args[0] == "().write":
-            content = call_args[1][0]
-            if "spanner_reference" in content:
-                written_data["model_config"] = content
+    for call in m().write.call_args_list:
+        content = call[0][0]
+        if "spanner_reference" in content:
+            written_data["model_config"] = content
 
     model_config = yaml.safe_load(written_data["model_config"])
     assert model_config["use_rest_api"] is True

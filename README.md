@@ -77,6 +77,18 @@ You can provide business artifacts directly to the agent from local filesystems 
 
 ---
 
+## Installing via a compatible Agent Plugins client
+
+This repository ships a valid [Agent Plugins](https://github.com/agentplugins/agent-plugins-spec) (v1) plugin under [`plugin/`](plugin/), bundling both agent skills and its MCP servers. Any [Agent Plugins–compatible client](https://agent-plugins.org/compatible-clients) (VS Code, Cursor, GitHub Copilot, Kiro, and others) can install it directly using its own built-in plugin command — no extra tooling required — by pointing at this repository:
+
+```
+https://github.com/GoogleCloudPlatform/db-context-enrichment
+```
+
+See your agent's documentation for its exact install command.
+
+---
+
 ## How to Use
 
 Launch your agent harness (Gemini CLI, Claude Code, or Antigravity) in your workspace directory and interact in natural language:

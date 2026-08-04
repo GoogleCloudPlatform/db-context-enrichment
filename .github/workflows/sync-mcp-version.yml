@@ -14,6 +14,8 @@ on:
     paths:
       - "plugin/.claude-plugin/plugin.json"
       - "gemini-extension.json"
+      - "plugin/plugin.json"
+      - "plugin/mcp.json"
 
 permissions:
   contents: write
@@ -32,6 +34,7 @@ jobs:
       - name: Rewrite args[0] to match each manifest's version
         run: |
           set -euo pipefail
+          # Manifests that carry their own $.version.
           for FILE in plugin/.claude-plugin/plugin.json gemini-extension.json; do
             VERSION=$(jq -r '.version' "$FILE")
             PIN="google-cloud-db-context-engineering@${VERSION}"
@@ -40,15 +43,25 @@ jobs:
               "$FILE" > "$FILE.tmp"
             mv "$FILE.tmp" "$FILE"
           done
+          # The Agent Plugins mcp.json has no $.version of its own; source it
+          # from the sibling plugin.json (bumped by release-please) so the pin
+          # stays atomic with the released payload.
+          MCP_VERSION=$(jq -r '.version' plugin/plugin.json)
+          PIN="google-cloud-db-context-engineering@${MCP_VERSION}"
+          jq --arg pin "$PIN" \
+            '.mcpServers["db-context-engineering"].args[0] = $pin' \
+            plugin/mcp.json > plugin/mcp.json.tmp
+          mv plugin/mcp.json.tmp plugin/mcp.json
 
       - name: Commit if changed
         run: |
-          if git diff --quiet plugin/.claude-plugin/plugin.json gemini-extension.json; then
+          FILES="plugin/.claude-plugin/plugin.json gemini-extension.json plugin/mcp.json"
+          if git diff --quiet -- $FILES; then
             echo "args[0] already in sync; nothing to do."
             exit 0
           fi
           git config user.name "${{ github.event.pull_request.user.login }}"
           git config user.email "${{ github.event.pull_request.user.id }}+${{ github.event.pull_request.user.login }}@users.noreply.github.com"
-          git add plugin/.claude-plugin/plugin.json gemini-extension.json
+          git add $FILES
           git commit -m "chore: sync MCP server version pin in plugin manifests"
           git push

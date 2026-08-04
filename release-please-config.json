@@ -24,6 +24,11 @@
         },
         {
           "type": "json",
+          "path": "plugin/plugin.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
           "path": "gemini-extension.json",
           "jsonpath": "$.version"
         }

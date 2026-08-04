@@ -1,0 +1,18 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "db-context-engineering",
+  "version": "0.7.0",
+  "description": "Context Engineering Agent for generating natural language to SQL templates, facets, and value searches.",
+  "author": {
+    "name": "Google Cloud Platform"
+  },
+  "repository": "https://github.com/GoogleCloudPlatform/db-context-enrichment",
+  "license": "Apache-2.0",
+  "keywords": [
+    "database",
+    "context-engineering",
+    "nl2sql",
+    "google-cloud",
+    "mcp"
+  ]
+}

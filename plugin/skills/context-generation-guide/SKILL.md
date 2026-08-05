@@ -6,15 +6,15 @@ description: Guidelines and best practices for generating context items (Templat
 # Context Generation Guide Skill
 
 
-This skill provides the agent with the necessary information, concepts, and best practices to generate high-quality context items for the "Context Engineering Agent". This context bridges the gap between LLMs and structured databases, enabling accurate Natural Language to SQL generation.
+This skill provides the agent with the necessary information, concepts, and best practices to generate high-quality context items for the "Context Engineering Agent". This context bridges the gap between LLMs and structured databases, enabling accurate Natural Language to SQL and GQL generation.
 
 ## Overview
 
 Context generation allows you to create specific, high-value items in three forms:
 
-1.  **Templates**: End-to-end mappings linking a natural language query to a complete, runnable SQL query. They teach the system overarching operational logic, table join infrastructures, and broad business rules.
-2.  **Facets**: Reusable, modular SQL fragments (like a `WHERE` clause or specialized join). They are dynamically injected filters linked to specific vocabulary or terminology.
-3.  **Value Searches**: Specialized queries used when a value in the natural language query does not perfectly match the stored value in the database. They employ mapping functions to find candidate values.
+1.  **Templates**: End-to-end mappings linking a natural language query to a complete, runnable SQL or GQL query. They teach the system overarching operational logic, table join infrastructures, and graph traversal rules.
+2.  **Facets**: Reusable, modular SQL/GQL fragments (like a `WHERE` clause, specialized join, or graph `MATCH` pattern). They are dynamically injected filters linked to specific vocabulary or terminology.
+3.  **Value Searches**: Specialized queries used when a value in the natural language query does not perfectly match the stored value in the database. They employ mapping functions to find candidate values across relational and graph property tables.
 
 ## Workflow
 

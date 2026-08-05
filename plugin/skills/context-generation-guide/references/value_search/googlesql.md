@@ -5,6 +5,7 @@ This reference provides the SQL templates and examples for Value Search in Spann
 ## Requirements
 
 *   **`SEMANTIC_SIMILARITY_MATCH` is NOT supported** on Spanner. Only `EXACT_MATCH_STRINGS` and `TRIGRAM_STRING_MATCH` are available — do not author value searches that rely on semantic embeddings here.
+*   **Spanner Graph Support**: In Spanner Graph, node and edge labels are backed by underlying relational tables. Value searches apply identically to columns in these node and edge property tables.
 
 ## Supported Match Functions
 

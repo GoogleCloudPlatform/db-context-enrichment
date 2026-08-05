@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "db-context-engineering": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "google-cloud-db-context-engineering@0.7.0"
+      ]
+    },
+    "toolbox": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "toolbox-server@1.4.0",
+        "--config",
+        "autoctx/tools.yaml",
+        "--stdio"
+      ]
+    }
+  }
+}

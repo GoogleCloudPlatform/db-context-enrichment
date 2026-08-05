@@ -3,6 +3,9 @@ name: Presubmit
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   validate-mcp-version-pin:
     runs-on: ubuntu-latest

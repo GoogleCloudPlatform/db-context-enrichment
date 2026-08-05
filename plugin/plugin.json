@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "db-context-engineering",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Context Engineering Agent for generating natural language to SQL templates, facets, and value searches.",
   "author": {
     "name": "Google Cloud Platform"

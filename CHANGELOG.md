@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.1...v0.7.2) (2026-08-05)
+
+
+### Features
+
+* **spanner:** add Spanner Graph context engineering support, GQL guidelines, and E2E CUJ test ([#204](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/204)) ([9761284](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/9761284e8fb2e54aff61c9ab6ea5f9f90b389b7d))
+
 ## [0.7.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.0...v0.7.1) (2026-08-05)
 
 

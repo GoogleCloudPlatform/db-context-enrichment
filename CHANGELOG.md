@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.0...v0.7.1) (2026-08-05)
+
+
+### Features
+
+* **evaluate:** Use REST transport to enable working for unreleased proto fields ([#192](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/192)) ([c243711](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/c243711bde96cb0232f91c8e3e0107d95827e467))
+* **plugin:** support agent plugin spec ([#205](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/205)) ([27852b1](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/27852b189c8dc47e78c9f2dff9235002b6a20708))
+
 ## [0.7.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.6.0...v0.7.0) (2026-07-25)
 
 

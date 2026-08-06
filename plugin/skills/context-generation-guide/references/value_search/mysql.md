@@ -13,7 +13,7 @@ This reference provides the SQL templates and examples for Value Search in MySQL
 **Description**: Exact match for strings in MySQL.
 **Example**: Use for exact matching in MySQL.
 
-**Note**: Deduping (`GROUP BY`) happens in a subquery on non-`JSON` columns; the `JSON_OBJECT() AS context` literal is projected in the outer query. MySQL does not allow `JSON` columns in `DISTINCT`/`GROUP BY`, and under `ONLY_FULL_GROUP_BY` a non-grouped `JSON` column can't be selected alongside a `GROUP BY`.
+**Note**: The `GROUP BY` in the subquery only dedupes non-`JSON` columns (`value`, `columns`, `concept_type`, `distance`) — that part is fine on its own. The `JSON_OBJECT() AS context` column is deliberately kept out of that `GROUP BY`/subquery and projected only in the outer query, because under `ONLY_FULL_GROUP_BY` (MySQL's default mode) a `JSON` column can't appear in the `SELECT` list of a query that has a `GROUP BY` unless it's also grouped — and `JSON` columns can't be grouped at all.
 
 **Template**:
 ```sql

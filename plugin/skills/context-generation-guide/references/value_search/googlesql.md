@@ -16,7 +16,7 @@ This reference provides the SQL templates and examples for Value Search in Spann
 
 **Template**:
 ```sql
-SELECT CAST($value AS STRING) AS value, '{column}' AS `columns`,
+SELECT DISTINCT CAST($value AS STRING) AS value, '{column}' AS `columns`,
 '{concept_type}' AS concept_type, 0 AS distance,
 JSON '{}' AS context
 FROM `{table}` AS T
@@ -34,7 +34,7 @@ WHERE CAST(T.`{column}` AS STRING) = CAST($value AS STRING)
 
 **Template**:
 ```sql
-SELECT CAST(T.`{column}` AS STRING) AS value, '{column}' AS `columns`,
+SELECT DISTINCT CAST(T.`{column}` AS STRING) AS value, '{column}' AS `columns`,
 '{concept_type}' AS concept_type,
 1 - SCORE_NGRAMS(T.`{column_tokens}`, CAST($value AS STRING)) AS distance,
 JSON '{}' AS context

@@ -13,12 +13,15 @@ This reference provides the SQL templates and examples for Value Search in MySQL
 **Description**: Exact match for strings in MySQL.
 **Example**: Use for exact matching in MySQL.
 
+**Note**: `GROUP BY` (not `DISTINCT`) is used to dedupe, since MySQL does not allow comparing `JSON` values (e.g. the `context` column) in `DISTINCT`/`GROUP BY`.
+
 **Template**:
 ```sql
 SELECT $value AS value, '{column}' AS `columns`,
 '{concept_type}' AS concept_type, 0 AS distance,
 JSON_OBJECT() AS context
 FROM `{table}` AS T WHERE T.`{column}` = $value
+GROUP BY value, `columns`, concept_type, distance
 ```
 
 ### 2. TRIGRAM_STRING_MATCH
@@ -53,6 +56,7 @@ SELECT * FROM (
   JSON_OBJECT() AS context
   FROM TrigramMetrics m, NormalizationParams n
 ) AS wrapped_query
+GROUP BY value, `columns`, concept_type, distance
 ```
 
 ### 3. SEMANTIC_SIMILARITY_MATCH
@@ -78,4 +82,5 @@ SELECT * FROM (
   FROM `{table}` AS T, search_embedding
   WHERE T.`{column_embedding}` IS NOT NULL
 ) AS wrapped_query
+GROUP BY value, `columns`, concept_type, distance
 ```

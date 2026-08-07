@@ -1,5 +1,3 @@
-This is not an officially supported Google product. This project is not eligible for the [Google Open Source Software Vulnerability Rewards Program](https://bughunters.google.com/open-source-security), [Google Cloud Platform/SecOps Terms of Service](https://cloud.google.com/terms), [How Gemini for Google Cloud uses your data](https://cloud.google.com/gemini/docs/discover/data-governance). This tool is provided "as is" without warranty of any kind. Users are solely responsible for understanding and managing the tool's interaction with their databases. Use of this tool constitutes acceptance of all risks associated with database access, reading, usage, and modifications.
-
 # Context Engineering Agent
 
 The **Context Engineering Agent** is an AI coding agent plugin designed to run in developer agent harnesses (such as Claude Code, Antigravity, or Gemini CLI). It generates, evaluates, and iteratively tunes tailored context artifacts (`ContextSets` comprising `Templates`, `Facets`, and `Value Searches`) to enrich database schemas for **Gemini Data Analytics's data agent developer platform tools**, supporting both **relational SQL** and **Graph Query Language (GQL)** across [AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/data-agent-overview), Cloud SQL ([PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/data-agent-overview) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/data-agent-overview)), and [Cloud Spanner (GoogleSQL & Spanner Graph)](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/data-agent-overview).
@@ -62,8 +60,7 @@ The optimization loop creates an initial `ContextSet` and then iteratively refin
 1. **Bootstrap**: Generate an initial baseline context.
 2. **Evaluate**: Measure context effectiveness against a golden dataset.
 3. **Hill-Climbing**: Perform gap analysis on failures and generate automated fixes.
-4. **Iterate**: Apply the improved context and re-run evaluation to continuously improve quality.
-5. **Final Validation** (Optional): Verify mutations against a separated test set to ensure generalization and prevent overfitting.
+4. **Iterate**: Apply the improved context and re-run evaluation to continuously improve quality until we reach an optimal point.
 
 *Note: While there is a typical ordering for these CUJs, the agent is flexible in how you want to execute. You can run the full pipeline end-to-end, trigger any individual phase, or ask for targeted changes to the `ContextSet`.*
 

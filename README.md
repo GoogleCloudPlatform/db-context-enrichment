@@ -60,7 +60,7 @@ The optimization loop creates an initial `ContextSet` and then iteratively refin
 1. **Bootstrap**: Generate an initial baseline context.
 2. **Evaluate**: Measure context effectiveness against a golden dataset.
 3. **Hill-Climbing**: Perform gap analysis on failures and generate automated fixes.
-4. **Iterate**: Apply the improved context and re-run evaluation to continuously improve quality, until we reach an optimal point.
+4. **Iterate**: Apply the improved context and re-run evaluation to continuously improve quality until we reach an optimal point.
 
 *Note: While there is a typical ordering for these CUJs, the agent is flexible in how you want to execute. You can run the full pipeline end-to-end, trigger any individual phase, or ask for targeted changes to the `ContextSet`.*
 

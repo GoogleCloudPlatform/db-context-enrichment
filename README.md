@@ -35,7 +35,7 @@ Follow the step-by-step setup guide in the official documentation:
 
 ## Primary Workflow Phases
 
-The agent enables you to craft an optimized context for QueryData API through three primary phases:
+The agent enables you to craft an optimized context for QueryData API through three primary phases. Depending on your needs, you may also toggle the agent to skip phases. For example, if you have a dataset already, you can skip directly to context optimization "optimize context using dataset in <file>."
 
 ### Phase 1: Artifact Ingestion
 *Why it matters: Without broader context on the application's goals and scope, AI models generate sterile queries based solely on database column names, missing how your users actually ask for information.*

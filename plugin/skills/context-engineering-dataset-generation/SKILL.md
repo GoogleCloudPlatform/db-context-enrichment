@@ -51,7 +51,7 @@ You must prepend this exact block to the very top of every single response you g
 *   **Goal:** Create `evalset_gen_plan.md` and get explicit user approval on the dataset requirements.
 *   **Mandatory Actions:**
     1.  Read `<skill_dir>/references/generation-plan-requirements.md`.
-    2.  **Ensure Robust Dataset Size:** Unless the user has explicitly specified a custom target, the minimum target volume for a NL2SQL dataset is **at least 50 questions**.
+    2.  **Ensure Robust Dataset Size & Stratum Quorum:** Unless the user has explicitly specified a custom target, the minimum target volume for a NL2SQL dataset is **at least 50 questions**. To support stratified dev/test splitting and holdout generalizability testing, ensure every schema subdomain (`subdomain`) contains **at least 5-10 NLQ-SQL pairs**.
     3.  **Compose and Update Plan (`evalset_gen_plan.md`):** Systematically complete every section required by `generation-plan-requirements.md`. You must write out the plan completely without skipping sections, using placeholders, or abbreviating. Place the main decisions requiring user-review at the top of the plan.
     4. **[USER APPROVAL GATE]:** STOP. You MUST halt and wait for user approval of `evalset_gen_plan.md`. **DO NOT proceed to the next phase until explicitly given permission.**
 *   **Exit Criteria:** User explicitly approved `evalset_gen_plan.md` and indicated we may proceed to the next phase.
@@ -60,13 +60,21 @@ You must prepend this exact block to the very top of every single response you g
 *   **Goal:** Create the core "Seed" dataset with execution-guided proof.
 *   **Mandatory Actions:**
     1.  Execute workflow in `<skill_dir>/references/generation-cot.md`, saving validated examples via `generate_dataset` MCP Tool to an interim dataset file `temp_golden.json`.
+    2.  **Attach Generalizability Metadata**: Ensure every generated item includes a `metadata` object with:
+        - `subdomain`: Business/schema module (e.g., `"sales"`, `"billing"`, `"inventory"`, `"crm"`)
+        - `linguistic_style`: Query style (`"canonical_synthetic"`, `"short_jargon"`, `"human_telemetry"`, `"ambiguous"`)
+        - `complexity_tier`: SQL complexity (`"tier_1_simple"`, `"tier_2_multi_join_agg"`, `"tier_3_advanced_cte_window"`)
+        - `logic_depth`: Business rule type (`"explicit_schema"`, `"implicit_business_rule"`, `"value_entity_lookup"`)
 *   **Exit Criteria:** `temp_golden.json` is created, and every single example in `temp_golden.json` satisfies `evalset_gen_plan.md`'s conditions on the initial seed dataset. 
 
 ### **PHASE 4: EXPANSION & DIVERSIFICATION**
 *   **Goal:** Increase volume and edge-case coverage to reach the approved target volume.
 *   **Mandatory Actions:**
     1.  Execute workflow in `<skill_dir>/references/dataset_expansion.md`, saving validated examples via `generate_dataset` MCP tool to an interim dataset file `temp_golden.json`.
+    2.  Maintain dimension metadata tags (`subdomain`, `linguistic_style`, `complexity_tier`, `logic_depth`) across all expanded queries.
+    3.  **Stratum Volume Verification**: Verify that every `subdomain` has at least 5 pairs generated so that stratified dev/test splitting yields sufficient training and holdout validation queries for every subdomain.
 *   **Exit Criteria:** `temp_golden.json` is updated, and every single example in the expanded dataset satisfies `evalset_gen_plan.md`'s conditions on the expanded dataset. 
+
 
 ### **PHASE 5: AUDIT & REPORTING [WAIT FOR USER APPROVAL]**
 *   **Goal:** Assess the quality and diversity of the generated dataset, and get explicit user approval on the dataset.
@@ -76,8 +84,10 @@ You must prepend this exact block to the very top of every single response you g
 *   **Exit Criteria:** User explicitly approved the dataset and indicated we may proceed to the next phase.
 
 ### **PHASE 6: FINALIZATION**
-*   **Goal:** Deliver the final package and any requested subsets to the active working directory.
+*   **Goal:** Deliver the final package and any requested subsets/splits to the active working directory.
 *   **Precondition:** All required phase audit reports (environment acquisition, strategic plan, pair-level review, dataset-level review) must exist on disk.
 *   **Mandatory Actions:**
     1.  **Save Dataset:** Copy the temp dataset file `temp_golden.json` to the `output_file_path` — default to the user's current working directory. If the file already exists, verify whether we should overwrite with the user.
     2.  **Move Deliverables:** Ensure all written files (`.json`, `.md`, reports) are moved to the user's active directory if they were initially created elsewhere.
+    3.  **Stratified Dataset Splitting (Optional / On User Request):** Partition `golden.json` into Stratified Dev/Test splits (e.g. 80/20 by `subdomain`) under `autoctx/experiments/<exp>/splits/` so the user is ready to perform generalizable hill-climbing with holdout score measurement. Check for any under-represented subdomains (< 5 pairs).
+

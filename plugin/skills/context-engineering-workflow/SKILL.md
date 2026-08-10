@@ -1,6 +1,6 @@
 ---
 name: context-engineering-workflow
-description: Context engineering for Gemini Data Analytics API's data agent developer platform tools. Generates, evaluates, and iteratively optimizes a ContextSet (Templates, Facets, Value Searches) to maximize Natural-Language-to-SQL translation accuracy. Use this skill to run the automated setup, NL-SQL pair evaluation dataset generation and expansion, bootstrapping, scoring, and optimization pipeline. For manual authoring standards and schema syntax rules, see the context-generation-guide skill.
+description: Context engineering for Gemini Data Analytics API's data agent developer platform tools. Generates, evaluates, and iteratively optimizes a ContextSet (Templates, Facets, Value Searches) to maximize Natural-Language-to-SQL translation accuracy. Use this skill to run the automated setup, NL-SQL pair evaluation dataset generation and expansion, bootstrapping, scoring, dev/test dataset splitting, and generalizable optimization pipeline. For manual authoring standards and schema syntax rules, see the context-generation-guide skill.
 ---
 
 # Skill: Context Engineering Orchestrator
@@ -13,7 +13,7 @@ Refer to [context-generation-guide/SKILL.md](../context-generation-guide/SKILL.m
 
 ## The Optimization Lifecycle & Phase Flow
 
-To build high-performing data applications, context engineers typically follow a systematic, iterative optimization lifecycle (Hill-Climbing). 
+To build high-performing data applications, context engineers follow a systematic, generalizable optimization lifecycle (Hill-Climbing with Dev/Test Holdout Validation).
 
 ```mermaid
 flowchart TD
@@ -23,19 +23,24 @@ Scaffolds workspace & connections]
     
     Prep -- No --> DatasetPrep[Dataset Prep & Expansion
 Builds reference ground-truth]
-    DatasetPrep --> Bootstrap[Baseline Context Bootstrapping
-Generates initial context from schema]
-    Prep -- Yes --> Bootstrap
+    DatasetPrep --> Split[Initial Dataset Splitting
+Dev/Test Split at start]
+    Prep -- Yes --> Split
     
-    Bootstrap --> Evaluate[Evaluation Scoring
-Scores context using Evalbench]
+    Split --> Bootstrap[Baseline Context Bootstrapping
+Generates initial context from schema]
+    
+    Bootstrap --> Evaluate[Dev Set Evaluation Scoring
+Scores context on Dev split]
     Evaluate --> Loop{Tuning Target Met?}
     
-    Loop -- No --> Hillclimb[Optimization & Hill-Climbing
-Gap Analysis & Context Mutation]
+    Loop -- No --> Hillclimb[Hill-Climbing Iteration
+Gap Analysis & Context Mutation on Dev]
     Hillclimb --> Evaluate
     
-    Loop -- Yes --> End([End - Context Deployed!])
+    Loop -- Yes --> Holdout[Holdout Test Set Evaluation
+Verifies generalizability on Test split]
+    Holdout --> End([End - Context Deployed with Holdout Verification!])
 ```
 
 ---
@@ -47,7 +52,7 @@ Gap Analysis & Context Mutation]
 ### Setup & Connection Configuration Phase
 *   **Reference**: [context-engineering-init](../context-engineering-init/SKILL.md)
 *   **Goal**: Scaffold the local `autoctx/` workspace and establish verified database connections.
-*   **Rationale**: Readonly-database access is an input for evaluation dataset prep and expand, baseline context bootstrapping, 
+*   **Rationale**: Readonly-database access is required for dataset prep, bootstrapping, and evaluation.
 *   **Entry Prerequisites**:
     *   *None*.
 
@@ -56,42 +61,48 @@ Gap Analysis & Context Mutation]
 ### Evaluation Dataset Prep & Expansion Phase
 *   **Reference**: [context-engineering-dataset-generation](../context-engineering-dataset-generation/SKILL.md)
 *   **Mandatory Deliverables**: `evalset_environment_inputs.md`, `evalset_gen_plan.md`, `evalset_report_pair_level.md`, and `evalset_report_dataset_level.md`.
-*   **Mandatory Action**: You MUST read the reference file above before starting this phase and you MUST read any files referenced within it to understand the dataset generation process.
 *   **Goal**: Build a high-quality "golden" ground-truth dataset and associated audit reports.
-*   **Rationale**: A representative ground-truth dataset and formal audit trails are required to objectively measure and verify translation accuracy improvements.
+*   **Rationale**: A representative ground-truth dataset and formal audit trails are required to objectively measure translation accuracy.
 *   **Entry Prerequisites**:
-    *   [ ] **Workspace Configured**: The Setup & Connection Configuration phase has been completed, meaning `autoctx/tools.yaml` is active.
+    *   [ ] **Workspace Configured**: The Setup & Connection Configuration phase has been completed (`autoctx/tools.yaml` active).
 
 ---
 
 ### Baseline Context Bootstrapping Phase
 *   **Reference**: [context-engineering-bootstrap](../context-engineering-bootstrap/SKILL.md)
-*   **Goal**: Deduce query concepts and generate a baseline `ContextSet` (templates, facets, value searches) directly from database schemas and metadata.
+*   **Goal**: Deduce query concepts and generate a baseline `ContextSet` (templates, facets, value searches) directly from database schemas.
 *   **Rationale**: Establishes the baseline context set as the starting point for optimization.
 *   **Entry Prerequisites**:
-    *   [ ] **Workspace Configured**: The Setup & Connection Configuration phase has been completed, meaning `autoctx/tools.yaml` is active.
+    *   [ ] **Workspace Configured**: The Setup & Connection Configuration phase has been completed (`autoctx/tools.yaml` active).
 
 ---
 
 ### Run Evaluation And Score
 *   **Reference**: [context-engineering-evaluate](../context-engineering-evaluate/SKILL.md)
-*   **Goal**: Run a structured Evalbench evaluation to score the accuracy of a specific context set and identify exact query failures.
+*   **Goal**: Run a structured Evalbench evaluation to score the accuracy of a context set against a golden dataset (or dev/test split) and identify exact query failures.
 *   **Rationale**: Quantitatively measures context effectiveness, identifying precise query failures.
 *   **Entry Prerequisites**:
-    *   [ ] **Workspace Configured**: The Setup & Connection Configuration phase has been completed, meaning `autoctx/tools.yaml` is active.
-    *   [ ] **Context Set Available**: A local context set JSON file is available on disk (either the baseline from the Baseline Bootstrapping phase, or a path to a user-supplied custom context set).
-    *   [ ] **Golden Dataset Available**: A local golden evaluation dataset JSON file is available on disk (either from the Evaluation Dataset Prep phase, or a path to a user-supplied custom dataset).
-    *   [ ] **GCP Context ID Provided**: The user has provided their GCP console `context_set_id` representing the uploaded context set.
+    *   [ ] **Workspace Configured**: The Setup & Connection Configuration phase has been completed (`autoctx/tools.yaml` active).
+    *   [ ] **Context Set Available**: A local context set JSON file is available on disk.
+    *   [ ] **Golden Dataset / Split Available**: A dataset or split file (`dev.json`, `test.json`) is available on disk.
+    *   [ ] **GCP Context ID Provided**: The user has provided their GCP console `context_set_id`.
 
 ---
 
-### Optimization & Hill-Climbing Phase
+### Generalizable Optimization & Hill-Climbing Phase
 *   **Reference**: [context-engineering-hillclimb](../context-engineering-hillclimb/SKILL.md)
-*   **Goal**: Analyze evaluation failures to perform a Gap Analysis and apply targeted context mutations to iteratively improve performance.
-*   **Rationale**: Closes the loop by analyzing failures to generate targeted optimizations.
+*   **Goal**: Perform generalizable hill-climbing using Stratified Dev/Test splits (stratified by `subdomain` or `complexity_tier`). Split the dataset once at the start using stratified splitting, perform iterative Gap Analysis and mutations on the Dev set, and evaluate on the Holdout Test set towards the end of hill-climbing to calculate Generalization Gap metrics.
+*   **Key Generalizability Metrics**:
+    - **Holdout Test Pass Rate (%)**: Pass rate on unseen test queries evaluated towards the end.
+    - **Generalization Gap ($\Delta_{\text{gen}}$)**: $\text{Dev Score} - \text{Holdout Score}$.
+    - **Out-of-Domain Transfer Index (OOD-TI)**: $\text{Holdout Score on Unseen Subdomains} / \text{Dev Score}$. Measures transferability across business modules ($\ge 0.90$ target).
+    - **Linguistic Robustness Score (LRS)**: $\text{Holdout Score on Jargon Queries} / \text{Dev Score on Canonical Queries}$. Measures resilience against phrasing/jargon changes.
+*   **Rationale**: Prevents overfitting / "echo chambering" to synthetic training queries and guarantees context improvements generalize to unseen user questions. **All hillclimbing MUST evaluate on the Holdout Test split towards the end and report generalizability metrics.**
 *   **Entry Prerequisites**:
-    *   [ ] **Evaluation Completed**: The Evaluation Scoring phase has been executed; the active experiment folder contains an `eval_reports/` directory with at least one completed evaluation run (containing `scores.csv` and `summary.csv`).
-    *   [ ] **Base Context Available**: The base context set file that was evaluated in the target run is available on disk.
+    *   [ ] **Stratified Dataset Split Available**: Dataset is partitioned into stratified dev/test splits (`splits/dev.json` and `splits/test.json`).
+    *   [ ] **Evaluation Completed**: Evaluation scoring executed on the Dev set.
+    *   [ ] **Base Context Available**: Base context set file is available on disk.
+
 
 ---
 
@@ -106,6 +117,9 @@ The Autoctx workflows generate and interact with a structured workspace to maint
     *   `experiments/`: Root directory for all experiments.
         *   `<experiment_name>/`: Specific experiment directory.
             *   `bootstrap_context.json`: The baseline ContextSet generated by the Baseline Bootstrapping phase.
+            *   `splits/`: Directory containing dataset splits for generalizability testing.
+                *   `dev.json`: Training/Dev split dataset.
+                *   `test.json`: Holdout Test split dataset.
             *   `eval_configs/`: Directory containing Evalbench configurations.
             *   `eval_reports/`: Directory containing evaluation output runs.
             *   `hillclimb/`: Directory containing hill-climbing iteration artifacts.
@@ -113,27 +127,23 @@ The Autoctx workflows generate and interact with a structured workspace to maint
                 *   `improved_context_vN.json`: The mutated ContextSet at iteration `N`.
 
 ### Workspace Evolution Lifecycle
-1.  **Post-Initialization**: `tools.yaml`, `state.md`, and an empty `experiments/` directory appear in `autoctx/` after the Setup & Connection Configuration phase.
-2.  **Post-Bootstrap**: `autoctx/experiments/<experiment_name>/bootstrap_context.json` is generated by the Baseline Bootstrapping phase.
-3.  **Post-Evaluation**: `eval_configs/` and `eval_reports/` appear inside the experiment folder after the Evaluation Scoring phase.
-4.  **Post-Hill-Climbing**: `hillclimb/` appears with `gap_analysis_vN.md` and `improved_context_vN.json` after the Optimization & Hill-Climbing phase, and `state.md` is updated.
-5.  **Tuning Loop**: Iteratively evaluates `improved_context_vN.json` and generates `improved_context_v(N+1).json` until target accuracy is achieved.
+1.  **Post-Initialization**: `tools.yaml`, `state.md`, and an empty `experiments/` directory appear in `autoctx/`.
+2.  **Post-Dataset Generation & Splitting**: Golden dataset and `splits/` (`dev.json`, `test.json`) are created.
+3.  **Post-Bootstrap**: `bootstrap_context.json` is generated by Baseline Bootstrapping.
+4.  **Post-Evaluation**: `eval_configs/` and `eval_reports/` appear after running evaluation.
+5.  **Post-Hill-Climbing**: `hillclimb/` appears with `gap_analysis_vN.md`, `improved_context_vN.json`, Holdout Test scores (towards the end), and updated `state.md`.
+
+---
 
 ## Safety & Protocol
 
 *   **Missing Dataset**:
-    *   If the user's request requires **evaluating, scoring, or optimizing** a context set (e.g., running evaluations, tuning, or hill-climbing):
+    *   If the user's request requires **evaluating, scoring, or optimizing** a context set:
         *   Validate if an evaluation dataset exists.
-        *   **Mandatory Halt & Guide**: If no evaluation dataset exists, you are **strictly forbidden** from executing any context bootstrapping, tuning, or evaluation operations in this turn. You must immediately halt, stop calling tools, and yield the turn. Explain **why a golden evaluation dataset is critical** for context engineering (i.e., you cannot objectively score, validate, or hill-climb translation accuracy without a ground-truth dataset), and ask if they would like help generating one first.
+        *   **Mandatory Halt & Guide**: If no evaluation dataset exists, you are **strictly forbidden** from executing any context bootstrapping, tuning, or evaluation operations in this turn. Stop, explain why a golden evaluation dataset is critical for context engineering, and offer to help generate one first.
+
+*   **Holdout Evaluation Requirement**:
+    *   All hillclimbing workflows **MUST evaluate on the holdout test set towards the end and report the holdout score**. Never declare optimization success based solely on training/dev set scores.
 
 *   **Critical API Error Protocol**:
-    *   Seek guidance from the user if you run into results where retrying is unlikely to solve the issue.
-    *   Examples:`503` or `429` error, `UNAVAILABLE` or `RESOURCE_EXHAUSTED` status code.
-    *   Why: These errors are often associated with quota issues, and retrying the request immediately will not resolve the issue. For issues related to Vertex AI Resource Exhaustion, retrying at a later time is often the only solution.
-
-*   **Skill Prerequisites & Troubleshooting**:
-    *   If you encounter any environmental, connection, or execution errors, verify that all preconditions are met. Types of preconditions:
-        *   *Google Cloud Service APIs enablement*
-        *   *IAM Roles & Access*
-        *   *Database Instance Permissions*
-        *   *Development Environment*: Application Default Credentials (ADC) and Python package manager (`uv`) 
+    *   Seek guidance from the user if you encounter non-recoverable errors (e.g. `503`, `429`, `RESOURCE_EXHAUSTED`).

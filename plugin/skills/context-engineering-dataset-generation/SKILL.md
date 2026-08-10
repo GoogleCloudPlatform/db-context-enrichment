@@ -89,5 +89,5 @@ You must prepend this exact block to the very top of every single response you g
 *   **Mandatory Actions:**
     1.  **Save Dataset:** Copy the temp dataset file `temp_golden.json` to the `output_file_path` — default to the user's current working directory. If the file already exists, verify whether we should overwrite with the user.
     2.  **Move Deliverables:** Ensure all written files (`.json`, `.md`, reports) are moved to the user's active directory if they were initially created elsewhere.
-    3.  **Stratified Dataset Splitting (Optional / On User Request):** Partition `golden.json` into Stratified Dev/Test splits (e.g. 80/20 by `subdomain`) under `autoctx/experiments/<exp>/splits/` so the user is ready to perform generalizable hill-climbing with holdout score measurement. Check for any under-represented subdomains (< 5 pairs).
+    3.  **Dataset Setup & Splitting (Optional / On User Request):** Ask the user if they have a custom test dataset file for holdout evaluation. If provided, copy/enrich it to `autoctx/experiments/<exp>/splits/test.json` and set `splits/dev.json` to `golden.json`. Otherwise, partition `golden.json` into Stratified Dev/Test splits (80/20 by `subdomain`) under `autoctx/experiments/<exp>/splits/`. Check for under-represented subdomains (< 5 pairs).
 

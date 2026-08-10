@@ -27,18 +27,26 @@ Analyze evaluation failures on training/dev splits to perform Gap Analysis and a
 
 Follow these steps in order:
 
-### 1. Stratified Dataset Partitioning & Stratum Check (At Start)
-1. Check if `autoctx/experiments/<experiment_name>/splits/` contains `dev.json` and `test.json`.
-2. If missing, partition `golden.json` into a Stratified Dev/Test split (80% Dev / 20% Holdout Test stratified by `metadata.subdomain` or `complexity_tier`):
-   - Group items in `golden.json` by `metadata.subdomain` (or `"general"` if absent).
-   - For each subdomain bucket with $N \ge 2$ items, assign 80% (at least 1 item) to `dev.json` and remaining items to `test.json`.
-   - For single-item subdomains ($N = 1$), assign to `dev.json` to ensure training coverage.
-   - Save the items into `autoctx/experiments/<experiment_name>/splits/dev.json` and `splits/test.json`.
+### 1. Dataset Setup & Partitioning (At Start)
+1. Check if `autoctx/experiments/<experiment_name>/splits/` already contains `dev.json` and `test.json`.
+2. If missing, **ask the user before proceeding to dev-test split**:
+   > *"Do you have an existing test dataset file you would like to use to evaluate generalizability at the end of the hill-climbing process?"*
+
+   - **Case A: User Has a Custom Test Dataset**:
+     - Prompt the user to provide the file path to their custom test dataset.
+     - Copy and enrich their test dataset to `autoctx/experiments/<experiment_name>/splits/test.json`.
+     - Use the generated evaluation dataset (`golden.json`) as `autoctx/experiments/<experiment_name>/splits/dev.json`.
+   - **Case B: User Does Not Have a Custom Test Dataset**:
+     - Automatically partition `golden.json` into a Stratified Dev/Test split (80% Dev / 20% Holdout Test stratified by `metadata.subdomain` or `complexity_tier`):
+       - Group items in `golden.json` by `metadata.subdomain` (or `"general"` if absent).
+       - For each subdomain bucket with $N \ge 2$ items, assign 80% (at least 1 item) to `dev.json` and remaining items to `test.json`.
+       - For single-item subdomains ($N = 1$), assign to `dev.json` to ensure training coverage.
+       - Save the items to `autoctx/experiments/<experiment_name>/splits/dev.json` and `splits/test.json`.
 3. **Stratum Volume Check**:
-   - Count items per subdomain bucket.
+   - Count items per subdomain bucket across Dev and Test sets.
    - If any subdomain has fewer than 5 evaluation pairs, inform the user:
      > *"Note: Subdomains [list] have fewer than 5 evaluation pairs. Holdout test evaluation will proceed, but expanding pairs for these subdomains via `context-engineering-dataset-generation` is recommended for robust test coverage."*
-4. Confirm that `dev.json` and `test.json` are materialized on disk.
+4. Confirm that `dev.json` and `test.json` are materialized on disk so that the workspace folder structure remains identical in either case.
 
 ### 2. Hill-Climbing Iteration Loop (Dev Set Only)
 For each iteration ($v1, v2, \dots, vN$):

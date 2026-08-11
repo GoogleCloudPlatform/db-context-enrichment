@@ -56,8 +56,15 @@ Follow these steps exactly in order:
    - Wait for the user to explicitly select an experiment folder to evaluate (or use the newly created one).
    - Once selected, explicitly record their chosen experiment name into the local `autoctx/state.md` file to act as long-term memory so you don't forget it during subsequent evaluations.
 
-2. **Parameter Collection:**
-   - **User Inputs:** Prompt the user ONLY for the `golden_dataset_path` and the `context_set_id` (if they haven't provided them already). Do NOT ask them to explain or verify database configurations.
+2. **Parameter Collection & Dataset Selection:**
+   - **User Inputs:** Prompt the user ONLY for the `golden_dataset_path` (or dataset split) and the `context_set_id` (if they haven't provided them already).
+   - **Dataset Selection & Dev/Test Split Check**:
+     - Check for available dataset files in `autoctx/experiments/<experiment_name>/`: `splits/dev.json`, `splits/test.json`, or `golden.json`.
+     - **If `splits/dev.json` exists**: Default to evaluating on `splits/dev.json` (or prompt the user if they want to score `test.json` or full `golden.json`).
+     - **If `splits/` folder does NOT exist yet**: Ask the user:
+       > *"Would you like to set up a Dev/Test split now (to prepare for hill-climbing tuning), or run a full baseline evaluation against all questions in `golden.json`?"*
+       - If they choose Dev/Test split: Ask if they have a custom test dataset file (Case A) or run automated stratified partitioning (Case B) to create `splits/dev.json` and `splits/test.json`, then evaluate on `splits/dev.json`.
+       - If they choose full baseline evaluation: Evaluate directly against `golden.json`.
    - **Interactive DB Selection:** Read the `autoctx/tools.yaml` file to list available databases to the user:
      1. Find all `kind: source` blocks with supported evaluation engines (consult the `generate_evalbench_configs` tool description for the exact list of supported types).
      2. If there is exactly one *supported* source, inform the user and auto-select it.

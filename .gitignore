@@ -37,3 +37,7 @@ htmlcov/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Autoctx local workspace artifacts & experiments
+autoctx/
+bootstrap_context.json

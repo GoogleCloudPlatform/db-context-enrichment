@@ -127,17 +127,20 @@ When executing blueprint-driven SQL generation, the model inevitably runs into t
 
 ## Dialect References
 
-For specific SQL templates, examples, and performance recommendations, refer to the subdirectories in `references/`:
+For specific SQL/NoSQL templates, examples, and performance recommendations, refer to the subdirectories in `references/`:
 
 *   **Templates**:
     *   [PostgreSQL](references/template/postgresql.md)
     *   [Spanner (GoogleSQL)](references/template/googlesql.md)
     *   [MySQL](references/template/mysql.md)
+    *   [MongoDB (MQL / Firestore)](references/template/mongodb.md)
 *   **Facets**:
     *   [PostgreSQL](references/facet/postgresql.md)
     *   [Spanner (GoogleSQL)](references/facet/googlesql.md)
     *   [MySQL](references/facet/mysql.md)
+    *   [MongoDB (MQL / Firestore)](references/facet/mongodb.md)
 *   **Value Searches**:
     *   [PostgreSQL](references/value_search/postgresql.md)
     *   [Spanner (GoogleSQL)](references/value_search/googlesql.md)
     *   [MySQL](references/value_search/mysql.md)
+    *   [MongoDB (MQL / Firestore)](references/value_search/mongodb.md)

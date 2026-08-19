@@ -12,9 +12,9 @@ bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,experiment_config.scorers.llmr
 bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,experiment_config.reporting.csv.output_directory,autoctx/experiments/bigtable-hotels-experiment/eval_reports/
 bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,experiment_config.orchestrator,oneshot
 bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,model_config.generator,query_data_api
-bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,model_config.project_id,google.com:cloud-bigtable-dev
+bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,model_config.project_id,cloud-db-nl2sql
 bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,model_config.location,global
-bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,model_config.context.datasource_references.bigtable_reference.database_reference.project_id,google.com:cloud-bigtable-dev
-bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,model_config.context.datasource_references.bigtable_reference.database_reference.instance_id,georgecma-bql-instance
-bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,model_config.context.datasource_references.bigtable_reference.agent_context_reference.context_set_id,projects/google.com:cloud-bigtable-dev/locations/global/contextSets/hotels-eval-contextset
-bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,db_configs.bigtable,"[{'db_type': 'bigtable', 'dialect': 'bigtable', 'database_name': 'georgecma-bql-instance', 'database_path': 'projects/google.com:cloud-bigtable-dev/instances/georgecma-bql-instance', 'max_executions_per_minute': 100, 'instance_id': 'georgecma-bql-instance', 'gcp_project_id': 'google.com:cloud-bigtable-dev'}]"
+bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,model_config.context.datasource_references.bigtable_reference.database_reference.project_id,cloud-db-nl2sql
+bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,model_config.context.datasource_references.bigtable_reference.database_reference.instance_id,evalbench-hotels
+bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,model_config.context.datasource_references.bigtable_reference.agent_context_reference.context_set_id,projects/cloud-db-nl2sql/locations/global/contextSets/hotels-eval-contextset
+bt-hotels-eval-run-001,2026-08-17 22:00:00.000000,db_configs.bigtable,"[{'db_type': 'bigtable', 'dialect': 'bigtable', 'database_name': 'evalbench-hotels', 'database_path': 'projects/cloud-db-nl2sql/instances/evalbench-hotels', 'max_executions_per_minute': 100, 'instance_id': 'evalbench-hotels', 'gcp_project_id': 'cloud-db-nl2sql'}]"

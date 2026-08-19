@@ -1,11 +1,11 @@
 generator: query_data_api
-project_id: google.com:cloud-bigtable-dev
+project_id: cloud-db-nl2sql
 location: global
 context:
   datasource_references:
     bigtable_reference:
       database_reference:
-        project_id: google.com:cloud-bigtable-dev
-        instance_id: georgecma-bql-instance
+        project_id: cloud-db-nl2sql
+        instance_id: evalbench-hotels
       agent_context_reference:
-        context_set_id: projects/google.com:cloud-bigtable-dev/locations/global/contextSets/hotels-eval-contextset
+        context_set_id: projects/cloud-db-nl2sql/locations/global/contextSets/hotels-eval-contextset

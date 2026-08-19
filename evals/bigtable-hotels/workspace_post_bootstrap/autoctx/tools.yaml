@@ -1,8 +1,8 @@
 kind: source
 name: bigtable-hotels-source
 type: bigtable
-project: google.com:cloud-bigtable-dev
-instance: georgecma-bql-instance
+project: cloud-db-nl2sql
+instance: evalbench-hotels
 ---
 kind: tool
 name: bigtable-hotels-source-list-schemas

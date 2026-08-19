@@ -13,6 +13,10 @@ from google.cloud.db_context_enrichment.evaluate import (
     result_reader,
 )
 from google.cloud.db_context_enrichment.model import context
+from google.cloud.db_context_enrichment.value_search import (
+    generator as value_search_generator,
+    match_templates,
+)
 
 mcp = FastMCP("Context Engineering Agent MCP")
 
@@ -102,13 +106,14 @@ def generate_upload_url(
 
     Args:
         db_engine: The database engine. Accepted values are 'alloydb',
-                 'cloudsql', or 'spanner'. This can be derived from the 'kind'
-                 field in the tools.yaml file. For example, 'alloydb-postgres'
-                 becomes 'alloydb', and 'cloud-sql-postgres' becomes 'cloudsql'.
+                 'cloudsql', 'spanner', or 'bigtable'. This can be derived from
+                 the 'kind' field in the tools.yaml file. For example,
+                 'alloydb-postgres' becomes 'alloydb', 'cloud-sql-postgres'
+                 becomes 'cloudsql', and 'bigtable' becomes 'bigtable'.
         project_id: The Google Cloud project ID.
         location: The location of the AlloyDB cluster.
         cluster_id: The ID of the AlloyDB cluster.
-        instance_id: The ID of the Cloud SQL or Spanner instance.
+        instance_id: The ID of the Cloud SQL, Spanner, or Bigtable instance.
         database_id: The ID of the Spanner database.
 
     Returns:
@@ -129,8 +134,13 @@ def generate_upload_url(
             return f"https://console.cloud.google.com/spanner/instances/{instance_id}/databases/{database_id}/details/query?project={project_id}"
         else:
             return "Error: Missing instance_id, database_id, or project_id for spanner."
+    elif db_engine == "bigtable":
+        if instance_id and project_id:
+            return f"https://console.cloud.google.com/bigtable/instances/{instance_id}/overview?project={project_id}"
+        else:
+            return "Error: Missing instance_id or project_id for bigtable."
     else:
-        return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', or 'spanner'."
+        return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', 'spanner', or 'bigtable'."
 
 
 # NOTE: `@mcp.tool` is intentionally NOT applied to upload_context_set /
@@ -275,5 +285,68 @@ async def read_evaluation_result(
     return result_reader.read_eval_results(run_folder_path, offset, batch_size)
 
 
+@mcp.tool
+async def generate_value_searches(
+    value_search_inputs_json: str,
+    db_engine: str,
+    db_version: str | None = None,
+) -> str:
+    """
+    Generates final value searches from a list of user-approved value search definitions.
+
+    Args:
+        value_search_inputs_json: A JSON string representing a list of value search definitions.
+            Each item in the list should be a dictionary with keys:
+            - "table_name": The name of the table.
+            - "column_name": The name of the column.
+            - "concept_type": The semantic type (e.g., 'City').
+            - "match_function": The match function to use (e.g., 'EXACT_MATCH_STRINGS').
+            - "description": (Optional) A description of the value search.
+            
+            Example:
+            '[
+                {"table_name": "users", "column_name": "city", "concept_type": "City", "match_function": "EXACT_MATCH_STRINGS"},
+                {"table_name": "products", "column_name": "name", "concept_type": "Product", "match_function": "FUZZY_MATCH_STRINGS"}
+            ]'
+            
+        db_engine: The database engine (postgresql, mysql, etc.).
+        db_version: The database version (optional).
+        
+    Returns:
+        A JSON string representing a ContextSet object containing all the new value searches.
+    """
+    if db_version and not db_version.strip():
+        db_version = None
+    
+    return value_search_generator.generate_value_searches(
+        value_search_inputs_json, db_engine, db_version
+    )
+
+
+@mcp.tool
+def list_match_functions(db_engine: str, db_version: str | None = None) -> str:
+    """
+    Lists the valid match template functions with their descriptions and examples for a specific database engine.
+    Use this to show the user what 'match_function' options are available, along with their details.
+    
+    If the engine or version is not supported, this will return an error message
+    listing the valid options.
+
+    Args:
+        db_engine: The database engine (e.g., 'postgresql').
+        db_version: The specific database version (optional).
+    
+    Returns:
+        A JSON string containing a dictionary of available function names mapped to their descriptions and examples,
+        or an error message if validation fails.
+    """
+    try:
+        functions = match_templates.get_available_functions(db_engine, db_version)
+        return json.dumps(functions)
+    except ValueError as e:
+        return f"Error: {str(e)}"
+
+
 if __name__ == "__main__":
     mcp.run()  # Uses STDIO transport by default
+

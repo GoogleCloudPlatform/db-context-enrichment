@@ -70,10 +70,11 @@ When collecting information from the user, inform the user that only Application
     - Cloud SQL MySQL
     - AlloyDB Postgres
     - Spanner
+    - Cloud Bigtable
 2.  **Collect Information:** Request all **Required Information** based on the templates inside this directory. Do NOT assume missing fields; ask the user for them explicitly.
 3.  **Generate Configuration:** Replace all placeholders with the user's provided values and generate the complete `tools.yaml` content. Save it to the target location (e.g., `autoctx/tools.yaml` for Autoctx workflows, or `tools.yaml` in the current directory for standalone use).
 4.  **Validate:** After saving, validate the new connection using the toolbox script, replacing `<config_path>` with the actual path to the file:
-    `uvx toolbox-server@1.4.0 --config <config_path> invoke <data_source_name>-list-schemas`
+    `uvx toolbox-server@1.9.0 --config <config_path> invoke <data_source_name>-list-schemas`
 
 ### 2. Add a Database to an Existing `tools.yaml`
 

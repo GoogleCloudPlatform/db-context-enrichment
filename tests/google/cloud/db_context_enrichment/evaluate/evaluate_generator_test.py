@@ -440,3 +440,36 @@ def test_generate_evalbench_configs_spanner_graph():
     assert model_config["use_rest_api"] is True
     spanner_ref = model_config["context"]["datasource_references"]["spanner_reference"]
     assert spanner_ref["database_reference"]["graph_ids"] == ["ResearchGraph"]
+
+
+def test_generate_evalbench_configs_bigtable():
+    mock_yaml = textwrap.dedent("""\
+        ---
+        kind: source
+        name: test-bigtable-source
+        type: bigtable
+        project: test-project
+        instance: test-instance
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=mock_yaml)) as m:
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
+            return_value='[{"mock": "data"}]',
+        ):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+            ) as mock_makedirs:
+                generate_evalbench_configs(
+                    output_dir="/test/out",
+                    dataset_path="/local/path/data.json",
+                    context_set_id="projects/test-project/locations/global/contextSets/test-ctx",
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="test-bigtable-source",
+                )
+
+    mock_makedirs.assert_called_once_with("/test/out/eval_configs", exist_ok=True)
+    calls = [call.args[0] for call in m().write.call_args_list]
+    assert any("bigtable" in call for call in calls)
+    assert any("bigtable_reference" in call for call in calls)
+

@@ -1,0 +1,34 @@
+############################################################
+### Dataset / Eval Items
+############################################################
+dataset_config: evals/bigtable-hotels/dataset.json
+dataset_format: gemini-cli-format
+
+# Orchestrator Configuration
+orchestrator: geminicli
+model_config: model_configs/gemini_model.yaml
+
+# Run scenarios
+runners:
+  gemini_cli_runners: 1
+
+############################################################
+### Scorer Related Configs
+############################################################
+scorers:
+  trajectory_matcher: {}
+
+  goal_completion:
+    model_config: model_configs/gemini_model.yaml
+
+  turn_count: {}
+  end_to_end_latency: {}
+  tool_call_latency: {}
+  token_consumption: {}
+
+############################################################
+### Reporting Related Configs
+############################################################
+reporting:
+  csv:
+    output_directory: 'results'

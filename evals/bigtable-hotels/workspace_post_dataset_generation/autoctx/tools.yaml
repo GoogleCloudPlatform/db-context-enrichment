@@ -1,0 +1,23 @@
+kind: source
+name: bigtable-hotels-source
+type: bigtable
+project: google.com:cloud-bigtable-dev
+instance: georgecma-bql-instance
+---
+kind: tool
+name: bigtable-hotels-source-list-schemas
+type: bigtable-list-schemas
+source: bigtable-hotels-source
+description: |
+  List tables and column families in the bigtable-hotels-source Bigtable instance.
+---
+kind: tool
+name: bigtable-hotels-source-execute-sql
+type: bigtable-sql
+source: bigtable-hotels-source
+description: Execute BTQL SQL queries against the hotels Bigtable table.
+statement: "{{.sql}}"
+templateParameters:
+  - name: sql
+    type: string
+    description: BTQL query to execute

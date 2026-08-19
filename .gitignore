@@ -34,6 +34,27 @@ htmlcov/
 # Claude Code local user settings
 .claude/settings.local.json
 
+# Multi-Agent Teamwork / Agent artifacts
+.agents/
+BRIEFING.md
+ORIGINAL_REQUEST.md
+PROJECT.md
+TEST_INFRA.md
+TEST_READY.md
+
+# Runtime & Test Reports
+/autoctx/
+results/
+e2e_test_report.*
+run_e2e_tests.py
+tests/e2e/
+tests/fixtures/
+tests/evals/
+plugin/mcp.json
+plugin/mcp_config.json
+
 # OS metadata
 .DS_Store
 Thumbs.db
+
+

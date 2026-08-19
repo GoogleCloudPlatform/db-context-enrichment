@@ -1,0 +1,11 @@
+generator: query_data_api
+project_id: google.com:cloud-bigtable-dev
+location: global
+context:
+  datasource_references:
+    bigtable_reference:
+      database_reference:
+        project_id: google.com:cloud-bigtable-dev
+        instance_id: georgecma-bql-instance
+      agent_context_reference:
+        context_set_id: projects/google.com:cloud-bigtable-dev/locations/global/contextSets/hotels-eval-contextset

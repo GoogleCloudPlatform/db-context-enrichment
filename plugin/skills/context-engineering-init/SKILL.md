@@ -84,7 +84,7 @@ When collecting information from the user, inform the user that only Application
 4.  **Generate and Append:** Generate the YAML snippets for the new `sources` and `tools` sections. Append these new entries to the respective sections in the existing file content.
 5.  **Save Configuration:** Save the updated content back to the file.
 6.  **Validate:** Validate only the newly added connection, replacing `<config_path>` with the actual path to the file:
-    `uvx toolbox-server@1.4.0 --config <config_path> invoke <data_source_name>-list-schemas`
+    `uvx toolbox-server@1.9.0 --config <config_path> invoke <data_source_name>-list-schemas`
 
 ### 3. List Existing Database Connections
 
@@ -94,7 +94,7 @@ When collecting information from the user, inform the user that only Application
 ## Validation
 
 To verify that a specific database connection is configured correctly at any time, run the validation script with the target data source name:
-`uvx toolbox-server@1.4.0 --config tools.yaml invoke <data_source_name>-list-schemas`
+`uvx toolbox-server@1.9.0 --config tools.yaml invoke <data_source_name>-list-schemas`
 
 ## Templates & Reference
 

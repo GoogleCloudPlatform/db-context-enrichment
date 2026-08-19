@@ -50,8 +50,6 @@ run_e2e_tests.py
 tests/e2e/
 tests/fixtures/
 tests/evals/
-plugin/mcp.json
-plugin/mcp_config.json
 
 # OS metadata
 .DS_Store

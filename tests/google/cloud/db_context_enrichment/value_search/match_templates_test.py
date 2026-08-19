@@ -92,6 +92,21 @@ def test_logic_unsupported_version(mock_config):
         with pytest.raises(ValueError, match="Minimum required version: 14"):
             get_match_template("postgresql", "TEST_FUNC", version="13")
 
+
+def test_logic_version_with_build_suffixes(mock_config):
+    """
+    Ensure version strings with pre-release or build metadata (e.g. '15.1-pgdg', '14.2-beta')
+    are parsed properly without crashing or failing supported checks.
+    """
+    with patch.dict(match_templates._MATCH_CONFIG, mock_config, clear=True):
+        # 15.1-pgdg is >= min_version 14, and should successfully retrieve the 15 override or fallback
+        template = get_match_template("postgresql", "ONLY_DEFAULT", version="15.1-pgdg")
+        assert template["sql_template"] == "DEFAULT_ONLY"
+
+        template_beta = get_match_template("postgresql", "ONLY_DEFAULT", version="14.2-beta")
+        assert template_beta["sql_template"] == "DEFAULT_ONLY"
+
+
 def test_logic_missing_function(mock_config):
     """
     If the function name doesn't exist in defaults or overrides, raise ValueError.

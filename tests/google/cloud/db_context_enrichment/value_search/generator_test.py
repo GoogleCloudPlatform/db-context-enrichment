@@ -172,3 +172,51 @@ def test_generate_value_searches_postgres_support():
     assert cs.value_searches is not None
     assert len(cs.value_searches) == 1
     assert "FROM \"users\" T" in cs.value_searches[0].query
+
+
+def test_generate_value_searches_non_list_json():
+    """Test error handling when input JSON is an object instead of a list."""
+    result_str = generate_value_searches(
+        value_search_inputs_json='{"table_name": "hotels"}',
+        db_engine="bigtable",
+    )
+    data = json.loads(result_str)
+    assert "error" in data
+    assert "must be a JSON list of objects" in data["error"]
+
+
+def test_generate_value_searches_non_dict_element():
+    """Test error handling when list contains non-dictionary elements."""
+    result_str = generate_value_searches(
+        value_search_inputs_json='["invalid_item"]',
+        db_engine="bigtable",
+    )
+    data = json.loads(result_str)
+    assert "error" in data
+    assert "must be a dictionary" in data["error"]
+
+
+def test_generate_value_searches_escaping_quotes_and_backticks():
+    """Test that single quotes in literals and backticks in identifiers are escaped."""
+    inputs = [
+        {
+            "table_name": "hotel`table",
+            "column_name": "cf['city']",
+            "concept_type": "Hotel's City",
+            "match_function": "EXACT_MATCH_STRINGS",
+        }
+    ]
+    result_str = generate_value_searches(
+        value_search_inputs_json=json.dumps(inputs),
+        db_engine="bigtable",
+    )
+    data = json.loads(result_str)
+    assert "error" not in data
+    cs = ContextSet.model_validate(data)
+    assert len(cs.value_searches) == 1
+    query = cs.value_searches[0].query
+    # Identifier backtick doubled
+    assert "FROM `hotel``table` AS T" in query
+    # Literal single quote doubled
+    assert "'Hotel''s City' AS concept_type" in query
+

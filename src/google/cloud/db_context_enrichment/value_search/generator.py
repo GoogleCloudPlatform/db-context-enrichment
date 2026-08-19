@@ -1,8 +1,25 @@
 import json
+from typing import Any, Dict, List
+
 from google.cloud.db_context_enrichment.model import context
 from google.cloud.db_context_enrichment.value_search import match_templates
-import json
-from typing import List, Dict, Any
+
+
+def _escape_sql_literal(val: str) -> str:
+    """Escapes single quotes for SQL string literals."""
+    if not isinstance(val, str):
+        return str(val)
+    return val.replace("'", "''")
+
+
+def _escape_identifier(val: str, dialect: str) -> str:
+    """Escapes identifier characters based on the database dialect."""
+    if not isinstance(val, str):
+        return str(val)
+    if dialect.lower() in ("postgresql", "postgres"):
+        return val.replace('"', '""')
+    return val.replace("`", "``")
+
 
 def generate_value_searches(
     value_search_inputs_json: str,
@@ -20,29 +37,35 @@ def generate_value_searches(
             - concept_type (str)
             - match_function (str)
             - description (str, optional)
-        db_engine: The database engine (e.g., 'postgresql').
+        db_engine: The database engine (e.g., 'postgresql', 'bigtable', 'googlesql', 'mysql').
         db_version: The specific database version (optional).
 
     Returns:
         A JSON string representation of a ContextSet containing all generated value searches.
     """
     try:
-        inputs: List[Dict[str, Any]] = json.loads(value_search_inputs_json)
+        inputs = json.loads(value_search_inputs_json)
     except json.JSONDecodeError as e:
         return json.dumps({"error": f"Invalid JSON format: {str(e)}"})
+
+    if not isinstance(inputs, list):
+        return json.dumps({"error": "value_search_inputs_json must be a JSON list of objects"})
 
     value_searches = []
 
     for index, item in enumerate(inputs):
+        if not isinstance(item, dict):
+            return json.dumps({"error": f"Item at index {index} must be a dictionary"})
+
         required_fields = ["table_name", "column_name", "concept_type", "match_function"]
         for field in required_fields:
             if not item.get(field):
                 return json.dumps({"error": f"Field '{field}' is missing at index {index}"})
 
-        table_name = item.get("table_name")
-        column_name = item.get("column_name")
-        concept_type = item.get("concept_type")
-        match_function = item.get("match_function")
+        table_name = str(item.get("table_name"))
+        column_name = str(item.get("column_name"))
+        concept_type = str(item.get("concept_type"))
+        match_function = str(item.get("match_function"))
         description = item.get("description")
 
         try:
@@ -53,13 +76,13 @@ def generate_value_searches(
             )
             raw_sql = template_def["sql_template"]
 
-            # Prepare formatting arguments with defaults for optional fields
+            # Prepare safely escaped formatting arguments
             format_args = {
-                "table": table_name,
-                "column": column_name,
-                "concept_type": concept_type,
-                "column_tokens": item.get("column_tokens", ""),
-                "column_embedding": item.get("column_embedding", ""),
+                "table": _escape_identifier(table_name, db_engine),
+                "column": _escape_identifier(column_name, db_engine),
+                "concept_type": _escape_sql_literal(concept_type),
+                "column_tokens": _escape_identifier(str(item.get("column_tokens", "")), db_engine),
+                "column_embedding": _escape_identifier(str(item.get("column_embedding", "")), db_engine),
             }
 
             value_search_query = raw_sql.format(**format_args)

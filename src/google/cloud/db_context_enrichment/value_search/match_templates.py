@@ -1,5 +1,6 @@
-from typing import Dict, Any, List
 from enum import Enum
+import re
+from typing import Any, Dict, List
 
 
 class Dialect(str, Enum):
@@ -165,13 +166,25 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
     }
 }
 
+
+def _parse_version(v: str) -> tuple[int, ...]:
+    """Extract numeric components from a version string like '13.2-beta' -> (13, 2)."""
+    parts = []
+    for part in v.split('.'):
+        match = re.match(r'^\d+', part)
+        if match:
+            parts.append(int(match.group(0)))
+        else:
+            break
+    if not parts:
+        raise ValueError(f"No numeric version parts found in '{v}'")
+    return tuple(parts)
+
+
 def _is_version_supported(version: str, min_version: str) -> bool:
-    """Helper to compare version strings (e.g. '13.2' >= '13')."""
-    def parse(v: str):
-        return tuple(map(int, v.split('.')))
-    
+    """Helper to compare version strings robustly (e.g. '13.2-beta' >= '13')."""
     try:
-        return parse(version) >= parse(min_version)
+        return _parse_version(version) >= _parse_version(min_version)
     except ValueError:
         return False
 

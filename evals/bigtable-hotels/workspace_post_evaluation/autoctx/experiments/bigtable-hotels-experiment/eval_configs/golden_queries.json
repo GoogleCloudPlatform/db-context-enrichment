@@ -1,0 +1,192 @@
+[
+  {
+    "id": "hotel_001",
+    "nl_prompt": "Find all hotels in Zurich",
+    "query_type": "DQL",
+    "database": "hotels",
+    "dialects": [
+      "bigtable"
+    ],
+    "golden_sql": {
+      "bigtable": [
+        "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Zurich'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "hotel_002",
+    "nl_prompt": "Count how many hotels are located in Basel",
+    "query_type": "DQL",
+    "database": "hotels",
+    "dialects": [
+      "bigtable"
+    ],
+    "golden_sql": {
+      "bigtable": [
+        "SELECT COUNT(*) AS total_hotels FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Basel'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "hotel_003",
+    "nl_prompt": "List all Luxury tier hotels",
+    "query_type": "DQL",
+    "database": "hotels",
+    "dialects": [
+      "bigtable"
+    ],
+    "golden_sql": {
+      "bigtable": [
+        "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location FROM `hotels` WHERE CAST(cf['price_tier'] AS STRING) = 'Luxury'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "hotel_004",
+    "nl_prompt": "Find available unbooked hotels in Geneva",
+    "query_type": "DQL",
+    "database": "hotels",
+    "dialects": [
+      "bigtable"
+    ],
+    "golden_sql": {
+      "bigtable": [
+        "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Geneva' AND TO_INT64(cf['booked']) = 0"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "hotel_005",
+    "nl_prompt": "Lookup hotel with ID 1",
+    "query_type": "DQL",
+    "database": "hotels",
+    "dialects": [
+      "bigtable"
+    ],
+    "golden_sql": {
+      "bigtable": [
+        "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE TO_INT64(cf['id']) = 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "hotel_006",
+    "nl_prompt": "Find hotels matching row key prefix hotels#1#",
+    "query_type": "DQL",
+    "database": "hotels",
+    "dialects": [
+      "bigtable"
+    ],
+    "golden_sql": {
+      "bigtable": [
+        "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location FROM `hotels` WHERE CAST(_key AS STRING) LIKE 'hotels#1#%'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "hotel_007",
+    "nl_prompt": "Count available unbooked hotels by price tier",
+    "query_type": "DQL",
+    "database": "hotels",
+    "dialects": [
+      "bigtable"
+    ],
+    "golden_sql": {
+      "bigtable": [
+        "SELECT CAST(cf['price_tier'] AS STRING) AS price_tier, COUNT(*) AS count FROM `hotels` WHERE TO_INT64(cf['booked']) = 0 GROUP BY cf['price_tier']"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "hotel_008",
+    "nl_prompt": "Find booked hotels with check-in date 2024-04-14",
+    "query_type": "DQL",
+    "database": "hotels",
+    "dialects": [
+      "bigtable"
+    ],
+    "golden_sql": {
+      "bigtable": [
+        "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location FROM `hotels` WHERE CAST(cf['checkin_date'] AS STRING) = '2024-04-14' AND TO_INT64(cf['booked']) = 1"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "hotel_009",
+    "nl_prompt": "List hotels in Bern with Midscale or Upper Midscale tier",
+    "query_type": "DQL",
+    "database": "hotels",
+    "dialects": [
+      "bigtable"
+    ],
+    "golden_sql": {
+      "bigtable": [
+        "SELECT _key, CAST(cf['name'] AS STRING) AS name FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Bern' AND (CAST(cf['price_tier'] AS STRING) = 'Midscale' OR CAST(cf['price_tier'] AS STRING) = 'Upper Midscale')"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  },
+  {
+    "id": "hotel_010",
+    "nl_prompt": "Lookup hotel details by exact name Marriott Zurich",
+    "query_type": "DQL",
+    "database": "hotels",
+    "dialects": [
+      "bigtable"
+    ],
+    "golden_sql": {
+      "bigtable": [
+        "SELECT _key, CAST(cf['location'] AS STRING) AS location, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE CAST(cf['name'] AS STRING) = 'Marriott Zurich'"
+      ]
+    },
+    "eval_query": {},
+    "setup_sql": {},
+    "cleanup_sql": {},
+    "other": {},
+    "tags": []
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "hotel_001",
+    "database": "hotels",
+    "nlq": "Find all hotels in Zurich",
+    "golden_sql": "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Zurich'"
+  },
+  {
+    "id": "hotel_002",
+    "database": "hotels",
+    "nlq": "Count how many hotels are located in Basel",
+    "golden_sql": "SELECT COUNT(*) AS total_hotels FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Basel'"
+  },
+  {
+    "id": "hotel_003",
+    "database": "hotels",
+    "nlq": "List all Luxury tier hotels",
+    "golden_sql": "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location FROM `hotels` WHERE CAST(cf['price_tier'] AS STRING) = 'Luxury'"
+  },
+  {
+    "id": "hotel_004",
+    "database": "hotels",
+    "nlq": "Find available unbooked hotels in Geneva",
+    "golden_sql": "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Geneva' AND TO_INT64(cf['booked']) = 0"
+  },
+  {
+    "id": "hotel_005",
+    "database": "hotels",
+    "nlq": "Lookup hotel with ID 1",
+    "golden_sql": "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE TO_INT64(cf['id']) = 1"
+  },
+  {
+    "id": "hotel_006",
+    "database": "hotels",
+    "nlq": "Find hotels matching row key prefix hotels#1#",
+    "golden_sql": "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location FROM `hotels` WHERE CAST(_key AS STRING) LIKE 'hotels#1#%'"
+  },
+  {
+    "id": "hotel_007",
+    "database": "hotels",
+    "nlq": "Count available unbooked hotels by price tier",
+    "golden_sql": "SELECT CAST(cf['price_tier'] AS STRING) AS price_tier, COUNT(*) AS count FROM `hotels` WHERE TO_INT64(cf['booked']) = 0 GROUP BY cf['price_tier']"
+  },
+  {
+    "id": "hotel_008",
+    "database": "hotels",
+    "nlq": "Find booked hotels with check-in date 2024-04-14",
+    "golden_sql": "SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location FROM `hotels` WHERE CAST(cf['checkin_date'] AS STRING) = '2024-04-14' AND TO_INT64(cf['booked']) = 1"
+  },
+  {
+    "id": "hotel_009",
+    "database": "hotels",
+    "nlq": "List hotels in Bern with Midscale or Upper Midscale tier",
+    "golden_sql": "SELECT _key, CAST(cf['name'] AS STRING) AS name FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Bern' AND (CAST(cf['price_tier'] AS STRING) = 'Midscale' OR CAST(cf['price_tier'] AS STRING) = 'Upper Midscale')"
+  },
+  {
+    "id": "hotel_010",
+    "database": "hotels",
+    "nlq": "Lookup hotel details by exact name Marriott Zurich",
+    "golden_sql": "SELECT _key, CAST(cf['location'] AS STRING) AS location, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE CAST(cf['name'] AS STRING) = 'Marriott Zurich'"
+  }
+]

@@ -1,0 +1,84 @@
+{
+  "templates": [
+    {
+      "nl_query": "How many hotels are located in Zurich?",
+      "sql": "SELECT count(*) FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Zurich'",
+      "intent": "count hotels in Zurich",
+      "manifest": "count hotels in a given city",
+      "parameterized": {
+        "parameterized_sql": "SELECT count(*) FROM `hotels` WHERE CAST(cf['location'] AS STRING) = ?",
+        "parameterized_intent": "count hotels in ?"
+      }
+    },
+    {
+      "nl_query": "Find all unbooked luxury hotels",
+      "sql": "SELECT CAST(_key AS STRING) AS hotel_id, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location FROM `hotels` WHERE CAST(cf['price_tier'] AS STRING) = 'Luxury' AND TO_INT64(cf['booked']) = 0",
+      "intent": "find unbooked luxury hotels",
+      "manifest": "find unbooked hotels in a given tier",
+      "parameterized": {
+        "parameterized_sql": "SELECT CAST(_key AS STRING) AS hotel_id, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location FROM `hotels` WHERE CAST(cf['price_tier'] AS STRING) = ? AND TO_INT64(cf['booked']) = 0",
+        "parameterized_intent": "find unbooked ? hotels"
+      }
+    },
+    {
+      "nl_query": "Find hotel with ID 1",
+      "sql": "SELECT CAST(_key AS STRING) AS hotel_id, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE TO_INT64(cf['id']) = 1",
+      "intent": "lookup hotel by id 1",
+      "manifest": "lookup hotel by a given id",
+      "parameterized": {
+        "parameterized_sql": "SELECT CAST(_key AS STRING) AS hotel_id, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE TO_INT64(cf['id']) = ?",
+        "parameterized_intent": "lookup hotel by id ?"
+      }
+    }
+  ],
+  "facets": [
+    {
+      "sql_snippet": "CAST(hotels.cf['location'] AS STRING) = 'Zurich'",
+      "intent": "hotels located in 'Zurich'",
+      "manifest": "hotels located in a given city",
+      "parameterized": {
+        "parameterized_sql_snippet": "CAST(hotels.cf['location'] AS STRING) = ?",
+        "parameterized_intent": "hotels located in ?"
+      }
+    },
+    {
+      "sql_snippet": "CAST(hotels.cf['price_tier'] AS STRING) = 'Luxury'",
+      "intent": "luxury tier hotels",
+      "manifest": "hotels in a given tier",
+      "parameterized": {
+        "parameterized_sql_snippet": "CAST(hotels.cf['price_tier'] AS STRING) = ?",
+        "parameterized_intent": "? tier hotels"
+      }
+    },
+    {
+      "sql_snippet": "TO_INT64(hotels.cf['booked']) = 0",
+      "intent": "unbooked / available hotels",
+      "manifest": "unbooked / available hotels",
+      "parameterized": {
+        "parameterized_sql_snippet": "TO_INT64(hotels.cf['booked']) = 0",
+        "parameterized_intent": "unbooked / available hotels"
+      }
+    },
+    {
+      "sql_snippet": "CAST(hotels._key AS STRING) LIKE 'hotels#1#%'",
+      "intent": "hotels matching ID 1 prefix",
+      "manifest": "hotels matching a given prefix",
+      "parameterized": {
+        "parameterized_sql_snippet": "CAST(hotels._key AS STRING) LIKE ?",
+        "parameterized_intent": "hotels matching ? prefix"
+      }
+    }
+  ],
+  "value_searches": [
+    {
+      "concept_type": "City",
+      "query": "SELECT CAST(T.`cf['location']` AS STRING) AS value, 'cf[\\'location\\']' AS `columns`, 'City' AS concept_type, 0 AS distance, '' AS context FROM `hotels` AS T WHERE CAST(T.`cf['location']` AS STRING) = CAST($value AS STRING)",
+      "description": "Exact match for hotel location city in hotels table"
+    },
+    {
+      "concept_type": "PriceTier",
+      "query": "SELECT CAST(T.`cf['price_tier']` AS STRING) AS value, 'cf[\\'price_tier\\']' AS `columns`, 'PriceTier' AS concept_type, 0 AS distance, '' AS context FROM `hotels` AS T WHERE CAST(T.`cf['price_tier']` AS STRING) = CAST($value AS STRING)",
+      "description": "Exact match for hotel price tier in hotels table"
+    }
+  ]
+}

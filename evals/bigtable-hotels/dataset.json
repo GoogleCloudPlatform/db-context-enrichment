@@ -1,0 +1,62 @@
+[
+  {
+    "id": "hotel-cuj-001",
+    "nlq": "Find all hotels in Seattle with nightly rate under 200",
+    "database": "hotels",
+    "golden_sql": "SELECT _key, details['name'], pricing['nightly_rate'] FROM `hotels` WHERE details['city'] = 'Seattle' AND TO_FLOAT64(pricing['nightly_rate']) < 200.0"
+  },
+  {
+    "id": "hotel-cuj-002",
+    "nlq": "Show pet-friendly hotels with cleanliness score above 4.8",
+    "database": "hotels",
+    "golden_sql": "SELECT _key, details['name'], reviews['cleanliness_score'] FROM `hotels` WHERE (amenities['pets_allowed'] = 'true' OR amenities['pets_allowed'] = b'\\x01') AND TO_FLOAT64(reviews['cleanliness_score']) >= 4.8"
+  },
+  {
+    "id": "hotel-cuj-003",
+    "nlq": "What is the average price of 5-star hotels in San Francisco?",
+    "database": "hotels",
+    "golden_sql": "SELECT AVG(TO_FLOAT64(pricing['nightly_rate'])) AS avg_rate FROM `hotels` WHERE details['city'] = 'San Francisco' AND TO_INT64(details['star_rating']) = 5"
+  },
+  {
+    "id": "hotel-cuj-004",
+    "nlq": "Lookup hotel by name Grand Hyatt Seattle",
+    "database": "hotels",
+    "golden_sql": "SELECT _key, details['name'], details['address'] FROM `hotels` WHERE details['name'] = 'Grand Hyatt Seattle'"
+  },
+  {
+    "id": "hotel-cuj-005",
+    "nlq": "List hotels with a swimming pool and wifi in California",
+    "database": "hotels",
+    "golden_sql": "SELECT _key, details['name'], details['city'] FROM `hotels` WHERE details['state'] = 'CA' AND amenities['has_pool'] = 'true' AND amenities['has_wifi'] = 'true'"
+  },
+  {
+    "id": "hotel-cuj-006",
+    "nlq": "Count total hotels by star rating in New York",
+    "database": "hotels",
+    "golden_sql": "SELECT TO_INT64(details['star_rating']) AS stars, COUNT(*) AS count FROM `hotels` WHERE details['city'] = 'New York' GROUP BY details['star_rating']"
+  },
+  {
+    "id": "hotel-cuj-007",
+    "nlq": "Find top 5 highest rated hotels in Chicago",
+    "database": "hotels",
+    "golden_sql": "SELECT _key, details['name'], TO_FLOAT64(reviews['avg_rating']) AS rating FROM `hotels` WHERE details['city'] = 'Chicago' ORDER BY rating DESC LIMIT 5"
+  },
+  {
+    "id": "hotel-cuj-008",
+    "nlq": "Find cheapest hotels in Miami with spa",
+    "database": "hotels",
+    "golden_sql": "SELECT _key, details['name'], TO_FLOAT64(pricing['nightly_rate']) AS rate FROM `hotels` WHERE details['city'] = 'Miami' AND amenities['has_spa'] = 'true' ORDER BY rate ASC LIMIT 5"
+  },
+  {
+    "id": "hotel-cuj-009",
+    "nlq": "Find hotels with row key prefix hotel#USA#Austin",
+    "database": "hotels",
+    "golden_sql": "SELECT _key, details['name'] FROM `hotels` WHERE _key LIKE 'hotel#USA#Austin%'"
+  },
+  {
+    "id": "hotel-cuj-010",
+    "nlq": "Calculate minimum, maximum, and average hotel price in Boston",
+    "database": "hotels",
+    "golden_sql": "SELECT MIN(TO_FLOAT64(pricing['nightly_rate'])) AS min_price, MAX(TO_FLOAT64(pricing['nightly_rate'])) AS max_price, AVG(TO_FLOAT64(pricing['nightly_rate'])) AS avg_price FROM `hotels` WHERE details['city'] = 'Boston'"
+  }
+]

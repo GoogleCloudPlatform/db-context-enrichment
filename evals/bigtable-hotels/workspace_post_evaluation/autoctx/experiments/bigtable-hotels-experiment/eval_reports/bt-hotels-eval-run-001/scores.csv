@@ -1,0 +1,5 @@
+comparator,comparison_error,comparison_logs,database,dialects,generated_error,generated_sql,id,job_id,score
+llmrater,,Skipped. Exact Match was found.,hotels,['bigtable'],,"SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Zurich'",hotel_001,bt-hotels-eval-run-001,100
+llmrater,,Skipped. Exact Match was found.,hotels,['bigtable'],,"SELECT COUNT(*) AS total_hotels FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Basel'",hotel_002,bt-hotels-eval-run-001,100
+llmrater,,Skipped. Exact Match was found.,hotels,['bigtable'],,"SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['location'] AS STRING) AS location FROM `hotels` WHERE CAST(cf['price_tier'] AS STRING) = 'Luxury'",hotel_003,bt-hotels-eval-run-001,100
+llmrater,,Skipped. Exact Match was found.,hotels,['bigtable'],,"SELECT _key, CAST(cf['name'] AS STRING) AS name, CAST(cf['price_tier'] AS STRING) AS price_tier FROM `hotels` WHERE CAST(cf['location'] AS STRING) = 'Geneva' AND TO_INT64(cf['booked']) = 0",hotel_004,bt-hotels-eval-run-001,100

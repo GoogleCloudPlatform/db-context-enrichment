@@ -21,9 +21,9 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "description": "Exact match for strings (Standard SQL).",
                 "example": "Use when finding a specific state code (e.g., 'CA'), order ID, or exact product name where precise spelling is required.",
                 "sql_template": (
-                    "SELECT $value as value, '{table}.{column}' as columns, "
+                    "SELECT $value as value, '{table_lit}.{column_lit}' as columns, "
                     "'{concept_type}' as concept_type, 0 as distance, "
-                    "'' as context FROM \"{table}\" T WHERE T.\"{column}\" = $value"
+                    "'' as context FROM \"{table_ident}\" T WHERE T.\"{column_ident}\" = $value"
                 ),
             },
             "TRIGRAM_STRING_MATCH": {
@@ -31,12 +31,12 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "example": "Use when searching for names, addresses, or plain text where users might have typos, misspellings, or partial matches.",
                 "sql_template": (
                     "WITH TrigramMetrics AS ("
-                    "    SELECT T.\"{column}\" AS original_value, "
-                    "    (T.\"{column}\" <-> $value::text) AS normalized_dist "
-                    "    FROM \"{table}\" T "
-                    "    WHERE T.\"{column}\" % $value::text"
+                    "    SELECT T.\"{column_ident}\" AS original_value, "
+                    "    (T.\"{column_ident}\" <-> $value::text) AS normalized_dist "
+                    "    FROM \"{table_ident}\" T "
+                    "    WHERE T.\"{column_ident}\" % $value::text"
                     ") "
-                    "SELECT original_value AS value, '{table}.{column}' AS columns, "
+                    "SELECT original_value AS value, '{table_lit}.{column_lit}' AS columns, "
                     "'{concept_type}' AS concept_type, normalized_dist AS distance, "
                     "''::text AS context FROM TrigramMetrics"
                 ),
@@ -46,14 +46,14 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "example": "Use when searching for concepts, descriptions, themes, or abstract text where the exact words might differ but the underlying meaning is similar.",
                 "sql_template": (
                     "WITH SemanticMetrics AS ("
-                    "    SELECT T.\"{column}\" AS original_value, ("
+                    "    SELECT T.\"{column_ident}\" AS original_value, ("
                     "        (google_ml.embedding('gemini-embedding-001', $value)::vector <=> "
-                    "         google_ml.embedding('gemini-embedding-001', T.\"{column}\")::vector) / 2.0"
+                    "         google_ml.embedding('gemini-embedding-001', T.\"{column_ident}\")::vector) / 2.0"
                     "    ) AS normalized_dist "
-                    "    FROM \"{table}\" T "
-                    "    WHERE T.\"{column}\" IS NOT NULL"
+                    "    FROM \"{table_ident}\" T "
+                    "    WHERE T.\"{column_ident}\" IS NOT NULL"
                     ") "
-                    "SELECT original_value AS value, '{table}.{column}' AS columns, "
+                    "SELECT original_value AS value, '{table_lit}.{column_lit}' AS columns, "
                     "'{concept_type}' AS concept_type, normalized_dist AS distance, "
                     "''::text AS context FROM SemanticMetrics"
                 ),
@@ -68,23 +68,23 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "description": "Exact match for strings in Spanner.",
                 "example": "Use for exact IDs or state codes in Spanner.",
                 "sql_template": (
-                    "SELECT CAST($value AS STRING) AS value, '{column}' AS `columns`, "
+                    "SELECT CAST($value AS STRING) AS value, '{column_lit}' AS `columns`, "
                     "'{concept_type}' AS concept_type, 0 AS distance, "
                     "JSON '{{}}' AS context "
-                    "FROM `{table}` AS T "
-                    "WHERE CAST(T.`{column}` AS STRING) = CAST($value AS STRING) "
+                    "FROM `{table_ident}` AS T "
+                    "WHERE CAST(T.`{column_ident}` AS STRING) = CAST($value AS STRING) "
                 )
             },
             "TRIGRAM_STRING_MATCH": {
                 "description": "String similarity using Spanner Search Indexes.",
                 "example": "Use for typos/misspellings in Spanner using SEARCH_NGRAMS.",
                 "sql_template": (
-                    "SELECT CAST(T.`{column}` AS STRING) AS value, '{column}' AS `columns`, "
+                    "SELECT CAST(T.`{column_ident}` AS STRING) AS value, '{column_lit}' AS `columns`, "
                     "'{concept_type}' AS concept_type, "
-                    "1 - SCORE_NGRAMS(T.`{column_tokens}`, CAST($value AS STRING)) AS distance, "
+                    "1 - SCORE_NGRAMS(T.`{column_tokens_ident}`, CAST($value AS STRING)) AS distance, "
                     "JSON '{{}}' AS context "
-                    "FROM `{table}` AS T "
-                    "WHERE SEARCH_NGRAMS(T.`{column_tokens}`, CAST($value AS STRING)) "
+                    "FROM `{table_ident}` AS T "
+                    "WHERE SEARCH_NGRAMS(T.`{column_tokens_ident}`, CAST($value AS STRING)) "
                 ),
             },
         },
@@ -97,10 +97,10 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "description": "Exact match for strings in MySQL.",
                 "example": "Use for exact matching in MySQL.",
                 "sql_template": (
-                    "SELECT $value AS value, '{column}' AS `columns`, "
+                    "SELECT $value AS value, '{column_lit}' AS `columns`, "
                     "'{concept_type}' AS concept_type, 0 AS distance, "
                     "JSON_OBJECT() AS context "
-                    "FROM `{table}` AS T WHERE T.`{column}` = $value"
+                    "FROM `{table_ident}` AS T WHERE T.`{column_ident}` = $value"
                 ),
             },
             "TRIGRAM_STRING_MATCH": {
@@ -109,17 +109,17 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "sql_template": (
                     "SELECT * FROM ("
                     "  WITH TrigramMetrics AS ("
-                    "    SELECT T.`{column}` AS original_value, "
-                    "    MATCH(T.`{column}`) AGAINST($value IN NATURAL LANGUAGE MODE) AS raw_score "
-                    "    FROM `{table}` AS T "
-                    "    WHERE MATCH(T.`{column}`) AGAINST($value IN NATURAL LANGUAGE MODE) > 0 "
+                    "    SELECT T.`{column_ident}` AS original_value, "
+                    "    MATCH(T.`{column_ident}`) AGAINST($value IN NATURAL LANGUAGE MODE) AS raw_score "
+                    "    FROM `{table_ident}` AS T "
+                    "    WHERE MATCH(T.`{column_ident}`) AGAINST($value IN NATURAL LANGUAGE MODE) > 0 "
                     "    ORDER BY raw_score DESC LIMIT 10"
                     "  ), "
                     "  NormalizationParams AS ("
                     "    SELECT MAX(raw_score) AS max_score "
                     "    FROM TrigramMetrics"
                     "  ) "
-                    "  SELECT original_value AS value, '{column}' AS `columns`, "
+                    "  SELECT original_value AS value, '{column_lit}' AS `columns`, "
                     "  '{concept_type}' AS concept_type, "
                     "  (CASE WHEN n.max_score > 0 THEN (1 - (m.raw_score / n.max_score)) ELSE 0 END) AS distance, "
                     "  JSON_OBJECT() AS context "
@@ -135,12 +135,12 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                     "  WITH search_embedding AS ("
                     "    SELECT mysql.ml_embedding('text-embedding-005', $value) AS val"
                     "  ) "
-                    "  SELECT T.`{column}` AS value, '{column}' AS `columns`, "
+                    "  SELECT T.`{column_ident}` AS value, '{column_lit}' AS `columns`, "
                     "  '{concept_type}' AS concept_type, "
-                    "  COSINE_DISTANCE(T.`{column_embedding}`, search_embedding.val) AS distance, "
+                    "  COSINE_DISTANCE(T.`{column_embedding_ident}`, search_embedding.val) AS distance, "
                     "  JSON_OBJECT() AS context "
-                    "  FROM `{table}` AS T, search_embedding "
-                    "  WHERE T.`{column_embedding}` IS NOT NULL"
+                    "  FROM `{table_ident}` AS T, search_embedding "
+                    "  WHERE T.`{column_embedding_ident}` IS NOT NULL"
                     ") AS wrapped_query "
                 ),
             },
@@ -154,11 +154,11 @@ _MATCH_CONFIG: Dict[Dialect, Dict[str, Any]] = {
                 "description": "Exact match for strings in Bigtable (BTQL).",
                 "example": "Use for exact matching in Bigtable (usually on Logical Views).",
                 "sql_template": (
-                    "SELECT CAST(T.`{column}` AS STRING) AS value, '{column}' AS `columns`, "
+                    "SELECT CAST(T.`{column_ident}` AS STRING) AS value, '{column_lit}' AS `columns`, "
                     "'{concept_type}' AS concept_type, 0 AS distance, "
                     "'' AS context "
-                    "FROM `{table}` AS T "
-                    "WHERE CAST(T.`{column}` AS STRING) = CAST($value AS STRING)"
+                    "FROM `{table_ident}` AS T "
+                    "WHERE CAST(T.`{column_ident}` AS STRING) = CAST($value AS STRING)"
                 )
             }
         },

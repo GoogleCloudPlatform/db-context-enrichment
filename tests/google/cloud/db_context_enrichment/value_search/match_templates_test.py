@@ -123,9 +123,9 @@ def test_get_match_template_bigtable_real():
         dialect="bigtable",
         function_name="EXACT_MATCH_STRINGS"
     )
-    assert "SELECT CAST(T.`{column}` AS STRING) AS value" in template["sql_template"]
+    assert "SELECT CAST(T.`{column_ident}` AS STRING) AS value" in template["sql_template"]
     assert "'' AS context" in template["sql_template"]
-    assert "WHERE CAST(T.`{column}` AS STRING) = CAST($value AS STRING)" in template["sql_template"]
+    assert "WHERE CAST(T.`{column_ident}` AS STRING) = CAST($value AS STRING)" in template["sql_template"]
     assert template["description"] is not None
 
 def test_get_available_functions_bigtable():
@@ -144,8 +144,9 @@ def test_bigtable_template_formatting_success():
     )
     sql_template = template["sql_template"]
     format_args = {
-        "table": "my_table",
-        "column": "my_column",
+        "table_ident": "my_table",
+        "column_ident": "my_column",
+        "column_lit": "my_column",
         "concept_type": "my_concept",
     }
     formatted_sql = sql_template.format(**format_args)
@@ -168,16 +169,17 @@ def test_bigtable_template_formatting_special_chars():
     sql_template = template["sql_template"]
     # Test special characters like backticks, quotes, braces, colons, slashes
     format_args = {
-        "table": "my_table`with`backticks",
-        "column": "my_column'with'quotes",
+        "table_ident": "my_table``with``backticks",
+        "column_ident": "my_column'with'quotes",
+        "column_lit": "my_column''with''quotes",
         "concept_type": "concept:with/special-chars",
     }
     formatted_sql = sql_template.format(**format_args)
 
     assert "SELECT CAST(T.`my_column'with'quotes` AS STRING) AS value" in formatted_sql
-    assert "'my_column'with'quotes' AS `columns`" in formatted_sql
+    assert "'my_column''with''quotes' AS `columns`" in formatted_sql
     assert "'concept:with/special-chars' AS concept_type" in formatted_sql
-    assert "FROM `my_table`with`backticks` AS T" in formatted_sql
+    assert "FROM `my_table``with``backticks` AS T" in formatted_sql
     assert "WHERE CAST(T.`my_column'with'quotes` AS STRING) = CAST($value AS STRING)" in formatted_sql
 
 
@@ -188,8 +190,9 @@ def test_bigtable_template_formatting_empty_values():
     )
     sql_template = template["sql_template"]
     format_args = {
-        "table": "",
-        "column": "",
+        "table_ident": "",
+        "column_ident": "",
+        "column_lit": "",
         "concept_type": "",
     }
     formatted_sql = sql_template.format(**format_args)
@@ -209,8 +212,9 @@ def test_bigtable_template_formatting_missing_placeholders():
     sql_template = template["sql_template"]
     # Table name missing
     format_args = {
-        "column": "my_column",
+        "column_ident": "my_column",
+        "column_lit": "my_column",
         "concept_type": "my_concept",
     }
-    with pytest.raises(KeyError, match="table"):
+    with pytest.raises(KeyError, match="table_ident"):
         sql_template.format(**format_args)

@@ -30,8 +30,9 @@ def test_stress_btql_template_formatting():
         concept = random_string(ct_len)
 
         format_args = {
-            "table": table,
-            "column": column,
+            "table_ident": table,
+            "column_ident": column,
+            "column_lit": column,
             "concept_type": concept,
         }
 

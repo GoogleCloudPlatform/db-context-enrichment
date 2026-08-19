@@ -217,6 +217,7 @@ def test_generate_value_searches_escaping_quotes_and_backticks():
     query = cs.value_searches[0].query
     # Identifier backtick doubled
     assert "FROM `hotel``table` AS T" in query
-    # Literal single quote doubled
+    # Literal single quote doubled in concept_type and columns literal
     assert "'Hotel''s City' AS concept_type" in query
+    assert "'cf[''city'']' AS `columns`" in query
 

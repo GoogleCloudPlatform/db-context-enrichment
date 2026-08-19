@@ -78,9 +78,19 @@ def generate_value_searches(
 
             # Prepare safely escaped formatting arguments
             format_args = {
+                # Distinct placeholders for identifiers and literals
+                "table_ident": _escape_identifier(table_name, db_engine),
+                "column_ident": _escape_identifier(column_name, db_engine),
+                "table_lit": _escape_sql_literal(table_name),
+                "column_lit": _escape_sql_literal(column_name),
+                "concept_type": _escape_sql_literal(concept_type),
+                "column_tokens_ident": _escape_identifier(str(item.get("column_tokens", "")), db_engine),
+                "column_tokens_lit": _escape_sql_literal(str(item.get("column_tokens", ""))),
+                "column_embedding_ident": _escape_identifier(str(item.get("column_embedding", "")), db_engine),
+                "column_embedding_lit": _escape_sql_literal(str(item.get("column_embedding", ""))),
+                # Fallback for templates using plain {table} and {column}
                 "table": _escape_identifier(table_name, db_engine),
                 "column": _escape_identifier(column_name, db_engine),
-                "concept_type": _escape_sql_literal(concept_type),
                 "column_tokens": _escape_identifier(str(item.get("column_tokens", "")), db_engine),
                 "column_embedding": _escape_identifier(str(item.get("column_embedding", "")), db_engine),
             }

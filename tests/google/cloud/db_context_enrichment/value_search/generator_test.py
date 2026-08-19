@@ -1,9 +1,13 @@
 """Unit tests for value search generator."""
 
 import json
+
 import pytest
+
 from google.cloud.db_context_enrichment.model.context import ContextSet
-from google.cloud.db_context_enrichment.value_search.generator import generate_value_searches
+from google.cloud.db_context_enrichment.value_search.generator import (
+    generate_value_searches,
+)
 
 
 def test_generate_value_searches_bigtable_exact_match_success():
@@ -171,7 +175,7 @@ def test_generate_value_searches_postgres_support():
     cs = ContextSet.model_validate(data)
     assert cs.value_searches is not None
     assert len(cs.value_searches) == 1
-    assert "FROM \"users\" T" in cs.value_searches[0].query
+    assert 'FROM "users" T' in cs.value_searches[0].query
 
 
 def test_generate_value_searches_non_list_json():
@@ -220,4 +224,3 @@ def test_generate_value_searches_escaping_quotes_and_backticks():
     # Literal single quote doubled in concept_type and columns literal
     assert "'Hotel''s City' AS concept_type" in query
     assert "'cf[''city'']' AS `columns`" in query
-

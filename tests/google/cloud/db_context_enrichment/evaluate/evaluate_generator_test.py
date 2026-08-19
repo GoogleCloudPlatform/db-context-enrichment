@@ -472,4 +472,3 @@ def test_generate_evalbench_configs_bigtable():
     calls = [call.args[0] for call in m().write.call_args_list]
     assert any("bigtable" in call for call in calls)
     assert any("bigtable_reference" in call for call in calls)
-

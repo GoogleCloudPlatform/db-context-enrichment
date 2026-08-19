@@ -1,18 +1,25 @@
-import pytest
-import string
 import random
-from google.cloud.db_context_enrichment.value_search.match_templates import get_match_template
+import string
+
+import pytest
+
+from google.cloud.db_context_enrichment.value_search.match_templates import (
+    get_match_template,
+)
+
 
 def random_string(length=10, alphabet=None):
     if alphabet is None:
         # Include normal letters, digits, and special characters
-        alphabet = string.ascii_letters + string.digits + " `'\"/\\{}[]()-+*&^%$#@!~|;:<>,.?"
+        alphabet = (
+            string.ascii_letters + string.digits + " `'\"/\\{}[]()-+*&^%$#@!~|;:<>,.?"
+        )
     return "".join(random.choice(alphabet) for _ in range(length))
+
 
 def test_stress_btql_template_formatting():
     template = get_match_template(
-        dialect="bigtable",
-        function_name="EXACT_MATCH_STRINGS"
+        dialect="bigtable", function_name="EXACT_MATCH_STRINGS"
     )
     sql_template = template["sql_template"]
 
@@ -40,7 +47,9 @@ def test_stress_btql_template_formatting():
         try:
             formatted_sql = sql_template.format(**format_args)
         except Exception as e:
-            pytest.fail(f"Formatting failed on iteration {i} with args {format_args}: {e}")
+            pytest.fail(
+                f"Formatting failed on iteration {i} with args {format_args}: {e}"
+            )
 
         # Property checks on generated SQL
         assert "CAST($value AS STRING)" in formatted_sql

@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+
 import pytest
 
 from google.cloud.db_context_enrichment.main import (
@@ -165,8 +166,7 @@ def test_generate_upload_url_spanner_missing_params():
         instance_id="test-instance",
     )
     assert (
-        result
-        == "Error: Missing instance_id, database_id, or project_id for spanner."
+        result == "Error: Missing instance_id, database_id, or project_id for spanner."
     )
 
 

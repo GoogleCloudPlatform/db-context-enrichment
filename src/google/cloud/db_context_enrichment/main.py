@@ -15,6 +15,8 @@ from google.cloud.db_context_enrichment.evaluate import (
 from google.cloud.db_context_enrichment.model import context
 from google.cloud.db_context_enrichment.value_search import (
     generator as value_search_generator,
+)
+from google.cloud.db_context_enrichment.value_search import (
     match_templates,
 )
 
@@ -302,22 +304,22 @@ async def generate_value_searches(
             - "concept_type": The semantic type (e.g., 'City').
             - "match_function": The match function to use (e.g., 'EXACT_MATCH_STRINGS').
             - "description": (Optional) A description of the value search.
-            
+
             Example:
             '[
                 {"table_name": "users", "column_name": "city", "concept_type": "City", "match_function": "EXACT_MATCH_STRINGS"},
                 {"table_name": "products", "column_name": "name", "concept_type": "Product", "match_function": "FUZZY_MATCH_STRINGS"}
             ]'
-            
+
         db_engine: The database engine (postgresql, mysql, etc.).
         db_version: The database version (optional).
-        
+
     Returns:
         A JSON string representing a ContextSet object containing all the new value searches.
     """
     if db_version and not db_version.strip():
         db_version = None
-    
+
     return value_search_generator.generate_value_searches(
         value_search_inputs_json, db_engine, db_version
     )
@@ -328,14 +330,14 @@ def list_match_functions(db_engine: str, db_version: str | None = None) -> str:
     """
     Lists the valid match template functions with their descriptions and examples for a specific database engine.
     Use this to show the user what 'match_function' options are available, along with their details.
-    
+
     If the engine or version is not supported, this will return an error message
     listing the valid options.
 
     Args:
         db_engine: The database engine (e.g., 'postgresql').
         db_version: The specific database version (optional).
-    
+
     Returns:
         A JSON string containing a dictionary of available function names mapped to their descriptions and examples,
         or an error message if validation fails.
@@ -349,4 +351,3 @@ def list_match_functions(db_engine: str, db_version: str | None = None) -> str:
 
 if __name__ == "__main__":
     mcp.run()  # Uses STDIO transport by default
-

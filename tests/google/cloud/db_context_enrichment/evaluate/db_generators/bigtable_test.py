@@ -106,7 +106,12 @@ def test_bigtable_generator_validation_none_values():
 
     model_config_yaml = gen.generate_model_config("context-123")
     model_config = yaml.safe_load(model_config_yaml)
-    assert model_config["context"]["datasource_references"]["bigtable_reference"]["database_reference"]["project_id"] is None
+    assert (
+        model_config["context"]["datasource_references"]["bigtable_reference"][
+            "database_reference"
+        ]["project_id"]
+        is None
+    )
 
 
 def test_bigtable_generator_validation_empty_values():
@@ -132,7 +137,7 @@ def test_bigtable_generator_extra_parameters():
         "project": "test-project",
         "instance": "test-instance",
         "extra_field": "ignored-value",
-        "nested": {"key": "val"}
+        "nested": {"key": "val"},
     }
     gen = BigtableConfigGenerator(params)
     db_config_yaml = gen.generate_db_config()
@@ -150,5 +155,7 @@ def test_bigtable_generator_special_characters():
     db_config_yaml = gen.generate_db_config()
     db_config = yaml.safe_load(db_config_yaml)
     assert db_config["gcp_project_id"] == "project:name:with:colons"
-    assert db_config["database_path"] == "projects/project:name:with:colons/instances/instance#with#special/chars"
-
+    assert (
+        db_config["database_path"]
+        == "projects/project:name:with:colons/instances/instance#with#special/chars"
+    )

@@ -408,7 +408,7 @@ def test_parse_graph_ids_from_state_md(tmp_path):
 
     state_file = tmp_path / "state.md"
     state_file.write_text(
-        "# State Tracking\n\n## Active Database\n- **Graph Ids**: [\"ResearchGraph\", \"LogisticsNet\"]\n"
+        '# State Tracking\n\n## Active Database\n- **Graph Ids**: ["ResearchGraph", "LogisticsNet"]\n'
     )
     assert _parse_graph_ids_from_state_md(str(state_file)) == [
         "ResearchGraph",
@@ -512,5 +512,3 @@ def test_generate_evalbench_configs_spanner_no_state_md_graphs(tmp_path):
     model_config = yaml.safe_load(model_config_path.read_text())
     spanner_ref = model_config["context"]["datasource_references"]["spanner_reference"]
     assert "graph_ids" not in spanner_ref["database_reference"]
-
-

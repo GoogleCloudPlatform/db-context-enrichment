@@ -44,4 +44,6 @@ Thumbs.db
 autoctx/experiments/
 .evalbench/
 .bin/
+scratch/
+results/
 

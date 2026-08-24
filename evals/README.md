@@ -54,29 +54,41 @@ Use this flow when running evaluations directly from your local developer termin
 #### Quick Start (Copy-and-Paste Block):
 
 ```bash
-# 1. Switch to Node v20+ and verify npm in PATH
+# 1. Switch to Node v20+ and ensure npm/node are in PATH
 source ~/.nvm/nvm.sh && nvm use 20
+export PATH="$(dirname "$(nvm which 20 2>/dev/null || which node)"):$PATH"
 
-# 2. Clean up any dirty extension cache from previous crashed runs
+# 2. Clean up dirty extension cache, temporary files, and reset workspace
 rm -rf evals/.venv/fake_home/.gemini/extensions/google-cloud-db-context-engineering
+rm -rf evals/.venv/fake_home/.gemini/tmp/*
+rm -f evals/.venv/fake_home/*.md evals/.venv/fake_home/*.json
+find evals/spanner-graph-cujs/workspace_supply_chain/ -mindepth 1 ! -name 'design_doc.md' -delete
 
-# 3. Export required GCP project and location variables
+# 3. Stage local repository changes (excluding evals/ so test rubrics don't leak)
+rm -rf /tmp/db-context-enrichment-staging
+rsync -av --exclude='.git' --exclude='.venv' --exclude='evals' \
+  /Users/lindazhang/Documents/GitHub/db-context-enrichment/ /tmp/db-context-enrichment-staging/
+
+# 4. Export required GCP project, location, and reporting variables
 export GOOGLE_CLOUD_PROJECT="cloud-db-nl2sql"
 export GOOGLE_CLOUD_LOCATION="global"
 export EVAL_GCP_PROJECT_ID="cloud-db-nl2sql"
 export EVAL_GCP_PROJECT_REGION="global"
+export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"
 
-# 4. (Optional) Filter to a specific scenario ID
-# export EVAL_SCENARIOS="spanner-graph-e2e-bootstrap"
+# 5. (Optional) Filter to a specific scenario ID
+# export EVAL_SCENARIOS="spanner-graph-full-workflow"
 
-# 5. Navigate to evals/ and execute the evaluation
+# 6. Navigate to evals/ and execute the evaluation
 cd evals/
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.10.0" \
+  google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
 ```
 
-To run Spanner Graph CUJs:
+To run Core CUJs:
 ```bash
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.10.0" \
+  google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
 ```
 
 ---
@@ -85,12 +97,14 @@ uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" g
 
 When an AI agent runs evaluations inside a non-interactive subshell against **unmerged local workspace changes**, follow these mandatory steps:
 
-#### 1. Stage Extension Outside the Repository (Avoid EINVAL Directory Recursion)
+#### 1. Stage Extension Outside the Repository (Avoid EINVAL & Test Leakage)
 Because Gemini CLI installs extensions by copying source files into `evals/.venv/fake_home/...`, pointing it directly at the root workspace will cause `cp` to fail with `EINVAL (cannot copy directory to a subdirectory of self)`. 
+
+Additionally, the `evals/` directory must be excluded from the staged extension so that test scenarios, evaluation rubrics (`dataset.json`), and fixtures are not packaged into the extension directory or searchable by the agent under test.
 
 Always stage the repository to `/tmp/db-context-enrichment-staging/` first:
 ```bash
-rsync -av --exclude='.git' --exclude='evals/.venv' /path/to/db-context-enrichment/ /tmp/db-context-enrichment-staging/
+rsync -av --exclude='.git' --exclude='.venv' --exclude='evals' /path/to/db-context-enrichment/ /tmp/db-context-enrichment-staging/
 ```
 
 #### 2. Explicit Node Path in Non-Interactive Shells
@@ -100,37 +114,47 @@ Non-interactive agent subshells do not source `~/.nvm/nvm.sh` automatically. Pre
 export PATH="$(dirname "$(nvm which 20 2>/dev/null || which node)"):$PATH"
 
 # Or specify your local installed Node version explicitly (e.g. v20.x.x):
-# export PATH="$HOME/.nvm/versions/node/<your-installed-version>/bin:$PATH"
+# export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH"
 ```
 
-#### 3. Reset Workspace Fixtures
-Before running a scenario that starts from an empty workspace, ensure generated files from prior runs are cleared:
+#### 3. Reset Workspace Fixtures & Clean State
+Before running any evaluation scenario, ensure generated artifacts, stray files, and session caches from prior runs are cleared:
 ```bash
-rm -rf evals/spanner-graph-cujs/workspace_empty/*
-touch evals/spanner-graph-cujs/workspace_empty/.gitkeep
+# Clean dirty extension state and temporary session logs
+rm -rf evals/.venv/fake_home/.gemini/extensions/google-cloud-db-context-engineering
+rm -rf evals/.venv/fake_home/.gemini/tmp/*
+rm -f evals/.venv/fake_home/*.md evals/.venv/fake_home/*.json
+
+# Reset scenario workspace (e.g. workspace_supply_chain: keep only design_doc.md)
+find evals/spanner-graph-cujs/workspace_supply_chain/ -mindepth 1 ! -name 'design_doc.md' -delete
+
+# For empty workspace fixtures:
+rm -rf evals/core-cujs/workspace_empty/*
+touch evals/core-cujs/workspace_empty/.gitkeep
 ```
 
 #### 4. Run via Local EvalBench Runner or UVX
 ```bash
-# Clean dirty extension state
-rm -rf evals/.venv/fake_home/.gemini/extensions/google-cloud-db-context-engineering
-
 # Export GCP credentials & environment
 export GOOGLE_CLOUD_PROJECT="cloud-db-nl2sql"
 export GOOGLE_CLOUD_LOCATION="global"
 export EVAL_GCP_PROJECT_ID="cloud-db-nl2sql"
 export EVAL_GCP_PROJECT_REGION="global"
+export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"
 
 # Execute evalbench from evals/ directory
 cd evals
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.10.0" \
+  google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
 ```
 
 ---
 
 ## Local Execution Caveats & Troubleshooting
 
-1. **Node & NPM Version**: Gemini CLI requires Node.js **v20+** for modern regex and stream support. Verify with `node -v`.
-2. **Dirty State Cleanup**: If a run terminates abruptly, `evals/.venv/fake_home/.gemini/extensions/` may contain incomplete installations. Always delete this folder before re-running.
-3. **Authentication**: Ensure Google Cloud ADC is active via `gcloud auth application-default login`.
-4. **Vertex AI Global Endpoint**: Both `GOOGLE_CLOUD_LOCATION="global"` and `EVAL_GCP_PROJECT_REGION="global"` must be exported for the simulated user model and judge raters.
+1. **Node & NPM Version**: Gemini CLI requires Node.js **v20+** for modern regex and stream support. Verify with `node -v` and ensure `npm` is accessible in `PATH`.
+2. **BigQuery Reporting Variable**: Set `export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"` (or your target GCP project) so EvalBench can write evaluation results to BigQuery without error.
+3. **Workspace Reset**: Always clean generated files (`autoctx/`, `golden.json`, `context_set.json`, `evalset_*.md`) from the scenario workspace and `fake_home` before running, otherwise the agent will detect existing state and skip initialization phases.
+4. **Dirty State Cleanup**: If a run terminates abruptly, `evals/.venv/fake_home/.gemini/extensions/` and `.gemini/tmp/` may contain incomplete installations and previous session logs. Always delete them before re-running.
+5. **Authentication**: Ensure Google Cloud ADC is active via `gcloud auth application-default login`.
+6. **Vertex AI Global Endpoint**: Both `GOOGLE_CLOUD_LOCATION="global"` and `EVAL_GCP_PROJECT_REGION="global"` must be exported for the simulated user model and judge raters.

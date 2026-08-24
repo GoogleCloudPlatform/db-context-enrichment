@@ -20,7 +20,16 @@ Follow these steps when the user asks to initialize the environment:
     - If it exists, verify if it contains valid `tools.yaml` and `state.md` files. If it appears to be an unrelated folder or corrupted, STOP and ask the user how to proceed (e.g., use a different name or overwrite).
     - If it is a valid Autoctx folder and contains all items, inform the user it's already initialized. Otherwise, proceed to create missing items inside `autoctx/`.
 3.  **Setup Toolbox Configuration:** If `tools.yaml` is missing inside `autoctx/`, follow the primary "1. Create a New tools.yaml" workflow documented below in the **Toolbox Config Helper** section.
-4.  **Create State Tracker:** If `state.md` is missing inside `autoctx/`, create it with header “context authoring experiment state tracking”.
+4.  **Create State Tracker (`autoctx/state.md`):** If `state.md` is missing inside `autoctx/`, create it. `state.md` is the **authoritative single source of truth** for active database scope and configuration across all workflow phases.
+    Initialize `state.md` with:
+    ```markdown
+    # Context Authoring Experiment State Tracking
+
+    ## Active Database
+    - **Source Name**: `<data_source_name>`
+    - **Type**: `<database_type>`
+    - **Graph Ids**: []  # (Populated during schema inspection)
+    ```
 5.  **Initialize Experiments Directory:** If `experiments/` is missing inside `autoctx/`, create an empty `experiments/` directory inside `autoctx/`.
 
 ## Output
@@ -28,7 +37,7 @@ Follow these steps when the user asks to initialize the environment:
 Upon successful completion, the workspace must contain:
 - `autoctx/`: The dedicated workspace directory.
     - `tools.yaml`: A structurally sound configuration file for the Toolbox MCP Server.
-    - `state.md`: The external state tracker for hill-climbing iterations.
+    - `state.md`: The external state tracker and single source of truth for database scope and hill-climbing iterations.
     - `experiments/`: The base directory prepared to store all hill-climbing run artifacts (e.g. baseline contexts, evaluation reports).
 
 ## Final Summary
@@ -58,7 +67,8 @@ When collecting information from the user, inform the user that only Application
 >
 > Could you please provide the following details:
 > - Google Cloud Project ID:
-> - Region:
+> - Region: (or Instance ID / Database ID for Spanner)
+> - Target tables or property graphs to focus on (optional):
 > ... (other required fields based on database type)"
 
 ## Primary Workflows
@@ -70,7 +80,8 @@ When collecting information from the user, inform the user that only Application
     - Cloud SQL MySQL
     - AlloyDB Postgres
     - Spanner
-2.  **Collect Information:** Request all **Required Information** based on the templates inside this directory. Do NOT assume missing fields; ask the user for them explicitly.
+2.  **Collect Information:**
+    - Request all **Required Information** based on the templates inside this directory. Do NOT assume missing fields; ask the user for them explicitly.
 3.  **Generate Configuration:** Replace all placeholders with the user's provided values and generate the complete `tools.yaml` content. Save it to the target location (e.g., `autoctx/tools.yaml` for Autoctx workflows, or `tools.yaml` in the current directory for standalone use).
 4.  **Validate:** After saving, validate the new connection using the toolbox script, replacing `<config_path>` with the actual path to the file:
     `uvx toolbox-server@1.4.0 --config <config_path> invoke <data_source_name>-list-schemas`

@@ -37,3 +37,11 @@ htmlcov/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Context engineering runtime experiments & artifacts
+.context-engineering/
+.context-engineer/
+autoctx/experiments/
+.evalbench/
+.bin/
+

@@ -7,7 +7,10 @@ from google.cloud.db_context_enrichment.common import (
     context_mutator,
     context_store_client,
 )
-from google.cloud.db_context_enrichment.dataset import dataset_generator
+from google.cloud.db_context_enrichment.dataset import (
+    dataset_generator,
+    dataset_splitter,
+)
 from google.cloud.db_context_enrichment.evaluate import (
     evaluate_generator,
     result_reader,
@@ -44,6 +47,42 @@ async def generate_dataset(
     """
     return await dataset_generator.generate_dataset(
         dataset_entries_json, output_file_path
+    )
+
+
+@mcp.tool
+async def split_dataset(
+    golden_dataset_path: str,
+    output_dir: str,
+    custom_test_dataset_path: str | None = None,
+    stratify_by: str = "subdomain",
+    train_ratio: float = 0.8,
+) -> str:
+    """
+    Splits a golden evaluation dataset into Stratified Dev and Holdout Test splits.
+
+    If a custom holdout test dataset path is provided, it uses the golden dataset as the Dev split
+    and the custom test dataset as the Holdout Test split.
+    Otherwise, it automatically partitions the golden dataset into Stratified Dev/Test splits (default 80/20)
+    stratified by the specified dimension (e.g. 'subdomain' or 'complexity_tier').
+
+    Args:
+        golden_dataset_path: Absolute or workspace-relative path to the golden dataset JSON file.
+        output_dir: Directory where the splits should live (e.g. 'autoctx/experiments/<exp>/').
+                    Files are saved to '<output_dir>/splits/dev.json' and '<output_dir>/splits/test.json'.
+        custom_test_dataset_path: Optional path to an existing custom test dataset file.
+        stratify_by: Metadata attribute to stratify by (default: 'subdomain').
+        train_ratio: Ratio of data to assign to the Dev split (default: 0.8).
+
+    Returns:
+        A markdown report detailing the split summary, item counts per stratum, and output paths.
+    """
+    return await dataset_splitter.split_dataset(
+        golden_dataset_path=golden_dataset_path,
+        output_dir=output_dir,
+        custom_test_dataset_path=custom_test_dataset_path,
+        stratify_by=stratify_by,
+        train_ratio=train_ratio,
     )
 
 

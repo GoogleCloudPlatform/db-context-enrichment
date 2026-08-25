@@ -84,10 +84,21 @@ You must prepend this exact block to the very top of every single response you g
 *   **Exit Criteria:** User explicitly approved the dataset and indicated we may proceed to the next phase.
 
 ### **PHASE 6: FINALIZATION**
-*   **Goal:** Deliver the final package and any requested subsets/splits to the active working directory.
+*   **Goal:** Deliver the final dataset package and generate the Stratified Dev/Test splits to the active working directory.
 *   **Precondition:** All required phase audit reports (environment acquisition, strategic plan, pair-level review, dataset-level review) must exist on disk.
 *   **Mandatory Actions:**
-    1.  **Save Dataset:** Copy the temp dataset file `temp_golden.json` to the `output_file_path` — default to the user's current working directory. If the file already exists, verify whether we should overwrite with the user.
-    2.  **Move Deliverables:** Ensure all written files (`.json`, `.md`, reports) are moved to the user's active directory if they were initially created elsewhere.
-    3.  **Dataset Setup & Splitting (Optional / On User Request):** Ask the user if they have a custom test dataset file for holdout evaluation. If provided, copy/enrich it to `autoctx/experiments/<exp>/splits/test.json` and set `splits/dev.json` to `golden.json`. Otherwise, partition `golden.json` into Stratified Dev/Test splits (80/20 by `subdomain`) under `autoctx/experiments/<exp>/splits/`. Check for under-represented subdomains (< 5 pairs).
+    1.  **Save Golden Dataset:** Copy/move the temp dataset file `temp_golden.json` to the target `output_file_path` (default: `golden.json` in the user's workspace). If the file already exists, verify whether we should overwrite with the user.
+    2.  **Move Deliverables:** Ensure all written files (`.json`, `.md`, audit reports) are moved to the user's active directory if they were initially created elsewhere.
+    3.  **Generate Dev/Test Splits (`split_dataset` MCP Tool):**
+        - Ask the user if they have an existing custom holdout test dataset file:
+          > *"Do you have an existing test dataset file you would like to use for holdout generalizability testing, or should I automatically partition this golden dataset into Stratified Dev/Test splits (80% Dev / 20% Holdout Test)?"*
+        - Call the `split_dataset` MCP tool:
+          - `golden_dataset_path`: Path to the materialized golden dataset (e.g. `golden.json`).
+          - `output_dir`: Active experiment directory (e.g. `autoctx/experiments/<experiment_name>/` or `autoctx/experiments/<experiment_name>/splits/`). If an experiment folder does not exist yet, prompt the user or save to `autoctx/experiments/default/splits/` or `./splits/`.
+          - `custom_test_dataset_path`: User-provided path if they supplied one, otherwise omit or `None`.
+          - `stratify_by`: `"subdomain"` (default) or `"complexity_tier"`.
+          - `train_ratio`: `0.8` (default).
+        - Review the returned split report and notify the user of item counts and any stratum quorum warnings.
+        - Update `autoctx/state.md` to record the dataset generation completion, `golden.json` path, and generated `splits/dev.json` and `splits/test.json` paths.
+*   **Exit Criteria:** `golden.json`, `splits/dev.json`, and `splits/test.json` are materialized on disk and state tracker is updated.
 

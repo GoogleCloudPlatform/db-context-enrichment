@@ -19,7 +19,7 @@ Analyze evaluation failures on training/dev splits to perform Gap Analysis and a
 > 1. **Stratified Split Verification**: Verify that the Stratified Dev/Test split (`dev.json` and `test.json`) created during the dataset generation phase is present under `autoctx/experiments/<experiment_name>/splits/`. If missing, run the `split_dataset` MCP tool to partition `golden.json`.
 > 2. **Stratum Adequacy Verification**: Review stratum volume warnings from dataset generation / `split_dataset`. If any stratum has fewer than 5 pairs, notify the user so they can optionally expand under-represented subdomains using `context-engineering-dataset-generation`.
 > 3. **Hill-Climbing Iterations**: All iterative Gap Analysis, Context Mutations, and progress verification evaluations are performed using **ONLY the Dev split** (`dev.json`).
-> 4. **Holdout Evaluation & Generalization Report Towards the End**: Towards the end of the hill-climbing process (when Dev score targets are met or iterations complete), run evaluation on the held-out **Test split** (`test.json`) using the final improved context set. Generate a descriptive **Final Evaluation Report** focusing primarily on the **Generalization Gap** ($\text{Dev Score} - \text{Holdout Score}$) and qualitative failure analysis (identifying where the context does not work well), using Out-of-Domain Transfer Index (OOD-TI) and Linguistic Robustness Score (LRS) as reference diagnostic metrics.
+> 4. **Mandatory File Persistence for Generalization Report**: Towards the end of the hill-climbing process (when Dev score targets are met or iterations complete), run evaluation on the held-out **Test split** (`test.json`) using the final improved context set. You MUST write and persist a comprehensive, descriptive report directly to disk at `autoctx/experiments/<experiment_name>/hillclimb/final_evaluation_report.md` focusing primarily on the **Generalization Gap** ($\text{Dev Score} - \text{Holdout Score}$) and qualitative failure analysis (identifying where the context does not work well), using Out-of-Domain Transfer Index (OOD-TI) and Linguistic Robustness Score (LRS) as reference diagnostic metrics. Do not merely print the report in chat; it must always be persisted to disk.
 
 ---
 
@@ -75,8 +75,8 @@ Towards the end of the hill-climbing process (when Dev performance target is met
    - **Out-of-Domain Transfer Index (OOD-TI)**: $\text{Holdout Score on Unseen Subdomains} / \text{Dev Score}$ (reference indicator for cross-module transfer).
    - **Linguistic Robustness Score (LRS)**: $\text{Holdout Score on Jargon Queries} / \text{Dev Score on Canonical Queries}$ (reference indicator for phrasing variations).
    *(Note: OOD-TI and LRS are reference diagnostic metrics for additional context, not hard pass/fail targets).*
-4. **Generate and Save Final Evaluation Report**:
-   Write a comprehensive report to `autoctx/experiments/<experiment_name>/hillclimb/final_evaluation_report.md` following this structure:
+4. **Mandatory Report File Persistence (`final_evaluation_report.md`)**:
+   You MUST write and persist the complete report directly to disk at `autoctx/experiments/<experiment_name>/hillclimb/final_evaluation_report.md`. Confirm the file exists on disk before concluding the run or presenting findings to the user. Follow this structure:
 
    ```markdown
    # Final Evaluation & Generalization Report

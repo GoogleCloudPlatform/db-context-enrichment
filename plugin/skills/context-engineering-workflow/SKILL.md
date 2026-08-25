@@ -88,14 +88,15 @@ Verifies generalizability on Test split]
 
 ### Generalizable Optimization & Hill-Climbing Phase
 *   **Reference**: [context-engineering-hillclimb](../context-engineering-hillclimb/SKILL.md)
-*   **Goal**: Perform generalizable hill-climbing using Stratified Dev/Test splits (`splits/dev.json` and `splits/test.json`) created during the dataset generation phase. Perform iterative Gap Analysis and mutations on the Dev set, and evaluate on the Holdout Test set towards the end of hill-climbing to generate a descriptive **Final Evaluation Report** mainly focusing on the **Generalization Gap** ($\text{Dev Score} - \text{Holdout Score}$) and identifying where the context does not work well.
+*   **Mandatory Deliverables**: `gap_analysis_vN.md`, `improved_context_vN.json`, and `final_evaluation_report.md` (all persisted to disk under `autoctx/experiments/<experiment_name>/hillclimb/`).
+*   **Goal**: Perform generalizable hill-climbing using Stratified Dev/Test splits (`splits/dev.json` and `splits/test.json`) created during the dataset generation phase. Perform iterative Gap Analysis and mutations on the Dev set, and evaluate on the Holdout Test set towards the end of hill-climbing to generate a descriptive **Final Evaluation Report** (`final_evaluation_report.md` persisted to disk) mainly focusing on the **Generalization Gap** ($\text{Dev Score} - \text{Holdout Score}$) and identifying where the context does not work well.
 *   **Key Evaluation Focus**:
     - **Generalization Gap ($\Delta_{\text{gen}}$)**: $\text{Dev Score} - \text{Holdout Score}$. Primary focus highlighting degradation on unseen queries.
     - **Descriptive Failure Analysis**: Qualitative breakdown of failed test queries (NLQ, Golden SQL, Generated SQL) to identify overfitted templates, missing facets, or unhandled jargon.
     - **Reference Diagnostic Indicators** (Informational only):
       - **Out-of-Domain Transfer Index (OOD-TI)**: $\text{Holdout Score on Unseen Subdomains} / \text{Dev Score}$. Reference indicator for cross-module transfer.
       - **Linguistic Robustness Score (LRS)**: $\text{Holdout Score on Jargon Queries} / \text{Dev Score on Canonical Queries}$. Reference indicator for phrasing resilience.
-*   **Rationale**: Prevents overfitting / "echo chambering" to synthetic training queries and provides actionable visibility into generalization weaknesses. **All hillclimbing MUST evaluate on the Holdout Test split towards the end and generate a final generalization report (`final_evaluation_report.md`).**
+*   **Rationale**: Prevents overfitting / "echo chambering" to synthetic training queries and provides actionable visibility into generalization weaknesses. **All hillclimbing MUST evaluate on the Holdout Test split towards the end and persist the final generalization report (`final_evaluation_report.md`) directly to disk.**
 *   **Entry Prerequisites**:
     *   [ ] **Stratified Dataset Split Available**: Dataset is partitioned into stratified dev/test splits (`splits/dev.json` and `splits/test.json`).
     *   [ ] **Evaluation Completed**: Evaluation scoring executed on the Dev set.

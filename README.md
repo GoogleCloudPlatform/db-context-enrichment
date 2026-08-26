@@ -1,14 +1,14 @@
 # Context Engineering Agent
 
-The **Context Engineering Agent** is an AI coding agent plugin designed to run in developer agent harnesses (such as Claude Code, Antigravity, or Gemini CLI). It generates, evaluates, and iteratively tunes tailored context artifacts (`ContextSets` comprising `Templates`, `Facets`, and `Value Searches`) to enrich database schemas for **Gemini Data Analytics's data agent developer platform tools**, supporting both **relational SQL** and **Graph Query Language (GQL)** across [AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/data-agent-overview), Cloud SQL ([PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/data-agent-overview) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/data-agent-overview)), and [Cloud Spanner (GoogleSQL & Spanner Graph)](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/data-agent-overview).
+The **Context Engineering Agent** is an AI coding agent plugin designed to run in developer agent harnesses (such as Claude Code, Antigravity, or Gemini CLI). It generates, evaluates, and iteratively tunes tailored context artifacts (`ContextSets` comprising `Templates`, `Facets`, and `Value Searches`) to enrich database schemas for **Gemini Data Analytics's data agent developer platform tools**, supporting both **relational SQL** and **Graph Query Language (GQL)** across [AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/data-agent-overview), Cloud SQL ([PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/data-agent-overview) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/data-agent-overview)), and [Cloud Spanner (GoogleSQL, Spanner Graph, and PostgreSQL)](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/data-agent-overview).
 
 ---
 
 ## Why Context Engineering?
 
-When building data agents and natural language analytics interfaces, accurately translating user intent into database queries—whether relational SQL, pure GQL, or hybrid graph queries—is critical. 
+When building data agents and natural language analytics interfaces, accurately translating user intent into database queries—whether relational SQL (PostgreSQL, GoogleSQL, MySQL), pure GQL, or hybrid graph queries—is critical. 
 
-As outlined in **Build Context with Context Engineering Agent** ([AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/build-context-gemini-cli) | Cloud SQL: [PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/build-context-gemini-cli) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/build-context-gemini-cli) | [Spanner (GoogleSQL)](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/build-context-gemini-cli)), by optimizing a `ContextSet` to match your application's expected query stream, the **QueryData API** acts as a data agent tool capable of achieving **~100% NL-to-SQL/GQL translation accuracy with low latency**.
+As outlined in **Build Context with Context Engineering Agent** ([AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/build-context-gemini-cli) | Cloud SQL: [PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/build-context-gemini-cli) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/build-context-gemini-cli) | [Spanner](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/build-context-gemini-cli)), by optimizing a `ContextSet` to match your application's expected query stream, the **QueryData API** acts as a data agent tool capable of achieving **~100% NL-to-SQL/GQL translation accuracy with low latency**.
 
 ---
 
@@ -20,7 +20,7 @@ A `ContextSet` is the central artifact generated and managed by the agent, conta
 * **Facets**: Reusable, modular query fragments (e.g., parameterized `WHERE` clauses, specialized join filters, or graph `MATCH` traversal patterns) linked to domain vocabulary.
 * **Value Searches**: Specialized mapping queries that dynamically resolve user-supplied values (e.g., *"Lndn"*) to database records (*"London"*) via the capabilities of the underlying database, such as embedding search, AI operators, or trigram search on relational and graph property tables.
 
-For full schema details, structure specifications, and dialect-specific JSON representations of `ContextSets`, see the official **Context Sets Overview** ([AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/context-sets-overview) | Cloud SQL: [PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/context-sets-overview) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/context-sets-overview) | [Spanner (GoogleSQL)](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/context-sets-overview)).
+For full schema details, structure specifications, and dialect-specific JSON representations of `ContextSets`, see the official **Context Sets Overview** ([AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/context-sets-overview) | Cloud SQL: [PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/context-sets-overview) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/context-sets-overview) | [Spanner](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/context-sets-overview)).
 
 ---
 
@@ -29,7 +29,7 @@ For full schema details, structure specifications, and dialect-specific JSON rep
 Before getting started, prepare your GCP environment, required APIs (Data Analytics API, Gemini for Google Cloud API, Dataplex Universal Catalog API), IAM permissions, and database Data API settings.
 
 Follow the step-by-step setup guide in the official documentation:
-👉 **Prepare Your Environment**: ([AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/build-context-gemini-cli#prepare-your-environment) | Cloud SQL: [PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/build-context-gemini-cli#prepare-your-environment) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/build-context-gemini-cli#prepare-your-environment) | [Spanner (GoogleSQL)](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/build-context-gemini-cli#prepare-your-environment))
+👉 **Prepare Your Environment**: ([AlloyDB](https://docs.cloud.google.com/gemini/data-agents/querydata/alloydb/build-context-gemini-cli#prepare-your-environment) | Cloud SQL: [PostgreSQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-postgres/build-context-gemini-cli#prepare-your-environment) / [MySQL](https://docs.cloud.google.com/gemini/data-agents/querydata/sql-mysql/build-context-gemini-cli#prepare-your-environment) | [Spanner](https://docs.cloud.google.com/gemini/data-agents/querydata/spanner/build-context-gemini-cli#prepare-your-environment))
 
 ---
 

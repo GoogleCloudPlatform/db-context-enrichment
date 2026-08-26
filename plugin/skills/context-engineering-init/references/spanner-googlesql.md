@@ -61,3 +61,4 @@ name: <data_source_name>-execute-sql
 type: spanner-execute-sql
 source: <data_source_name>
 description: Use this tool to execute SQL or GQL statements against the <data_source_name> database.
+```

@@ -1,0 +1,13 @@
+{
+  "scenarios": [
+    {
+      "id": "spanner-pg-full-workflow",
+      "starting_prompt": "help me optimize context set for Aura Financial Core Banking based on design_doc.md",
+      "conversation_plan": "Ask the agent to optimize context set for Aura Financial Core Banking based on the provided design_doc.md. When the agent asks for database connection details, provide Google Cloud Spanner parameters with PostgreSQL dialect: project 'cloud-db-nl2sql', instance 'nl2sql-spanner-pg', database 'aura_banking_core', dialect 'POSTGRESQL'. When prompted for an experiment name, use 'aura-banking-core'. In the Dataset Generation phase, when the agent presents the dataset generation plan (evalset_gen_plan.md) for human sign-off, instruct the agent to generate a concise dataset of 20 questions for testing and approve the plan. When the agent finishes generating the golden dataset (golden.json), audit reports, and baseline context set (bootstrap_context.json), approve proceeding with evaluation and running one iteration of hill-climbing optimization. Verify that the agent executes the initial evaluation, performs error analysis on the results, mutates the context set to fix gaps using valid Spanner PostgreSQL syntax ($1 positional parameters and ANSI double-quoting), and runs one iteration of hill-climbing. Terminate the conversation after the first hill-climbing iteration completes.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_banking/",
+      "max_turns": 12
+    }
+  ]
+}

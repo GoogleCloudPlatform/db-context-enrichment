@@ -212,6 +212,8 @@ def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
         PostgresConfigGenerator.SOURCE_TYPE: PostgresConfigGenerator,
         MySQLConfigGenerator.SOURCE_TYPE: MySQLConfigGenerator,
         SpannerConfigGenerator.SOURCE_TYPE: SpannerConfigGenerator,
+        "spanner-postgres": SpannerConfigGenerator,
+        "spanner-pg": SpannerConfigGenerator,
     }
 
     if source_type not in generators:

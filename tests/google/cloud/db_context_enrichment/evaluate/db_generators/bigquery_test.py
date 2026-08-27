@@ -64,9 +64,7 @@ def test_generate_model_config_with_tables(mock_params):
     )
     m_config = yaml.safe_load(model_config_yaml)
 
-    table_refs = m_config["context"]["datasource_references"]["bq"][
-        "table_references"
-    ]
+    table_refs = m_config["context"]["datasource_references"]["bq"]["table_references"]
     assert table_refs == [
         {
             "project_id": "test-project",

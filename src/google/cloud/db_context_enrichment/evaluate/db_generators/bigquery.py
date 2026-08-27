@@ -1,6 +1,5 @@
 from typing import Any
 
-import google.cloud.geminidataanalytics_v1beta as gda
 import yaml
 
 from .base import BaseDBConfigGenerator
@@ -46,35 +45,17 @@ class BigQueryConfigGenerator(BaseDBConfigGenerator):
             db_config, sort_keys=False, default_flow_style=False
         ).strip()
 
-    def build_datasource_reference(
-        self, context_set_id: str
-    ) -> gda.DatasourceReferences:
-        datasource_ref = gda.DatasourceReferences()
-
+    def build_datasource_reference(self, context_set_id: str) -> dict[str, Any]:
         table_references = [
-            gda.BigQueryTableReference(
-                project_id=self.project,
-                dataset_id=self.dataset,
-                table_id=table_id,
-            )
+            {
+                "project_id": self.project,
+                "dataset_id": self.dataset,
+                "table_id": table_id,
+            }
             for table_id in self.tables
         ]
 
-        bq_references = gda.BigQueryTableReferences(
-            table_references=table_references
-        )
-
-        # The agent_context_reference field on BigQueryTableReferences is not
-        # yet available in the public google-cloud-geminidataanalytics SDK
-        # (restricted-visibility rollout; see the Wave2 FR). Attach it
-        # dynamically so this generator works with internal SDK builds and
-        # degrades gracefully on public ones.
-        if "agent_context_reference" in {
-            f.name for f in type(bq_references).pb(bq_references).DESCRIPTOR.fields
-        }:
-            bq_references.agent_context_reference = gda.AgentContextReference(
-                context_set_id=context_set_id
-            )
-
-        datasource_ref.bq = bq_references
-        return datasource_ref
+        bq_ref: dict[str, Any] = {"table_references": table_references}
+        if context_set_id:
+            bq_ref["agent_context_reference"] = {"context_set_id": context_set_id}
+        return {"bq": bq_ref}

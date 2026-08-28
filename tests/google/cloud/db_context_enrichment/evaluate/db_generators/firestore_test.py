@@ -96,3 +96,13 @@ def test_generate_model_config_no_collections(mock_params):
             }
         },
     }
+
+
+def test_generate_db_config_default_database():
+    gen = FirestoreConfigGenerator({"project": "my-project"})
+    db_config_yaml = gen.generate_db_config()
+
+    assert gen.SOURCE_TYPE == "firestore"
+    config = yaml.safe_load(db_config_yaml)
+    assert config["database_name"] == "(default)"
+    assert config["firestore_database"] == "projects/my-project/databases/(default)"

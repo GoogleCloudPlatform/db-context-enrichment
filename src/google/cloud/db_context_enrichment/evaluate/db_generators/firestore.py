@@ -15,12 +15,13 @@ class FirestoreConfigGenerator(BaseDBConfigGenerator):
     DIALECT = "mongodb"
     REQUIRED_FIELDS = BaseDBConfigGenerator.REQUIRED_FIELDS | {
         "project",
+        "database",
     }
 
     def __init__(self, params: dict[str, Any]):
         super().__init__(params)
         self.project = params.get("project")
-        self.database = params.get("database") or "(default)"
+        self.database = params.get("database")
         self.connection_string = params.get("connection_string")
         self.collection_ids = params.get("collection_ids") or params.get("table_ids")
 

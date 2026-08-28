@@ -135,7 +135,6 @@ def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
         MySQLConfigGenerator.SOURCE_TYPE: MySQLConfigGenerator,
         SpannerConfigGenerator.SOURCE_TYPE: SpannerConfigGenerator,
         FirestoreConfigGenerator.SOURCE_TYPE: FirestoreConfigGenerator,
-        FirestoreConfigGenerator.ALIAS_SOURCE_TYPE: FirestoreConfigGenerator,
     }
 
     if source_type not in generators:

@@ -1,6 +1,6 @@
-# MongoDB (MQL / Firestore Enterprise Edition) Value Search Templates
+# Firestore (MQL) Value Search Templates
 
-This reference provides MQL query templates and examples for Value Search in MongoDB MQL (`firestore_mql`) and Firestore Enterprise Edition with MongoDB Compatible API.
+This reference provides MQL query templates and examples for Value Search in Firestore (MQL) and Firestore Enterprise Edition with MongoDB Compatible API.
 
 ## Requirements & Server-Side Contract
 

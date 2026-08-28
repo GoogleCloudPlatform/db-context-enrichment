@@ -1,6 +1,6 @@
-# MongoDB (MQL / Firestore Enterprise Edition) Facet Generation Reference
+# Firestore (MQL) Facet Generation Reference
 
-This reference provides best practices and ideal output definitions for generating Facets in MongoDB MQL (`firestore_mql`) and Firestore Enterprise Edition with MongoDB Compatible API.
+This reference provides best practices and ideal output definitions for generating Facets in Firestore (MQL) and Firestore Enterprise Edition with MongoDB Compatible API.
 
 ## Concepts
 

@@ -12,6 +12,7 @@ class FirestoreConfigGenerator(BaseDBConfigGenerator):
     """
 
     SOURCE_TYPE = "firestore"
+    ALIAS_SOURCE_TYPE = "firestore-mongodb"
     DIALECT = "mongodb"
     REQUIRED_FIELDS = BaseDBConfigGenerator.REQUIRED_FIELDS | {
         "project",

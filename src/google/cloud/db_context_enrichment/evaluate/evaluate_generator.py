@@ -96,10 +96,10 @@ def _extract_toolbox_params(
                     f"Could not find a 'kind: source' named '{toolbox_source_name}' in {toolbox_config_path}"
                 )
 
-            # For Spanner sources, state.md is the authoritative source of truth for graph_ids
+            # For Spanner sources, state.md is the authoritative single source of truth for graph_ids
             # (QueryData API requires explicit graph_ids in model_config.yaml, whereas tools.yaml
             # only configures MCP Toolbox runtime tools and parameters).
-            if source_doc.get("type") == "spanner" and "graph_ids" not in source_doc:
+            if source_doc.get("type") == "spanner":
                 state_md_dir = os.path.dirname(toolbox_config_path)
                 state_md_path = os.path.join(state_md_dir, "state.md")
                 if graph_ids := _parse_graph_ids_from_state_md(state_md_path):

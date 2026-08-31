@@ -1,29 +1,24 @@
 # Firestore (MQL) Facet Generation Reference
 
-This reference provides best practices, format definitions, and guidelines for authoring Facets in Firestore (MQL) and Firestore Enterprise Edition with MongoDB Compatible API.
+This reference provides best practices and ideal output definitions for generating Facets in Firestore (MQL) and Firestore Enterprise Edition with MongoDB Compatible API.
 
 ## Concepts
 
-Facets are modular, reusable NoSQL filter fragments, field-value predicates, or metric formulas. They link natural language terminology to specific NoSQL conditions or calculation rules.
+Facets in Firestore (MQL) are modular, reusable NoSQL filter fragments and document field-value predicates. They link natural language terminology directly to MQL query filter documents that drop into `$match` pipeline stages or `db.collection.find(...)` queries.
+
+In Firestore (MQL), `sql_snippet` is written in **MQL JSON Predicate Format** (e.g. `{ "orders.payment_method": "credit_card" }`, `{ "orders.status": "completed" }`, `{ "products.rating": { "$gt": 4.5 } }`).
 
 ---
 
-## Formats: MQL JSON Predicates vs. Structured Query Expressions
+## Parameterization
 
-In Firestore (MQL), `sql_snippet` supports two distinct representation formats depending on the nature of the facet:
-
-| Format | Syntax Example | Recommended Use Case |
-|---|---|---|
-| **MQL JSON Predicate** | `{ "payment_method": "credit_card" }`<br>`{ "rating": { "$gt": 4.5 } }` | Direct document filters, query document conditions, array matching (`$elemMatch`), and MQL operators (`$in`, `$gt`, `$exists`) that drop into `$match` pipeline stages or `find()` queries. |
-| **Structured Query Expression** | `orders.payment_method = 'credit_card'`<br>`orders.totalRevenue = SUM(orders.total_amount)` | High-level declarative business definitions, simple equality conditions, and metric/aggregation calculation formulas. |
+Values in the MQL JSON snippet and intent are parameterized using positional placeholders (e.g. `$1`, `$2`), according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
 
 ---
 
-## 1. MQL JSON Predicate Format (Recommended for Filter Predicates)
+## Examples
 
-Use the MQL JSON object format when defining direct document filtering conditions.
-
-### Example: Exact Field Filter
+### 1. Exact Field Filter (Payment Method)
 ```json
 {
   "sql_snippet": "{ \"orders.payment_method\": \"credit_card\" }",
@@ -36,7 +31,20 @@ Use the MQL JSON object format when defining direct document filtering condition
 }
 ```
 
-### Example: Range / Operator Filter
+### 2. Status Filter (Completed Orders)
+```json
+{
+  "sql_snippet": "{ \"orders.status\": \"completed\" }",
+  "intent": "completed order status is exact string 'completed'",
+  "manifest": "completed order status filter",
+  "parameterized": {
+    "parameterized_sql_snippet": "{ \"orders.status\": \"$1\" }",
+    "parameterized_intent": "order status is $1"
+  }
+}
+```
+
+### 3. Range / Comparison Filter (Numeric Threshold)
 ```json
 {
   "sql_snippet": "{ \"products.rating\": { \"$gt\": 4.5 } }",
@@ -49,7 +57,20 @@ Use the MQL JSON object format when defining direct document filtering condition
 }
 ```
 
-### Example: Nested Array Element Match
+### 4. Set Membership Filter ($in)
+```json
+{
+  "sql_snippet": "{ \"orders.status\": { \"$in\": [\"active\", \"pending\"] } }",
+  "intent": "active or pending order status",
+  "manifest": "active or pending order status filter",
+  "parameterized": {
+    "parameterized_sql_snippet": "{ \"orders.status\": { \"$in\": [$1] } }",
+    "parameterized_intent": "order status in $1"
+  }
+}
+```
+
+### 5. Nested Array Element Filter ($elemMatch)
 ```json
 {
   "sql_snippet": "{ \"items\": { \"$elemMatch\": { \"name\": \"Desk\", \"price\": { \"$gte\": 100 } } } }",
@@ -62,34 +83,15 @@ Use the MQL JSON object format when defining direct document filtering condition
 }
 ```
 
----
-
-## 2. Structured Query Expression Format (Recommended for Formulas & Definitions)
-
-Use structured query expressions when defining high-level business definitions, aliases, or metric calculation formulas that span multiple fields.
-
-### Example: Status Expression
+### 6. Subdocument Path Filter (Dot Notation)
 ```json
 {
-  "sql_snippet": "orders.status = 'completed'",
-  "intent": "completed order status is exact string 'completed'",
-  "manifest": "completed order status filter",
+  "sql_snippet": "{ \"customer.satisfaction\": { \"$gte\": 4 } }",
+  "intent": "satisfied customer with rating of 4 or higher",
+  "manifest": "satisfied customer rating filter",
   "parameterized": {
-    "parameterized_sql_snippet": "orders.status = '$1'",
-    "parameterized_intent": "order status is $1"
-  }
-}
-```
-
-### Example: Metric Calculation Formula
-```json
-{
-  "sql_snippet": "orders.totalRevenue = SUM(orders.total_amount)",
-  "intent": "total revenue formula for orders",
-  "manifest": "orders total revenue formula",
-  "parameterized": {
-    "parameterized_sql_snippet": "orders.totalRevenue = SUM(orders.total_amount)",
-    "parameterized_intent": "orders total revenue formula"
+    "parameterized_sql_snippet": "{ \"customer.satisfaction\": { \"$gte\": $1 } }",
+    "parameterized_intent": "customer satisfaction rating of $1 or higher"
   }
 }
 ```
@@ -98,8 +100,7 @@ Use structured query expressions when defining high-level business definitions, 
 
 ## Best Practices & NoSQL Guidelines
 
-*   **When to Use MQL JSON Object**: Choose MQL JSON format when the intent maps to an explicit MQL query filter stage or uses NoSQL operators (`$gt`, `$elemMatch`, `$in`, `$regex`).
-*   **When to Use Structured Query Expression**: Choose structured expressions for metric definitions, formulas (`SUM(...)`), or simple descriptive field mappings.
-*   **Field Qualification**: Always qualify fields with their collection or nested subdocument path (e.g., `orders.payment_method`, `customer.address.city`).
-*   **Case Sensitivity**: Match the exact case and spacing of values stored in the database (e.g. `'credit_card'`, `'In store'`).
-*   **Parameterization**: Parameterize literal values using positional placeholders (`$1`, `$2`) according to the [Phrase Extraction Guidelines](../phrase_extraction/guidelines.md).
+*   **MQL JSON Format**: Always author `sql_snippet` using MQL JSON object filter format (`{ "field": value }` or `{ "field": { "$operator": value } }`) so the snippet cleanly composes into `$match` pipeline stages and `find()` queries.
+*   **Field Qualification**: Always qualify fields with collection or subdocument path syntax (e.g., `orders.payment_method`, `customer.satisfaction`, `items.price`).
+*   **Case & Value Sensitivity**: Match the exact case and formatting of stored values (e.g. `'credit_card'`, `'completed'`, `'In store'`).
+*   **NoSQL Operators**: Leverage native MQL operators (`$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$elemMatch`, `$exists`, `$regex`) for non-trivial filters.

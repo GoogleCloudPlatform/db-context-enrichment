@@ -2,11 +2,11 @@
 
 This reference provides MQL query templates and examples for Value Search in Firestore (MQL) and Firestore Enterprise Edition with MongoDB Compatible API.
 
-## Requirements & Server-Side Contract
+## Requirements & Value Linking Contract
 
 Value Search queries map user-supplied natural language terms (e.g., `"London"`, `"electronics"`, `"credit card"`) to stored field values in collections.
 
-Under the server-side value linking contract (see `valuelinking.go`), all value search queries must project a specific 5-field schema:
+Under the standard value linking contract, all value search queries must project a specific 5-field schema:
 
 | Field Name | Type | Description |
 |---|---|---|

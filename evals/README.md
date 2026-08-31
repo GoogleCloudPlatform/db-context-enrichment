@@ -71,12 +71,12 @@ export EVAL_GCP_PROJECT_REGION="global"
 
 # 5. Navigate to evals/ and execute the evaluation
 cd evals/
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.15.0" google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
 ```
 
 To run Spanner Graph CUJs:
 ```bash
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.15.0" google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
 ```
 
 ---
@@ -123,7 +123,7 @@ export EVAL_GCP_PROJECT_REGION="global"
 
 # Execute evalbench from evals/ directory
 cd evals
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.15.0" google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
 ```
 
 ---

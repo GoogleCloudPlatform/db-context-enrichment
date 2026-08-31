@@ -420,6 +420,68 @@ def test_parse_graph_ids_from_state_md(tmp_path):
     state_empty.write_text("- **Graph Ids**: []\n")
     assert _parse_graph_ids_from_state_md(str(state_empty)) is None
 
+    # Empty list with trailing comment (template default)
+    state_empty_comment = tmp_path / "state_empty_comment.md"
+    state_empty_comment.write_text(
+        "- **Graph Ids**: [] # (Populated during schema inspection)\n"
+    )
+    assert _parse_graph_ids_from_state_md(str(state_empty_comment)) is None
+
+    # List with trailing comment
+    state_comment = tmp_path / "state_comment.md"
+    state_comment.write_text(
+        '- **Graph Ids**: ["ResearchGraph", "LogisticsNet"] # some comment\n'
+    )
+    assert _parse_graph_ids_from_state_md(str(state_comment)) == [
+        "ResearchGraph",
+        "LogisticsNet",
+    ]
+
+    # Unbracketed comma-separated with trailing comment
+    state_unbracketed = tmp_path / "state_unbracketed.md"
+    state_unbracketed.write_text(
+        "- **Graph Ids**: ResearchGraph, LogisticsNet # some comment\n"
+    )
+    assert _parse_graph_ids_from_state_md(str(state_unbracketed)) == [
+        "ResearchGraph",
+        "LogisticsNet",
+    ]
+
+    # None / N/A / dash sentinels
+    state_none = tmp_path / "state_none.md"
+    state_none.write_text("- **Graph Ids**: None\n")
+    assert _parse_graph_ids_from_state_md(str(state_none)) is None
+
+    state_na = tmp_path / "state_na.md"
+    state_na.write_text("- **Graph Ids**: N/A # none available\n")
+    assert _parse_graph_ids_from_state_md(str(state_na)) is None
+
+    state_dash = tmp_path / "state_dash.md"
+    state_dash.write_text("- **Graph Ids**: -\n")
+    assert _parse_graph_ids_from_state_md(str(state_dash)) is None
+
+    # Colon inside bold
+    state_colon_inside = tmp_path / "state_colon_inside.md"
+    state_colon_inside.write_text('**Graph Ids:** ["ResearchGraph"]\n')
+    assert _parse_graph_ids_from_state_md(str(state_colon_inside)) == ["ResearchGraph"]
+
+    # Multiline bullet items
+    state_multiline = tmp_path / "state_multiline.md"
+    state_multiline.write_text(
+        textwrap.dedent("""\
+            # State Tracking
+            - **Source Name**: spanner-db
+            - **Graph Ids**:
+              - ResearchGraph
+              - `LogisticsNet`
+            - **Other Setting**: something_else
+        """)
+    )
+    assert _parse_graph_ids_from_state_md(str(state_multiline)) == [
+        "ResearchGraph",
+        "LogisticsNet",
+    ]
+
     # Missing file
     assert _parse_graph_ids_from_state_md(str(tmp_path / "nonexistent.md")) is None
 

@@ -126,25 +126,61 @@ def _parse_graph_ids_from_state_md(state_md_path: str) -> list[str] | None:
     """
     if not os.path.exists(state_md_path):
         return None
-    try:
-        with open(state_md_path) as f:
-            content = f.read()
-        match = re.search(
-            r"(?:-\s*)?\*\*Graph Ids?\*\*:\s*([^\n]+)", content, re.IGNORECASE
-        )
-        if not match:
-            return None
-        val_str = match.group(1).strip()
-        if val_str.startswith("[") and val_str.endswith("]"):
-            val_str = val_str[1:-1]
-        graphs = [
-            g.strip().strip("'\"`")
-            for g in val_str.split(",")
-            if g.strip().strip("'\"`")
-        ]
-        return graphs if graphs else None
-    except Exception:
+    with open(state_md_path, encoding="utf-8") as f:
+        content = f.read()
+    match = re.search(
+        r"(?:^[ \t]*[-*][ \t]*)?\*\*Graph\s+Ids?:?\*\*:?[ \t]*([^\n]*)",
+        content,
+        re.MULTILINE | re.IGNORECASE,
+    )
+    if not match:
         return None
+
+    val_str = match.group(1).split("#")[0].strip()
+
+    # If empty on the same line, check for multiline sub-bullets
+    if not val_str:
+        after_match = content[match.end() :]
+        bullet_items = []
+        for line in after_match.splitlines():
+            line_stripped = line.strip()
+            if not line_stripped:
+                continue
+            if line_stripped.startswith(("-", "*")) and not re.match(
+                r"^[-*]\s*\*\*", line_stripped
+            ):
+                item = line_stripped.lstrip("-* ").split("#")[0].strip().strip("'\"`")
+                if item and item.lower() not in (
+                    "none",
+                    "n/a",
+                    "null",
+                    "nil",
+                    "-",
+                ):
+                    bullet_items.append(item)
+            elif (
+                line_stripped.startswith("#")
+                or line_stripped.startswith("- **")
+                or line_stripped.startswith("* **")
+            ):
+                break
+            else:
+                break
+        return bullet_items if bullet_items else None
+
+    # Handle explicit empty / none indicators
+    if val_str.lower() in ("none", "n/a", "null", "nil", "-", "[]", ""):
+        return None
+
+    if val_str.startswith("[") and val_str.endswith("]"):
+        val_str = val_str[1:-1]
+    graphs = [
+        g.strip().strip("'\"`")
+        for g in val_str.split(",")
+        if g.strip().strip("'\"`")
+        and g.strip().strip("'\"`").lower() not in ("none", "n/a", "null", "nil", "-")
+    ]
+    return graphs if graphs else None
 
 
 def _interpolate_env_vars(raw_yaml: str) -> str:

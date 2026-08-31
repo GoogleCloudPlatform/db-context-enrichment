@@ -32,6 +32,10 @@ description: |
   Scope:
   - The tool can fetch system/extension schemas. Agents should ignore them and focus on user data.
 
+  Behavior:
+  - Omit 'graph_names' to fetch all graphs.
+  - Omit 'output_format' for detailed schema (default).
+
 ---
 kind: tool
 name: <data_source_name>-list-schemas

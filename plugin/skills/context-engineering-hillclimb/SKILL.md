@@ -142,11 +142,9 @@ Upon successful completion, the workspace must contain:
 
 ## Logging State Example (`autoctx/state.md`)
 
-When updating `autoctx/state.md`, please append or update the `Hill-Climbing Run Log` section:
+When updating `autoctx/state.md`, preserve the existing `## Active Database` section and append or update the `Hill-Climbing Run Log` section:
 
 ```markdown
-# Context Authoring Experiment State Tracking
-
 ## Active Experiment: my-exp-1
 
 ## Hill-Climbing Run Log

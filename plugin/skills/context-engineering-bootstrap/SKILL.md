@@ -23,7 +23,7 @@ Before beginning the workflow, you explicitly require:
 
 Follow these steps exactly in order:
 
-1. **Condition Check & Schema Retrieval:**
+1. **Experiment Setup & Scope Validation:**
    - **Ask for Experiment Name & Handle Existing Folders**: You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`).
      - **If the experiment folder already exists inside `autoctx/experiments/`**: You **MUST** detect it and explicitly ask the user for confirmation:
        - *"An experiment named `<experiment_name>` already exists. Do you want to resume it (update its baseline context), fork it (create a new version, e.g., `<experiment_name>_v2`), or overwrite it completely?"*
@@ -32,8 +32,6 @@ Follow these steps exactly in order:
        - If the user selects **overwrite**: clear the existing folder's contents and proceed.
      - **If it does not exist**: Create a new dedicated subfolder inside `autoctx/experiments/` using this name.
      - Do not proceed until the experiment folder structure is finalized.
-   - Use the available Toolbox MCP tools configured in the active `autoctx/tools.yaml` to fetch the schemas for the target database.
-   - Present the retrieved schema summary **structurally and cleanly** to the user. Ask the user if they want to filter or focus on specific schemas or tables.
    - **Source Enrichment**: Prompt the user for any existing **Design Docs** or **Application Code** (e.g., ORM models, SQL queries) they wish to provide to enrich the context generation. Wait for the user's response before proceeding.
    - **Artifact Scope Cross-Validation Gate**:
      Compare the required database scope derived from the provided design docs, application code, or query patterns against the active `autoctx/tools.yaml` configuration.
@@ -44,7 +42,10 @@ Follow these steps exactly in order:
        3. Wait for the user's explicit decision before proceeding. If approved, update `tools.yaml` and `state.md`.
 
 2. **Deduce Key Info (Core Execution):**
-   - Perform a **deep analysis** of the retrieved **schema and any provided documentation or code** to identify important concepts, relationships, and likely query patterns (including both relational SQL queries and Graph GQL queries if graph is enabled).
+   - **Targeted Schema & Graph Retrieval**: Informed by the ingested application artifacts and design docs, use the available Toolbox MCP tools configured in the active `autoctx/tools.yaml` (e.g., `<source>-list-schemas`, `<source>-list-graphs`) to fetch the schemas for the target database and relevant tables/graphs.
+   - Present the retrieved schema summary **structurally and cleanly** to the user. Ask the user if they want to filter or focus on specific schemas, tables, or graphs.
+   - Perform a **deep analysis** of the retrieved **schema and any provided documentation or code** to identify important concepts, relationships, and likely query patterns.
+   - **GQL Preference for Graph Entities**: When querying entities or relationships that are modeled within a property graph, **always prefer GQL (`GRAPH <graph_name> MATCH ...`)** over writing relational SQL `JOIN` queries against the underlying node/edge tables.
    - **Collect Candidates**: Identify representative natural language queries with their corresponding SQL/GQL, common filter conditions or business rules (and graph pattern facets), and **columns that require specialized value searching** (e.g., names needing fuzzy match, descriptions needing semantic search).
    - *Review Check:* Briefly display these candidates to the user for approval or modifications before proceeding.
 

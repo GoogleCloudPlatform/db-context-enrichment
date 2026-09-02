@@ -79,5 +79,6 @@ Spanner Graph queries using `GRAPH <graph_name> MATCH ...` are supported under t
 
 *   Provide complete, executable SQL or GQL queries.
 *   Ensure the SQL/GQL follows Spanner (GoogleSQL) syntax.
+*   **GQL Preference for Graph Entities**: When querying entities or relationships that are defined within a property graph, **always prefer GQL (`GRAPH <graph_name> MATCH ...`)** over relational SQL `JOIN` queries against the underlying node/edge tables.
 *   For Spanner Graph, you can use pure GQL (`GRAPH <graph_name> MATCH ...`) or GoogleSQL with `GRAPH_TABLE(<graph_name> MATCH ...)`.
 *   The intent should accurately describe what the query does.

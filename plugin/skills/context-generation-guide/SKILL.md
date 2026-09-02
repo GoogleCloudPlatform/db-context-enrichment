@@ -5,6 +5,7 @@ description: Guidelines and best practices for generating context items (Templat
 
 # Context Generation Guide Skill
 
+> **Note**: This skill covers manual authoring standards and syntax rules for individual context items. If the user asks to **optimize, tune, evaluate, or run the end-to-end workflow** for a database or project (e.g., from a design doc or database schema), use the [context-engineering-workflow](../context-engineering-workflow/SKILL.md) skill instead.
 
 This skill provides the agent with the necessary information, concepts, and best practices to generate high-quality context items for the "Context Engineering Agent". This context bridges the gap between LLMs and structured databases, enabling accurate Natural Language to SQL and GQL generation.
 

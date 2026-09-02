@@ -76,10 +76,10 @@ def _extract_toolbox_params(
         with open(toolbox_config_path) as f:
             content = f.read()
             interpolated = _interpolate_env_vars(content)
-            docs = yaml.safe_load_all(interpolated)
+            docs = [doc for doc in yaml.safe_load_all(interpolated) if doc]
+
+            source_doc = None
             for doc in docs:
-                if not doc:
-                    continue
                 if (
                     doc.get("kind") == "source"
                     and doc.get("name") == toolbox_source_name
@@ -88,11 +88,24 @@ def _extract_toolbox_params(
                         raise ValueError(
                             f"Selected source '{toolbox_source_name}' is missing the 'type' field."
                         )
-                    return doc
+                    source_doc = doc
+                    break
 
-            raise ValueError(
-                f"Could not find a 'kind: source' named '{toolbox_source_name}' in {toolbox_config_path}"
-            )
+            if not source_doc:
+                raise ValueError(
+                    f"Could not find a 'kind: source' named '{toolbox_source_name}' in {toolbox_config_path}"
+                )
+
+            # For Spanner sources, state.md is the authoritative single source of truth for graph_ids
+            # (QueryData API requires explicit graph_ids in model_config.yaml, whereas tools.yaml
+            # only configures MCP Toolbox runtime tools and parameters).
+            if source_doc.get("type") == "spanner":
+                state_md_dir = os.path.dirname(toolbox_config_path)
+                state_md_path = os.path.join(state_md_dir, "state.md")
+                if graph_ids := _parse_graph_ids_from_state_md(state_md_path):
+                    source_doc["graph_ids"] = graph_ids
+
+            return source_doc
 
     except FileNotFoundError:
         raise ValueError(f"Config file not found: {toolbox_config_path}")
@@ -102,6 +115,72 @@ def _extract_toolbox_params(
         )
     except yaml.YAMLError as e:
         raise ValueError(f"Failed to parse {toolbox_config_path} as YAML: {e}")
+
+
+def _parse_graph_ids_from_state_md(state_md_path: str) -> list[str] | None:
+    """Parses graph_ids from state.md.
+
+    state.md is the authoritative source of truth for the database and graph scope
+    because QueryData API requires explicit graph_ids in model_config.yaml to evaluate
+    property graphs, whereas tools.yaml only configures MCP Toolbox runtime tools.
+    """
+    if not os.path.exists(state_md_path):
+        return None
+    with open(state_md_path, encoding="utf-8") as f:
+        content = f.read()
+    match = re.search(
+        r"(?:^[ \t]*[-*][ \t]*)?\*\*Graph\s+Ids?:?\*\*:?[ \t]*([^\n]*)",
+        content,
+        re.MULTILINE | re.IGNORECASE,
+    )
+    if not match:
+        return None
+
+    val_str = match.group(1).split("#")[0].strip()
+
+    # If empty on the same line, check for multiline sub-bullets
+    if not val_str:
+        after_match = content[match.end() :]
+        bullet_items = []
+        for line in after_match.splitlines():
+            line_stripped = line.strip()
+            if not line_stripped:
+                continue
+            if line_stripped.startswith(("-", "*")) and not re.match(
+                r"^[-*]\s*\*\*", line_stripped
+            ):
+                item = line_stripped.lstrip("-* ").split("#")[0].strip().strip("'\"`")
+                if item and item.lower() not in (
+                    "none",
+                    "n/a",
+                    "null",
+                    "nil",
+                    "-",
+                ):
+                    bullet_items.append(item)
+            elif (
+                line_stripped.startswith("#")
+                or line_stripped.startswith("- **")
+                or line_stripped.startswith("* **")
+            ):
+                break
+            else:
+                break
+        return bullet_items if bullet_items else None
+
+    # Handle explicit empty / none indicators
+    if val_str.lower() in ("none", "n/a", "null", "nil", "-", "[]", ""):
+        return None
+
+    if val_str.startswith("[") and val_str.endswith("]"):
+        val_str = val_str[1:-1]
+    graphs = [
+        g.strip().strip("'\"`")
+        for g in val_str.split(",")
+        if g.strip().strip("'\"`")
+        and g.strip().strip("'\"`").lower() not in ("none", "n/a", "null", "nil", "-")
+    ]
+    return graphs if graphs else None
 
 
 def _interpolate_env_vars(raw_yaml: str) -> str:

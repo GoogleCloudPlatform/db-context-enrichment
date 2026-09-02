@@ -71,7 +71,12 @@ Follow these steps exactly in order:
    - You do not need to manually write or extract file contents. Verify that the files have materialized if needed.
 
 4. **Evalbench Run Integration:**
-   - Trigger the `run_shell_command` natively to execute the evaluation from the ROOT of the workspace using the following exact command template:
+   - **Environment Variables**: Ensure the required GCP environment variables are exported:
+     ```bash
+     export EVAL_GCP_PROJECT_ID="<project_id>"
+     export EVAL_GCP_PROJECT_REGION="global"
+     ```
+   - **Canonical Pinned Execution**: You MUST use the pinned version of Evalbench below. Trigger the execution command from the ROOT of the workspace using the exact pinned command:
      `uvx google-evalbench@1.15.0 --experiment_config=autoctx/experiments/<experiment_name>/eval_configs/run_config.yaml`
    - Check the command outputs to ensure the evaluation reports materialize in the respective `autoctx/experiments/<experiment_name>/eval_reports/` directory.
 

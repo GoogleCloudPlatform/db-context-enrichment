@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.3](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.2...v0.7.3) (2026-09-02)
+
+
+### Features
+
+* add validate_context_set MCP tool ([#173](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/173)) ([2afc5d1](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/2afc5d163bc0fb1dcf4255ce81ab166a5f7b765e))
+* **hillclimb:** use evalbench pipeline_debug_info in gap analysis ([#213](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/213)) ([b42231f](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/b42231f5e6810fbffb19349da8e4a8e985f9b25d))
+* Improve spanner graph context engineering - help infer relevant graph entities to use, fix yaml ([#215](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/215)) ([dfc8598](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/dfc85981b03beb5d08b8ed3f1e1517938b9eef46))
+* **plugin:** add Antigravity mcp_config.json and sync its version pin ([#212](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/212)) ([a7cd839](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/a7cd83977f702555a785c3a77ac7136e83a009ae))
+
+
+### Bug Fixes
+
+* update SQL templates to use DISTINCT for value searches in Spann… ([#208](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/208)) ([a19bd96](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/a19bd960315941f641d34609565fbe4d3081be4c))
+* update SQL templates to use DISTINCT for value searches in Spanner, ([a19bd96](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/a19bd960315941f641d34609565fbe4d3081be4c))
+
 ## [0.7.2](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.1...v0.7.2) (2026-08-05)
 
 

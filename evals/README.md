@@ -14,6 +14,7 @@ Each suite folder contains only suite-specific files:
 
 - **`core-cujs/`**: Full lifecycle CUJ scenarios on relational databases (AlloyDB).
 - **`spanner-graph-cujs/`**: End-to-end Spanner Graph CUJ scenarios (schema discovery, property graph scope gating, GQL + SQL generation, and evaluation).
+- **`spanner-pg-cujs/`**: End-to-end Spanner PostgreSQL CUJ scenarios (PostgreSQL dialect on Spanner, parameterization, and evaluation).
 - **`freeform-input/`**: Freeform user input and exploratory workflow tests.
 
 Within each suite directory:
@@ -85,12 +86,11 @@ cd evals/
 uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.15.0" google-evalbench --experiment_config=<eval_set_to_run>/run_gemini_cli.yaml
 ```
 
-For example, T=to run Core CUJs:
+For example, to run Core CUJs:
 ```bash
 cd evals/
 uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.15.0" google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
 ```
-
 
 ---
 

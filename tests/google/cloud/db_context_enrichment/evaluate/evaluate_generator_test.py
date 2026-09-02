@@ -574,3 +574,55 @@ def test_generate_evalbench_configs_spanner_no_state_md_graphs(tmp_path):
     model_config = yaml.safe_load(model_config_path.read_text())
     spanner_ref = model_config["context"]["datasource_references"]["spanner_reference"]
     assert "graph_ids" not in spanner_ref["database_reference"]
+
+
+def test_generate_evalbench_configs_spanner_postgres():
+    tools_yaml_content = textwrap.dedent("""\
+        kind: source
+        name: spanner-pg-source
+        type: spanner
+        project: test-project
+        instance: test-instance
+        database: test-db
+        engine: POSTGRESQL
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=tools_yaml_content)) as m:
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
+            return_value='[{"mock": "data"}]',
+        ):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+            ):
+                generate_evalbench_configs(
+                    output_dir="/test/out",
+                    dataset_path="/fake/dataset.json",
+                    context_set_id="projects/test-project/locations/us-central1/contextSets/context-123",
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="spanner-pg-source",
+                )
+
+    written_data = {}
+    for call in m().write.call_args_list:
+        content = call[0][0]
+        if "spanner_reference" in content:
+            written_data["model_config"] = content
+        elif "db_type: spanner" in content:
+            written_data["db_config"] = content
+        elif "dialect: spanner_pg" in content and "dataset_config" in content:
+            written_data["run_config"] = content
+
+    assert "model_config" in written_data
+    model_config = yaml.safe_load(written_data["model_config"])
+    spanner_ref = model_config["context"]["datasource_references"]["spanner_reference"]
+    assert spanner_ref["database_reference"]["engine"] == "POSTGRESQL"
+
+    assert "db_config" in written_data
+    db_config = yaml.safe_load(written_data["db_config"])
+    assert db_config["dialect"] == "spanner_pg"
+    assert db_config["db_type"] == "spanner"
+
+    assert "run_config" in written_data
+    run_config = yaml.safe_load(written_data["run_config"])
+    assert run_config["dialect"] == "spanner_pg"

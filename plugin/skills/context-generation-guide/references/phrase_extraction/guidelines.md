@@ -57,7 +57,7 @@ Replace the extracted value phrases with placeholders in both the SQL query and 
 
 ### 1. Placeholder Syntax
 
-*   **PostgreSQL**: Use positional parameters like `$1`, `$2`, `$3`, etc.
+*   **PostgreSQL & Spanner (PostgreSQL)**: Use positional parameters like `$1`, `$2`, `$3`, etc.
 *   **Spanner (GoogleSQL) & MySQL**: Use `?` for all parameters.
 
 ### 2. Processing Order (Critical)

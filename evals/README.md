@@ -81,13 +81,13 @@ export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"
 
 # 6. Navigate to evals/ and execute the evaluation
 cd evals/
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.10.0" \
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" \
   google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
 ```
 
 To run Core CUJs:
 ```bash
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.10.0" \
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" \
   google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
 ```
 
@@ -144,7 +144,7 @@ export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"
 
 # Execute evalbench from evals/ directory
 cd evals
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.10.0" \
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" \
   google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
 ```
 

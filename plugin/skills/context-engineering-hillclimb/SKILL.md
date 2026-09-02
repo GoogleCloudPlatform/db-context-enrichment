@@ -143,6 +143,7 @@ Upon successful completion, the workspace must contain:
 
 When updating `autoctx/state.md`, preserve the existing `## Active Database` section and append or update the `Hill-Climbing Run Log` section:
 
+```markdown
 ## Active Experiment: my-exp-1
 
 ## Hill-Climbing Run Log

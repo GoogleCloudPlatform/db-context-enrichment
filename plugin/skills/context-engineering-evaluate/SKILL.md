@@ -77,10 +77,6 @@ Follow these steps exactly in order:
      export EVAL_GCP_PROJECT_REGION="global"
      ```
    - **Canonical Pinned Execution**: You MUST use the pinned version of Evalbench below. Trigger the execution command from the ROOT of the workspace using the exact pinned command:
-     ```bash
-     uvx google-evalbench@1.12.0 --experiment_config=autoctx/experiments/<experiment_name>/eval_configs/run_config.yaml
-     ```
-   - Trigger the `run_shell_command` natively to execute the evaluation from the ROOT of the workspace using the following exact command template:
      `uvx google-evalbench@1.15.0 --experiment_config=autoctx/experiments/<experiment_name>/eval_configs/run_config.yaml`
    - Check the command outputs to ensure the evaluation reports materialize in the respective `autoctx/experiments/<experiment_name>/eval_reports/` directory.
 

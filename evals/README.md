@@ -80,16 +80,17 @@ export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"
 # export EVAL_SCENARIOS="spanner-graph-full-workflow"
 
 # 6. Navigate to evals/ and execute the evaluation
+```bash
 cd evals/
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" \
-  google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.15.0" google-evalbench --experiment_config=<eval_set_to_run>/run_gemini_cli.yaml
 ```
 
-To run Core CUJs:
+For example, T=to run Core CUJs:
 ```bash
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" \
-  google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
+cd evals/
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.15.0" google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
 ```
+
 
 ---
 
@@ -144,8 +145,7 @@ export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"
 
 # Execute evalbench from evals/ directory
 cd evals
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.12.0" \
-  google-evalbench --experiment_config=spanner-graph-cujs/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.15.0" google-evalbench --experiment_config=<eval_dir_to_run>/run_gemini_cli.yaml
 ```
 
 ---

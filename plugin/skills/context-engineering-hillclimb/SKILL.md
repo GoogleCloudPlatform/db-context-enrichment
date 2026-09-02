@@ -46,6 +46,7 @@ Follow these steps exactly in order:
     -   Iterate through the failure cases by calling the tool with increasing `offset` (0, 10, 20, ...) until all failed queries are analyzed.
     -   **First Batch (offset=0)**: Initialize the report file with the `# Gap Analysis Report - vN` header and `## Summary` section, followed by the analysis of the first batch under `## Failed Queries Detail`.
     -   **Subsequent Batches**: Call the tool with the next offset, analyze the new failures, and **append** them to the `## Failed Queries Detail` section.
+    -   **Use `pipeline_debug_info`**: If a failure case's **Additional Output** contains it, use this generation trace (showing which context the API retrieved and used) to ground the **Root Cause** and **Proposed Mutation** rather than guessing. For example, if the trace shows no template matched a question that should have been covered, treat the missing blueprint match as the root cause.
 
     Use the following structure for the report:
 

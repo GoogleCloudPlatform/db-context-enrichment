@@ -1,10 +1,11 @@
-## Spanner
+## Spanner GoogleSQL
 
 **Required properties from the `kind: source` block in `tools.yaml`:**
 - Source Type (`type: spanner`)
 - Google Cloud Project ID (`project_id`)
 - Instance ID (`instance_id`)
 - Database Name (`database_name`)
+- *(Optional)* Dialect (`dialect: GOOGLESQL`, defaults to GoogleSQL if omitted)
 - *(Optional)* Graph IDs (`Graph Ids` in `state.md`)
 
 **EvalBench Database Config Spec (`db_config.yaml`):**

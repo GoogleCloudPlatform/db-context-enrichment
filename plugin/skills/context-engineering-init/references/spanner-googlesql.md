@@ -1,12 +1,13 @@
-## Spanner
+## Spanner GoogleSQL
 
 **Required Information:**
 - Data Source Name (e.g., `my-spanner-db`)
 - Google Cloud Project ID
 - Instance ID
 - Database Name
+- Dialect: `GOOGLESQL` (optional in `tools.yaml`, defaults to GoogleSQL if omitted)
 
-### Template: Spanner Configuration
+### Template: Spanner GoogleSQL Configuration
 
 ```yaml
 kind: source
@@ -15,6 +16,7 @@ type: spanner
 project: <project_id>
 instance: <instance_id>
 database: <database_name>
+dialect: GOOGLESQL
 ---
 kind: tool
 name: <data_source_name>-list-graphs
@@ -62,3 +64,16 @@ type: spanner-execute-sql
 source: <data_source_name>
 description: Use this tool to execute SQL or GQL statements against the <data_source_name> database.
 ```
+
+### Dialect Verification (CLI)
+
+If the user specifies a Spanner database but does not indicate whether it uses GoogleSQL or PostgreSQL dialect, the agent can verify the dialect using the `gcloud` CLI:
+
+```bash
+gcloud spanner databases describe <database_name> --instance=<instance_id> --project=<project_id> --format="value(databaseDialect)"
+```
+- Returns `GOOGLE_STANDARD_SQL` (or empty/null for older instances) for Spanner GoogleSQL databases.
+- Returns `POSTGRESQL` for Spanner PostgreSQL databases.
+
+If the CLI is not accessible, explicitly ask the user to confirm the dialect.
+

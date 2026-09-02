@@ -124,7 +124,7 @@ The Autoctx workflows generate and interact with a structured workspace to maint
 *   **Unconfigured Database & MCP Tool Probing**:
     *   Before calling any database MCP tools (such as `<source>-list-schemas`, `<source>-list-graphs`, `<source>-execute-sql`), verify whether `autoctx/tools.yaml` exists and is configured.
     *   **Strictly Forbidden**: If `autoctx/tools.yaml` is missing or unverified, you are **strictly forbidden from proceeding**.
-    *   **Mandatory Action**: You **MUST immediately halt and yield the turn** to solicit the database connection parameters (Project ID, Instance ID, Database ID, and any target tables/property graphs) and an experiment name from the user. Do not proceed on the workflow until the user provides this infromation.
+    *   **Mandatory Action**: You **MUST immediately halt and yield the turn** to solicit the database connection parameters (Project ID, Instance ID, Database ID, Dialect [for Spanner: GoogleSQL vs. PostgreSQL], and any target tables/property graphs) and an experiment name from the user. Do not proceed on the workflow until the user provides this information.
 
 *   **Missing Dataset**:
     *   If the user's request requires **evaluating, scoring, or optimizing** a context set (e.g., running evaluations, tuning, or hill-climbing):

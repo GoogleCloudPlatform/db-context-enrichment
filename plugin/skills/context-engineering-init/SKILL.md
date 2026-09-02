@@ -68,6 +68,7 @@ When collecting information from the user, inform the user that only Application
 > Could you please provide the following details:
 > - Google Cloud Project ID:
 > - Region: (or Instance ID / Database ID for Spanner)
+> - Dialect: (for Spanner: GoogleSQL [default] or PostgreSQL)
 > - Target tables or property graphs to focus on (optional):
 > ... (other required fields based on database type)"
 
@@ -81,8 +82,10 @@ When collecting information from the user, inform the user that only Application
     - AlloyDB Postgres
     - Spanner GoogleSQL (Graph supported)
     - Spanner PostgreSQL (no Graph support)
+
+    *Spanner Dialect Disambiguation Rule:* If the user specifies Spanner without indicating whether it is GoogleSQL or PostgreSQL, the agent **MUST explicitly ask**: *"Is your Spanner database configured with GoogleSQL (default) or PostgreSQL dialect?"* Alternatively, if `gcloud` is authenticated, the agent can inspect the database dialect using `gcloud spanner databases describe <database_name> --instance=<instance_id> --project=<project_id> --format="value(databaseDialect)"`. Do not silently assume GoogleSQL.
 2.  **Collect Information:**
-    - Request all **Required Information** based on the templates inside this directory. Do NOT assume missing fields; ask the user for them explicitly.
+    - Request all **Required Information** based on the templates inside this directory. Do NOT assume missing fields; ask the user for them explicitly. For Spanner, ensure the dialect (`GOOGLESQL` or `POSTGRESQL`) is determined and explicitly configured in `tools.yaml`.
 3.  **Generate Configuration:** Replace all placeholders with the user's provided values and generate the complete `tools.yaml` content. Save it to the target location (e.g., `autoctx/tools.yaml` for Autoctx workflows, or `tools.yaml` in the current directory for standalone use).
 4.  **Validate:** After saving, validate the new connection using the toolbox script, replacing `<config_path>` with the actual path to the file:
     `uvx toolbox-server@1.4.0 --config <config_path> invoke <data_source_name>-list-schemas`

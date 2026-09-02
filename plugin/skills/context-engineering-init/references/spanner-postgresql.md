@@ -45,3 +45,15 @@ source: <data_source_name>
 description: Use this tool to execute Spanner PostgreSQL statements against the <data_source_name> database.
 ```
 
+### Dialect Verification (CLI)
+
+If the user specifies a Spanner database but does not indicate whether it uses GoogleSQL or PostgreSQL dialect, the agent can verify the dialect using the `gcloud` CLI:
+
+```bash
+gcloud spanner databases describe <database_name> --instance=<instance_id> --project=<project_id> --format="value(databaseDialect)"
+```
+- Returns `POSTGRESQL` for Spanner PostgreSQL databases.
+- Returns `GOOGLE_STANDARD_SQL` (or empty/null for older instances) for Spanner GoogleSQL databases.
+
+If the CLI is not accessible, explicitly ask the user to confirm the dialect.
+

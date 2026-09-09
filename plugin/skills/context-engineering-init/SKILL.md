@@ -80,6 +80,7 @@ When collecting information from the user, inform the user that only Application
     - Cloud SQL MySQL
     - AlloyDB Postgres
     - Spanner
+    - BigQuery
 2.  **Collect Information:**
     - Request all **Required Information** based on the templates inside this directory. Do NOT assume missing fields; ask the user for them explicitly.
 3.  **Generate Configuration:** Replace all placeholders with the user's provided values and generate the complete `tools.yaml` content. Save it to the target location (e.g., `autoctx/tools.yaml` for Autoctx workflows, or `tools.yaml` in the current directory for standalone use).

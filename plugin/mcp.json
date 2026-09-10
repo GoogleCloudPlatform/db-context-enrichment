@@ -5,7 +5,7 @@
       "type": "stdio",
       "command": "uvx",
       "args": [
-        "google-cloud-db-context-engineering@0.7.2"
+        "google-cloud-db-context-engineering@0.7.3"
       ]
     },
     "toolbox": {

@@ -304,4 +304,5 @@ substitutions:
   _PROJECT_LOCATION: 'global'
 
 options:
+  machineType: 'E2_HIGHCPU_8'
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

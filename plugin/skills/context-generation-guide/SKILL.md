@@ -22,7 +22,7 @@ Context generation allows you to create specific, high-value items in three form
 When asked to generate context items:
 1.  **Identify the Type**: Determine if the user wants to create a Template, Facet, or Value Search.
 2.  **Gather Information**: Ensure you have all the required information for the chosen context type as described in the "Context Type Definitions" section below. If information is missing, try to explore the database to find it or ask the user for clarification.
-3.  **Select Dialect Reference**: Identify the target database dialect (PostgreSQL, Spanner GoogleSQL, Spanner PostgreSQL, or MySQL) and consult the corresponding file in `references/` for specific syntax and patterns.
+3.  **Select Dialect Reference**: Identify the target database dialect (PostgreSQL, Spanner GoogleSQL, Spanner PostgreSQL, MySQL, or Bigtable) and consult the corresponding file in `references/` for specific syntax and patterns.
 4.  **Parameterize**: Follow the [Phrase Extraction and Parameterization Guidelines](references/phrase_extraction/guidelines.md) to generalize the values.
 5.  **Format Output**: Construct the final JSON object according to the examples in the reference files.
 6.  **Save Context**: Use the appropriate MCP tool (e.g., `mutate_context_set`) to save or update the context set.
@@ -135,13 +135,16 @@ For specific SQL templates, examples, and performance recommendations, refer to 
     *   [Spanner GoogleSQL](references/template/googlesql.md)
     *   [Spanner PostgreSQL](references/template/spanner-postgresql.md)
     *   [MySQL](references/template/mysql.md)
+    *   [Bigtable](references/template/bigtable.md)
 *   **Facets**:
     *   [PostgreSQL](references/facet/postgresql.md)
     *   [Spanner GoogleSQL](references/facet/googlesql.md)
     *   [Spanner PostgreSQL](references/facet/spanner-postgresql.md)
     *   [MySQL](references/facet/mysql.md)
+    *   [Bigtable](references/facet/bigtable.md)
 *   **Value Searches**:
     *   [PostgreSQL](references/value_search/postgresql.md)
     *   [Spanner GoogleSQL](references/value_search/googlesql.md)
     *   [Spanner PostgreSQL](references/value_search/spanner-postgresql.md)
     *   [MySQL](references/value_search/mysql.md)
+    *   [Bigtable](references/value_search/bigtable.md)

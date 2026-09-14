@@ -82,13 +82,14 @@ When collecting information from the user, inform the user that only Application
     - AlloyDB Postgres
     - Spanner GoogleSQL (Graph supported)
     - Spanner PostgreSQL (no Graph support)
+    - Cloud Bigtable
 
     *Spanner Dialect Disambiguation Rule:* If the user specifies Spanner without indicating whether it is GoogleSQL or PostgreSQL, the agent **MUST explicitly ask**: *"Is your Spanner database configured with GoogleSQL (default) or PostgreSQL dialect?"* Alternatively, if `gcloud` is authenticated, the agent can inspect the database dialect using `gcloud spanner databases describe <database_name> --instance=<instance_id> --project=<project_id> --format="value(databaseDialect)"`. Do not silently assume GoogleSQL.
 2.  **Collect Information:**
     - Request all **Required Information** based on the templates inside this directory. Do NOT assume missing fields; ask the user for them explicitly. For Spanner, ensure the dialect (`GOOGLESQL` or `POSTGRESQL`) is determined and explicitly configured in `tools.yaml`.
 3.  **Generate Configuration:** Replace all placeholders with the user's provided values and generate the complete `tools.yaml` content. Save it to the target location (e.g., `autoctx/tools.yaml` for Autoctx workflows, or `tools.yaml` in the current directory for standalone use).
 4.  **Validate:** After saving, validate the new connection using the toolbox script, replacing `<config_path>` with the actual path to the file:
-    `uvx toolbox-server@1.4.0 --config <config_path> invoke <data_source_name>-list-schemas`
+    `uvx toolbox-server@1.9.0 --config <config_path> invoke <data_source_name>-list-schemas`
 
 ### 2. Add a Database to an Existing `tools.yaml`
 
@@ -98,7 +99,7 @@ When collecting information from the user, inform the user that only Application
 4.  **Generate and Append:** Generate the YAML snippets for the new `sources` and `tools` sections. Append these new entries to the respective sections in the existing file content.
 5.  **Save Configuration:** Save the updated content back to the file.
 6.  **Validate:** Validate only the newly added connection, replacing `<config_path>` with the actual path to the file:
-    `uvx toolbox-server@1.4.0 --config <config_path> invoke <data_source_name>-list-schemas`
+    `uvx toolbox-server@1.9.0 --config <config_path> invoke <data_source_name>-list-schemas`
 
 ### 3. List Existing Database Connections
 
@@ -108,7 +109,7 @@ When collecting information from the user, inform the user that only Application
 ## Validation
 
 To verify that a specific database connection is configured correctly at any time, run the validation script with the target data source name:
-`uvx toolbox-server@1.4.0 --config tools.yaml invoke <data_source_name>-list-schemas`
+`uvx toolbox-server@1.9.0 --config tools.yaml invoke <data_source_name>-list-schemas`
 
 ## Templates & Reference
 

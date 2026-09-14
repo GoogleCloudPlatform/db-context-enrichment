@@ -103,13 +103,14 @@ def generate_upload_url(
 
     Args:
         db_engine: The database engine. Accepted values are 'alloydb',
-                 'cloudsql', or 'spanner'. This can be derived from the 'kind'
-                 field in the tools.yaml file. For example, 'alloydb-postgres'
-                 becomes 'alloydb', and 'cloud-sql-postgres' becomes 'cloudsql'.
+                 'cloudsql', 'spanner', or 'bigtable'. This can be derived from
+                 the 'kind' field in the tools.yaml file. For example,
+                 'alloydb-postgres' becomes 'alloydb', 'cloud-sql-postgres'
+                 becomes 'cloudsql', and 'bigtable' becomes 'bigtable'.
         project_id: The Google Cloud project ID.
         location: The location of the AlloyDB cluster.
         cluster_id: The ID of the AlloyDB cluster.
-        instance_id: The ID of the Cloud SQL or Spanner instance.
+        instance_id: The ID of the Cloud SQL, Spanner, or Bigtable instance.
         database_id: The ID of the Spanner database.
 
     Returns:
@@ -130,8 +131,13 @@ def generate_upload_url(
             return f"https://console.cloud.google.com/spanner/instances/{instance_id}/databases/{database_id}/details/query?project={project_id}"
         else:
             return "Error: Missing instance_id, database_id, or project_id for spanner."
+    elif db_engine == "bigtable":
+        if instance_id and project_id:
+            return f"https://console.cloud.google.com/bigtable/instances/{instance_id}/overview?project={project_id}"
+        else:
+            return "Error: Missing instance_id or project_id for bigtable."
     else:
-        return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', or 'spanner'."
+        return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', 'spanner', or 'bigtable'."
 
 
 # NOTE: `@mcp.tool` is intentionally NOT applied to upload_context_set /

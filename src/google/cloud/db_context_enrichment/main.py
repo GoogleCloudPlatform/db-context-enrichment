@@ -8,9 +8,13 @@ from google.cloud.db_context_enrichment.common import (
     context_store_client,
     context_validator,
 )
-from google.cloud.db_context_enrichment.dataset import dataset_generator
+from google.cloud.db_context_enrichment.dataset import (
+    dataset_generator,
+    dataset_splitter,
+)
 from google.cloud.db_context_enrichment.evaluate import (
     evaluate_generator,
+    generalizability,
     result_reader,
 )
 from google.cloud.db_context_enrichment.model import context
@@ -45,6 +49,68 @@ async def generate_dataset(
     """
     return await dataset_generator.generate_dataset(
         dataset_entries_json, output_file_path
+    )
+
+
+@mcp.tool
+async def split_dataset(
+    golden_dataset_path: str,
+    output_dir: str,
+    train_ratio: float = 0.8,
+) -> str:
+    """Splits a golden dataset into Dev (Training) and Holdout Test splits.
+
+    Guarantees 100% query template overlap between splits (every SQL query template in Dev
+    is also represented in Test with different natural language phrasings and parameters).
+    Saves internal partitions to <output_dir>/splits/dev.json and <output_dir>/splits/test.json.
+
+    Args:
+        golden_dataset_path: The absolute path to the golden dataset JSON file.
+        output_dir: Output directory where splits/dev.json and splits/test.json are saved.
+        train_ratio: Ratio of data for training/dev (default: 0.8).
+
+    Returns:
+        A concise summary message confirming the split creation.
+    """
+    return await dataset_splitter.split_dataset(
+        golden_dataset_path, output_dir, train_ratio
+    )
+
+
+@mcp.tool
+def evaluate_generalizability(
+    dev_passed: int,
+    dev_total: int,
+    test_passed: int,
+    test_total: int,
+    alpha: float = 0.05,
+    diagnosis: str | None = None,
+    recommended_action: str | None = None,
+    next_step: str | None = None,
+) -> str:
+    """Evaluates generalizability across training and holdout test splits.
+
+    Calculates a two-proportion pooled z-test, derives the verdict (PASS, INVESTIGATE,
+    INCONCLUSIVE), and returns the formatted On-Screen Summary Card for novice users.
+
+    Args:
+        dev_passed: Number of passed queries in Training Questions.
+        dev_total: Total queries in Training Questions (N_dev).
+        test_passed: Number of passed queries in New / Rephrased Questions.
+        test_total: Total queries in New / Rephrased Questions (N_test).
+        alpha: Significance level (default: 0.05).
+        diagnosis: Optional specific diagnosis text.
+        recommended_action: Optional recommended action text.
+        next_step: Optional immediate next step text.
+
+    Returns:
+        The markdown string for the On-Screen Summary Card.
+    """
+    stats = generalizability.calculate_z_test(
+        dev_passed, dev_total, test_passed, test_total, alpha
+    )
+    return generalizability.format_on_screen_card(
+        stats, diagnosis, recommended_action, next_step
     )
 
 

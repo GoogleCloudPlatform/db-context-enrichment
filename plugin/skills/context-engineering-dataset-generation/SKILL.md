@@ -48,33 +48,35 @@ You must prepend this exact block to the very top of every single response you g
 *   **Exit Criteria:** A `evalset_environment_inputs.md` report is written to disk.
 
 ### **PHASE 2: STRATEGIC PLANNING [WAIT FOR USER APPROVAL]**
-*   **Goal:** Create `evalset_gen_plan.md` and get explicit user approval on the dataset requirements.
+*   **Goal:** Create `evalset_gen_plan.md` and get explicit user approval on the dataset requirements and holdout evaluation structure.
 *   **Mandatory Actions:**
     1.  Read `<skill_dir>/references/generation-plan-requirements.md`.
-    2.  **Ensure Robust Dataset Size & Stratum Quorum:** Unless the user has explicitly specified a custom target, the minimum target volume for a NL2SQL dataset is **at least 50 questions**. To support stratified dev/test splitting and holdout generalizability testing, ensure every schema subdomain (`subdomain`) contains **at least 5-10 NLQ-SQL pairs**.
+    2.  **Dataset Generation Proposal (Chat Display)**: Unless the user provides an existing dataset or requests custom sizing, present the standardized proposal directly in chat:
+        ```text
+        Dataset Generation Proposal:
+        - Total Questions Generated: 150 questions across 30 core database query patterns.
+        - Training Questions: 120 questions (4 variations per query pattern used for iterative optimization).
+        - Held-Out Test Questions: 30 questions (1 alternate phrasing and parameter variation per query pattern, held out to test generalizability).
+        - Query Coverage: 100% of query patterns appear in both sets, ensuring test questions evaluate generalizability to new phrasing rather than unseen schemas.
+        - Zero-Leakage Guarantee: The holdout test partition (splits/test.json) is strictly isolated during the entire hill-climbing optimization loop (zero data leakage) and evaluated strictly once in a read-only pass after training convergence.
+        - Internal Partitions: Preserved in splits/dev.json and splits/test.json.
+        ```
     3.  **Compose and Update Plan (`evalset_gen_plan.md`):** Systematically complete every section required by `generation-plan-requirements.md`. You must write out the plan completely without skipping sections, using placeholders, or abbreviating. Place the main decisions requiring user-review at the top of the plan.
-    4. **[USER APPROVAL GATE]:** STOP. You MUST halt and wait for user approval of `evalset_gen_plan.md`. **DO NOT proceed to the next phase until explicitly given permission.**
+    4.  **[USER APPROVAL GATE]:** STOP. You MUST halt and wait for user approval of `evalset_gen_plan.md`. **DO NOT proceed to the next phase until explicitly given permission.**
 *   **Exit Criteria:** User explicitly approved `evalset_gen_plan.md` and indicated we may proceed to the next phase.
 
 ### **PHASE 3: INTELLIGENT GENERATION**
 *   **Goal:** Create the core "Seed" dataset with execution-guided proof.
 *   **Mandatory Actions:**
     1.  Execute workflow in `<skill_dir>/references/generation-cot.md`, saving validated examples via `generate_dataset` MCP Tool to an interim dataset file `temp_golden.json`.
-    2.  **Attach Generalizability Metadata**: Ensure every generated item includes a `metadata` object with:
-        - `subdomain`: Business/schema module (e.g., `"sales"`, `"billing"`, `"inventory"`, `"crm"`)
-        - `linguistic_style`: Query style (`"canonical_synthetic"`, `"short_jargon"`, `"human_telemetry"`, `"ambiguous"`)
-        - `complexity_tier`: SQL complexity (`"tier_1_simple"`, `"tier_2_multi_join_agg"`, `"tier_3_advanced_cte_window"`)
-        - `logic_depth`: Business rule type (`"explicit_schema"`, `"implicit_business_rule"`, `"value_entity_lookup"`)
 *   **Exit Criteria:** `temp_golden.json` is created, and every single example in `temp_golden.json` satisfies `evalset_gen_plan.md`'s conditions on the initial seed dataset. 
 
 ### **PHASE 4: EXPANSION & DIVERSIFICATION**
-*   **Goal:** Increase volume and edge-case coverage to reach the approved target volume.
+*   **Goal:** Increase volume and phrasing diversity to reach the approved target volume.
 *   **Mandatory Actions:**
     1.  Execute workflow in `<skill_dir>/references/dataset_expansion.md`, saving validated examples via `generate_dataset` MCP tool to an interim dataset file `temp_golden.json`.
-    2.  Maintain dimension metadata tags (`subdomain`, `linguistic_style`, `complexity_tier`, `logic_depth`) across all expanded queries.
-    3.  **Stratum Volume Verification**: Verify that every `subdomain` has at least 5 pairs generated so that stratified dev/test splitting yields sufficient training and holdout validation queries for every subdomain.
+    2.  **Genuine NLQ Variation Rule**: Expansion must produce genuine phrasing variants only: different natural-language expressions of the same SQL template and slot/value combinations drawn from existing contexts, and NOT net-new types of queries or ungrounded schemas. Every query template must have multiple phrasing variations so that template overlap is preserved across splits.
 *   **Exit Criteria:** `temp_golden.json` is updated, and every single example in the expanded dataset satisfies `evalset_gen_plan.md`'s conditions on the expanded dataset. 
-
 
 ### **PHASE 5: AUDIT & REPORTING [WAIT FOR USER APPROVAL]**
 *   **Goal:** Assess the quality and diversity of the generated dataset, and get explicit user approval on the dataset.
@@ -83,22 +85,11 @@ You must prepend this exact block to the very top of every single response you g
     2.  **[USER APPROVAL GATE]:** STOP. You MUST halt and wait for user approval of the dataset and resolution of all questions before proceeding to the next phase.
 *   **Exit Criteria:** User explicitly approved the dataset and indicated we may proceed to the next phase.
 
-### **PHASE 6: FINALIZATION**
-*   **Goal:** Deliver the final dataset package and generate the Stratified Dev/Test splits to the active working directory.
+### **PHASE 6: FINALIZATION & INTERNAL STRATIFIED PARTITIONING**
+*   **Goal:** Deliver the final golden dataset package and partition internal Dev and Holdout Test splits.
 *   **Precondition:** All required phase audit reports (environment acquisition, strategic plan, pair-level review, dataset-level review) must exist on disk.
 *   **Mandatory Actions:**
-    1.  **Save Golden Dataset:** Copy/move the temp dataset file `temp_golden.json` to the target `output_file_path` (default: `golden.json` in the user's workspace). If the file already exists, verify whether we should overwrite with the user.
-    2.  **Move Deliverables:** Ensure all written files (`.json`, `.md`, audit reports) are moved to the user's active directory if they were initially created elsewhere.
-    3.  **Generate Dev/Test Splits (`split_dataset` MCP Tool):**
-        - Ask the user if they have an existing custom holdout test dataset file:
-          > *"Do you have an existing test dataset file you would like to use for holdout generalizability testing, or should I automatically partition this golden dataset into Stratified Dev/Test splits (80% Dev / 20% Holdout Test)?"*
-        - Call the `split_dataset` MCP tool:
-          - `golden_dataset_path`: Path to the materialized golden dataset (e.g. `golden.json`).
-          - `output_dir`: Active experiment directory (e.g. `autoctx/experiments/<experiment_name>/` or `autoctx/experiments/<experiment_name>/splits/`). If an experiment folder does not exist yet, prompt the user or save to `autoctx/experiments/default/splits/` or `./splits/`.
-          - `custom_test_dataset_path`: User-provided path if they supplied one, otherwise omit or `None`.
-          - `stratify_by`: `"subdomain"` (default) or `"complexity_tier"`.
-          - `train_ratio`: `0.8` (default).
-        - Review the returned split report and notify the user of item counts and any stratum quorum warnings.
-        - Update `autoctx/state.md` to record the dataset generation completion, `golden.json` path, and generated `splits/dev.json` and `splits/test.json` paths.
-*   **Exit Criteria:** `golden.json`, `splits/dev.json`, and `splits/test.json` are materialized on disk and state tracker is updated.
-
+    1.  **Save Dataset:** Copy the temp dataset file `temp_golden.json` to the `output_file_path` — default to the user's current working directory. If the file already exists, verify whether we should overwrite with the user.
+    2.  **Partition Dev/Test Splits**: Call the `split_dataset` MCP tool on the golden dataset to generate `splits/dev.json` (Training Questions) and `splits/test.json` (Held-Out Test Variations) with 100% template overlap.
+    3.  **No Redundant Split Reports**: Do not burden the user with a separate `split_report.md`. Internal dataset splitting details (`splits/dev.json`, `splits/test.json`) remain internal system artifacts.
+    4.  **Move Deliverables:** Ensure all written files (`.json`, `.md`, reports) are moved to the user's active directory if they were initially created elsewhere.

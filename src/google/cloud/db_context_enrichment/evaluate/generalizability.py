@@ -95,9 +95,19 @@ def format_on_screen_card(
     test_total = stats["test_total"]
 
     if v_type == "PASS":
-        notes_test = "Consistent with training (1-question variance)" if (dev_passed - test_passed <= 2) else "Consistent with training"
-        diag_text = diagnosis or "The model is generalizing well and not simply memorizing training phrases. The minor difference between training and test is well within normal statistical expectations."
-        next_text = next_step or "Export `improved_context_v3.json` to production. No further optimization iterations required."
+        notes_test = (
+            "Consistent with training (1-question variance)"
+            if (dev_passed - test_passed <= 2)
+            else "Consistent with training"
+        )
+        diag_text = (
+            diagnosis
+            or "The model is generalizing well and not simply memorizing training phrases. The minor difference between training and test is well within normal statistical expectations."
+        )
+        next_text = (
+            next_step
+            or "Export `improved_context_v3.json` to production. No further optimization iterations required."
+        )
 
         return (
             f"🎯 **Evaluation Complete: Context Set Generalizes Reliably**\n\n"
@@ -117,7 +127,10 @@ def format_on_screen_card(
             f"With only {test_total} test questions, each question changes accuracy by {int(round(100 / test_total))}%. "
             f"A statistical test cannot distinguish normal variation from genuine performance drops."
         )
-        action_text = recommended_action or "**Expand Evaluation Dataset**. Add questions to reach at least **150 total pairs** (>= 120 Training / >= 30 Test) and restart context engineering."
+        action_text = (
+            recommended_action
+            or "**Expand Evaluation Dataset**. Add questions to reach at least **150 total pairs** (>= 120 Training / >= 30 Test) and restart context engineering."
+        )
 
         return (
             f"⚠️ **Evaluation Inconclusive: Sample Size Too Small**\n\n"
@@ -135,8 +148,14 @@ def format_on_screen_card(
     else:  # INVESTIGATE
         diff_pct = abs(int(round(stats["difference"] * 100)))
         p_val_str = f"{stats['p_value']:.3f}"
-        diag_text = diagnosis or "Evaluation revealed statistically significant drops on new question phrasings due to missing domain contexts or phrasing gaps."
-        action_text = recommended_action or "Review the failure breakdown below, generate missing facets/values, and re-run optimization with a fresh test set."
+        diag_text = (
+            diagnosis
+            or "Evaluation revealed statistically significant drops on new question phrasings due to missing domain contexts or phrasing gaps."
+        )
+        action_text = (
+            recommended_action
+            or "Review the failure breakdown below, generate missing facets/values, and re-run optimization with a fresh test set."
+        )
 
         return (
             f"❌ **Evaluation Alert: Performance Drop on New Questions**\n\n"

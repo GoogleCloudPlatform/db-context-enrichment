@@ -1,11 +1,12 @@
-## Spanner
+## Spanner GoogleSQL
 
 **Required properties from the `kind: source` block in `tools.yaml`:**
 - Source Type (`type: spanner`)
 - Google Cloud Project ID (`project_id`)
 - Instance ID (`instance_id`)
 - Database Name (`database_name`)
-- *(Optional)* Property Graph IDs (`graph_ids`)
+- *(Optional)* Dialect (`dialect: GOOGLESQL`, defaults to GoogleSQL if omitted)
+- *(Optional)* Graph IDs (`Graph Ids` in `state.md`)
 
 **EvalBench Database Config Spec (`db_config.yaml`):**
 
@@ -21,8 +22,6 @@ max_executions_per_minute: 100
 
 **EvalBench Model Config Spec (`model_config.yaml`):**
 
-For Spanner Graph (when `graph_ids: [<graph_name>]` is configured in `tools.yaml`), `model_config.yaml` includes `graph_ids` and `use_rest_api: true`:
-
 ```yaml
 generator: query_data_api
 project_id: <project_id>
@@ -37,7 +36,10 @@ context:
         instance_id: <instance_id>
         database_id: <database_name>
         graph_ids:
-          - <graph_name>
+          - <graph_name_1>
+          - <graph_name_2>
       agent_context_reference:
         context_set_id: <context_set_id>
 ```
+
+For Spanner Graph (when `Graph Ids` is configured in `state.md`), `generate_evalbench_configs` captures those values in `graph_ids`.

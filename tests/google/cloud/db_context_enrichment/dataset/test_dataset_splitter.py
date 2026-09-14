@@ -35,7 +35,9 @@ def sample_golden_entries():
 
 
 @pytest.mark.asyncio
-async def test_split_dataset_template_overlap(tmp_path: pathlib.Path, sample_golden_entries):
+async def test_split_dataset_template_overlap(
+    tmp_path: pathlib.Path, sample_golden_entries
+):
     input_file = tmp_path / "golden.json"
     with open(input_file, "w", encoding="utf-8") as f:
         json.dump(sample_golden_entries, f)

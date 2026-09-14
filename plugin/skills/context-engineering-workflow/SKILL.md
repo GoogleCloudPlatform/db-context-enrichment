@@ -226,7 +226,7 @@ The Autoctx workflows generate and interact with a structured workspace to maint
 ### Workspace Folder Layout
 *   `autoctx/`: The dedicated workspace directory.
     *   `tools.yaml`: Configuration file for the Toolbox MCP Server.
-    *   `state.md`: Authoritative single source of truth for database scope, active experiment, base context, run history, and generalizability status.
+    *   `state.md`: Authoritative single source of truth for database scope (including Spanner Property Graphs), active experiment, base context, run history, and generalizability status.
     *   `experiments/`: Root directory for all experiments.
         *   `<experiment_name>/`: Specific experiment directory.
             *   `splits/`: Preserves internal partitions (`dev.json` and `test.json`).

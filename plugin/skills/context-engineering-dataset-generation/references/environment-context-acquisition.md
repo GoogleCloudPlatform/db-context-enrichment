@@ -6,8 +6,8 @@ This protocol serves as a guide to build a comprehensive, grounded understanding
 
 **1. Schema & Artifact Integration (Domain Mapping)**
 *   **Objective:** Bridge the gap between technical architecture and business terminology.
-*   **Action:** Check for `tools.yaml` to identify DB configurations. Use `<source>-list-schemas` tools to fetch schemas. If unavailable, ask the user to run the initialization workflow for auto context generation. Process business context artifacts (e.g., documents, Markdown, PDFs, source codes locally or from a remote repo such as github, etc.), offline or MCP-fetched schemas, or application source code. **Assign a friendly short name to each ingested artifact (e.g., "Q1_2024_Sales_Report.pdf" → "Sales Report", "https://github.com/kupp0/google-dach-summit26-database-labs" → "github-google-dach-summit26-database-labs") so they can be concisely referred to as sources in the grounding citations for generated pairs. Save this artifact-to-short-name mapping to an output file named `evalset_environment_inputs.md`.** Map business definitions to technical schema elements. 
-*   **Required State:** A clear mapping between business concepts (found in PDFs, Markdown, source codes locally or from a remote repo) and actual database elements (fetched via `<source>-list-schemas`). This mapping should naturally filter out irrelevant system tables, migration records, or deprecated columns. The `evalset_environment_inputs.md` file must be successfully created and populated with the artifact short names.
+*   **Action:** Check for `tools.yaml` to identify DB configurations. Use `<source>-list-schemas` and `<source>-list-graphs` tools to fetch schemas. If unavailable, ask the user to run the initialization workflow for auto context generation. Process business context artifacts (e.g., documents, Markdown, PDFs, source codes locally or from a remote repo such as github, etc.), offline or MCP-fetched schemas, or application source code. **Assign a friendly short name to each ingested artifact (e.g., "Q1_2024_Sales_Report.pdf" → "Sales Report", "https://github.com/kupp0/google-dach-summit26-database-labs" → "github-google-dach-summit26-database-labs") so they can be concisely referred to as sources in the grounding citations for generated pairs. Save this artifact-to-short-name mapping to an output file named `evalset_environment_inputs.md`.** Map business definitions to technical schema elements and property graphs. 
+*   **Required State:** A clear mapping between business concepts (found in PDFs, Markdown, source codes locally or from a remote repo) and actual database elements. This mapping should naturally filter out irrelevant system tables, migration records, or deprecated columns. The `evalset_environment_inputs.md` file must be successfully created and populated with the artifact short names.
 
 **2. Usage Heatmapping**
 *   **Objective:** Identify the highest-value data structures based on real-world application behavior.
@@ -34,8 +34,11 @@ This protocol serves as a guide to build a comprehensive, grounded understanding
 *   **Action:** If we identify existing datasets, confirm usage of these datasets by recording the dataset filename and the number of examples provided in `evalset_environment_inputs.md`.
 
 **7. Artifact Scope Cross-Validation**
-*   **Objective:** Identify any discrepancies between the database scope extracted from application artifacts (tables, schemas, property graphs, engines) and the active `tools.yaml` configuration.
-*   **Action:** Compare the target tables, property graphs (e.g., Spanner Graph `FinGraph`), and database engines required by the ingested artifacts against `tools.yaml`. If a discrepancy is detected (e.g., artifacts require property graphs or tables not exposed in `tools.yaml`):
-    - Record the exact discrepancy in `evalset_environment_inputs.md`.
-    - Surface this as the top priority decision in `evalset_gen_plan.md` under **Key Decisions Needing Human Review** for explicit user resolution during the Phase 2 approval gate.
-*   **Required State:** Recorded scope findings in `evalset_environment_inputs.md` ready to be integrated into `evalset_gen_plan.md`.
+*   **Objective:** Identify any discrepancies between the database scope extracted from application artifacts (tables, schemas, property graphs, engines) and the active `state.md` / `tools.yaml` configuration, and expand fields there such as graph ids.
+*   **Action:** Compare the target tables, property graphs and database engines required by the ingested artifacts against `state.md` and database schemas.
+    - If the ingested artifacts or schema reveal additional targets beyond what the user initially specified (or if the user provided an initial subset):
+      - Identify the complete set relevant from schemas and ingested artifacts.
+      - Propose the expanded list of targets in `evalset_gen_plan.md` under **Key Decisions Needing Human Review**.
+      - Update `autoctx/state.md` under `## Active Database -> - **Graph Ids**: [...]` with the expanded list.
+    - Record scope findings and discrepancies in `evalset_environment_inputs.md`.
+*   **Required State:** Recorded scope findings in `evalset_environment_inputs.md` and updated `autoctx/state.md` ready to be integrated into `evalset_gen_plan.md`.

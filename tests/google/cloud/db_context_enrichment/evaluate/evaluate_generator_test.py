@@ -401,16 +401,190 @@ def test_convert_dataset_case_sensitive():
             _convert_dataset("/fake/dataset.json", "postgres")
 
 
-def test_generate_evalbench_configs_spanner_graph():
+def test_parse_graph_ids_from_state_md(tmp_path):
+    from google.cloud.db_context_enrichment.evaluate.evaluate_generator import (
+        _parse_graph_ids_from_state_md,
+    )
+
+    state_file = tmp_path / "state.md"
+    state_file.write_text(
+        '# State Tracking\n\n## Active Database\n- **Graph Ids**: ["ResearchGraph", "LogisticsNet"]\n'
+    )
+    assert _parse_graph_ids_from_state_md(str(state_file)) == [
+        "ResearchGraph",
+        "LogisticsNet",
+    ]
+
+    # Empty list
+    state_empty = tmp_path / "state_empty.md"
+    state_empty.write_text("- **Graph Ids**: []\n")
+    assert _parse_graph_ids_from_state_md(str(state_empty)) is None
+
+    # Empty list with trailing comment (template default)
+    state_empty_comment = tmp_path / "state_empty_comment.md"
+    state_empty_comment.write_text(
+        "- **Graph Ids**: [] # (Populated during schema inspection)\n"
+    )
+    assert _parse_graph_ids_from_state_md(str(state_empty_comment)) is None
+
+    # List with trailing comment
+    state_comment = tmp_path / "state_comment.md"
+    state_comment.write_text(
+        '- **Graph Ids**: ["ResearchGraph", "LogisticsNet"] # some comment\n'
+    )
+    assert _parse_graph_ids_from_state_md(str(state_comment)) == [
+        "ResearchGraph",
+        "LogisticsNet",
+    ]
+
+    # Unbracketed comma-separated with trailing comment
+    state_unbracketed = tmp_path / "state_unbracketed.md"
+    state_unbracketed.write_text(
+        "- **Graph Ids**: ResearchGraph, LogisticsNet # some comment\n"
+    )
+    assert _parse_graph_ids_from_state_md(str(state_unbracketed)) == [
+        "ResearchGraph",
+        "LogisticsNet",
+    ]
+
+    # None / N/A / dash sentinels
+    state_none = tmp_path / "state_none.md"
+    state_none.write_text("- **Graph Ids**: None\n")
+    assert _parse_graph_ids_from_state_md(str(state_none)) is None
+
+    state_na = tmp_path / "state_na.md"
+    state_na.write_text("- **Graph Ids**: N/A # none available\n")
+    assert _parse_graph_ids_from_state_md(str(state_na)) is None
+
+    state_dash = tmp_path / "state_dash.md"
+    state_dash.write_text("- **Graph Ids**: -\n")
+    assert _parse_graph_ids_from_state_md(str(state_dash)) is None
+
+    # Colon inside bold
+    state_colon_inside = tmp_path / "state_colon_inside.md"
+    state_colon_inside.write_text('**Graph Ids:** ["ResearchGraph"]\n')
+    assert _parse_graph_ids_from_state_md(str(state_colon_inside)) == ["ResearchGraph"]
+
+    # Multiline bullet items
+    state_multiline = tmp_path / "state_multiline.md"
+    state_multiline.write_text(
+        textwrap.dedent("""\
+            # State Tracking
+            - **Source Name**: spanner-db
+            - **Graph Ids**:
+              - ResearchGraph
+              - `LogisticsNet`
+            - **Other Setting**: something_else
+        """)
+    )
+    assert _parse_graph_ids_from_state_md(str(state_multiline)) == [
+        "ResearchGraph",
+        "LogisticsNet",
+    ]
+
+    # Missing file
+    assert _parse_graph_ids_from_state_md(str(tmp_path / "nonexistent.md")) is None
+
+
+def test_generate_evalbench_configs_spanner_graph_from_state_md(tmp_path):
+    tools_yaml = tmp_path / "tools.yaml"
+    tools_yaml.write_text(
+        textwrap.dedent("""\
+            kind: source
+            name: spanner-source
+            type: spanner
+            project: test-project
+            instance: test-instance
+            database: test-db
+        """)
+    )
+
+    state_md = tmp_path / "state.md"
+    state_md.write_text(
+        textwrap.dedent("""\
+            # Context Authoring Experiment State Tracking
+
+            ## Active Database
+            - **Source Name**: spanner-source
+            - **Type**: spanner
+            - **Graph Ids**: ["ResearchGraph", "LogisticsNet"]
+        """)
+    )
+
+    dataset_json = tmp_path / "dataset.json"
+    dataset_json.write_text(
+        json.dumps(
+            [{"id": "1", "database": "test-db", "nlq": "q", "golden_sql": "SELECT 1"}]
+        )
+    )
+
+    out_dir = tmp_path / "experiments" / "exp1"
+
+    generate_evalbench_configs(
+        output_dir=str(out_dir),
+        dataset_path=str(dataset_json),
+        context_set_id="projects/test-project/locations/us-central1/contextSets/context-123",
+        toolbox_config_path=str(tools_yaml),
+        toolbox_source_name="spanner-source",
+    )
+
+    model_config_path = out_dir / "eval_configs" / "model_config.yaml"
+    assert model_config_path.exists()
+    model_config = yaml.safe_load(model_config_path.read_text())
+    assert model_config["use_rest_api"] is True
+    spanner_ref = model_config["context"]["datasource_references"]["spanner_reference"]
+    assert spanner_ref["database_reference"]["graph_ids"] == [
+        "ResearchGraph",
+        "LogisticsNet",
+    ]
+
+
+def test_generate_evalbench_configs_spanner_no_state_md_graphs(tmp_path):
+    tools_yaml = tmp_path / "tools.yaml"
+    tools_yaml.write_text(
+        textwrap.dedent("""\
+            kind: source
+            name: spanner-source
+            type: spanner
+            project: test-project
+            instance: test-instance
+            database: test-db
+        """)
+    )
+
+    dataset_json = tmp_path / "dataset.json"
+    dataset_json.write_text(
+        json.dumps(
+            [{"id": "1", "database": "test-db", "nlq": "q", "golden_sql": "SELECT 1"}]
+        )
+    )
+
+    out_dir = tmp_path / "experiments" / "exp2"
+
+    generate_evalbench_configs(
+        output_dir=str(out_dir),
+        dataset_path=str(dataset_json),
+        context_set_id="projects/test-project/locations/us-central1/contextSets/context-123",
+        toolbox_config_path=str(tools_yaml),
+        toolbox_source_name="spanner-source",
+    )
+
+    model_config_path = out_dir / "eval_configs" / "model_config.yaml"
+    assert model_config_path.exists()
+    model_config = yaml.safe_load(model_config_path.read_text())
+    spanner_ref = model_config["context"]["datasource_references"]["spanner_reference"]
+    assert "graph_ids" not in spanner_ref["database_reference"]
+
+
+def test_generate_evalbench_configs_spanner_postgres():
     tools_yaml_content = textwrap.dedent("""\
         kind: source
-        name: spanner-source
+        name: spanner-pg-source
         type: spanner
         project: test-project
         instance: test-instance
         database: test-db
-        graph_ids:
-          - ResearchGraph
+        engine: POSTGRESQL
     """).strip()
 
     with patch("builtins.open", mock_open(read_data=tools_yaml_content)) as m:
@@ -426,17 +600,61 @@ def test_generate_evalbench_configs_spanner_graph():
                     dataset_path="/fake/dataset.json",
                     context_set_id="projects/test-project/locations/us-central1/contextSets/context-123",
                     toolbox_config_path="/fake/tools.yaml",
-                    toolbox_source_name="spanner-source",
+                    toolbox_source_name="spanner-pg-source",
                 )
 
-    # Find the write call for model_config.yaml
     written_data = {}
     for call in m().write.call_args_list:
         content = call[0][0]
         if "spanner_reference" in content:
             written_data["model_config"] = content
+        elif "db_type: spanner" in content:
+            written_data["db_config"] = content
+        elif "dialect: spanner_pg" in content and "dataset_config" in content:
+            written_data["run_config"] = content
 
+    assert "model_config" in written_data
     model_config = yaml.safe_load(written_data["model_config"])
-    assert model_config["use_rest_api"] is True
     spanner_ref = model_config["context"]["datasource_references"]["spanner_reference"]
-    assert spanner_ref["database_reference"]["graph_ids"] == ["ResearchGraph"]
+    assert spanner_ref["database_reference"]["engine"] == "POSTGRESQL"
+
+    assert "db_config" in written_data
+    db_config = yaml.safe_load(written_data["db_config"])
+    assert db_config["dialect"] == "spanner_pg"
+    assert db_config["db_type"] == "spanner"
+
+    assert "run_config" in written_data
+    run_config = yaml.safe_load(written_data["run_config"])
+    assert run_config["dialect"] == "spanner_pg"
+
+
+def test_generate_evalbench_configs_bigtable():
+    mock_yaml = textwrap.dedent("""\
+        ---
+        kind: source
+        name: test-bigtable-source
+        type: bigtable
+        project: test-project
+        instance: test-instance
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=mock_yaml)) as m:
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
+            return_value='[{"mock": "data"}]',
+        ):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+            ) as mock_makedirs:
+                generate_evalbench_configs(
+                    output_dir="/test/out",
+                    dataset_path="/local/path/data.json",
+                    context_set_id="projects/test-project/locations/global/contextSets/test-ctx",
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="test-bigtable-source",
+                )
+
+    mock_makedirs.assert_called_once_with("/test/out/eval_configs", exist_ok=True)
+    calls = [call.args[0] for call in m().write.call_args_list]
+    assert any("bigtable" in call for call in calls)
+    assert any("bigtable_reference" in call for call in calls)

@@ -54,12 +54,12 @@ You must prepend this exact block to the very top of every single response you g
     2.  **Dataset Generation Proposal (Chat Display)**: Unless the user provides an existing dataset or requests custom sizing, present the standardized proposal directly in chat:
         ```text
         Dataset Generation Proposal:
-        - Total Questions Generated: 150 questions across 30 core database query patterns.
-        - Training Questions: 120 questions (4 variations per query pattern used for iterative optimization).
-        - Held-Out Test Questions: 30 questions (1 alternate phrasing and parameter variation per query pattern, held out to test generalizability).
-        - Query Coverage: 100% of query patterns appear in both sets, ensuring test questions evaluate generalizability to new phrasing rather than unseen schemas.
-        - Zero-Leakage Guarantee: The holdout test partition (splits/test.json) is strictly isolated during the entire hill-climbing optimization loop (zero data leakage) and evaluated strictly once in a read-only pass after training convergence.
-        - Internal Partitions: Preserved in splits/dev.json and splits/test.json.
+        - Total Questions Generated: 150 questions across 30 core database query patterns (default size before split).
+        - Hillclimbing Questions: 105 questions (default split ratio 0.7, used for iterative optimization).
+        - Holdout Questions: 45 questions (minimum holdout size 45, alternate phrasings and parameter variations held out to test generalizability).
+        - Query Coverage: 100% of query patterns appear in both sets, ensuring holdout questions evaluate generalizability to new phrasing rather than unseen schemas.
+        - Zero-Leakage Guarantee: The holdout partition (splits/holdout.json) is strictly isolated during the entire hill-climbing optimization loop (zero data leakage) and evaluated strictly once in a read-only pass after hillclimbing convergence.
+        - Internal Partitions: Preserved in splits/hillclimb.json and splits/holdout.json.
         ```
     3.  **Compose and Update Plan (`evalset_gen_plan.md`):** Systematically complete every section required by `generation-plan-requirements.md`. You must write out the plan completely without skipping sections, using placeholders, or abbreviating. Place the main decisions requiring user-review at the top of the plan.
     4.  **[USER APPROVAL GATE]:** STOP. You MUST halt and wait for user approval of `evalset_gen_plan.md`. **DO NOT proceed to the next phase until explicitly given permission.**
@@ -86,10 +86,10 @@ You must prepend this exact block to the very top of every single response you g
 *   **Exit Criteria:** User explicitly approved the dataset and indicated we may proceed to the next phase.
 
 ### **PHASE 6: FINALIZATION & INTERNAL STRATIFIED PARTITIONING**
-*   **Goal:** Deliver the final golden dataset package and partition internal Dev and Holdout Test splits.
+*   **Goal:** Deliver the final golden dataset package and partition internal Hillclimbing and Holdout splits.
 *   **Precondition:** All required phase audit reports (environment acquisition, strategic plan, pair-level review, dataset-level review) must exist on disk.
 *   **Mandatory Actions:**
     1.  **Save Dataset:** Copy the temp dataset file `temp_golden.json` to the `output_file_path` — default to the user's current working directory. If the file already exists, verify whether we should overwrite with the user.
-    2.  **Partition Dev/Test Splits**: Call the `split_dataset` MCP tool on the golden dataset to generate `splits/dev.json` (Training Questions) and `splits/test.json` (Held-Out Test Variations) with 100% template overlap.
-    3.  **No Redundant Split Reports**: Do not burden the user with a separate `split_report.md`. Internal dataset splitting details (`splits/dev.json`, `splits/test.json`) remain internal system artifacts.
+    2.  **Partition Hillclimbing/Holdout Splits**: Call the `split_dataset` MCP tool on the golden dataset (default ratio 0.7, minimum holdout size 45) to generate `splits/hillclimb.json` (Hillclimbing Questions, default 105 items) and `splits/holdout.json` (Holdout Variations, minimum 45 items) with 100% template overlap.
+    3.  **No Redundant Split Reports**: Do not burden the user with a separate `split_report.md`. Internal dataset splitting details (`splits/hillclimb.json`, `splits/holdout.json`) remain internal system artifacts.
     4.  **Move Deliverables:** Ensure all written files (`.json`, `.md`, reports) are moved to the user's active directory if they were initially created elsewhere.

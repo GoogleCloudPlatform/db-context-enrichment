@@ -12,25 +12,30 @@ def calculate_z_test(
     """Calculates a two-proportion pooled z-test and derives the verdict.
 
     Args:
-        dev_passed: Number of passed queries in dev split (Training Questions).
-        dev_total: Total queries in dev split (N_dev).
-        test_passed: Number of passed queries in test split (New / Rephrased Questions).
-        test_total: Total queries in test split (N_test).
+        dev_passed: Number of passed queries in hillclimbing split (Hillclimbing Questions).
+        dev_total: Total queries in hillclimbing split (N_dev).
+        test_passed: Number of passed queries in holdout split (Holdout Questions).
+        test_total: Total queries in holdout split (N_test).
         alpha: Significance level (default: 0.05).
 
     Returns:
         Dict containing statistical metrics, p-value, and plain-language verdict.
     """
-    p_dev = (dev_passed / dev_total) if dev_total > 0 else 0.0
-    p_test = (test_passed / test_total) if test_total > 0 else 0.0
+    if dev_total <= 0 or test_total <= 0:
+        raise ValueError("dev_total and test_total must be positive integers.")
+    if dev_passed < 0 or test_passed < 0 or dev_passed > dev_total or test_passed > test_total:
+        raise ValueError("Passed counts must be between 0 and total counts.")
+
+    p_dev = dev_passed / dev_total
+    p_test = test_passed / test_total
     drop = p_dev - p_test
     diff = p_test - p_dev
 
     total_queries = dev_total + test_total
     total_passed = dev_passed + test_passed
-    p_hat = (total_passed / total_queries) if total_queries > 0 else 0.0
+    p_hat = total_passed / total_queries
 
-    if total_queries > 0 and dev_total > 0 and test_total > 0 and 0.0 < p_hat < 1.0:
+    if 0.0 < p_hat < 1.0:
         se = math.sqrt(p_hat * (1.0 - p_hat) * (1.0 / dev_total + 1.0 / test_total))
         z = (p_dev - p_test) / se if se > 0 else 0.0
         p_value = math.erfc(abs(z) / math.sqrt(2.0))
@@ -40,10 +45,10 @@ def calculate_z_test(
         p_value = 1.0
 
     # Decision logic based on design doc & simulated outputs:
-    # 1. Underpowered holdout size (N_test < 30) -> Inconclusive
+    # 1. Underpowered holdout size (N_test < 45) -> Inconclusive
     # 2. Statistically significant drop (p < alpha and p_dev > p_test) -> Investigate
-    # 3. No statistically significant drop or test >= dev -> Pass
-    if test_total < 30:
+    # 3. No statistically significant drop or holdout >= hillclimbing -> Pass
+    if test_total < 45:
         verdict_type = "INCONCLUSIVE"
         verdict = "NOT PASS — INCONCLUSIVE (Sample Size Too Small)"
         status = "More Data Needed"
@@ -96,13 +101,13 @@ def format_on_screen_card(
 
     if v_type == "PASS":
         notes_test = (
-            "Consistent with training (1-question variance)"
+            "Consistent with hillclimbing (1-question variance)"
             if (dev_passed - test_passed <= 2)
-            else "Consistent with training"
+            else "Consistent with hillclimbing"
         )
         diag_text = (
             diagnosis
-            or "The model is generalizing well and not simply memorizing training phrases. The minor difference between training and test is well within normal statistical expectations."
+            or "The model is generalizing well and not simply memorizing hillclimbing phrases. The minor difference between hillclimbing and holdout is well within normal statistical expectations."
         )
         next_text = (
             next_step
@@ -115,8 +120,8 @@ def format_on_screen_card(
             f"Your context set successfully handles new ways of asking questions without performance drops.\n\n"
             f"| Split | Accuracy | Correct Queries | Notes |\n"
             f"| :---- | :---: | :---: | :---- |\n"
-            f"| **Training Questions** | **{dev_pct}%** | **{dev_passed} / {dev_total}** | **Baseline optimization accuracy** |\n"
-            f"| **New / Rephrased Questions** | **{test_pct}%** | **{test_passed} / {test_total}** | **{notes_test}** |\n\n"
+            f"| **Hillclimbing Questions** | **{dev_pct}%** | **{dev_passed} / {dev_total}** | **Baseline optimization accuracy** |\n"
+            f"| **Holdout Questions** | **{test_pct}%** | **{test_passed} / {test_total}** | **{notes_test}** |\n\n"
             f"**Summary**:\n"
             f"* **Robustness**: {diag_text}\n"
             f"* **Next Step**: {next_text}"
@@ -124,22 +129,22 @@ def format_on_screen_card(
 
     elif v_type == "INCONCLUSIVE":
         diag_text = diagnosis or (
-            f"With only {test_total} test questions, each question changes accuracy by {int(round(100 / test_total))}%. "
+            f"With only {test_total} holdout questions, each question changes accuracy by {int(round(100 / test_total))}%. "
             f"A statistical test cannot distinguish normal variation from genuine performance drops."
         )
         action_text = (
             recommended_action
-            or "**Expand Evaluation Dataset**. Add questions to reach at least **150 total pairs** (>= 120 Training / >= 30 Test) and restart context engineering."
+            or "**Expand Evaluation Dataset**. Add questions to reach at least **150 total pairs** (>= 105 Hillclimbing / >= 45 Holdout) and restart context engineering."
         )
 
         return (
             f"⚠️ **Evaluation Inconclusive: Sample Size Too Small**\n\n"
             f"**Status**: More Data Needed\n\n"
-            f"The test set is too small to determine whether the context set generalizes reliably.\n\n"
+            f"The holdout set is too small to determine whether the context set generalizes reliably.\n\n"
             f"| Split | Accuracy | Correct Queries | Notes |\n"
             f"| :---- | :---: | :---: | :---- |\n"
-            f"| **Training Questions** | **{dev_pct}%** | **{dev_passed} / {dev_total}** | **Baseline optimization accuracy** |\n"
-            f"| **New / Rephrased Questions** | **{test_pct}%** | **{test_passed} / {test_total}** | **{test_total - test_passed} failures; sample size underpowered** |\n\n"
+            f"| **Hillclimbing Questions** | **{dev_pct}%** | **{dev_passed} / {dev_total}** | **Baseline optimization accuracy** |\n"
+            f"| **Holdout Questions** | **{test_pct}%** | **{test_passed} / {test_total}** | **{test_total - test_passed} failures; sample size underpowered** |\n\n"
             f"**Summary & Recommendation**:\n"
             f"* **Diagnosis**: {diag_text}\n"
             f"* **Recommended Action**: {action_text}"
@@ -150,21 +155,21 @@ def format_on_screen_card(
         p_val_str = f"{stats['p_value']:.3f}"
         diag_text = (
             diagnosis
-            or "Evaluation revealed statistically significant drops on new question phrasings due to missing domain contexts or phrasing gaps."
+            or "Evaluation revealed statistically significant drops on holdout question phrasings due to missing domain contexts or phrasing gaps."
         )
         action_text = (
             recommended_action
-            or "Review the failure breakdown below, generate missing facets/values, and re-run optimization with a fresh test set."
+            or "Review the failure breakdown below, generate missing facets/values, and re-run optimization with a fresh holdout set."
         )
 
         return (
-            f"❌ **Evaluation Alert: Performance Drop on New Questions**\n\n"
+            f"❌ **Evaluation Alert: Performance Drop on Holdout Questions**\n\n"
             f"**Status**: Needs Optimization\n\n"
-            f"The model passed training questions but dropped on new phrasings.\n\n"
+            f"The model passed hillclimbing questions but dropped on holdout phrasings.\n\n"
             f"| Split | Accuracy | Correct Queries | Notes |\n"
             f"| :---- | :---: | :---: | :---- |\n"
-            f"| **Training Questions** | **{dev_pct}%** | **{dev_passed} / {dev_total}** | **Baseline optimization accuracy** |\n"
-            f"| **New / Rephrased Questions** | **{test_pct}%** | **{test_passed} / {test_total}** | **Statistically significant drop (-{diff_pct}%, p = {p_val_str})** |\n\n"
+            f"| **Hillclimbing Questions** | **{dev_pct}%** | **{dev_passed} / {dev_total}** | **Baseline optimization accuracy** |\n"
+            f"| **Holdout Questions** | **{test_pct}%** | **{test_passed} / {test_total}** | **Statistically significant drop (-{diff_pct}%, p = {p_val_str})** |\n\n"
             f"**Summary & Recommendation**:\n"
             f"* **Diagnosis**: {diag_text}\n"
             f"* **Recommended Action**: {action_text}"
@@ -196,7 +201,7 @@ def format_final_evaluation_report(
         sig_text = f"Inconclusive (p = {stats['p_value']:.2f}, statistical power < 25%)"
         decision_text = (
             f"Inconclusive. Statistical power < 25% to detect a drop at alpha = {stats['alpha']}.\n"
-            f"Minimum recommended test sample size is N_test >= 30."
+            f"Minimum recommended holdout sample size is N_test >= 45."
         )
     else:
         sig_text = f"Statistically Significant Drop (p = {stats['p_value']:.4f} < {stats['alpha']})"
@@ -209,24 +214,24 @@ def format_final_evaluation_report(
         f"TL;DR\n"
         f"--------------------------------------------------------------------------------\n"
         f"Verdict: {stats['verdict']}\n"
-        f"Generalization Drop: {drop_pct} ({dev_pct} Training -> {test_pct} Test)\n"
+        f"Next Steps: {tldr_next_steps}\n"
+        f"Generalization Drop: {drop_pct} ({dev_pct} Hillclimbing -> {test_pct} Holdout)\n"
         f"Significance Assessment: {sig_text}\n"
-        f"Summary: {tldr_summary}\n"
-        f"Next Steps: {tldr_next_steps}\n\n"
+        f"Summary: {tldr_summary}\n\n"
         f"--------------------------------------------------------------------------------\n"
-        f"1. PERFORMANCE OVERVIEW\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"Training Set:            {stats['dev_passed']:3d} / {stats['dev_total']:3d} passed ({dev_pct})\n"
-        f"Test Set (New Phrasings): {stats['test_passed']:3d} / {stats['test_total']:3d} passed ({test_pct})\n"
-        f"Difference:              {diff_queries:+d} queries ({diff_pct})\n\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"2. TEST SET FAILURE BREAKDOWN\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"{failure_breakdown_md.strip()}\n\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"3. ACTIONABLE RECOMMENDATIONS\n"
+        f"1. ACTIONABLE RECOMMENDATIONS\n"
         f"--------------------------------------------------------------------------------\n"
         f"{actionable_recommendations_md.strip()}\n\n"
+        f"--------------------------------------------------------------------------------\n"
+        f"2. PERFORMANCE OVERVIEW\n"
+        f"--------------------------------------------------------------------------------\n"
+        f"Hillclimbing Set:            {stats['dev_passed']:3d} / {stats['dev_total']:3d} passed ({dev_pct})\n"
+        f"Holdout Set (New Phrasings): {stats['test_passed']:3d} / {stats['test_total']:3d} passed ({test_pct})\n"
+        f"Difference:                  {diff_queries:+d} queries ({diff_pct})\n\n"
+        f"--------------------------------------------------------------------------------\n"
+        f"3. HOLDOUT SET FAILURE BREAKDOWN\n"
+        f"--------------------------------------------------------------------------------\n"
+        f"{failure_breakdown_md.strip()}\n\n"
         f"--------------------------------------------------------------------------------\n"
         f"4. STATISTICAL DETAILS\n"
         f"--------------------------------------------------------------------------------\n"

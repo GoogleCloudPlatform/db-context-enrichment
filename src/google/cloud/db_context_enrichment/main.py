@@ -56,24 +56,27 @@ async def generate_dataset(
 async def split_dataset(
     golden_dataset_path: str,
     output_dir: str,
-    train_ratio: float = 0.8,
+    hillclimb_ratio: float = 0.7,
+    min_holdout_size: int = 45,
 ) -> str:
-    """Splits a golden dataset into Dev (Training) and Holdout Test splits.
+    """Splits a golden dataset into Hillclimbing and Holdout splits.
 
-    Guarantees 100% query template overlap between splits (every SQL query template in Dev
-    is also represented in Test with different natural language phrasings and parameters).
-    Saves internal partitions to <output_dir>/splits/dev.json and <output_dir>/splits/test.json.
+    Guarantees 100% query template overlap between splits (every SQL query template in Hillclimbing
+    is also represented in Holdout with different natural language phrasings and parameters).
+    Enforces a minimum holdout set size (default: 45, default ratio: 0.7, e.g., 105 Hillclimbing / 45 Holdout for 150 items).
+    Saves internal partitions to <output_dir>/splits/hillclimb.json and <output_dir>/splits/holdout.json.
 
     Args:
         golden_dataset_path: The absolute path to the golden dataset JSON file.
-        output_dir: Output directory where splits/dev.json and splits/test.json are saved.
-        train_ratio: Ratio of data for training/dev (default: 0.8).
+        output_dir: Output directory where splits/hillclimb.json and splits/holdout.json are saved.
+        hillclimb_ratio: Ratio of data for hillclimbing (default: 0.7).
+        min_holdout_size: Minimum required items for holdout split (default: 45).
 
     Returns:
         A concise summary message confirming the split creation.
     """
     return await dataset_splitter.split_dataset(
-        golden_dataset_path, output_dir, train_ratio
+        golden_dataset_path, output_dir, hillclimb_ratio, min_holdout_size
     )
 
 
@@ -88,16 +91,16 @@ def evaluate_generalizability(
     recommended_action: str | None = None,
     next_step: str | None = None,
 ) -> str:
-    """Evaluates generalizability across training and holdout test splits.
+    """Evaluates generalizability across hillclimbing and holdout splits.
 
     Calculates a two-proportion pooled z-test, derives the verdict (PASS, INVESTIGATE,
     INCONCLUSIVE), and returns the formatted On-Screen Summary Card for novice users.
 
     Args:
-        dev_passed: Number of passed queries in Training Questions.
-        dev_total: Total queries in Training Questions (N_dev).
-        test_passed: Number of passed queries in New / Rephrased Questions.
-        test_total: Total queries in New / Rephrased Questions (N_test).
+        dev_passed: Number of passed queries in Hillclimbing Questions.
+        dev_total: Total queries in Hillclimbing Questions (N_dev).
+        test_passed: Number of passed queries in Holdout Questions.
+        test_total: Total queries in Holdout Questions (N_test).
         alpha: Significance level (default: 0.05).
         diagnosis: Optional specific diagnosis text.
         recommended_action: Optional recommended action text.

@@ -64,11 +64,12 @@ GROUP BY value, `columns`, concept_type, distance
 ### 3. SEMANTIC_SIMILARITY_MATCH
 
 **Description**: Semantic match in MySQL using Vertex AI embedding.
-**Prerequisites**: Requires `mysql.ml_embedding` support and a `column_embedding` column.
+**Prerequisites**: Requires `mysql.ml_embedding` support and a `column_embedding` column (query available models via `SELECT model_id FROM mysql.google_ml_models`).
 **Example**: Use for semantic matching (requires `mysql.ml_embedding`).
 
 **Performance Recommendations**:
 *   **Pre-compute embeddings**: MySQL cannot call Gemini models inline efficiently for large datasets. Pre-compute embeddings and store them in a column (e.g., `{column_embedding}`).
+*   **Embedding model**: Replace `'text-embedding-005'` in the template with the user-confirmed embedding model ID (e.g., `'text-embedding-005'`, `'gemini-embedding-001'`).
 *   **Use a VECTOR index**: Use a `VECTOR` index (available in HeatWave or specialized builds) to accelerate distance calculations.
 
 **Template**:

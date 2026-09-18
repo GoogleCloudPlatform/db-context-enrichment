@@ -15,7 +15,7 @@ This reference provides the SQL templates and examples for Value Search in Postg
 
 **Template**:
 ```sql
-SELECT $value as value, '{table}.{column}' as columns, '{concept_type}' as concept_type, 0 as distance, '' as context FROM "{table}" T WHERE T."{column}" = $value
+SELECT DISTINCT $value as value, '{table}.{column}' as columns, '{concept_type}' as concept_type, 0 as distance, '' as context FROM "{table}" T WHERE T."{column}" = $value
 ```
 
 ### 2. TRIGRAM_STRING_MATCH
@@ -39,7 +39,7 @@ WITH TrigramMetrics AS (
     FROM "{table}" T
     WHERE T."{column}" % $value::text
 )
-SELECT original_value AS value, '{table}.{column}' AS columns,
+SELECT DISTINCT original_value AS value, '{table}.{column}' AS columns,
 '{concept_type}' AS concept_type, normalized_dist AS distance,
 ''::text AS context FROM TrigramMetrics
 ```
@@ -64,7 +64,7 @@ WITH SemanticMetrics AS (
     FROM "{table}" T
     WHERE T."{column}" IS NOT NULL
 )
-SELECT original_value AS value, '{table}.{column}' AS columns,
+SELECT DISTINCT original_value AS value, '{table}.{column}' AS columns,
 '{concept_type}' AS concept_type, normalized_dist AS distance,
 ''::text AS context FROM SemanticMetrics
 ```

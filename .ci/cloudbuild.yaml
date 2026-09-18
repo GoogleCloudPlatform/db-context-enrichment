@@ -134,6 +134,17 @@ steps:
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
     args: ['.ci/run_gemini_cli.sh', 'eval-dataset-gen']
 
+  - id: eval-gemini-cli-spanner-graph-cujs
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'EVAL_REPORTING_PROJECT=$_EVAL_REPORTING_PROJECT'
+    args: ['.ci/run_gemini_cli.sh', 'spanner-graph-cujs']
+
   # --- Claude Code eval steps (parallel, isolated per suite) ---
   - id: eval-claude-code-core-cujs
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
@@ -170,6 +181,18 @@ steps:
       - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
     args: ['.ci/run_claude_code.sh', 'eval-dataset-gen']
 
+  - id: eval-claude-code-spanner-graph-cujs
+    name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
+    entrypoint: 'bash'
+    secretEnv: ['ADC_KEY']
+    waitFor: ['build-extension', 'preflight']
+    env:
+      - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
+      - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
+      - 'EVAL_REPORTING_PROJECT=$_EVAL_REPORTING_PROJECT'
+      - 'CLAUDE_GCP_VERTEX_PROJECT_ID=$_CLAUDE_GCP_VERTEX_PROJECT_ID'
+    args: ['.ci/run_claude_code.sh', 'spanner-graph-cujs']
+
   # --- Upload Results and Workspaces (after all eval steps) ---
   - id: upload
     name: 'gcr.io/cloud-builders/gsutil'
@@ -180,14 +203,16 @@ steps:
       - 'eval-gemini-cli-core-cujs'
       - 'eval-gemini-cli-freeform-input'
       - 'eval-gemini-cli-eval-dataset-gen'
+      - 'eval-gemini-cli-spanner-graph-cujs'
       - 'eval-claude-code-core-cujs'
       - 'eval-claude-code-freeform-input'
       - 'eval-claude-code-eval-dataset-gen'
+      - 'eval-claude-code-spanner-graph-cujs'
     args:
       - '-c'
       - |
         ANY_RAN=0
-        for RUN in gemini-cli-smoke-test claude-code-smoke-test gemini-cli-core-cujs gemini-cli-freeform-input gemini-cli-eval-dataset-gen claude-code-core-cujs claude-code-freeform-input claude-code-eval-dataset-gen; do
+        for RUN in gemini-cli-smoke-test claude-code-smoke-test gemini-cli-core-cujs gemini-cli-freeform-input gemini-cli-eval-dataset-gen gemini-cli-spanner-graph-cujs claude-code-core-cujs claude-code-freeform-input claude-code-eval-dataset-gen claude-code-spanner-graph-cujs; do
           if [ ! -f /workspace/EVAL_RAN_$$RUN ]; then
             echo "$$RUN did not run; skipping its upload."
             continue
@@ -229,7 +254,7 @@ steps:
       - |
         THRESHOLD=60
         FAILED=0
-        for RUN in gemini-cli-smoke-test claude-code-smoke-test gemini-cli-core-cujs gemini-cli-freeform-input gemini-cli-eval-dataset-gen claude-code-core-cujs claude-code-freeform-input claude-code-eval-dataset-gen; do
+        for RUN in gemini-cli-smoke-test claude-code-smoke-test gemini-cli-core-cujs gemini-cli-freeform-input gemini-cli-eval-dataset-gen gemini-cli-spanner-graph-cujs claude-code-core-cujs claude-code-freeform-input claude-code-eval-dataset-gen claude-code-spanner-graph-cujs; do
           if [ ! -f /workspace/EVAL_RAN_$$RUN ]; then
             continue
           fi

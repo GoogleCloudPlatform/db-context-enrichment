@@ -23,7 +23,7 @@ Before beginning the workflow, you explicitly require:
 
 Follow these steps exactly in order:
 
-1. **Condition Check & Schema Retrieval:**
+1. **Experiment Setup & Scope Validation:**
    - **Ask for Experiment Name & Handle Existing Folders**: You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`).
      - **If the experiment folder already exists inside `autoctx/experiments/`**: You **MUST** detect it and explicitly ask the user for confirmation:
        - *"An experiment named `<experiment_name>` already exists. Do you want to resume it (update its baseline context), fork it (create a new version, e.g., `<experiment_name>_v2`), or overwrite it completely?"*
@@ -32,13 +32,21 @@ Follow these steps exactly in order:
        - If the user selects **overwrite**: clear the existing folder's contents and proceed.
      - **If it does not exist**: Create a new dedicated subfolder inside `autoctx/experiments/` using this name.
      - Do not proceed until the experiment folder structure is finalized.
-   - Use the available Toolbox MCP tools configured in the active `autoctx/tools.yaml` to fetch the schemas for the target database.
-   - Present the retrieved schema summary **structurally and cleanly** to the user. Ask the user if they want to filter or focus on specific schemas or tables.
    - **Source Enrichment**: Prompt the user for any existing **Design Docs** or **Application Code** (e.g., ORM models, SQL queries) they wish to provide to enrich the context generation. Wait for the user's response before proceeding.
+   - **Artifact Scope Cross-Validation Gate**:
+     Compare the required database scope derived from the provided design docs, application code, or query patterns against the active `autoctx/tools.yaml` configuration.
+     - Check if the artifacts reference schemas, tables, or graphs that are not enabled or present in `tools.yaml`.
+     - If a discrepancy is detected between the artifact requirements and `tools.yaml`:
+       1. Pause execution and surface the exact mismatch clearly to the user.
+       2. Present actionable resolution options (e.g., update `tools.yaml` to include the required graph or missing tables vs. limit the context scope to the current `tools.yaml` definition).
+       3. Wait for the user's explicit decision before proceeding. If approved, update `tools.yaml` and `state.md`.
 
 2. **Deduce Key Info (Core Execution):**
+   - **Targeted Schema & Graph Retrieval**: Informed by the ingested application artifacts and design docs, use the available Toolbox MCP tools configured in the active `autoctx/tools.yaml` (e.g., `<source>-list-schemas`, `<source>-list-graphs`) to fetch the schemas for the target database and relevant tables/graphs.
+   - Present the retrieved schema summary **structurally and cleanly** to the user. Ask the user if they want to filter or focus on specific schemas, tables, or graphs.
    - Perform a **deep analysis** of the retrieved **schema and any provided documentation or code** to identify important concepts, relationships, and likely query patterns.
-   - **Collect Candidates**: Identify representative natural language queries with their corresponding SQL, common filter conditions or business rules, and **columns that require specialized value searching** (e.g., names needing fuzzy match, descriptions needing semantic search).
+   - **GQL Preference for Graph Entities**: When querying entities or relationships that are modeled within a property graph, **always prefer GQL (`GRAPH <graph_name> MATCH ...`)** over writing relational SQL `JOIN` queries against the underlying node/edge tables.
+   - **Collect Candidates**: Identify representative natural language queries with their corresponding SQL/GQL, common filter conditions or business rules (and graph pattern facets), and **columns that require specialized value searching** (e.g., names needing fuzzy match, descriptions needing semantic search).
    - *Review Check:* Briefly display these candidates to the user for approval or modifications before proceeding.
 
 3. **Context Generation (Core Execution):**
@@ -46,6 +54,8 @@ Follow these steps exactly in order:
    - Provide the deduced candidates collected in Step 2 as input to that skill.
    - That skill will handle phrase extraction, parameterization, and constructing the final valid JSON structure according to dialect best practices for all context types.
    - Once generated, use the `mutate_context_set` MCP tool to save the context items to `bootstrap_context.json` inside the approved experiment folder. Since this is a new file, construct a list of `"operation": "add"` mutations for each generated item (Template, Facet, Value Search) and pass them to the tool.
+
+4. **Validate**: Call `validate_context_set` on `bootstrap_context.json`. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
 
 ## Output
 

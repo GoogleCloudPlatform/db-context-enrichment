@@ -5,26 +5,28 @@ description: Guidelines and best practices for generating context items (Templat
 
 # Context Generation Guide Skill
 
+> **Note**: This skill covers manual authoring standards and syntax rules for individual context items. If the user asks to **optimize, tune, evaluate, or run the end-to-end workflow** for a database or project (e.g., from a design doc or database schema), use the [context-engineering-workflow](../context-engineering-workflow/SKILL.md) skill instead.
 
-This skill provides the agent with the necessary information, concepts, and best practices to generate high-quality context items for the "Context Engineering Agent". This context bridges the gap between LLMs and structured databases, enabling accurate Natural Language to SQL generation.
+This skill provides the agent with the necessary information, concepts, and best practices to generate high-quality context items for the "Context Engineering Agent". This context bridges the gap between LLMs and structured databases, enabling accurate Natural Language to SQL and GQL generation.
 
 ## Overview
 
 Context generation allows you to create specific, high-value items in three forms:
 
-1.  **Templates**: End-to-end mappings linking a natural language query to a complete, runnable SQL query. They teach the system overarching operational logic, table join infrastructures, and broad business rules.
-2.  **Facets**: Reusable, modular SQL fragments (like a `WHERE` clause or specialized join). They are dynamically injected filters linked to specific vocabulary or terminology.
-3.  **Value Searches**: Specialized queries used when a value in the natural language query does not perfectly match the stored value in the database. They employ mapping functions to find candidate values.
+1.  **Templates**: End-to-end mappings linking a natural language query to a complete, runnable SQL or GQL query. They teach the system overarching operational logic, table join infrastructures, and graph traversal rules.
+2.  **Facets**: Reusable, modular SQL/GQL fragments (like a `WHERE` clause, specialized join, or graph `MATCH` pattern). They are dynamically injected filters linked to specific vocabulary or terminology.
+3.  **Value Searches**: Specialized queries used when a value in the natural language query does not perfectly match the stored value in the database. They employ mapping functions to find candidate values across relational and graph property tables.
 
 ## Workflow
 
 When asked to generate context items:
 1.  **Identify the Type**: Determine if the user wants to create a Template, Facet, or Value Search.
 2.  **Gather Information**: Ensure you have all the required information for the chosen context type as described in the "Context Type Definitions" section below. If information is missing, try to explore the database to find it or ask the user for clarification.
-3.  **Select Dialect Reference**: Identify the target database dialect (PostgreSQL, GoogleSQL, or MySQL) and consult the corresponding file in `references/` for specific syntax and patterns.
+3.  **Select Dialect Reference**: Identify the target database dialect (PostgreSQL, Spanner GoogleSQL, Spanner PostgreSQL, MySQL, Bigtable, or Firestore) and consult the corresponding file in `references/` for specific syntax and patterns.
 4.  **Parameterize**: Follow the [Phrase Extraction and Parameterization Guidelines](references/phrase_extraction/guidelines.md) to generalize the values.
 5.  **Format Output**: Construct the final JSON object according to the examples in the reference files.
 6.  **Save Context**: Use the appropriate MCP tool (e.g., `mutate_context_set`) to save or update the context set.
+7.  **Validate**: Call `validate_context_set` on the file you just modified. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
 
 Note: Use the `mutate_context_set` tool for all ContextSet changes. It supports granular additions, updates, and deletions of ContextSet items without replacing the whole file. Pass mutation payloads directly — the tool handles all file I/O internally, so the agent should not read the target file beforehand.
 
@@ -96,7 +98,7 @@ When executing blueprint-driven SQL generation, the model inevitably runs into t
     {
       "query": "SELECT T.\"name\" AS value, 'airports.name' AS columns, 'Airport Name' AS concept_type, (T.\"name\" <-> $value::text) AS distance, '{}'::text AS context FROM \"airports\" T WHERE T.\"name\" % $value::text",
       "concept_type": "Airport Name",
-      "description": "Fuzzy match using standard trigram for partial airport names"
+       "description": "Fuzzy match using standard trigram for partial airport names"
     }
   ]
 }
@@ -126,17 +128,26 @@ When executing blueprint-driven SQL generation, the model inevitably runs into t
 
 ## Dialect References
 
-For specific SQL templates, examples, and performance recommendations, refer to the subdirectories in `references/`:
+For specific SQL/NoSQL templates, examples, and performance recommendations, refer to the subdirectories in `references/`:
 
 *   **Templates**:
     *   [PostgreSQL](references/template/postgresql.md)
-    *   [Spanner (GoogleSQL)](references/template/googlesql.md)
+    *   [Spanner GoogleSQL](references/template/googlesql.md)
+    *   [Spanner PostgreSQL](references/template/spanner-postgresql.md)
     *   [MySQL](references/template/mysql.md)
+    *   [Bigtable](references/template/bigtable.md)
+    *   [Firestore (MQL)](references/template/firestore.md)
 *   **Facets**:
     *   [PostgreSQL](references/facet/postgresql.md)
-    *   [Spanner (GoogleSQL)](references/facet/googlesql.md)
+    *   [Spanner GoogleSQL](references/facet/googlesql.md)
+    *   [Spanner PostgreSQL](references/facet/spanner-postgresql.md)
     *   [MySQL](references/facet/mysql.md)
+    *   [Bigtable](references/facet/bigtable.md)
+    *   [Firestore (MQL)](references/facet/firestore.md)
 *   **Value Searches**:
     *   [PostgreSQL](references/value_search/postgresql.md)
-    *   [Spanner (GoogleSQL)](references/value_search/googlesql.md)
+    *   [Spanner GoogleSQL](references/value_search/googlesql.md)
+    *   [Spanner PostgreSQL](references/value_search/spanner-postgresql.md)
     *   [MySQL](references/value_search/mysql.md)
+    *   [Bigtable](references/value_search/bigtable.md)
+    *   [Firestore (MQL)](references/value_search/firestore.md)

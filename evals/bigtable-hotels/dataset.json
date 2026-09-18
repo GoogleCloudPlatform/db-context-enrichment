@@ -1,0 +1,13 @@
+{
+  "scenarios": [
+    {
+      "id": "bigtable-hotels-full-workflow",
+      "starting_prompt": "help me setup and optimize context set for Cloud Bigtable hotels database based on design_doc.md",
+      "conversation_plan": "Ask the agent to set up and optimize the context set for Cloud Bigtable hotels database based on the provided design_doc.md. When the agent asks for database connection details, provide Cloud Bigtable parameters: project 'cloud-db-nl2sql', instance 'evalbench-hotels', table 'hotels'. When prompted for an experiment name, use 'bigtable-hotels-experiment'. In the Dataset Generation phase, instruct the agent to generate a concise dataset of 5 questions and approve the plan. When the agent generates baseline templates and facets, verify that it uses Bigtable SQL (BTQL) syntax (e.g. cf['qualifier'] access, TO_FLOAT64/TO_INT64 casting, and _key row keys). When prompted, approve running evaluation. Terminate the conversation after the evaluation completes.",
+      "expected_trajectory": [],
+      "kind": "agents",
+      "work_dir": "workspace_hotels/",
+      "max_turns": 8
+    }
+  ]
+}

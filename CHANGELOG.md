@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.7.3](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.2...v0.7.3) (2026-09-10)
+
+
+### Features
+
+* add validate_context_set MCP tool ([#173](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/173)) ([2afc5d1](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/2afc5d163bc0fb1dcf4255ce81ab166a5f7b765e))
+* **hillclimb:** use evalbench pipeline_debug_info in gap analysis ([#213](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/213)) ([b42231f](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/b42231f5e6810fbffb19349da8e4a8e985f9b25d))
+* Improve spanner graph context engineering - help infer relevant graph entities to use, fix yaml ([#215](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/215)) ([dfc8598](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/dfc85981b03beb5d08b8ed3f1e1517938b9eef46))
+* **plugin:** add Antigravity mcp_config.json and sync its version pin ([#212](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/212)) ([a7cd839](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/a7cd83977f702555a785c3a77ac7136e83a009ae))
+* **spanner:** add Spanner PostgreSQL context engineering support ([#216](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/216)) ([f5e26e1](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/f5e26e19c169c72247104516c29de72ca891dd69))
+
+
+### Bug Fixes
+
+* update SQL templates to use DISTINCT for value searches in Spann… ([#208](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/208)) ([a19bd96](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/a19bd960315941f641d34609565fbe4d3081be4c))
+* update SQL templates to use DISTINCT for value searches in Spanner, ([a19bd96](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/a19bd960315941f641d34609565fbe4d3081be4c))
+
+## [0.7.2](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.1...v0.7.2) (2026-08-05)
+
+
+### Features
+
+* **spanner:** add Spanner Graph context engineering support, GQL guidelines, and E2E CUJ test ([#204](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/204)) ([9761284](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/9761284e8fb2e54aff61c9ab6ea5f9f90b389b7d))
+
+## [0.7.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.0...v0.7.1) (2026-08-05)
+
+
+### Features
+
+* **evaluate:** Use REST transport to enable working for unreleased proto fields ([#192](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/192)) ([c243711](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/c243711bde96cb0232f91c8e3e0107d95827e467))
+* **plugin:** support agent plugin spec ([#205](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/205)) ([27852b1](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/27852b189c8dc47e78c9f2dff9235002b6a20708))
+
+## [0.7.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.6.0...v0.7.0) (2026-07-25)
+
+
+### Features
+
+* Enable sheperding of users through context engineering workflow  ([#168](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/168)) ([3231e59](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/3231e5966ac305268929eaa5517ea2ea22194c3f))
+* golden dataset generation and expansion ([#187](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/187)) ([694cc3c](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/694cc3cc2def917a31ca0cf64e01b9c56d5b1d81))
+* **mcp:** add upload_context_set and download_context_set tools ([#178](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/178)) ([b4f7b13](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/b4f7b131e1ebe96d12fe08d7ebd012f126b56486))
+
+
+### Bug Fixes
+
+* restore Best Practices heading in context-generation-guide ([#174](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/174)) ([5d111e7](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/5d111e77d64c32b0b0a74852470f8ecac6e20cb2))
+
+
+### Miscellaneous Chores
+
+* release 0.7.0 ([#198](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/198)) ([350ec43](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/350ec43c7006002fe1dc1274e6cbbfdc986de15f))
+
 ## [0.6.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.5.1...v0.6.0) (2026-06-16)
 
 

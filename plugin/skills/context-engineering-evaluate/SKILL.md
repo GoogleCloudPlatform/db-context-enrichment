@@ -71,8 +71,13 @@ Follow these steps exactly in order:
    - You do not need to manually write or extract file contents. Verify that the files have materialized if needed.
 
 4. **Evalbench Run Integration:**
-   - Trigger the `run_shell_command` natively to execute the evaluation from the ROOT of the workspace using the following exact command template:
-     `uvx google-evalbench@1.9.0 --experiment_config=autoctx/experiments/<experiment_name>/eval_configs/run_config.yaml`
+   - **Environment Variables**: Ensure the required GCP environment variables are exported:
+     ```bash
+     export EVAL_GCP_PROJECT_ID="<project_id>"
+     export EVAL_GCP_PROJECT_REGION="global"
+     ```
+   - **Canonical Pinned Execution**: You MUST use the pinned version of Evalbench below. Trigger the execution command from the ROOT of the workspace using the exact pinned command:
+     `uvx google-evalbench@1.17.0 --experiment_config=autoctx/experiments/<experiment_name>/eval_configs/run_config.yaml`
    - Check the command outputs to ensure the evaluation reports materialize in the respective `autoctx/experiments/<experiment_name>/eval_reports/` directory.
 
 ## Output
@@ -86,7 +91,11 @@ Upon successful completion, the workspace must contain:
 Conclude by providing a succinct summary to the user:
 - Confirm that the context set has been scored and point out exactly where the final metrics CSV/results are located.
 - Share top-level performance summaries.
-- Suggest actionable next steps (e.g., transition to a refinement workflow to hill-climb and improve the metrics based on failed evaluations).
+- **Handling QueryData API Errors**: If the evaluation results or failure cases indicate a API error under `SQL Generator Error`:
+  1. Distinguish this from a context/prompt quality defect.
+  2. Inform the user that the evaluation encountered an API error, and advise them on how to fix. We must fix these errors before we have usable evaluation results.
+  3. For errors related to API field access, advice the caller to verify API field visibility: "Your request references pre-release or private preview feature. Please ensure your GCP project is allowlisted for access by contacting your Google Cloud account team."
+- If the evaluation is successful, suggest actionable next steps (e.g., transition to a refinement workflow to hill-climb and improve the metrics based on failed evaluations).
 
 ## Templates & Reference
 

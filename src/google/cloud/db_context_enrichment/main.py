@@ -6,6 +6,7 @@ from fastmcp import FastMCP
 from google.cloud.db_context_enrichment.common import (
     context_mutator,
     context_store_client,
+    context_validator,
 )
 from google.cloud.db_context_enrichment.dataset import dataset_generator
 from google.cloud.db_context_enrichment.evaluate import (
@@ -102,13 +103,14 @@ def generate_upload_url(
 
     Args:
         db_engine: The database engine. Accepted values are 'alloydb',
-                 'cloudsql', or 'spanner'. This can be derived from the 'kind'
-                 field in the tools.yaml file. For example, 'alloydb-postgres'
-                 becomes 'alloydb', and 'cloud-sql-postgres' becomes 'cloudsql'.
+                 'cloudsql', 'spanner', or 'bigtable'. This can be derived from
+                 the 'kind' field in the tools.yaml file. For example,
+                 'alloydb-postgres' becomes 'alloydb', 'cloud-sql-postgres'
+                 becomes 'cloudsql', and 'bigtable' becomes 'bigtable'.
         project_id: The Google Cloud project ID.
         location: The location of the AlloyDB cluster.
         cluster_id: The ID of the AlloyDB cluster.
-        instance_id: The ID of the Cloud SQL or Spanner instance.
+        instance_id: The ID of the Cloud SQL, Spanner, or Bigtable instance.
         database_id: The ID of the Spanner database.
 
     Returns:
@@ -129,8 +131,13 @@ def generate_upload_url(
             return f"https://console.cloud.google.com/spanner/instances/{instance_id}/databases/{database_id}/details/query?project={project_id}"
         else:
             return "Error: Missing instance_id, database_id, or project_id for spanner."
+    elif db_engine == "bigtable":
+        if instance_id and project_id:
+            return f"https://console.cloud.google.com/bigtable/instances/{instance_id}/overview?project={project_id}"
+        else:
+            return "Error: Missing instance_id or project_id for bigtable."
     else:
-        return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', or 'spanner'."
+        return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', 'spanner', or 'bigtable'."
 
 
 # NOTE: `@mcp.tool` is intentionally NOT applied to upload_context_set /
@@ -256,6 +263,30 @@ def mutate_context_set(
         return f"Successfully applied {len(mutations)} mutations to {file_path}"
     except Exception as e:
         return f"Error applying mutations: {str(e)}"
+
+
+@mcp.tool
+def validate_context_set(file_path: str) -> str:
+    """
+    Validate a ContextSet JSON file for structural and convention issues. Reports issues only — does not fix them. The caller (agent) is expected to apply fixes via `mutate_context_set`, then re-run validation until `valid` is true.
+
+    Args:
+        file_path: Absolute path to the ContextSet file.
+
+    Returns:
+        A JSON string of the shape:
+          {
+            "valid": bool,
+            "issues": [
+              {
+                "location": {"type": "template" | "facet" | "value_search", "index": int} | null,
+                "message": str
+              },
+              ...
+            ]
+          }
+    """
+    return json.dumps(context_validator.validate_context_set(file_path), indent=2)
 
 
 @mcp.tool

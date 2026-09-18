@@ -16,6 +16,7 @@ on:
       - "gemini-extension.json"
       - "plugin/plugin.json"
       - "plugin/mcp.json"
+      - "plugin/mcp_config.json"
 
 permissions:
   contents: write
@@ -43,22 +44,24 @@ jobs:
               "$FILE" > "$FILE.tmp"
             mv "$FILE.tmp" "$FILE"
           done
-          # The Agent Plugins mcp.json has no $.version of its own; source it
-          # from the sibling plugin.json (bumped by release-please) so the pin
-          # stays atomic with the released payload.
+          # The Agent Plugins mcp.json and the Antigravity mcp_config.json have
+          # no $.version of their own; source it from the sibling plugin.json
+          # (bumped by release-please) so the pin stays atomic with the payload.
           MCP_VERSION=$(jq -r '.version' plugin/plugin.json)
           PIN="google-cloud-db-context-engineering@${MCP_VERSION}"
-          jq --arg pin "$PIN" \
-            '.mcpServers["db-context-engineering"].args[0] = $pin' \
-            plugin/mcp.json > plugin/mcp.json.tmp
-          mv plugin/mcp.json.tmp plugin/mcp.json
+          for FILE in plugin/mcp.json plugin/mcp_config.json; do
+            jq --arg pin "$PIN" \
+              '.mcpServers["db-context-engineering"].args[0] = $pin' \
+              "$FILE" > "$FILE.tmp"
+            mv "$FILE.tmp" "$FILE"
+          done
 
       - name: Commit if changed
         env:
           PR_AUTHOR_LOGIN: ${{ github.event.pull_request.user.login }}
           PR_AUTHOR_ID: ${{ github.event.pull_request.user.id }}
         run: |
-          FILES="plugin/.claude-plugin/plugin.json gemini-extension.json plugin/mcp.json"
+          FILES="plugin/.claude-plugin/plugin.json gemini-extension.json plugin/mcp.json plugin/mcp_config.json"
           if git diff --quiet -- $FILES; then
             echo "args[0] already in sync; nothing to do."
             exit 0

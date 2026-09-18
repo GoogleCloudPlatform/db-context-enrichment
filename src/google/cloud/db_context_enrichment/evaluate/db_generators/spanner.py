@@ -9,10 +9,10 @@ class SpannerConfigGenerator(BaseDBConfigGenerator):
     """
     Dedicated generator mapping properties to explicit Spanner configuration
     topologies utilized by both EvalBench binaries and GDA Context objects.
+    Supports both GoogleSQL and PostgreSQL dialects.
     """
 
     SOURCE_TYPE = "spanner"
-    DIALECT = "spanner_gsql"
     REQUIRED_FIELDS = BaseDBConfigGenerator.REQUIRED_FIELDS | {
         "project",
         "instance",
@@ -24,6 +24,40 @@ class SpannerConfigGenerator(BaseDBConfigGenerator):
         self.project = params.get("project")
         self.instance = params.get("instance")
         self.database = params.get("database")
+
+        raw_dialect = (
+            params.get("dialect")
+            or params.get("engine")
+            or params.get("database_dialect")
+        )
+        if not raw_dialect and params.get("type") in ("spanner-postgres", "spanner-pg"):
+            raw_dialect = "POSTGRESQL"
+
+        if raw_dialect:
+            normalized = str(raw_dialect).strip().lower().replace("-", "_")
+            if normalized in (
+                "postgresql",
+                "postgres",
+                "spanner_pg",
+                "pg",
+                "spanner_postgres",
+            ):
+                self.engine = "POSTGRESQL"
+                self._dialect = "spanner_pg"
+            elif normalized in ("google_sql", "googlesql", "spanner_gsql", "gsql"):
+                self.engine = "GOOGLE_SQL"
+                self._dialect = "spanner_gsql"
+            else:
+                raise ValueError(
+                    f"Unsupported Spanner dialect/engine: '{raw_dialect}'. Must be 'GOOGLE_SQL' or 'POSTGRESQL'."
+                )
+        else:
+            self.engine = "GOOGLE_SQL"
+            self._dialect = "spanner_gsql"
+
+    @property
+    def DIALECT(self) -> str:
+        return self._dialect
 
     def generate_db_config(self) -> str:
         db_type = "spanner"
@@ -44,12 +78,16 @@ class SpannerConfigGenerator(BaseDBConfigGenerator):
 
     def build_datasource_reference(self, context_set_id: str) -> dict[str, Any]:
         database_ref: dict[str, Any] = {
-            "engine": "GOOGLE_SQL",
+            "engine": self.engine,
             "project_id": self.project,
             "instance_id": self.instance,
             "database_id": self.database,
         }
         if graph_ids := self.params.get("graph_ids"):
+            if self.engine == "POSTGRESQL":
+                raise ValueError(
+                    "graph_ids is not supported for Spanner PostgreSQL dialect"
+                )
             if not isinstance(graph_ids, list) or not all(
                 isinstance(g, str) for g in graph_ids
             ):

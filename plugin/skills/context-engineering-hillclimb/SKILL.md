@@ -46,6 +46,7 @@ Follow these steps exactly in order:
     -   Iterate through the failure cases by calling the tool with increasing `offset` (0, 10, 20, ...) until all failed queries are analyzed.
     -   **First Batch (offset=0)**: Initialize the report file with the `# Gap Analysis Report - vN` header and `## Summary` section, followed by the analysis of the first batch under `## Failed Queries Detail`.
     -   **Subsequent Batches**: Call the tool with the next offset, analyze the new failures, and **append** them to the `## Failed Queries Detail` section.
+    -   **Use `pipeline_debug_info`**: If a failure case's **Additional Output** contains it, use this generation trace (showing which context the API retrieved and used) to ground the **Root Cause** and **Proposed Mutation** rather than guessing. For example, if the trace shows no template matched a question that should have been covered, treat the missing blueprint match as the root cause.
 
     Use the following structure for the report:
 
@@ -112,7 +113,8 @@ Refer to [context-generation-guide](../context-generation-guide/SKILL.md) for ho
         -   **Templates**: Run generated SQL examples via `<source>-execute-sql` (use dummy values for placeholders) to verify syntax.
         -   **Others**: Cross-check table/column references against the schema via `<source>-list-schemas`.
     -   **Apply Mutations**: Call the `mutate_context_set` MCP tool passing the **new** file path as `file_path` and mutations as `mutations_json` to mutate the context set.
-3.  **Log in State Tracking**:
+4.  **Validate**: Call `validate_context_set` on `improved_context_vN.json`. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
+5.  **Log in State Tracking**:
     -   Update `autoctx/state.md` to include the output path of `improved_context_vN.json` for Loop `vN`.
 
 ---
@@ -140,11 +142,9 @@ Upon successful completion, the workspace must contain:
 
 ## Logging State Example (`autoctx/state.md`)
 
-When updating `autoctx/state.md`, please append or update the `Hill-Climbing Run Log` section:
+When updating `autoctx/state.md`, preserve the existing `## Active Database` section and append or update the `Hill-Climbing Run Log` section:
 
 ```markdown
-# Context Authoring Experiment State Tracking
-
 ## Active Experiment: my-exp-1
 
 ## Hill-Climbing Run Log

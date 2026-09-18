@@ -5,14 +5,14 @@
       "type": "stdio",
       "command": "uvx",
       "args": [
-        "google-cloud-db-context-engineering@0.7.2"
+        "google-cloud-db-context-engineering@0.7.3"
       ]
     },
     "toolbox": {
       "type": "stdio",
       "command": "uvx",
       "args": [
-        "toolbox-server@1.4.0",
+        "toolbox-server@1.10.0",
         "--config",
         "autoctx/tools.yaml",
         "--stdio"

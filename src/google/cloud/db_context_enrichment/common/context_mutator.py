@@ -48,7 +48,7 @@ def mutate_context_set(file_path: str, mutations: list[Mutation]) -> None:
         context_set = context.ContextSet()
     else:
         try:
-            with open(file_path) as f:
+            with open(file_path, encoding="utf-8") as f:
                 raw_data = json.load(f)
             context_set = context.ContextSet.model_validate(raw_data)
         except ValidationError as e:
@@ -126,7 +126,7 @@ def mutate_context_set(file_path: str, mutations: list[Mutation]) -> None:
     # 4. Save validated ContextSet
     try:
         os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write(context_set.model_dump_json(indent=2, exclude_none=True))
     except OSError as e:
         raise RuntimeError(f"Error saving ContextSet to {file_path}: {e}") from e

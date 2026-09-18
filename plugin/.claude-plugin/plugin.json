@@ -1,7 +1,7 @@
 {
   "name": "db-context-engineering",
   "description": "Context Engineering Agent for generating natural language to SQL templates, facets, and value searches.",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "author": {
     "name": "Google Cloud Platform"
   },

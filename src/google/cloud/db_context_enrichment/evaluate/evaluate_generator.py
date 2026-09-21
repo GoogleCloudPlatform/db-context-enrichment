@@ -1,4 +1,6 @@
+import importlib
 import json
+import logging
 import os
 import re
 import textwrap
@@ -8,9 +10,12 @@ import yaml
 
 from google.cloud.db_context_enrichment.common import config
 
+logger = logging.getLogger(__name__)
+
 from .db_generators.alloydb import AlloyDBConfigGenerator
 from .db_generators.base import BaseDBConfigGenerator
 from .db_generators.bigtable import BigtableConfigGenerator
+from .db_generators.custom import CustomDBConfigGenerator
 from .db_generators.firestore import FirestoreConfigGenerator
 from .db_generators.mysql import MySQLConfigGenerator
 from .db_generators.postgres import PostgresConfigGenerator
@@ -218,7 +223,46 @@ def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
         "spanner-postgres": SpannerConfigGenerator,
         "spanner-pg": SpannerConfigGenerator,
         FirestoreConfigGenerator.SOURCE_TYPE: FirestoreConfigGenerator,
+        CustomDBConfigGenerator.SOURCE_TYPE: CustomDBConfigGenerator,
     }
+
+    # Dynamically register external custom database configuration generators.
+    custom_plugin = os.environ.get("AUTOCTX_CUSTOM_GENERATORS")
+    if custom_plugin:
+        try:
+            mod = importlib.import_module(custom_plugin)
+            custom_gens = getattr(mod, "CUSTOM_GENERATORS", None)
+            if custom_gens is None:
+                raise AttributeError(
+                    f"Custom generator module '{custom_plugin}' must define 'CUSTOM_GENERATORS' dict."
+                )
+            generators.update(custom_gens)
+        except Exception as e:
+            logger.error(
+                "Failed to load custom generators from plugin module '%s': %s",
+                custom_plugin,
+                e,
+            )
+            raise RuntimeError(
+                f"Failed to load custom generators from plugin module '{custom_plugin}': {e}"
+            ) from e
+
+    if (
+        "connector_class" in params
+        or "generator_class" in params
+        or source_type == "custom"
+    ):
+        if (
+            source_type in generators
+            and source_type != CustomDBConfigGenerator.SOURCE_TYPE
+        ):
+            logger.warning(
+                "Source type '%s' is being overridden by custom connector_class '%s' / generator_class '%s'.",
+                source_type,
+                params.get("connector_class"),
+                params.get("generator_class"),
+            )
+        return CustomDBConfigGenerator(params)
 
     if source_type not in generators:
         supported = ", ".join(generators.keys())

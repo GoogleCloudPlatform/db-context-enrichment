@@ -1,12 +1,14 @@
 import json
 import os
 import textwrap
+import types
 from unittest.mock import mock_open, patch
 
 import pytest
 import yaml
 
 from google.cloud.db_context_enrichment.evaluate.evaluate_generator import (
+    _get_db_generator,
     generate_evalbench_configs,
 )
 
@@ -658,3 +660,227 @@ def test_generate_evalbench_configs_bigtable():
     calls = [call.args[0] for call in m().write.call_args_list]
     assert any("bigtable" in call for call in calls)
     assert any("bigtable_reference" in call for call in calls)
+
+
+def test_generate_evalbench_configs_custom_type():
+    tools_yaml_content = textwrap.dedent("""\
+        kind: source
+        name: custom-engine-source
+        type: custom
+        connector_class: my_package.connectors.CustomDB
+        generator_class: my_package.generators.CustomGenerator
+        dialect: custom_sql
+        server: /custom/endpoint
+        database: test_db
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=tools_yaml_content)) as m:
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
+            return_value='[{"mock": "data"}]',
+        ):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+            ):
+                generate_evalbench_configs(
+                    output_dir="/test/out",
+                    dataset_path="/fake/dataset.json",
+                    context_set_id="custom-ctx-id",
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="custom-engine-source",
+                )
+
+    written_data = {}
+    for call in m().write.call_args_list:
+        content = call[0][0]
+        if "generator: custom" in content:
+            written_data["model_config"] = content
+        elif "db_type: custom" in content:
+            written_data["db_config"] = content
+        elif "dialect: custom_sql" in content and "dataset_config" in content:
+            written_data["run_config"] = content
+
+    assert "db_config" in written_data
+    db_config = yaml.safe_load(written_data["db_config"])
+    assert db_config["db_type"] == "custom"
+    assert db_config["connector_class"] == "my_package.connectors.CustomDB"
+    assert db_config["dialect"] == "custom_sql"
+    assert db_config["server"] == "/custom/endpoint"
+    assert db_config["database"] == "test_db"
+
+    assert "model_config" in written_data
+    model_config = yaml.safe_load(written_data["model_config"])
+    assert model_config["generator"] == "custom"
+    assert model_config["generator_class"] == "my_package.generators.CustomGenerator"
+    assert model_config["context_set_id"] == "custom-ctx-id"
+    assert model_config["server"] == "/custom/endpoint"
+
+    assert "run_config" in written_data
+    run_config = yaml.safe_load(written_data["run_config"])
+    assert run_config["dialect"] == "custom_sql"
+
+
+def test_generate_evalbench_configs_custom_missing_classes():
+    tools_yaml_content = textwrap.dedent("""\
+        kind: source
+        name: invalid-custom-source
+        type: custom
+        dialect: custom_sql
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=tools_yaml_content)):
+        with pytest.raises(
+            ValueError,
+            match="Custom source configuration must specify at least 'connector_class' or 'generator_class'",
+        ):
+            generate_evalbench_configs(
+                output_dir="/test/out",
+                dataset_path="/fake/dataset.json",
+                context_set_id="custom-ctx-id",
+                toolbox_config_path="/fake/tools.yaml",
+                toolbox_source_name="invalid-custom-source",
+            )
+
+
+def test_generate_evalbench_configs_inferred_custom_from_connector_class():
+    tools_yaml_content = textwrap.dedent("""\
+        kind: source
+        name: inferred-custom-source
+        type: pluggable_engine
+        connector_class: pkg.DBConnector
+        generator_class: pkg.ModelGen
+        dialect: special_sql
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=tools_yaml_content)) as m:
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
+            return_value='[{"mock": "data"}]',
+        ):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+            ):
+                generate_evalbench_configs(
+                    output_dir="/test/out",
+                    dataset_path="/fake/dataset.json",
+                    context_set_id="custom-ctx-id",
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="inferred-custom-source",
+                )
+
+    written_data = {}
+    for call in m().write.call_args_list:
+        content = call[0][0]
+        if "generator: custom" in content:
+            written_data["model_config"] = content
+        elif "db_type: custom" in content:
+            written_data["db_config"] = content
+
+    assert "db_config" in written_data
+    db_config = yaml.safe_load(written_data["db_config"])
+    assert db_config["connector_class"] == "pkg.DBConnector"
+    assert db_config["dialect"] == "special_sql"
+
+
+def test_get_db_generator_plugin_registration(monkeypatch):
+    class MockCustomGenerator:
+        SOURCE_TYPE = "snowflake_test"
+
+        def __init__(self, params):
+            self.params = params
+
+    mock_mod = types.ModuleType("mock_custom_plugin")
+    mock_mod.CUSTOM_GENERATORS = {"snowflake_test": MockCustomGenerator}
+
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "mock_custom_plugin")
+    with patch("importlib.import_module", return_value=mock_mod):
+        gen = _get_db_generator({"type": "snowflake_test"})
+        assert isinstance(gen, MockCustomGenerator)
+
+
+
+def test_get_db_generator_plugin_import_failure(monkeypatch):
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "nonexistent.module.path")
+    with pytest.raises(
+        RuntimeError, match="Failed to load custom generators from plugin module"
+    ):
+        _get_db_generator({"type": "custom"})
+
+
+def test_get_db_generator_plugin_missing_custom_generators_attr(monkeypatch):
+    mock_mod = types.ModuleType("empty_plugin")
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "empty_plugin")
+    with patch("importlib.import_module", return_value=mock_mod):
+        with pytest.raises(
+            RuntimeError, match="must define 'CUSTOM_GENERATORS' dict"
+        ):
+            _get_db_generator({"type": "custom"})
+
+
+def test_get_db_generator_known_type_override_warning(caplog):
+    import logging
+
+    params = {
+        "type": "cloud-sql-postgres",
+        "connector_class": "my_pkg.connectors.CustomPostgres",
+        "dialect": "postgres",
+    }
+    with caplog.at_level(logging.WARNING):
+        gen = _get_db_generator(params)
+        from google.cloud.db_context_enrichment.evaluate.db_generators.custom import (
+            CustomDBConfigGenerator,
+        )
+
+        assert isinstance(gen, CustomDBConfigGenerator)
+        assert (
+            "Source type 'cloud-sql-postgres' is being overridden by custom connector_class 'my_pkg.connectors.CustomPostgres'"
+            in caplog.text
+        )
+
+
+def test_generate_evalbench_configs_custom_connector_only():
+    tools_yaml_content = textwrap.dedent("""\
+        kind: source
+        name: custom-connector-only
+        type: custom
+        connector_class: my_package.connectors.CustomDB
+        dialect: custom_sql
+        server: /custom/endpoint
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=tools_yaml_content)) as m:
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
+            return_value='[{"mock": "data"}]',
+        ):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+            ):
+                generate_evalbench_configs(
+                    output_dir="/test/out",
+                    dataset_path="/fake/dataset.json",
+                    context_set_id="custom-ctx-id",
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="custom-connector-only",
+                )
+
+    written_data = {}
+    for call in m().write.call_args_list:
+        content = call[0][0]
+        if "generator: query_data_api" in content:
+            written_data["model_config"] = content
+        elif "db_type: custom" in content:
+            written_data["db_config"] = content
+
+    assert "db_config" in written_data
+    db_config = yaml.safe_load(written_data["db_config"])
+    assert db_config["db_type"] == "custom"
+    assert db_config["connector_class"] == "my_package.connectors.CustomDB"
+    assert db_config["dialect"] == "custom_sql"
+
+    # Falls back cleanly to base model config (query_data_api) with empty datasource_references
+    assert "model_config" in written_data
+    model_config = yaml.safe_load(written_data["model_config"])
+    assert model_config["generator"] == "query_data_api"
+    assert model_config["datasource_references"] == []
+

@@ -43,7 +43,7 @@ Custom classes loaded dynamically by EvalBench do **not** need to inherit from E
 - **Connector Contract**: `execute(self, query: str, eval_query: str = None, **kwargs) -> tuple[list[Any] | None, list[Any] | None, str | Exception | None]`. Optional methods: `clean_tmp_creations()`, `close_connections()`.
 - **Generator Contract**: `generate(self, prompt: str, **kwargs) -> str`.
 
-## Two SPI Integration Tiers
+## Integration Options
 
-1. **Tier 1 (Config-Driven SPI)**: Configure `type: custom` (or define `connector_class` / `generator_class`) in `tools.yaml`. Non-meta parameters are forwarded directly into `db_config.yaml` and `model_config.yaml`.
-2. **Tier 2 (Full Package SPI)**: External packages can register full custom engine generators via `AUTOCTX_CUSTOM_GENERATORS=my_pkg.generators` (exporting a `CUSTOM_GENERATORS` dict).
+1. **In `tools.yaml` (Standard)**: Configure `type: custom` (or define `connector_class` / `generator_class`) in `tools.yaml`. All custom parameters are forwarded directly into `db_config.yaml` and `model_config.yaml`.
+2. **External Plugin Package (Advanced)**: External packages can register full custom engine generators via `AUTOCTX_CUSTOM_GENERATORS=my_pkg.generators` (exporting a `CUSTOM_GENERATORS` dict).

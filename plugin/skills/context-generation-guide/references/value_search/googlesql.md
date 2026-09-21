@@ -4,8 +4,8 @@ This reference provides the SQL templates and examples for Value Search in Spann
 
 ## Requirements
 
-*   **`SEMANTIC_SIMILARITY_MATCH` is NOT supported** on Spanner. Only `EXACT_MATCH_STRINGS` and `TRIGRAM_STRING_MATCH` are available — do not author value searches that rely on semantic embeddings here.
-*   **Spanner Graph Support**: In Spanner Graph, node and edge labels are backed by underlying relational tables. Value searches apply identically to columns in these node and edge property tables.
+-   **`SEMANTIC_SIMILARITY_MATCH` is NOT supported** on Spanner. Only `EXACT_MATCH_STRINGS` and `TRIGRAM_STRING_MATCH` are available --- do not author value searches that rely on semantic embeddings here.
+-   **Spanner Graph Support**: In Spanner Graph, node and edge labels are backed by underlying relational tables. Value searches apply identically to columns in these node and edge property tables.
 
 ## Supported Match Functions
 
@@ -15,6 +15,7 @@ This reference provides the SQL templates and examples for Value Search in Spann
 **Example**: Use for exact IDs or state codes in Spanner.
 
 **Template**:
+
 ```sql
 SELECT value, '{column}' AS `columns`, '{concept_type}' AS concept_type, 0 AS distance,
 JSON '{}' AS context
@@ -32,9 +33,11 @@ FROM (
 **Example**: Use for typos/misspellings in Spanner using `SEARCH_NGRAMS`.
 
 **Performance Recommendations**:
-*   Use a Search Index on a `TOKENLIST` column (e.g., `{column_tokens}`) to accelerate search.
+
+-   Use a Search Index on a `TOKENLIST` column (e.g., `{column_tokens}`) to accelerate search.
 
 **Template**:
+
 ```sql
 SELECT value, '{column}' AS `columns`, '{concept_type}' AS concept_type, distance,
 JSON '{}' AS context
@@ -45,3 +48,7 @@ FROM (
   WHERE SEARCH_NGRAMS(T.`{column_tokens}`, CAST($value AS STRING))
 )
 ```
+
+## Validation
+
+Spanner does not support `EXPLAIN`. Validate candidate queries by appending `LIMIT 0` (e.g., `SELECT ... LIMIT 0`).

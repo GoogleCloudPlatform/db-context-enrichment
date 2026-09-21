@@ -4,7 +4,7 @@ This reference provides the SQL templates and examples for Value Search in MySQL
 
 ## Requirements
 
-*   **Minimum MySQL version**: `8`.
+-   **Minimum MySQL version**: `8`.
 
 ## Supported Match Functions
 
@@ -13,9 +13,10 @@ This reference provides the SQL templates and examples for Value Search in MySQL
 **Description**: Exact match for strings in MySQL.
 **Example**: Use for exact matching in MySQL.
 
-**Note**: The `GROUP BY` in the subquery only dedupes non-`JSON` columns (`value`, `columns`, `concept_type`, `distance`) — that part is fine on its own. The `JSON_OBJECT() AS context` column is deliberately kept out of that `GROUP BY`/subquery and projected only in the outer query, because under `ONLY_FULL_GROUP_BY` (MySQL's default mode) a `JSON` column can't appear in the `SELECT` list of a query that has a `GROUP BY` unless it's also grouped — and `JSON` columns can't be grouped at all.
+**Note**: The `GROUP BY` in the subquery only dedupes non-`JSON` columns (`value`, `columns`, `concept_type`, `distance`) --- that part is fine on its own. The `JSON_OBJECT() AS context` column is deliberately kept out of that `GROUP BY`/subquery and projected only in the outer query, because under `ONLY_FULL_GROUP_BY` (MySQL's default mode) a `JSON` column can't appear in the `SELECT` list of a query that has a `GROUP BY` unless it's also grouped --- and `JSON` columns can't be grouped at all.
 
 **Template**:
+
 ```sql
 SELECT value, `columns`, concept_type, distance, JSON_OBJECT() AS context
 FROM (
@@ -33,12 +34,14 @@ FROM (
 **Example**: Use for fuzzy matching in MySQL (requires `FULLTEXT` index).
 
 **Performance Recommendations**:
-*   Use a `FULLTEXT` index with the `ngram` parser for trigram-like behavior:
+
+-   Use a `FULLTEXT` index with the `ngram` parser for trigram-like behavior:
     ```sql
     ALTER TABLE `{table}` ADD FULLTEXT INDEX ft_ngram_idx (`{column}`) WITH PARSER ngram;
     ```
 
 **Template**:
+
 ```sql
 SELECT value, `columns`, concept_type, distance, JSON_OBJECT() AS context
 FROM (
@@ -64,15 +67,17 @@ GROUP BY value, `columns`, concept_type, distance
 ### 3. SEMANTIC_SIMILARITY_MATCH
 
 **Description**: Semantic match in MySQL using Vertex AI embedding.
-**Prerequisites**: Requires `mysql.ml_embedding` support and a `column_embedding` column (query available models via `SELECT model_id FROM mysql.google_ml_models`).
+**Prerequisites**: Requires `mysql.ml_embedding` support and a populated `column_embedding` column (query available models via `SELECT id FROM mysql.cloudsql_ml_models`).
 **Example**: Use for semantic matching (requires `mysql.ml_embedding`).
 
 **Performance Recommendations**:
-*   **Pre-compute embeddings**: MySQL cannot call Gemini models inline efficiently for large datasets. Pre-compute embeddings and store them in a column (e.g., `{column_embedding}`).
-*   **Embedding model**: Replace `'text-embedding-005'` in the template with the user-confirmed embedding model ID (e.g., `'text-embedding-005'`, `'gemini-embedding-001'`).
-*   **Use a VECTOR index**: Use a `VECTOR` index (available in HeatWave or specialized builds) to accelerate distance calculations.
+
+-   **Pre-compute embeddings**: MySQL cannot call Gemini models inline efficiently for large datasets. Pre-compute embeddings and store them in a column (e.g., `{column_embedding}`).
+-   **Embedding model**: Replace `'text-embedding-005'` in the template with the user-confirmed embedding model ID (e.g., `'text-embedding-005'`, `'gemini-embedding-001'`).
+-   **Use a VECTOR index**: Use a `VECTOR` index (available in HeatWave or specialized builds) to accelerate distance calculations.
 
 **Template**:
+
 ```sql
 SELECT value, `columns`, concept_type, distance, JSON_OBJECT() AS context
 FROM (
@@ -87,3 +92,7 @@ FROM (
 ) AS wrapped_query
 GROUP BY value, `columns`, concept_type, distance
 ```
+
+## Validation
+
+Validate candidate queries by prepending `EXPLAIN` (e.g., `EXPLAIN SELECT ...` or `EXPLAIN WITH ...`).

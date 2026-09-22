@@ -61,7 +61,7 @@ Custom classes loaded dynamically by EvalBench do **not** need to inherit from E
 ### Database Connector Interface
 Custom connector classes instantiated via `connector_class`:
 - **`__init__(self, db_config: dict[str, Any])`**: Receives the contents of `db_config.yaml`.
-- **`execute(self, query: str, eval_query: str = None, **kwargs)`**: Required. Executes the SQL query and returns a 3-tuple `(result, eval_result, error)` where `result` and `eval_result` are lists of dicts/tuples (or `None`), and `error` is `None` on success or an error message / `Exception` on failure.
+- **`execute(self, query: str, eval_query: str = None, **kwargs)`**: Required. Executes the SQL query and returns a 3-tuple `(result, eval_result, error)`. `result` must be a `list[dict[str, Any]]` mapping column names to values, or `None`/`[]` for 0 rows. Non-dict rows (e.g. unmapped tuples) will raise `TypeError` immediately at the evaluation boundary. If using a DB cursor that yields tuples, convert each row with `[dict(zip(column_names, row)) for row in rows]`. `error` must be `None` on success or an error message / `Exception` on failure.
 - **`clean_tmp_creations(self)`**: Optional. Cleans up any temporary tables or artifacts created during execution. Checked via `hasattr` before invocation.
 - **`close_connections(self)`**: Optional. Closes any open connection pools. Checked via `hasattr` before invocation.
 

@@ -40,7 +40,7 @@ model_config: autoctx/experiments/<experiment_name>/eval_configs/model_config.ya
 
 Custom classes loaded dynamically by EvalBench do **not** need to inherit from EvalBench base classes:
 
-- **Connector Contract**: `execute(self, query: str, eval_query: str = None, **kwargs) -> tuple[list[Any] | None, list[Any] | None, str | Exception | None]`. Optional methods: `clean_tmp_creations()`, `close_connections()`.
+- **Connector Contract**: `execute(self, query: str, eval_query: str = None, **kwargs) -> tuple[list[dict[str, Any]] | None, list[dict[str, Any]] | None, str | Exception | None]`. Optional methods: `clean_tmp_creations()`, `close_connections()`. Result sets must be `list[dict]` (column name → value) or `None`/`[]` for 0 rows; non-dict rows raise `TypeError` immediately at the boundary.
 - **Generator Contract**: `generate(self, prompt: str, **kwargs) -> str`.
 
 ## Integration Options

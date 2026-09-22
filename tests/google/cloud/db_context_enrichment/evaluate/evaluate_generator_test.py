@@ -817,6 +817,17 @@ def test_get_db_generator_plugin_missing_custom_generators_attr(monkeypatch):
             _get_db_generator({"type": "custom"})
 
 
+def test_get_db_generator_plugin_custom_generators_not_a_dict(monkeypatch):
+    mock_mod = types.ModuleType("invalid_plugin")
+    mock_mod.CUSTOM_GENERATORS = ["not", "a", "dict"]
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "invalid_plugin")
+    with patch("importlib.import_module", return_value=mock_mod):
+        with pytest.raises(
+            RuntimeError, match="must be a dictionary, got list"
+        ):
+            _get_db_generator({"type": "custom"})
+
+
 def test_get_db_generator_known_type_override_warning(caplog):
     import logging
 

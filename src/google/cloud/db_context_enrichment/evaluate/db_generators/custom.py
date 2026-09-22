@@ -1,3 +1,4 @@
+import os
 from typing import Any
 
 import yaml
@@ -19,6 +20,12 @@ class CustomDBConfigGenerator(BaseDBConfigGenerator):
 
     def __init__(self, params: dict[str, Any]):
         self.params = params
+        if "project" not in self.params:
+            project_id = os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get(
+                "GCP_PROJECT"
+            )
+            if project_id:
+                self.params["project"] = project_id
         self.connector_class = params.get("connector_class", "")
         self.generator_class = params.get("generator_class", "")
         self.DIALECT = params.get("dialect", self.DIALECT)

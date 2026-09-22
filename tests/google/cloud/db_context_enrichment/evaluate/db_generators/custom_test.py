@@ -65,3 +65,30 @@ def test_custom_generator_validation_missing_both_classes():
         match="Custom source configuration must specify at least 'connector_class' or 'generator_class'",
     ):
         CustomDBConfigGenerator({"dialect": "sql"})
+
+
+def test_custom_generator_project_resolution_from_google_cloud_project(monkeypatch):
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "env-project-123")
+    monkeypatch.delenv("GCP_PROJECT", raising=False)
+    params = {"connector_class": "my_pkg.connectors.MyConnector"}
+    gen = CustomDBConfigGenerator(params)
+    assert gen.params["project"] == "env-project-123"
+
+
+def test_custom_generator_project_resolution_from_gcp_project(monkeypatch):
+    monkeypatch.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
+    monkeypatch.setenv("GCP_PROJECT", "env-gcp-project-456")
+    params = {"connector_class": "my_pkg.connectors.MyConnector"}
+    gen = CustomDBConfigGenerator(params)
+    assert gen.params["project"] == "env-gcp-project-456"
+
+
+def test_custom_generator_explicit_project_not_overridden(monkeypatch):
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "env-project-ignored")
+    monkeypatch.setenv("GCP_PROJECT", "env-gcp-project-ignored")
+    params = {
+        "connector_class": "my_pkg.connectors.MyConnector",
+        "project": "explicit-project",
+    }
+    gen = CustomDBConfigGenerator(params)
+    assert gen.params["project"] == "explicit-project"

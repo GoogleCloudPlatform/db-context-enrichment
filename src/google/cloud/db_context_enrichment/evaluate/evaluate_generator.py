@@ -236,6 +236,11 @@ def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
                 raise AttributeError(
                     f"Custom generator module '{custom_plugin}' must define 'CUSTOM_GENERATORS' dict."
                 )
+            if not isinstance(custom_gens, dict):
+                raise TypeError(
+                    f"CUSTOM_GENERATORS in '{custom_plugin}' must be a dictionary, "
+                    f"got {type(custom_gens).__name__}."
+                )
             generators.update(custom_gens)
         except Exception as e:
             logger.error(

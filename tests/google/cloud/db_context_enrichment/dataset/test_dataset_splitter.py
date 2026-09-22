@@ -38,7 +38,10 @@ async def test_split_dataset_default_150_to_105_and_45(
     # Default hillclimb_ratio=0.7, min_holdout_size=45
     res = await split_dataset(str(input_file), str(output_dir))
 
-    assert "Successfully partitioned 150 items across 30 query templates into Hillclimbing (105 items) and Holdout (45 items)" in res
+    assert (
+        "Successfully partitioned 150 items across 30 query templates into Hillclimbing (105 items) and Holdout (45 items)"
+        in res
+    )
     dev_file = output_dir / "splits" / "hillclimb.json"
     test_file = output_dir / "splits" / "holdout.json"
 

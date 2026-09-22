@@ -101,9 +101,7 @@ async def split_dataset(
         )
 
     if min_holdout_size < 1:
-        raise ValueError(
-            f"min_holdout_size must be at least 1, got {min_holdout_size}"
-        )
+        raise ValueError(f"min_holdout_size must be at least 1, got {min_holdout_size}")
 
     golden_data = _load_and_validate_dataset(golden_dataset_path)
     total_items = len(golden_data)
@@ -118,8 +116,7 @@ async def split_dataset(
     # Sort groups deterministically by template key, and sort items within each group by id
     sorted_keys = sorted(groups_dict.keys())
     groups: list[list[dict[str, Any]]] = [
-        sorted(groups_dict[k], key=lambda x: str(x.get("id", "")))
-        for k in sorted_keys
+        sorted(groups_dict[k], key=lambda x: str(x.get("id", ""))) for k in sorted_keys
     ]
 
     # Calculate maximum possible holdout items while keeping at least 1 item per template in hillclimb

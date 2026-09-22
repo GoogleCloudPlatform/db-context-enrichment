@@ -23,7 +23,12 @@ def calculate_z_test(
     """
     if dev_total <= 0 or test_total <= 0:
         raise ValueError("dev_total and test_total must be positive integers.")
-    if dev_passed < 0 or test_passed < 0 or dev_passed > dev_total or test_passed > test_total:
+    if (
+        dev_passed < 0
+        or test_passed < 0
+        or dev_passed > dev_total
+        or test_passed > test_total
+    ):
         raise ValueError("Passed counts must be between 0 and total counts.")
 
     p_dev = dev_passed / dev_total

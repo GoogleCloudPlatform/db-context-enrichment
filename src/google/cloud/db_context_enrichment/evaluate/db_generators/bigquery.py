@@ -22,6 +22,11 @@ class BigQueryConfigGenerator(BaseDBConfigGenerator):
         super().__init__(params)
         self.project = params.get("project")
         self.dataset = params.get("dataset")
+        # BigQuery dataset location (e.g. "US", "EU", "us-central1"), used only
+        # by EvalBench to execute queries. It is intentionally NOT used as the
+        # GDA API location in the model config: multi-regions like "US" are not
+        # valid GDA locations. Set `region` to override the GDA location
+        # (defaults to "global").
         self.location = params.get("location")
         # Optional explicit table scoping; the public GDA proto references
         # BigQuery at table granularity rather than dataset granularity.

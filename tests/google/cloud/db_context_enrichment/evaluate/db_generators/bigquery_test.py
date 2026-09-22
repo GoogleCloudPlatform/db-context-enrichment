@@ -57,6 +57,20 @@ def test_generate_model_config(mock_params):
     assert "bq" in m_config["context"]["datasource_references"]
 
 
+def test_model_config_location_ignores_dataset_location(mock_params):
+    # The BigQuery dataset location only applies to db_config; GDA location
+    # comes from `region` and defaults to "global".
+    gen = BigQueryConfigGenerator({**mock_params, "location": "US"})
+    m_config = yaml.safe_load(gen.generate_model_config("ctx"))
+    assert m_config["location"] == "global"
+
+    gen = BigQueryConfigGenerator(
+        {**mock_params, "location": "US", "region": "us-central1"}
+    )
+    m_config = yaml.safe_load(gen.generate_model_config("ctx"))
+    assert m_config["location"] == "us-central1"
+
+
 def test_generate_model_config_with_tables(mock_params):
     gen = BigQueryConfigGenerator({**mock_params, "tables": ["t1", "t2"]})
     model_config_yaml = gen.generate_model_config(

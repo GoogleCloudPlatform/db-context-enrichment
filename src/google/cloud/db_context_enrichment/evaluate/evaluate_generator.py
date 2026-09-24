@@ -10,6 +10,8 @@ from google.cloud.db_context_enrichment.common import config
 
 from .db_generators.alloydb import AlloyDBConfigGenerator
 from .db_generators.base import BaseDBConfigGenerator
+from .db_generators.bigtable import BigtableConfigGenerator
+from .db_generators.firestore import FirestoreConfigGenerator
 from .db_generators.mysql import MySQLConfigGenerator
 from .db_generators.postgres import PostgresConfigGenerator
 from .db_generators.spanner import SpannerConfigGenerator
@@ -209,9 +211,13 @@ def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
 
     generators = {
         AlloyDBConfigGenerator.SOURCE_TYPE: AlloyDBConfigGenerator,
+        BigtableConfigGenerator.SOURCE_TYPE: BigtableConfigGenerator,
         PostgresConfigGenerator.SOURCE_TYPE: PostgresConfigGenerator,
         MySQLConfigGenerator.SOURCE_TYPE: MySQLConfigGenerator,
         SpannerConfigGenerator.SOURCE_TYPE: SpannerConfigGenerator,
+        "spanner-postgres": SpannerConfigGenerator,
+        "spanner-pg": SpannerConfigGenerator,
+        FirestoreConfigGenerator.SOURCE_TYPE: FirestoreConfigGenerator,
     }
 
     if source_type not in generators:

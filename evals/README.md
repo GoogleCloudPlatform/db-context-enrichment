@@ -14,6 +14,8 @@ Each suite folder contains only suite-specific files:
 
 - **`core-cujs/`**: Full lifecycle CUJ scenarios on relational databases (AlloyDB).
 - **`spanner-graph-cujs/`**: End-to-end Spanner Graph CUJ scenarios (schema discovery, property graph scope gating, GQL + SQL generation, and evaluation).
+- **`spanner-pg-cujs/`**: End-to-end Spanner PostgreSQL CUJ scenarios (PostgreSQL dialect on Spanner, parameterization, and evaluation).
+- **`bigtable-hotels/`**: End-to-end Cloud Bigtable CUJ scenarios (schema discovery, column family qualifying, BTQL templates/facets, and evaluation).
 - **`freeform-input/`**: Freeform user input and exploratory workflow tests.
 
 Within each suite directory:
@@ -63,6 +65,7 @@ rm -rf evals/.venv/fake_home/.gemini/extensions/google-cloud-db-context-engineer
 rm -rf evals/.venv/fake_home/.gemini/tmp/*
 rm -f evals/.venv/fake_home/*.md evals/.venv/fake_home/*.json
 find evals/spanner-graph-cujs/workspace_supply_chain/ -mindepth 1 ! -name 'design_doc.md' -delete
+find evals/bigtable-hotels/workspace_hotels/ -mindepth 1 ! -name 'design_doc.md' -delete
 
 # 3. Stage local repository changes (excluding evals/ so test rubrics don't leak)
 rm -rf /tmp/db-context-enrichment-staging
@@ -82,15 +85,14 @@ export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"
 # 6. Navigate to evals/ and execute the evaluation
 ```bash
 cd evals/
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.15.0" google-evalbench --experiment_config=<eval_set_to_run>/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.17.0" google-evalbench --experiment_config=<eval_set_to_run>/run_gemini_cli.yaml
 ```
 
-For example, T=to run Core CUJs:
+For example, to run Core CUJs:
 ```bash
 cd evals/
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.15.0" google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.17.0" google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
 ```
-
 
 ---
 
@@ -128,6 +130,7 @@ rm -f evals/.venv/fake_home/*.md evals/.venv/fake_home/*.json
 
 # Reset scenario workspace (e.g. workspace_supply_chain: keep only design_doc.md)
 find evals/spanner-graph-cujs/workspace_supply_chain/ -mindepth 1 ! -name 'design_doc.md' -delete
+find evals/bigtable-hotels/workspace_hotels/ -mindepth 1 ! -name 'design_doc.md' -delete
 
 # For empty workspace fixtures:
 rm -rf evals/core-cujs/workspace_empty/*
@@ -145,7 +148,7 @@ export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"
 
 # Execute evalbench from evals/ directory
 cd evals
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.15.0" google-evalbench --experiment_config=<eval_dir_to_run>/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.17.0" google-evalbench --experiment_config=<eval_dir_to_run>/run_gemini_cli.yaml
 ```
 
 ---

@@ -118,7 +118,6 @@ After generating candidate Value Search queries, when `<source>-execute-sql` is 
      - Prompt the user with the required setup command from the dialect reference (e.g., `CREATE EXTENSION IF NOT EXISTS pg_trgm;`) and ask whether to apply it, switch to a simpler supported template (e.g., `EXACT_MATCH_STRINGS`), or drop the value search.
      - If the prerequisite is not applied, record the missing requirement in `autoctx/state.md`.
 
-
 ## Best Practices
 
 ### General

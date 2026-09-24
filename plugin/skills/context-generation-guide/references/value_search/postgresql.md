@@ -4,7 +4,7 @@ This reference provides the SQL templates and examples for Value Search in Postg
 
 ## Requirements
 
--   **Minimum PostgreSQL version**: `13`.
+*   **Minimum PostgreSQL version**: `13`.
 
 ## Supported Match Functions
 
@@ -14,7 +14,6 @@ This reference provides the SQL templates and examples for Value Search in Postg
 **Example**: Use when finding a specific state code (e.g., 'CA'), order ID, or exact product name where precise spelling is required.
 
 **Template**:
-
 ```sql
 SELECT DISTINCT $value as value, '{table}.{column}' as columns, '{concept_type}' as concept_type, 0 as distance, '' as context FROM "{table}" T WHERE T."{column}" = $value
 ```
@@ -26,15 +25,13 @@ SELECT DISTINCT $value as value, '{table}.{column}' as columns, '{concept_type}'
 **Example**: Use when searching for names, addresses, or plain text where users might have typos, misspellings, or partial matches.
 
 **Performance Recommendations**:
-
--   Use a GiST index on the search column to accelerate trigram distance calculations:
+*   Use a GiST index on the search column to accelerate trigram distance calculations:
     ```sql
     CREATE INDEX idx_trgm_gist ON "{table}" USING gist ("{column}" gist_trgm_ops);
     ```
--   The template uses the `%` operator in the `WHERE` clause to discard bad matches early and utilize the index.
+*   The template uses the `%` operator in the `WHERE` clause to discard bad matches early and utilize the index.
 
 **Template**:
-
 ```sql
 WITH TrigramMetrics AS (
     SELECT T."{column}" AS original_value,
@@ -54,12 +51,10 @@ SELECT DISTINCT original_value AS value, '{table}.{column}' AS columns,
 **Example**: Use when searching for concepts, descriptions, themes, or abstract text where the exact words might differ but the underlying meaning is similar.
 
 **Performance Recommendations**:
-
--   **Pre-compute embeddings**: If the column has a corresponding populated embedding column, replace the inline `google_ml.embedding` call for `T."{column}"` with the embedding column, and replace `'gemini-embedding-001'` with the user-confirmed embedding model ID (e.g., `'gemini-embedding-001'`, `'text-embedding-005'`).
--   **Create a Vector Index**: Create an index (e.g., HNSW or IVFFlat) on the embedding column to speed up the `<=>` (cosine distance) operations.
+*   **Pre-compute embeddings**: If the column has a corresponding populated embedding column, replace the inline `google_ml.embedding` call for `T."{column}"` with the embedding column, and replace `'gemini-embedding-001'` with the user-confirmed embedding model ID (e.g., `'gemini-embedding-001'`, `'text-embedding-005'`).
+*   **Create a Vector Index**: Create an index (e.g., HNSW or IVFFlat) on the embedding column to speed up the `<=>` (cosine distance) operations.
 
 **Template**:
-
 ```sql
 WITH SemanticMetrics AS (
     SELECT T."{column}" AS original_value, (
@@ -77,4 +72,3 @@ SELECT DISTINCT original_value AS value, '{table}.{column}' AS columns,
 ## Validation
 
 Validate candidate queries by prepending `EXPLAIN` (e.g., `EXPLAIN SELECT ...` or `EXPLAIN WITH ...`).
-

@@ -45,3 +45,7 @@ FROM (
   WHERE SEARCH_NGRAMS(T.`{column_tokens}`, CAST($value AS STRING))
 )
 ```
+
+## Validation
+
+Spanner does not support `EXPLAIN`. Validate candidate queries by appending `LIMIT 0` (e.g., `SELECT ... LIMIT 0`).

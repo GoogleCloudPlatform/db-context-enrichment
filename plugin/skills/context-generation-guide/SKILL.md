@@ -25,8 +25,9 @@ When asked to generate context items:
 3.  **Select Dialect Reference**: Identify the target database dialect (PostgreSQL, Spanner GoogleSQL, Spanner PostgreSQL, MySQL, Bigtable, or Firestore) and consult the corresponding file in `references/` for specific syntax and patterns.
 4.  **Parameterize**: Follow the [Phrase Extraction and Parameterization Guidelines](references/phrase_extraction/guidelines.md) to generalize the values.
 5.  **Format Output**: Construct the final JSON object according to the examples in the reference files.
-6.  **Save Context**: Use the appropriate MCP tool (e.g., `mutate_context_set`) to save or update the context set.
-7.  **Validate**: Call `validate_context_set` on the file you just modified. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
+6.  **Validate Value Searches**: If generating Value Searches, validate each `query` on the database engine when `<source>-execute-sql` is available (see [Value Search Validation](#value-search-validation)).
+7.  **Save Context**: Use the appropriate MCP tool (e.g., `mutate_context_set`) to save or update the context set.
+8.  **Validate**: Call `validate_context_set` on the file you just modified. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
 
 Note: Use the `mutate_context_set` tool for all ContextSet changes. It supports granular additions, updates, and deletions of ContextSet items without replacing the whole file. Pass mutation payloads directly — the tool handles all file I/O internally, so the agent should not read the target file beforehand.
 
@@ -104,6 +105,19 @@ When executing blueprint-driven SQL generation, the model inevitably runs into t
 }
 ```
 
+### Value Search Validation
+
+After generating candidate Value Search queries, when `<source>-execute-sql` is available, validate each query against the database engine before saving:
+
+1. **Prepare Query**: Replace `$value` (or `@value`) with a realistic sample literal and prepare the query for validation as specified in the corresponding dialect reference.
+2. **Execute**: Run the query using `<source>-execute-sql`.
+3. **Handle Results**:
+   - **Success (Execution Plan or Zero Rows Returned)**: The query is verified valid on the engine. Proceed to save via `mutate_context_set`.
+   - **Schema or Syntax Error**: Call `<source>-list-schemas` to verify column names and casing, correct identifier quoting (e.g., `T."col"`), and re-validate. Stop after 2 failed attempts and surface remaining issues to the user.
+   - **Missing Extension, Index, or Function**: If a required extension (e.g., `pg_trgm`, `vector`), index (e.g., `FULLTEXT`), or search function is missing:
+     - Prompt the user with the required setup command from the dialect reference (e.g., `CREATE EXTENSION IF NOT EXISTS pg_trgm;`) and ask whether to apply it, switch to a simpler supported template (e.g., `EXACT_MATCH_STRINGS`), or drop the value search.
+     - If the prerequisite is not applied, record the missing requirement in `autoctx/state.md`.
+
 ## Best Practices
 
 ### General
@@ -120,7 +134,8 @@ When executing blueprint-driven SQL generation, the model inevitably runs into t
 
 ### Value Searches
 *   Choose the appropriate match function based on the column content and performance requirements.
-*   Refer to dialect-specific references for performance optimizations (e.g., indices).
+*   **Embeddings**: If pre-computed embedding (`vector`) columns exist in the schema, for each populated column ask the user which embedding model ID was used (and the target text column if not obvious) without recommending options for these factual questions; for each `NULL` `vector` column, ask how to handle it (e.g., populate it, switch templates, use inline `google_ml.embedding`, or drop it, with a recommended option), and wait for their response before proceeding.
+*   **Index Recommendations**: If any fuzzy or semantic search column lacks its recommended index, output a `### Recommended Indexes` section in your final response with the `CREATE INDEX` statements from the dialect reference, and ask the user if they would like to save them to `recommended_indexes.sql`.
 
 ## Shared Guidelines
 

@@ -119,3 +119,53 @@ async def test_split_dataset_missing_required_keys(tmp_path: pathlib.Path):
 
     with pytest.raises(ValueError, match="missing required keys"):
         await split_dataset(str(input_file), str(tmp_path / "out"))
+
+
+@pytest.mark.asyncio
+async def test_split_dataset_enforces_all_holdout_keys_in_hillclimb_with_singletons_and_pairs(
+    tmp_path: pathlib.Path,
+):
+    # 50 templates with 2 variations each (100 items) + 50 single-variation templates (50 items) = 150 items
+    entries = []
+    for t in range(1, 51):
+        for i in range(1, 3):
+            entries.append(
+                {
+                    "id": f"eval_pair_{t}_{i}",
+                    "database": "test_db",
+                    "nlq": f"Pair template {t} var {i}",
+                    "golden_sql": f"SELECT * FROM pair_table_{t} WHERE amount > {10.5 * i} AND name = 'O''Reilly';",
+                }
+            )
+    for s in range(1, 51):
+        entries.append(
+            {
+                "id": f"eval_singleton_{s}",
+                "database": "test_db",
+                "nlq": f"Singleton query {s}",
+                "golden_sql": f"SELECT COUNT(*) FROM singleton_table_{s}",
+            }
+        )
+
+    input_file = tmp_path / "mixed_golden.json"
+    with open(input_file, "w", encoding="utf-8") as f:
+        json.dump(entries, f)
+
+    output_dir = tmp_path / "mixed_out"
+    res = await split_dataset(str(input_file), str(output_dir))
+    assert "100% of holdout SQL templates (45/45) are included in hillclimb.json" in res
+
+    with open(output_dir / "splits" / "hillclimb.json", encoding="utf-8") as f:
+        hillclimb_data = json.load(f)
+    with open(output_dir / "splits" / "holdout.json", encoding="utf-8") as f:
+        holdout_data = json.load(f)
+
+    assert len(hillclimb_data) == 105
+    assert len(holdout_data) == 45
+
+    hillclimb_keys = {_normalize_sql_template(e["golden_sql"]) for e in hillclimb_data}
+    holdout_keys = {_normalize_sql_template(e["golden_sql"]) for e in holdout_data}
+
+    # Every normalized SQL key in holdout.json MUST be included in hillclimb.json
+    assert holdout_keys.issubset(hillclimb_keys)
+    assert len(holdout_keys - hillclimb_keys) == 0

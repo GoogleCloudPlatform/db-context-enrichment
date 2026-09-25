@@ -61,8 +61,8 @@ async def split_dataset(
 ) -> str:
     """Splits a golden dataset into Hillclimbing and Holdout splits.
 
-    Guarantees 100% query template overlap between splits (every SQL query template in Hillclimbing
-    is also represented in Holdout with different natural language phrasings and parameters).
+    Strictly enforces that every normalized SQL query template (key) in Holdout (holdout.json)
+    is also included in Hillclimbing (hillclimb.json) with different natural language phrasings and parameters.
     Enforces a minimum holdout set size (default: 45, default ratio: 0.7, e.g., 105 Hillclimbing / 45 Holdout for 150 items).
     Saves internal partitions to <output_dir>/splits/hillclimb.json and <output_dir>/splits/holdout.json.
 
@@ -90,6 +90,8 @@ def evaluate_generalizability(
     diagnosis: str | None = None,
     recommended_action: str | None = None,
     next_step: str | None = None,
+    context_set_id: str | None = None,
+    context_file: str | None = None,
 ) -> str:
     """Evaluates generalizability across hillclimbing and holdout splits.
 
@@ -105,6 +107,8 @@ def evaluate_generalizability(
         diagnosis: Optional specific diagnosis text.
         recommended_action: Optional recommended action text.
         next_step: Optional immediate next step text.
+        context_set_id: Optional full ContextSet resource name of the final hill-climbing iteration.
+        context_file: Optional filename of the final mutated ContextSet JSON file.
 
     Returns:
         The markdown string for the On-Screen Summary Card.
@@ -113,7 +117,12 @@ def evaluate_generalizability(
         dev_passed, dev_total, test_passed, test_total, alpha
     )
     return generalizability.format_on_screen_card(
-        stats, diagnosis, recommended_action, next_step
+        stats,
+        diagnosis,
+        recommended_action,
+        next_step,
+        context_set_id,
+        context_file,
     )
 
 

@@ -91,6 +91,8 @@ def format_on_screen_card(
     diagnosis: str | None = None,
     recommended_action: str | None = None,
     next_step: str | None = None,
+    context_set_id: str | None = None,
+    context_file: str | None = None,
 ) -> str:
     """Formats the primary on-screen summary card for the chat UI.
 
@@ -114,10 +116,18 @@ def format_on_screen_card(
             diagnosis
             or "The model is generalizing well and not simply memorizing hillclimbing phrases. The minor difference between hillclimbing and holdout is well within normal statistical expectations."
         )
-        next_text = (
-            next_step
-            or "Export `improved_context_v3.json` to production. No further optimization iterations required."
-        )
+        cs_id_display = context_set_id or "<full_context_set_id>"
+        if next_step:
+            next_text = (
+                next_step
+                if (not context_set_id or context_set_id in next_step)
+                else f"{next_step} (Full Context Set ID: `{context_set_id}`)"
+            )
+        else:
+            next_text = (
+                f"Export `{context_file}` or the context set (`{cs_id_display}`) of the final hill climb to production. "
+                f"No further optimization iterations required."
+            )
 
         return (
             f"🎯 **Evaluation Complete: Context Set Generalizes Reliably**\n\n"

@@ -41,15 +41,16 @@ Single-pass generalizability assessment on holdout split]
 ```
 
 ### Master Loop Control & Tuning Target Gate (`Loop{Tuning Target Met?}`)
-As the master orchestrator, this skill strictly governs phase transitions after every evaluation run (`Run Evaluation And Score`). This gate **supersedes** generic next-step suggestions in individual sub-skills:
+As the master orchestrator, this skill strictly governs phase transitions after every evaluation run (`Run Evaluation And Score`). This gate **supersedes** the `## Final Summary & Next Steps` ("Conclude by providing a succinct summary... suggest actionable next steps") section in `context-engineering-evaluate/SKILL.md`:
 
 *   **Tuning Target Definition**:
     *   The default tuning target is **100% accuracy (`0` failed queries)** on `splits/hillclimb.json`, unless the user specifies a custom target accuracy threshold (e.g., 90%) or maximum iteration limit recorded in `autoctx/state.md`.
-*   **Mandatory Post-Evaluation Check (Immediate Branching)**:
+*   **Mandatory Post-Evaluation Check (Immediate Autonomous Branching)**:
     *   Immediately upon completing any `Run Evaluation And Score` pass on `splits/hillclimb.json`, inspect the evaluation pass rate (`passed / total`) and failed query count:
         1.  **When Tuning Target IS Hit (`pass_rate >= tuning_target` or `failed == 0`) or Loop Converged**:
             *   **HALT Hill-Climbing Immediately**: Do **not** enter `Optimization & Hill-Climbing Phase` and do **not** suggest another refinement loop.
-            *   **Immediately Trigger Generalizability Test**: Automatically transition directly to the **Holdout Evaluation & Generalization Reporting Phase** in the same turn (run the single read-only Evalbench pass on `splits/holdout.json`, execute `evaluate_generalizability`, display the novice-friendly On-Screen Card in chat, and write `final_evaluation_report.md`).
+            *   **Zero-Confirmation / No-Yield Rule (Strictly Enforced)**: Do **NOT** conclude or yield your turn after scoring `splits/hillclimb.json`, and do **NOT** ask the user for permission, confirmation, or approval to proceed to the generalizability test.
+            *   **Immediately Execute Generalizability Test in the Same Turn**: Without waiting for user input, immediately continue calling tools in the exact same conversational turn to execute the **Holdout Evaluation & Generalization Reporting Phase** (`generate_evalbench_configs` on `splits/holdout.json` $\rightarrow$ `uvx google-evalbench@1.17.0` $\rightarrow$ `evaluate_generalizability` $\rightarrow$ display the novice-friendly On-Screen Card in chat $\rightarrow$ write `final_evaluation_report.md`).
         2.  **When Tuning Target is NOT YET Hit (`pass_rate < tuning_target` and `failed > 0`)**:
             *   Proceed to `Optimization & Hill-Climbing Phase` (`context-engineering-hillclimb`) to perform Gap Analysis and Context Mutation on the failed queries, then re-evaluate.
 
@@ -72,12 +73,16 @@ As the master orchestrator, this skill strictly governs phase transitions after 
 *   **Reference**: [context-engineering-dataset-generation](../context-engineering-dataset-generation/SKILL.md)
 *   **Mandatory Deliverables**: `evalset_environment_inputs.md`, `evalset_gen_plan.md`, `evalset_report_pair_level.md`, and `evalset_report_dataset_level.md`.
 *   **Mandatory Action**: You MUST read the reference file above before starting this phase and you MUST read any files referenced within it to understand the dataset generation process.
-*   **Goal**: Build a high-quality "golden" ground-truth dataset and partition it into `splits/hillclimb.json` (Hillclimbing Questions) and `splits/holdout.json` (Holdout Variations) guaranteeing 100% query template overlap.
+*   **Goal**: Build a high-quality "golden" ground-truth dataset and partition it into `splits/hillclimb.json` (Hillclimbing Questions) and `splits/holdout.json` (Holdout Variations) using the `split_dataset` MCP tool, strictly enforcing that every normalized SQL template (key) in `splits/holdout.json` is included in `splits/hillclimb.json`.
+*   **Mandatory Stratified Split Enforcement (`split_dataset`)**:
+    *   **Always Use `split_dataset` MCP Tool**: You MUST invoke the `split_dataset` MCP tool to generate `splits/hillclimb.json` and `splits/holdout.json` (for both newly generated datasets and user-supplied datasets). You are **strictly forbidden** from manually slicing or partitioning dataset JSON files via custom Python scripts or shell commands.
+    *   **Holdout-in-Hillclimb SQL Template Invariant**: Every normalized SQL template (key) in `splits/holdout.json` **MUST** be included in `splits/hillclimb.json` (`holdout_keys <= hillclimb_keys`). Single-variation SQL templates (appearing only once in the golden dataset) are placed exclusively in `splits/hillclimb.json` and never in `splits/holdout.json`.
+    *   **Template-Preserving Expansion**: When expanding seed or user-supplied queries to reach the target dataset size (e.g., 150 items: 105 hillclimbing / 45 holdout), ensure sufficient variations preserve the normalized `golden_sql` template (using Paraphrasing, Distraction Injection, Linguistic Variation, or Value Substitution). If `split_dataset` fails because too many templates have only a single variation, expand existing SQL templates with template-preserving phrasing/parameter variations and re-run `split_dataset`—never bypass `split_dataset`.
 *   **Dataset Proposal & Input Scenarios**:
     *   **Proposal in Chat**: Crema proposes creating a dataset with 150 questions across 30 query patterns (105 hillclimbing questions for optimization, 45 holdout variations to test generalizability, default split ratio 0.7 and minimum holdout size 45). Internal partitions are preserved in `splits/hillclimb.json` and `splits/holdout.json` without exposing a separate `split_report.md` to the user.
-    *   **Scenario (a) Full Automated Flow**: User accepts proposal $\rightarrow$ generate, expand NLQ variations, stratified hillclimb/holdout split, hill-climb on hillclimb split, holdout evaluation, and generalizability reporting.
+    *   **Scenario (a) Full Automated Flow**: User accepts proposal $\rightarrow$ generate, expand NLQ variations, run `split_dataset` to produce stratified hillclimb/holdout splits, hill-climb on hillclimb split, holdout evaluation, and generalizability reporting.
     *   **Scenario (b) Skip Holdout Split (User Override)**: User overrides to skip holdout generation $\rightarrow$ run hill-climbing on hillclimb split only, do NOT compute generalizability metric, and record `generalizability_test: SKIPPED` in `autoctx/state.md`.
-    *   **Scenario (c) User-Supplied Dataset (Auto-Split)**: User provides evaluation set $\rightarrow$ Crema auto-expands question phrasings into 105 hillclimbing / 45 holdout ($N_{\text{test}} \ge 45$, default split ratio 0.7, 100% template overlap); never ask the user to pre-partition.
+    *   **Scenario (c) User-Supplied Dataset (Auto-Split)**: User provides evaluation set $\rightarrow$ Crema auto-expands question phrasings (preserving normalized SQL templates) and runs `split_dataset` into 105 hillclimbing / 45 holdout ($N_{\text{test}} \ge 45$, default split ratio 0.7, every holdout SQL template included in hillclimb); never ask the user to pre-partition.
     *   **Scenario (d) Pre-Partitioned Datasets (Fail Early)**: User attempts to supply separate `--dev-dataset` and `--test-dataset` $\rightarrow$ fail early with `[ERROR] InvalidDatasetConfiguration`.
 *   **Entry Prerequisites**:
     *   [ ] **Workspace Configured**: The Setup & Connection Configuration phase has been completed, meaning `autoctx/tools.yaml` is active.
@@ -138,13 +143,15 @@ As the master orchestrator, this skill strictly governs phase transitions after 
             ```
         *   Present standard optimization completion on the hillclimbing set in chat and conclude the workflow without holdout evaluation.
 
-2.  **Single Read-Only Holdout Evaluation**:
-    *   Locate the final mutated context set: `autoctx/experiments/<experiment_name>/hillclimb/improved_context_vN.json`.
-    *   Execute a single Evalbench evaluation pass on `splits/holdout.json` using this final context set.
-    *   Extract `test_passed` and `test_total` from the resulting evaluation run. Retrieve `dev_passed` and `dev_total` from the final hillclimbing iteration.
+2.  **Single Read-Only Holdout Evaluation (Autonomous Zero-Prompt Execution)**:
+    *   **Do NOT Prompt or Ask Permission**: Reuse the active `experiment_name`, `toolbox_config_path` (`autoctx/tools.yaml`), `toolbox_source_name`, and the just-evaluated `context_set_id` (e.g., `projects/<project_id>/locations/<location>/contextSets/<context_set_name>`) from the final hillclimbing evaluation without asking the user for any parameters or confirmation.
+    *   **Generate Holdout Evalbench Configs**: Immediately call the `generate_evalbench_configs` MCP tool with `output_dir="autoctx/experiments/<experiment_name>/"`, `dataset_path="autoctx/experiments/<experiment_name>/splits/holdout.json"`, and the reused `context_set_id`, `toolbox_config_path`, and `toolbox_source_name`.
+    *   **Run Holdout Evaluation**: Immediately execute the canonical Evalbench command:
+        `uvx google-evalbench@1.17.0 --experiment_config=autoctx/experiments/<experiment_name>/eval_configs/run_config.yaml`
+    *   **Extract Scores**: Extract `test_passed` and `test_total` from the resulting holdout evaluation run (`summary.csv` in the latest `eval_reports/` folder), and retrieve `dev_passed` and `dev_total` from the final hillclimbing iteration.
 
 3.  **Statistical Significance Testing (Two-Proportion Pooled z-Test)**:
-    *   Call the `evaluate_generalizability` tool with `dev_passed`, `dev_total`, `test_passed`, `test_total`, and `alpha=0.05`.
+    *   Call the `evaluate_generalizability` tool with `dev_passed`, `dev_total`, `test_passed`, `test_total`, `alpha=0.05`, and the `context_set_id` of the final hill-climbing iteration.
     *   **Statistical Formulation**:
         *   $p_{\text{dev}} = \frac{x_{\text{dev}}}{N_{\text{dev}}}$, $p_{\text{test}} = \frac{x_{\text{test}}}{N_{\text{test}}}$
         *   $p_{\text{pool}} = \frac{x_{\text{dev}} + x_{\text{test}}}{N_{\text{dev}} + N_{\text{test}}}$
@@ -157,7 +164,7 @@ As the master orchestrator, this skill strictly governs phase transitions after 
 
 4.  **Agent On-Screen Interface (Primary Chat Output)**:
     *   **Core Principle**: The chat card is the primary user interface. Novice users should never be required to open a markdown file to understand the verdict, performance, or next steps.
-    *   **Order by Decision Relevance**: Status & Verdict $\rightarrow$ Performance Overview (4-column table) $\rightarrow$ Plain-Language Summary & Diagnosis $\rightarrow$ Immediate Next Step.
+    *   **Order by Decision Relevance**: Status & Verdict $\rightarrow$ Performance Overview (4-column table) $\rightarrow$ Plain-Language Summary & Diagnosis $\rightarrow$ Immediate Next Step (including the **full `context_set_id`** of the final hill-climbing iteration when ready for production).
     *   **Plain-Language Terminology**: Use "Hillclimbing Questions" and "Holdout Questions" (not ML jargon). Explain differences humanely (e.g. `Difference: -1 queries (-3.3%, within expected variance)`). Restrict formulas, z-scores, and p-values to `final_evaluation_report.md`.
     *   **On-Screen Card Templates**:
 
@@ -176,7 +183,7 @@ As the master orchestrator, this skill strictly governs phase transitions after 
 
             **Summary**:
             * **Robustness**: The model is generalizing well and not simply memorizing hillclimbing phrases. The minor difference between hillclimbing and holdout (87% vs 90%) is well within normal statistical expectations.
-            * **Next Step**: Export `improved_context_vN.json` to production. No further optimization iterations required.
+            * **Next Step**: Export `improved_context_vN.json` or the full context set ID (`<full_context_set_id>`) of the final hill climb to production. No further optimization iterations required.
             ```
 
         *   **Case 2: INCONCLUSIVE — Sample Size Too Small**:

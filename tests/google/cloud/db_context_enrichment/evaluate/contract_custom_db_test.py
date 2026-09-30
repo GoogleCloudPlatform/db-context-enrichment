@@ -33,7 +33,6 @@ from google.cloud.db_context_enrichment.evaluate.evaluate_generator import (
     generate_evalbench_configs,
 )
 
-
 # ==============================================================================
 # Option 1: Config-Driven SPI Contract (tools.yaml)
 # ==============================================================================
@@ -51,24 +50,26 @@ def test_contract_option1_config_driven_full_pipeline():
         kind: source
         name: client-custom-db
         type: custom
-        connector_class: client_pkg.connectors.F1DB
-        generator_class: client_pkg.generators.F1ModelGen
+        connector_class: client_pkg.connectors.CustomDB
+        generator_class: client_pkg.generators.CustomModelGen
         dialect: googlesql
-        server: /f1/query/prod
+        server: /custom/query/endpoint
         database_name: default
         custom_deadline_ms: 15000
         auth_mode: internal_cert
         max_executions_per_minute: 200
     """).strip()
 
-    dummy_dataset = json.dumps([
-        {
-            "id": "q001",
-            "database": "default",
-            "nlq": "Count all active accounts",
-            "golden_sql": "SELECT COUNT(1) FROM accounts WHERE active = true",
-        }
-    ])
+    dummy_dataset = json.dumps(
+        [
+            {
+                "id": "q001",
+                "database": "default",
+                "nlq": "Count all active accounts",
+                "golden_sql": "SELECT COUNT(1) FROM accounts WHERE active = true",
+            }
+        ]
+    )
 
     written_files = {}
 
@@ -79,11 +80,15 @@ def test_contract_option1_config_driven_full_pipeline():
             return mock_open(read_data=dummy_dataset)()
         # Capture generated output files
         m = mock_open()()
-        m.write.side_effect = lambda content: written_files.update({str(path): content})
+        m.write.side_effect = lambda content: written_files.update(
+            {str(path): content}
+        )
         return m
 
     with patch("builtins.open", side_effect=capture_open):
-        with patch("google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"):
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+        ):
             generate_evalbench_configs(
                 output_dir="/eval_output",
                 dataset_path="/data/dataset.json",
@@ -97,22 +102,24 @@ def test_contract_option1_config_driven_full_pipeline():
     db_config = yaml.safe_load(written_files[db_config_path])
 
     assert db_config["db_type"] == "custom"
-    assert db_config["connector_class"] == "client_pkg.connectors.F1DB"
+    assert db_config["connector_class"] == "client_pkg.connectors.CustomDB"
     assert db_config["dialect"] == "googlesql"
-    assert db_config["server"] == "/f1/query/prod"
+    assert db_config["server"] == "/custom/query/endpoint"
     assert db_config["database_name"] == "default"
     assert db_config["custom_deadline_ms"] == 15000
     assert db_config["auth_mode"] == "internal_cert"
     assert db_config["max_executions_per_minute"] == 200
 
     # 2. Verify model_config.yaml contract
-    model_config_path = next(p for p in written_files if p.endswith("model_config.yaml"))
+    model_config_path = next(
+        p for p in written_files if p.endswith("model_config.yaml")
+    )
     model_config = yaml.safe_load(written_files[model_config_path])
 
     assert model_config["generator"] == "custom"
-    assert model_config["generator_class"] == "client_pkg.generators.F1ModelGen"
+    assert model_config["generator_class"] == "client_pkg.generators.CustomModelGen"
     assert model_config["context_set_id"] == "projects/p1/locations/l1/contextSets/cs1"
-    assert model_config["server"] == "/f1/query/prod"
+    assert model_config["server"] == "/custom/query/endpoint"
 
     # 3. Verify run_config.yaml contract
     run_config_path = next(p for p in written_files if p.endswith("run_config.yaml"))
@@ -140,14 +147,16 @@ def test_contract_option1_connector_only_query_data_api_fallback():
         server: /endpoint
     """).strip()
 
-    dummy_dataset = json.dumps([
-        {
-            "id": "q1",
-            "database": "db1",
-            "nlq": "Find all users",
-            "golden_sql": "SELECT * FROM users",
-        }
-    ])
+    dummy_dataset = json.dumps(
+        [
+            {
+                "id": "q1",
+                "database": "db1",
+                "nlq": "Find all users",
+                "golden_sql": "SELECT * FROM users",
+            }
+        ]
+    )
 
     written_files = {}
 
@@ -157,11 +166,15 @@ def test_contract_option1_connector_only_query_data_api_fallback():
         if "dataset.json" in str(path):
             return mock_open(read_data=dummy_dataset)()
         m = mock_open()()
-        m.write.side_effect = lambda content: written_files.update({str(path): content})
+        m.write.side_effect = lambda content: written_files.update(
+            {str(path): content}
+        )
         return m
 
     with patch("builtins.open", side_effect=capture_open):
-        with patch("google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"):
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+        ):
             generate_evalbench_configs(
                 output_dir="/eval_output",
                 dataset_path="/data/dataset.json",
@@ -170,10 +183,12 @@ def test_contract_option1_connector_only_query_data_api_fallback():
                 toolbox_source_name="client-db-only",
             )
 
-    model_config_path = next(p for p in written_files if p.endswith("model_config.yaml"))
+    model_config_path = next(
+        p for p in written_files if p.endswith("model_config.yaml")
+    )
     model_config = yaml.safe_load(written_files[model_config_path])
     assert model_config["generator"] == "query_data_api"
-    assert model_config["datasource_references"] == []
+    assert model_config["context"]["datasource_references"] == {}
 
 
 # ==============================================================================
@@ -198,14 +213,16 @@ def test_contract_option2_external_package_spi_end_to_end(monkeypatch):
         REQUIRED_FIELDS = {"account", "warehouse", "database"}
 
         def generate_db_config(self) -> str:
-            return yaml.safe_dump({
-                "db_type": "snowflake",
-                "dialect": self.DIALECT,
-                "account_id": self.params["account"],
-                "warehouse": self.params["warehouse"],
-                "database_name": self.params["database"],
-                "max_executions_per_minute": 120,
-            })
+            return yaml.safe_dump(
+                {
+                    "db_type": "snowflake",
+                    "dialect": self.DIALECT,
+                    "account_id": self.params["account"],
+                    "warehouse": self.params["warehouse"],
+                    "database_name": self.params["database"],
+                    "max_executions_per_minute": 120,
+                }
+            )
 
         def build_datasource_reference(self, context_set_id: str) -> dict[str, Any]:
             return {
@@ -232,14 +249,16 @@ def test_contract_option2_external_package_spi_end_to_end(monkeypatch):
         database: PROD_DB
     """).strip()
 
-    dummy_dataset = json.dumps([
-        {
-            "id": "q100",
-            "database": "PROD_DB",
-            "nlq": "Total revenue this quarter",
-            "golden_sql": "SELECT SUM(revenue) FROM sales",
-        }
-    ])
+    dummy_dataset = json.dumps(
+        [
+            {
+                "id": "q100",
+                "database": "PROD_DB",
+                "nlq": "Total revenue this quarter",
+                "golden_sql": "SELECT SUM(revenue) FROM sales",
+            }
+        ]
+    )
 
     written_files = {}
 
@@ -249,12 +268,19 @@ def test_contract_option2_external_package_spi_end_to_end(monkeypatch):
         if "dataset.json" in str(path):
             return mock_open(read_data=dummy_dataset)()
         m = mock_open()()
-        m.write.side_effect = lambda content: written_files.update({str(path): content})
+        m.write.side_effect = lambda content: written_files.update(
+            {str(path): content}
+        )
         return m
 
-    with patch("importlib.import_module", return_value=mock_partner_pkg):
-        with patch("builtins.open", side_effect=capture_open):
-            with patch("google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"):
+    with patch("builtins.open", side_effect=capture_open):
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+        ):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.importlib.import_module",
+                return_value=mock_partner_pkg,
+            ):
                 generate_evalbench_configs(
                     output_dir="/eval_output",
                     dataset_path="/data/dataset.json",
@@ -272,17 +298,17 @@ def test_contract_option2_external_package_spi_end_to_end(monkeypatch):
     assert db_config["warehouse"] == "ANALYTICS_WH"
 
     # 2. Verify model_config.yaml received external datasource reference
-    model_config_path = next(p for p in written_files if p.endswith("model_config.yaml"))
+    model_config_path = next(
+        p for p in written_files if p.endswith("model_config.yaml")
+    )
     model_config = yaml.safe_load(written_files[model_config_path])
     assert model_config["generator"] == "query_data_api"
-    assert model_config["datasource_references"] == [
-        {
-            "snowflake_reference": {
-                "account_id": "xy99881",
-                "database_id": "PROD_DB",
-            }
+    assert model_config["context"]["datasource_references"] == {
+        "snowflake_reference": {
+            "account_id": "xy99881",
+            "database_id": "PROD_DB",
         }
-    ]
+    }
 
     # 3. Verify run_config.yaml captured dialect
     run_config_path = next(p for p in written_files if p.endswith("run_config.yaml"))
@@ -319,9 +345,14 @@ def test_contract_option2_external_package_validation_enforced(monkeypatch):
         cluster_id: c-123
     """).strip()
 
-    with patch("importlib.import_module", return_value=mock_mod):
-        with patch("builtins.open", mock_open(read_data=tools_yaml)):
-            with pytest.raises(ValueError, match="Missing required fields.*mandatory_token"):
+    with patch("builtins.open", mock_open(read_data=tools_yaml)):
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator.importlib.import_module",
+            return_value=mock_mod,
+        ):
+            with pytest.raises(
+                ValueError, match="Missing required fields.*mandatory_token"
+            ):
                 generate_evalbench_configs(
                     output_dir="/out",
                     dataset_path="/data.json",

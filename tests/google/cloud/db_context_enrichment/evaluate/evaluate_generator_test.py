@@ -893,5 +893,5 @@ def test_generate_evalbench_configs_custom_connector_only():
     assert "model_config" in written_data
     model_config = yaml.safe_load(written_data["model_config"])
     assert model_config["generator"] == "query_data_api"
-    assert model_config["datasource_references"] == []
+    assert model_config["context"]["datasource_references"] == {}
 

@@ -28,7 +28,7 @@ def test_custom_generator_defaults():
     # model_config generation defaults to query_data_api when generator_class is absent
     model_config = yaml.safe_load(gen.generate_model_config("test-context-id"))
     assert model_config["generator"] == "query_data_api"
-    assert model_config["datasource_references"] == []
+    assert model_config["context"]["datasource_references"] == {}
 
 
 def test_custom_generator_explicit_dialect():

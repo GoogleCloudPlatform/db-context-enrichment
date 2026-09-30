@@ -10,8 +10,6 @@ import yaml
 
 from google.cloud.db_context_enrichment.common import config
 
-logger = logging.getLogger(__name__)
-
 from .db_generators.alloydb import AlloyDBConfigGenerator
 from .db_generators.base import BaseDBConfigGenerator
 from .db_generators.bigtable import BigtableConfigGenerator
@@ -20,6 +18,8 @@ from .db_generators.firestore import FirestoreConfigGenerator
 from .db_generators.mysql import MySQLConfigGenerator
 from .db_generators.postgres import PostgresConfigGenerator
 from .db_generators.spanner import SpannerConfigGenerator
+
+logger = logging.getLogger(__name__)
 
 # Constants for EvalBench configuration filenames
 DB_CONFIG_NAME = "db_config.yaml"
@@ -227,20 +227,26 @@ def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
     }
 
     # Dynamically register external custom database configuration generators.
+    # AUTOCTX_CUSTOM_GENERATORS holds a dotted Python module import path
+    # (e.g., "my_package.custom_generators") that exposes a
+    # CUSTOM_GENERATORS: dict[str, type[BaseDBConfigGenerator]] mapping
+    # custom tools.yaml source types to BaseDBConfigGenerator subclasses.
+    custom_gens: dict[str, type[BaseDBConfigGenerator]] = {}
     custom_plugin = os.environ.get("AUTOCTX_CUSTOM_GENERATORS")
     if custom_plugin:
         try:
             mod = importlib.import_module(custom_plugin)
-            custom_gens = getattr(mod, "CUSTOM_GENERATORS", None)
-            if custom_gens is None:
+            loaded_gens = getattr(mod, "CUSTOM_GENERATORS", None)
+            if loaded_gens is None:
                 raise AttributeError(
                     f"Custom generator module '{custom_plugin}' must define 'CUSTOM_GENERATORS' dict."
                 )
-            if not isinstance(custom_gens, dict):
+            if not isinstance(loaded_gens, dict):
                 raise TypeError(
                     f"CUSTOM_GENERATORS in '{custom_plugin}' must be a dictionary, "
-                    f"got {type(custom_gens).__name__}."
+                    f"got {type(loaded_gens).__name__}."
                 )
+            custom_gens = loaded_gens
             generators.update(custom_gens)
         except Exception as e:
             logger.error(
@@ -252,10 +258,11 @@ def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
                 f"Failed to load custom generators from plugin module '{custom_plugin}': {e}"
             ) from e
 
-    if (
-        "connector_class" in params
-        or "generator_class" in params
-        or source_type == "custom"
+    # If the source type is not handled by an external AUTOCTX_CUSTOM_GENERATORS
+    # plugin, allow inline connector_class / generator_class in tools.yaml to
+    # route directly to CustomDBConfigGenerator.
+    if source_type not in custom_gens and (
+        "connector_class" in params or "generator_class" in params
     ):
         if (
             source_type in generators

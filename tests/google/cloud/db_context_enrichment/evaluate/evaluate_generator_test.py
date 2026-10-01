@@ -798,7 +798,6 @@ def test_get_db_generator_plugin_registration(monkeypatch):
         assert isinstance(gen, MockCustomGenerator)
 
 
-
 def test_get_db_generator_plugin_import_failure(monkeypatch):
     monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "nonexistent.module.path")
     with pytest.raises(
@@ -811,9 +810,7 @@ def test_get_db_generator_plugin_missing_custom_generators_attr(monkeypatch):
     mock_mod = types.ModuleType("empty_plugin")
     monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "empty_plugin")
     with patch("importlib.import_module", return_value=mock_mod):
-        with pytest.raises(
-            RuntimeError, match="must define 'CUSTOM_GENERATORS' dict"
-        ):
+        with pytest.raises(RuntimeError, match="must define 'CUSTOM_GENERATORS' dict"):
             _get_db_generator({"type": "custom"})
 
 
@@ -822,9 +819,7 @@ def test_get_db_generator_plugin_custom_generators_not_a_dict(monkeypatch):
     mock_mod.CUSTOM_GENERATORS = ["not", "a", "dict"]
     monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "invalid_plugin")
     with patch("importlib.import_module", return_value=mock_mod):
-        with pytest.raises(
-            RuntimeError, match="must be a dictionary, got list"
-        ):
+        with pytest.raises(RuntimeError, match="must be a dictionary, got list"):
             _get_db_generator({"type": "custom"})
 
 
@@ -894,4 +889,3 @@ def test_generate_evalbench_configs_custom_connector_only():
     model_config = yaml.safe_load(written_data["model_config"])
     assert model_config["generator"] == "query_data_api"
     assert model_config["context"]["datasource_references"] == {}
-

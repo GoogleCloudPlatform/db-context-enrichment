@@ -80,9 +80,7 @@ def test_contract_option1_config_driven_full_pipeline():
             return mock_open(read_data=dummy_dataset)()
         # Capture generated output files
         m = mock_open()()
-        m.write.side_effect = lambda content: written_files.update(
-            {str(path): content}
-        )
+        m.write.side_effect = lambda content: written_files.update({str(path): content})
         return m
 
     with patch("builtins.open", side_effect=capture_open):
@@ -166,9 +164,7 @@ def test_contract_option1_connector_only_query_data_api_fallback():
         if "dataset.json" in str(path):
             return mock_open(read_data=dummy_dataset)()
         m = mock_open()()
-        m.write.side_effect = lambda content: written_files.update(
-            {str(path): content}
-        )
+        m.write.side_effect = lambda content: written_files.update({str(path): content})
         return m
 
     with patch("builtins.open", side_effect=capture_open):
@@ -268,9 +264,7 @@ def test_contract_option2_external_package_spi_end_to_end(monkeypatch):
         if "dataset.json" in str(path):
             return mock_open(read_data=dummy_dataset)()
         m = mock_open()()
-        m.write.side_effect = lambda content: written_files.update(
-            {str(path): content}
-        )
+        m.write.side_effect = lambda content: written_files.update({str(path): content})
         return m
 
     with patch("builtins.open", side_effect=capture_open):

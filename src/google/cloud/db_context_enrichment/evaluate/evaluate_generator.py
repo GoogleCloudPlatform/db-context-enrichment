@@ -231,22 +231,21 @@ def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
     # (e.g., "my_package.custom_generators") that exposes a
     # CUSTOM_GENERATORS: dict[str, type[BaseDBConfigGenerator]] mapping
     # custom tools.yaml source types to BaseDBConfigGenerator subclasses.
-    custom_gens: dict[str, type[BaseDBConfigGenerator]] = {}
+    custom_gens = {}
     custom_plugin = os.environ.get("AUTOCTX_CUSTOM_GENERATORS")
     if custom_plugin:
         try:
             mod = importlib.import_module(custom_plugin)
-            loaded_gens = getattr(mod, "CUSTOM_GENERATORS", None)
-            if loaded_gens is None:
+            custom_gens = getattr(mod, "CUSTOM_GENERATORS", None)
+            if custom_gens is None:
                 raise AttributeError(
                     f"Custom generator module '{custom_plugin}' must define 'CUSTOM_GENERATORS' dict."
                 )
-            if not isinstance(loaded_gens, dict):
+            if not isinstance(custom_gens, dict):
                 raise TypeError(
                     f"CUSTOM_GENERATORS in '{custom_plugin}' must be a dictionary, "
-                    f"got {type(loaded_gens).__name__}."
+                    f"got {type(custom_gens).__name__}."
                 )
-            custom_gens = loaded_gens
             generators.update(custom_gens)
         except Exception as e:
             logger.error(

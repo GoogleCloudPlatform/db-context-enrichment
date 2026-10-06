@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import textwrap
 import types
 from unittest.mock import mock_open, patch
@@ -889,3 +890,73 @@ def test_generate_evalbench_configs_custom_connector_only():
     model_config = yaml.safe_load(written_data["model_config"])
     assert model_config["generator"] == "query_data_api"
     assert model_config["context"]["datasource_references"] == {}
+
+
+def test_get_db_generator_plugin_cwd_fallback(tmp_path, monkeypatch):
+    real_tmp = os.path.abspath(os.path.realpath(str(tmp_path)))
+    plugin_file = tmp_path / "uvx_cwd_plugin.py"
+    plugin_file.write_text(
+        textwrap.dedent("""\
+        class MockCwdGenerator:
+            SOURCE_TYPE = "cwd_engine"
+            def __init__(self, params):
+                self.params = params
+
+        CUSTOM_GENERATORS = {"cwd_engine": MockCwdGenerator}
+    """)
+    )
+
+    monkeypatch.chdir(real_tmp)
+    clean_path = [
+        p
+        for p in sys.path
+        if p not in ("", ".") and os.path.abspath(os.path.realpath(p)) != real_tmp
+    ]
+    monkeypatch.setattr(sys, "path", clean_path)
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "uvx_cwd_plugin")
+
+    try:
+        gen = _get_db_generator({"type": "cwd_engine"})
+        assert gen.__class__.__name__ == "MockCwdGenerator"
+        assert sys.path[-1] == real_tmp
+    finally:
+        sys.modules.pop("uvx_cwd_plugin", None)
+
+
+def test_get_db_generator_plugin_cwd_already_in_sys_path_does_not_duplicate(
+    tmp_path, monkeypatch
+):
+    real_tmp = os.path.abspath(os.path.realpath(str(tmp_path)))
+    monkeypatch.chdir(real_tmp)
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "missing_plugin_xyz")
+
+    for existing_entry in (real_tmp, "", "."):
+        path_with_cwd = [existing_entry]
+        monkeypatch.setattr(sys, "path", path_with_cwd)
+        with pytest.raises(RuntimeError, match="missing_plugin_xyz"):
+            _get_db_generator({"type": "custom"})
+        assert sys.path == [existing_entry]
+
+
+def test_get_db_generator_plugin_transitive_import_error_does_not_mutate_sys_path(
+    tmp_path, monkeypatch
+):
+    real_tmp = os.path.abspath(os.path.realpath(str(tmp_path)))
+    pkg_dir = os.path.join(real_tmp, "pkg_on_path")
+    other_cwd = os.path.join(real_tmp, "other_cwd")
+    os.makedirs(pkg_dir)
+    os.makedirs(other_cwd)
+    with open(os.path.join(pkg_dir, "broken_dep_plugin.py"), "w") as f:
+        f.write("import missing_third_party_pkg_xyz\n")
+
+    monkeypatch.chdir(other_cwd)
+    clean_path = [pkg_dir]
+    monkeypatch.setattr(sys, "path", clean_path)
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "broken_dep_plugin")
+
+    try:
+        with pytest.raises(RuntimeError, match="missing_third_party_pkg_xyz"):
+            _get_db_generator({"type": "custom"})
+        assert sys.path == [pkg_dir]
+    finally:
+        sys.modules.pop("broken_dep_plugin", None)

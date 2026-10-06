@@ -3,7 +3,9 @@ import json
 import logging
 import os
 import re
+import sys
 import textwrap
+import threading
 from typing import Any
 
 import yaml
@@ -210,6 +212,28 @@ def _interpolate_env_vars(raw_yaml: str) -> str:
     return pattern.sub(replacer, raw_yaml)
 
 
+_SYS_PATH_LOCK = threading.Lock()
+
+
+def _import_with_cwd_fallback(mod_name: str):
+    """Imports mod_name, falling back to appending os.getcwd() to sys.path."""
+    try:
+        return importlib.import_module(mod_name)
+    except ModuleNotFoundError as e:
+        if e.name is None or not (
+            mod_name == e.name or mod_name.startswith(e.name + ".")
+        ):
+            raise
+        cwd = os.path.abspath(os.getcwd())
+        with _SYS_PATH_LOCK:
+            if not any(os.path.abspath(p or cwd) == cwd for p in sys.path):
+                # Keep cwd at the end of sys.path so lazy runtime imports work
+                # without shadowing standard library or installed packages.
+                sys.path.append(cwd)
+                importlib.invalidate_caches()
+        return importlib.import_module(mod_name)
+
+
 def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
     """Factory function to build the correct Evaluation Generator."""
     source_type = params.get("type", "").lower()
@@ -235,7 +259,7 @@ def _get_db_generator(params: dict[str, Any]) -> BaseDBConfigGenerator:
     custom_plugin = os.environ.get("AUTOCTX_CUSTOM_GENERATORS")
     if custom_plugin:
         try:
-            mod = importlib.import_module(custom_plugin)
+            mod = _import_with_cwd_fallback(custom_plugin)
             custom_gens = getattr(mod, "CUSTOM_GENERATORS", None)
             if custom_gens is None:
                 raise AttributeError(

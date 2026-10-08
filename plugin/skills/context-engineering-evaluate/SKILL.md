@@ -100,4 +100,12 @@ Conclude by providing a succinct summary to the user:
 ## Templates & Reference
 
 When listing sources from `tools.yaml`, ensure you only present `kind: source` records to the user.
-The tool `generate_evalbench_configs` will find the selected block inside the file and validate its connection parameters deterministically using Python code. You do not need to manually parse or map individual properties such as `host`, `port`, or `database` yourself. If the tool indicates a verification failure for a specific database type, refer to the schema examples inside this directory (e.g., `cloud-sql-postgres.md`) to guide the user on fixing their `tools.yaml` definition.
+The tool `generate_evalbench_configs` will find the selected block inside the file and validate its connection parameters deterministically using Python code. You do not need to manually parse or map individual properties such as `host`, `port`, or `database` yourself. If the tool indicates a verification failure for a specific database type, or when configuring a custom/pluggable engine, refer to the schema examples inside `references/` to guide the user on fixing their `tools.yaml` definition:
+
+- [AlloyDB Postgres](references/alloydb-postgres.md)
+- [Cloud Bigtable](references/cloud-bigtable.md)
+- [Cloud SQL MySQL](references/cloud-sql-mysql.md)
+- [Cloud SQL Postgres](references/cloud-sql-postgres.md)
+- [Spanner GoogleSQL](references/spanner-googlesql.md)
+- [Spanner PostgreSQL](references/spanner-postgresql.md)
+- [Custom / Pluggable Engine](references/custom-engine.md)

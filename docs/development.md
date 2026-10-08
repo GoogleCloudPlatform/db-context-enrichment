@@ -160,3 +160,50 @@ To test a new feature with the full PyInstaller-bundled binaries (including Eval
    ```
    *Note: Use `gemini extensions uninstall google-cloud-db-context-engineering` before installing your test release.*
 
+## Adding Custom Database Engines
+
+AutoCtx and EvalBench support pluggable database engines and model generators via a generic Service Provider Interface (SPI). There are two ways to integrate a custom database engine without modifying core framework code:
+
+### Option 1: Config-Driven SPI in `tools.yaml`
+
+Specify `type: custom` (or attach `connector_class` / `generator_class`) directly in a `tools.yaml` source block:
+
+```yaml
+kind: source
+name: my_custom_db
+type: custom
+dialect: googlesql
+connector_class: my_package.connectors.CustomDB
+generator_class: my_package.generators.CustomGenerator
+database: default
+server: /custom/endpoint
+max_executions_per_minute: 100
+```
+
+- All non-meta fields in the source block are forwarded into `db_config.yaml` and `model_config.yaml`.
+- If `generator_class` is omitted, `model_config.yaml` falls back to the standard `query_data_api` generator.
+- Custom classes are dynamically imported by EvalBench and only need to implement duck-typed interfaces:
+  - **Database Connector (`connector_class`)**:
+    - `__init__(self, db_config: dict[str, Any])`
+    - `execute(self, query: str, eval_query: str = None, **kwargs) -> tuple[list[dict[str, Any]] | None, list[dict[str, Any]] | None, str | Exception | None]`
+    - Optional: `clean_tmp_creations(self)`, `close_connections(self)`
+  - **Model Generator (`generator_class`)**:
+    - `__init__(self, config: dict[str, Any])`
+    - `generate(self, prompt: str, **kwargs) -> str`
+
+### Option 2: External Plugin Package (`AUTOCTX_CUSTOM_GENERATORS`)
+
+To register a reusable first-class `source` type with custom validation and YAML generation:
+
+1. Subclass `BaseDBConfigGenerator` (`google.cloud.db_context_enrichment.evaluate.db_generators.base.BaseDBConfigGenerator`) and implement `generate_db_config()` and `build_datasource_reference()`.
+2. Export a `CUSTOM_GENERATORS: dict[str, type[BaseDBConfigGenerator]]` dictionary from your Python module mapping the `tools.yaml` `type` string to your generator class:
+   ```python
+   CUSTOM_GENERATORS = {
+       "snowflake": SnowflakeConfigGenerator,
+   }
+   ```
+3. Set `AUTOCTX_CUSTOM_GENERATORS=<your_python_module_path>` in the environment before running `generate_evalbench_configs`.
+
+See the skill references in [plugin/skills/context-engineering-init/references/custom-engine.md](../plugin/skills/context-engineering-init/references/custom-engine.md) and [plugin/skills/context-engineering-evaluate/references/custom-engine.md](../plugin/skills/context-engineering-evaluate/references/custom-engine.md) for full details.
+
+

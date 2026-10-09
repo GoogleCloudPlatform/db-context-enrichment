@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.4](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.3...v0.7.4) (2026-10-08)
+
+
+### Features
+
+* **bigtable:** add Cloud Bigtable (BTQL) dialect guides, generator, and hotels fixture ([#214](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/214)) ([12e0e68](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/12e0e686d13ed2db221c47f12c58ff7d501bc4fa))
+* **evaluate:** pluggable custom database engine SPI support for tools.yaml ([#222](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/222)) ([8ed41ff](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/8ed41ff9db1cd95e6323913c3b439f65cbe533c0))
+* **firestore:** support firestore mongodb dialect ([#177](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/177)) ([cefa7e5](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/cefa7e522187909f8f04cde93c0a11eacd381a10))
+
 ## [0.7.3](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.2...v0.7.3) (2026-09-10)
 
 

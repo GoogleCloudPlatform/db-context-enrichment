@@ -84,6 +84,7 @@ When collecting information from the user, inform the user that only Application
     - Spanner PostgreSQL (no Graph support)
     - Cloud Bigtable
     - Firestore (MongoDB API)
+    - Custom / Pluggable Engine (`type: custom`)
 
     *Spanner Dialect Disambiguation Rule:* If the user specifies Spanner without indicating whether it is GoogleSQL or PostgreSQL, the agent **MUST explicitly ask**: *"Is your Spanner database configured with GoogleSQL (default) or PostgreSQL dialect?"* Alternatively, if `gcloud` is authenticated, the agent can inspect the database dialect using `gcloud spanner databases describe <database_name> --instance=<instance_id> --project=<project_id> --format="value(databaseDialect)"`. Do not silently assume GoogleSQL.
 2.  **Collect Information:**
@@ -114,4 +115,13 @@ To verify that a specific database connection is configured correctly at any tim
 
 ## Templates & Reference
 
-For the specific fields required for each database type and the exact YAML structure to use, refer to the templates in this directory (.../references/init/...).
+For the specific fields required for each database type and the exact YAML structure to use, refer to the templates in `references/`:
+
+- [AlloyDB Postgres](references/alloydb-postgres.md)
+- [Cloud Bigtable](references/cloud-bigtable.md)
+- [Cloud SQL MySQL](references/cloud-sql-mysql.md)
+- [Cloud SQL Postgres](references/cloud-sql-postgres.md)
+- [Firestore (MongoDB API)](references/firestore.md)
+- [Spanner GoogleSQL](references/spanner-googlesql.md)
+- [Spanner PostgreSQL](references/spanner-postgresql.md)
+- [Custom / Pluggable Engine](references/custom-engine.md)

@@ -1,6 +1,6 @@
 {
   "name": "google-cloud-db-context-engineering",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "contextFileName": "./GEMINI.md",
   "mcpServers": {
     "mcp_db_context_engineering": {

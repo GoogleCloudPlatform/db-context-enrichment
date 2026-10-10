@@ -3,11 +3,13 @@
 **Required properties from the `kind: source` block in `tools.yaml`:**
 - Source Type (`type: bigquery`)
 - Google Cloud Project ID (`project`)
-- Dataset ID (`dataset`)
+- Dataset ID (`allowedDatasets`, exactly one entry; the toolbox BigQuery source has no `dataset` field)
+
+**Required properties from `state.md`:**
+- Table IDs (`Table Ids` under `## Active Database`, e.g. `- **Table Ids**: [orders, customers]`). The QueryData API requires at least one table reference, and `tools.yaml` has no place for it. If missing, populate it from the schema listing before generating configs.
 
 **Optional properties:**
-- Dataset location (`location`, e.g. `US`, `EU`, `us-central1`): written to `db_config.yaml` and used only by EvalBench to execute queries.
-- GDA API location (`region`): the location used for Gemini Data Analytics API calls in `model_config.yaml`. Defaults to `global`. This is independent of `location`; BigQuery multi-regions such as `US` are not valid GDA locations, so `location` is never used here.
+- Dataset location (`location`, e.g. `US`, `EU`, `us-central1`): written to `db_config.yaml` and used only by EvalBench to execute queries. It is **not** used as the Gemini Data Analytics API location — BigQuery multi-regions such as `US` are not valid GDA locations — so `model_config.yaml` always uses `global` for BigQuery.
 
 **EvalBench Database Config Spec (`db_config.yaml`):**
 

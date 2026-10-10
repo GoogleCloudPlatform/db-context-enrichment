@@ -10,7 +10,8 @@ from google.cloud.db_context_enrichment.evaluate.db_generators.bigquery import (
 def mock_params():
     return {
         "project": "test-project",
-        "dataset": "test-dataset",
+        "allowedDatasets": ["test-dataset"],
+        "tables": ["t1"],
     }
 
 
@@ -38,8 +39,31 @@ def test_generate_db_config_with_location(mock_params):
 
 
 def test_missing_required_fields():
-    with pytest.raises(ValueError, match="dataset"):
+    with pytest.raises(ValueError, match="allowedDatasets"):
         BigQueryConfigGenerator({"project": "test-project"})
+
+
+@pytest.mark.parametrize(
+    "allowed",
+    [[], ["ds1", "ds2"], [1], None],
+)
+def test_allowed_datasets_must_have_exactly_one(mock_params, allowed):
+    with pytest.raises(ValueError, match="exactly one dataset"):
+        BigQueryConfigGenerator({**mock_params, "allowedDatasets": allowed})
+
+
+@pytest.mark.parametrize(
+    "allowed", ["test-dataset", ["test-dataset"], ["other-project.test-dataset"]]
+)
+def test_allowed_datasets_forms(mock_params, allowed):
+    gen = BigQueryConfigGenerator({**mock_params, "allowedDatasets": allowed})
+    assert gen.dataset == "test-dataset"
+
+
+def test_model_config_requires_tables(mock_params):
+    gen = BigQueryConfigGenerator({**mock_params, "tables": []})
+    with pytest.raises(ValueError, match="Table Ids"):
+        gen.generate_model_config("ctx")
 
 
 def test_generate_model_config(mock_params):
@@ -52,23 +76,17 @@ def test_generate_model_config(mock_params):
     assert m_config["generator"] == "query_data_api"
     assert m_config["project_id"] == "test-project"
     assert m_config["location"] == "global"
-    # The public GDA SDK references BigQuery at table granularity; with no
-    # explicit tables configured the reference set is empty but present.
-    assert "bq" in m_config["context"]["datasource_references"]
+    assert m_config["context"]["datasource_references"]["bq"]["table_references"] == [
+        {"project_id": "test-project", "dataset_id": "test-dataset", "table_id": "t1"}
+    ]
 
 
 def test_model_config_location_ignores_dataset_location(mock_params):
-    # The BigQuery dataset location only applies to db_config; GDA location
-    # comes from `region` and defaults to "global".
+    # The BigQuery dataset location only applies to db_config; the GDA
+    # location stays "global".
     gen = BigQueryConfigGenerator({**mock_params, "location": "US"})
     m_config = yaml.safe_load(gen.generate_model_config("ctx"))
     assert m_config["location"] == "global"
-
-    gen = BigQueryConfigGenerator(
-        {**mock_params, "location": "US", "region": "us-central1"}
-    )
-    m_config = yaml.safe_load(gen.generate_model_config("ctx"))
-    assert m_config["location"] == "us-central1"
 
 
 def test_generate_model_config_with_tables(mock_params):

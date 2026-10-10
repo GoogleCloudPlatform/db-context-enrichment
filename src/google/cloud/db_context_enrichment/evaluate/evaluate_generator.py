@@ -115,6 +115,14 @@ def _extract_toolbox_params(
                 if graph_ids := _parse_graph_ids_from_state_md(state_md_path):
                     source_doc["graph_ids"] = graph_ids
 
+            # Likewise for BigQuery, the QueryData API requires explicit table references,
+            # which have no place in a toolbox BigQuery source block.
+            if source_doc.get("type") == "bigquery":
+                state_md_dir = os.path.dirname(toolbox_config_path)
+                state_md_path = os.path.join(state_md_dir, "state.md")
+                if table_ids := _parse_table_ids_from_state_md(state_md_path):
+                    source_doc["tables"] = table_ids
+
             return source_doc
 
     except FileNotFoundError:
@@ -134,12 +142,24 @@ def _parse_graph_ids_from_state_md(state_md_path: str) -> list[str] | None:
     because QueryData API requires explicit graph_ids in model_config.yaml to evaluate
     property graphs, whereas tools.yaml only configures MCP Toolbox runtime tools.
     """
+    return _parse_list_field_from_state_md(state_md_path, r"Graph\s+Ids?")
+
+
+def _parse_table_ids_from_state_md(state_md_path: str) -> list[str] | None:
+    """Parses BigQuery table ids from the `Table Ids` field in state.md."""
+    return _parse_list_field_from_state_md(state_md_path, r"Table\s+Ids?")
+
+
+def _parse_list_field_from_state_md(
+    state_md_path: str, label_pattern: str
+) -> list[str] | None:
+    """Parses a `- **<Label>**: [a, b]` (or sub-bulleted) list field from state.md."""
     if not os.path.exists(state_md_path):
         return None
     with open(state_md_path, encoding="utf-8") as f:
         content = f.read()
     match = re.search(
-        r"(?:^[ \t]*[-*][ \t]*)?\*\*Graph\s+Ids?:?\*\*:?[ \t]*([^\n]*)",
+        rf"(?:^[ \t]*[-*][ \t]*)?\*\*{label_pattern}:?\*\*:?[ \t]*([^\n]*)",
         content,
         re.MULTILINE | re.IGNORECASE,
     )
@@ -184,13 +204,13 @@ def _parse_graph_ids_from_state_md(state_md_path: str) -> list[str] | None:
 
     if val_str.startswith("[") and val_str.endswith("]"):
         val_str = val_str[1:-1]
-    graphs = [
+    items = [
         g.strip().strip("'\"`")
         for g in val_str.split(",")
         if g.strip().strip("'\"`")
         and g.strip().strip("'\"`").lower() not in ("none", "n/a", "null", "nil", "-")
     ]
-    return graphs if graphs else None
+    return items if items else None
 
 
 def _interpolate_env_vars(raw_yaml: str) -> str:

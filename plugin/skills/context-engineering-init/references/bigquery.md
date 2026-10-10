@@ -4,6 +4,9 @@
 - Data Source Name (e.g., `my-bigquery-db`)
 - Google Cloud Project ID
 - Dataset ID
+- *(Optional)* Dataset location (e.g., `US`, `EU`, `us-central1`)
+
+> The toolbox BigQuery source has **no `dataset` field** (toolbox rejects unknown fields). Declare the target dataset in `allowedDatasets` instead — evaluation requires exactly one entry. This also restricts the toolbox tools to that dataset.
 
 **Template:**
 
@@ -12,7 +15,9 @@ kind: source
 name: <data_source_name>
 type: bigquery
 project: <project_id>
-dataset: <dataset_id>
+location: <dataset_location>  # optional; omit to use the BigQuery default
+allowedDatasets:
+  - <dataset_id>
 ---
 kind: tool
 name: <data_source_name>-list-schemas

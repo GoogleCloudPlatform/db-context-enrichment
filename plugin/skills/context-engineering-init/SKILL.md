@@ -29,6 +29,7 @@ Follow these steps when the user asks to initialize the environment:
     - **Source Name**: `<data_source_name>`
     - **Type**: `<database_type>`
     - **Graph Ids**: []  # (Populated during schema inspection)
+    - **Table Ids**: []  # (BigQuery only; tables in scope, populated during schema inspection)
     ```
 5.  **Initialize Experiments Directory:** If `experiments/` is missing inside `autoctx/`, create an empty `experiments/` directory inside `autoctx/`.
 

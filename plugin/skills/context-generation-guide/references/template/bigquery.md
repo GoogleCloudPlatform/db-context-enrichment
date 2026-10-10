@@ -15,8 +15,8 @@ reference in the SQL **must** be fully qualified as
 `` `my-project`.`sales_data`.`orders` ``). SQL that references a bare table
 name (`FROM orders`) will fail with "Table not found" when executed.
 
-Take the project and dataset IDs from the `kind: source` block in
-`tools.yaml`. Apply this rule to the `sql` field AND the
+Take the project ID from `project` and the dataset ID from
+`allowedDatasets` in the `kind: source` block of `tools.yaml`. Apply this rule to the `sql` field AND the
 `parameterized_sql` field — never parameterize the project, dataset, or
 table identifiers themselves; only parameterize filter values.
 

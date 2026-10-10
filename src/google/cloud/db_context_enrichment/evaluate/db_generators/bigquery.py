@@ -13,24 +13,41 @@ class BigQueryConfigGenerator(BaseDBConfigGenerator):
 
     SOURCE_TYPE = "bigquery"
     DIALECT = "googlesql"
+    # The toolbox BigQuery source has no `dataset` field; the target dataset is
+    # declared via `allowedDatasets`, which must contain exactly one entry.
     REQUIRED_FIELDS = BaseDBConfigGenerator.REQUIRED_FIELDS | {
         "project",
-        "dataset",
+        "allowedDatasets",
     }
 
     def __init__(self, params: dict[str, Any]):
         super().__init__(params)
         self.project = params.get("project")
-        self.dataset = params.get("dataset")
+        self.dataset = self._resolve_dataset(params.get("allowedDatasets"))
         # BigQuery dataset location (e.g. "US", "EU", "us-central1"), used only
         # by EvalBench to execute queries. It is intentionally NOT used as the
         # GDA API location in the model config: multi-regions like "US" are not
-        # valid GDA locations. Set `region` to override the GDA location
-        # (defaults to "global").
+        # valid GDA locations, so the model config uses "global".
         self.location = params.get("location")
-        # Optional explicit table scoping; the public GDA proto references
-        # BigQuery at table granularity rather than dataset granularity.
+        # Table scope comes from `Table Ids` in state.md (tools.yaml has no
+        # place for it); the GDA API requires at least one table reference.
         self.tables = params.get("tables") or []
+
+    @staticmethod
+    def _resolve_dataset(allowed_datasets: Any) -> str:
+        if isinstance(allowed_datasets, str):
+            allowed_datasets = [allowed_datasets]
+        if (
+            not isinstance(allowed_datasets, list)
+            or len(allowed_datasets) != 1
+            or not isinstance(allowed_datasets[0], str)
+        ):
+            raise ValueError(
+                "BigQuery source 'allowedDatasets' must list exactly one dataset "
+                f"for evaluation, got: {allowed_datasets!r}"
+            )
+        # allowedDatasets entries may be `dataset` or `project.dataset`.
+        return allowed_datasets[0].split(".")[-1]
 
     def generate_db_config(self) -> str:
         db_type = "bigquery"
@@ -51,6 +68,12 @@ class BigQueryConfigGenerator(BaseDBConfigGenerator):
         ).strip()
 
     def build_datasource_reference(self, context_set_id: str) -> dict[str, Any]:
+        if not self.tables:
+            raise ValueError(
+                "No BigQuery tables in scope: set `Table Ids` under "
+                "`## Active Database` in state.md (e.g. `- **Table Ids**: [orders, "
+                "customers]`). The QueryData API requires at least one table reference."
+            )
         table_references = [
             {
                 "project_id": self.project,

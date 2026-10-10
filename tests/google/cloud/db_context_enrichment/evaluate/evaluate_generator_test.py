@@ -579,6 +579,109 @@ def test_generate_evalbench_configs_spanner_no_state_md_graphs(tmp_path):
     assert "graph_ids" not in spanner_ref["database_reference"]
 
 
+def test_generate_evalbench_configs_bigquery_tables_from_state_md(tmp_path):
+    tools_yaml = tmp_path / "tools.yaml"
+    tools_yaml.write_text(
+        textwrap.dedent("""\
+            kind: source
+            name: bq-source
+            type: bigquery
+            project: test-project
+            location: US
+            allowedDatasets:
+              - test_dataset
+        """)
+    )
+
+    state_md = tmp_path / "state.md"
+    state_md.write_text(
+        textwrap.dedent("""\
+            # Context Authoring Experiment State Tracking
+
+            ## Active Database
+            - **Source Name**: bq-source
+            - **Type**: bigquery
+            - **Table Ids**: [orders, customers]
+        """)
+    )
+
+    dataset_json = tmp_path / "dataset.json"
+    dataset_json.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "1",
+                    "database": "test_dataset",
+                    "nlq": "q",
+                    "golden_sql": "SELECT 1",
+                }
+            ]
+        )
+    )
+
+    out_dir = tmp_path / "experiments" / "exp1"
+
+    generate_evalbench_configs(
+        output_dir=str(out_dir),
+        dataset_path=str(dataset_json),
+        context_set_id="projects/test-project/locations/us-central1/contextSets/context-123",
+        toolbox_config_path=str(tools_yaml),
+        toolbox_source_name="bq-source",
+    )
+
+    db_config = yaml.safe_load(
+        (out_dir / "eval_configs" / "db_config.yaml").read_text()
+    )
+    assert db_config["database_name"] == "test_dataset"
+    assert db_config["location"] == "US"
+
+    model_config = yaml.safe_load(
+        (out_dir / "eval_configs" / "model_config.yaml").read_text()
+    )
+    assert model_config["location"] == "global"
+    bq_ref = model_config["context"]["datasource_references"]["bq"]
+    assert [t["table_id"] for t in bq_ref["table_references"]] == [
+        "orders",
+        "customers",
+    ]
+    assert {t["dataset_id"] for t in bq_ref["table_references"]} == {"test_dataset"}
+
+
+def test_generate_evalbench_configs_bigquery_no_state_md_tables(tmp_path):
+    tools_yaml = tmp_path / "tools.yaml"
+    tools_yaml.write_text(
+        textwrap.dedent("""\
+            kind: source
+            name: bq-source
+            type: bigquery
+            project: test-project
+            allowedDatasets: [test_dataset]
+        """)
+    )
+    dataset_json = tmp_path / "dataset.json"
+    dataset_json.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "1",
+                    "database": "test_dataset",
+                    "nlq": "q",
+                    "golden_sql": "SELECT 1",
+                }
+            ]
+        )
+    )
+
+    with pytest.raises(ValueError, match="Table Ids"):
+        generate_evalbench_configs(
+            output_dir=str(tmp_path / "out"),
+            dataset_path=str(dataset_json),
+            context_set_id="ctx",
+            toolbox_config_path=str(tools_yaml),
+            toolbox_source_name="bq-source",
+        )
+
+
 def test_generate_evalbench_configs_spanner_postgres():
     tools_yaml_content = textwrap.dedent("""\
         kind: source

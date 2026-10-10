@@ -47,11 +47,11 @@ SELECT DISTINCT original_value AS value, '{table}.{column}' AS columns,
 ### 3. SEMANTIC_SIMILARITY_MATCH
 
 **Description**: Semantic similarity search using Gemini text embeddings.
-**Prerequisites**: Requires `vector` and `google_ml_integration` extensions.
+**Prerequisites**: Requires `vector` and `google_ml_integration` extensions (query available models via `SELECT model_id FROM google_ml.model_info_view`).
 **Example**: Use when searching for concepts, descriptions, themes, or abstract text where the exact words might differ but the underlying meaning is similar.
 
 **Performance Recommendations**:
-*   **Pre-compute embeddings**: If the column has a corresponding embedding column, replace the inline `google_ml.embedding` call for `T."{column}"` with the name of the embedding column.
+*   **Pre-compute embeddings**: If the column has a corresponding populated embedding column, replace the inline `google_ml.embedding` call for `T."{column}"` with the embedding column, and replace `'gemini-embedding-001'` with the user-confirmed embedding model ID (e.g., `'gemini-embedding-001'`, `'text-embedding-005'`).
 *   **Create a Vector Index**: Create an index (e.g., HNSW or IVFFlat) on the embedding column to speed up the `<=>` (cosine distance) operations.
 
 **Template**:
@@ -68,3 +68,7 @@ SELECT DISTINCT original_value AS value, '{table}.{column}' AS columns,
 '{concept_type}' AS concept_type, normalized_dist AS distance,
 ''::text AS context FROM SemanticMetrics
 ```
+
+## Validation
+
+Validate candidate queries by prepending `EXPLAIN` (e.g., `EXPLAIN SELECT ...` or `EXPLAIN WITH ...`).

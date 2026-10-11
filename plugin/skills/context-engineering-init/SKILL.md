@@ -29,6 +29,7 @@ Follow these steps when the user asks to initialize the environment:
     - **Source Name**: `<data_source_name>`
     - **Type**: `<database_type>`
     - **Graph Ids**: []  # (Populated during schema inspection)
+    - **Table Ids**: []  # (BigQuery only; tables in scope, populated during schema inspection)
     ```
 5.  **Initialize Experiments Directory:** If `experiments/` is missing inside `autoctx/`, create an empty `experiments/` directory inside `autoctx/`.
 
@@ -84,6 +85,7 @@ When collecting information from the user, inform the user that only Application
     - Spanner PostgreSQL (no Graph support)
     - Cloud Bigtable
     - Firestore (MongoDB API)
+    - BigQuery
     - Custom / Pluggable Engine (`type: custom`)
 
     *Spanner Dialect Disambiguation Rule:* If the user specifies Spanner without indicating whether it is GoogleSQL or PostgreSQL, the agent **MUST explicitly ask**: *"Is your Spanner database configured with GoogleSQL (default) or PostgreSQL dialect?"* Alternatively, if `gcloud` is authenticated, the agent can inspect the database dialect using `gcloud spanner databases describe <database_name> --instance=<instance_id> --project=<project_id> --format="value(databaseDialect)"`. Do not silently assume GoogleSQL.

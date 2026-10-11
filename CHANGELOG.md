@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.6](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.5...v0.7.6) (2026-10-11)
+
+
+### Features
+
+* add BigQuery support to evaluation config generation ([#194](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/194)) ([ab96075](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/ab96075c8e11f3808132bf86ac6e0c2c6069bad1))
+
 ## [0.7.5](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.4...v0.7.5) (2026-10-10)
 
 

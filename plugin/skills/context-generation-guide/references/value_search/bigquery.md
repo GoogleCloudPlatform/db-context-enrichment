@@ -16,11 +16,13 @@ This reference provides the SQL templates and examples for Value Search in BigQu
 
 **Template**:
 ```sql
-SELECT CAST($value AS STRING) AS value, '{column}' AS `columns`,
-'{concept_type}' AS concept_type, 0.0 AS distance,
+SELECT value, '{column}' AS `columns`, '{concept_type}' AS concept_type, 0.0 AS distance,
 JSON '{}' AS context
-FROM `{project}`.`{dataset}`.`{table}` AS T
-WHERE CAST(T.`{column}` AS STRING) = CAST($value AS STRING)
+FROM (
+  SELECT DISTINCT CAST($value AS STRING) AS value
+  FROM `{project}`.`{dataset}`.`{table}` AS T
+  WHERE CAST(T.`{column}` AS STRING) = CAST($value AS STRING)
+)
 ```
 
 ### 2. EDIT_DISTANCE_MATCH
@@ -30,12 +32,14 @@ WHERE CAST(T.`{column}` AS STRING) = CAST($value AS STRING)
 
 **Template**:
 ```sql
-SELECT CAST(T.`{column}` AS STRING) AS value, '{column}' AS `columns`,
-'{concept_type}' AS concept_type,
-EDIT_DISTANCE(LOWER(CAST(T.`{column}` AS STRING)), LOWER(CAST($value AS STRING))) AS distance,
+SELECT value, '{column}' AS `columns`, '{concept_type}' AS concept_type, distance,
 JSON '{}' AS context
-FROM `{project}`.`{dataset}`.`{table}` AS T
-WHERE EDIT_DISTANCE(LOWER(CAST(T.`{column}` AS STRING)), LOWER(CAST($value AS STRING))) <= 3
+FROM (
+  SELECT DISTINCT CAST(T.`{column}` AS STRING) AS value,
+  EDIT_DISTANCE(LOWER(CAST(T.`{column}` AS STRING)), LOWER(CAST($value AS STRING))) AS distance
+  FROM `{project}`.`{dataset}`.`{table}` AS T
+  WHERE EDIT_DISTANCE(LOWER(CAST(T.`{column}` AS STRING)), LOWER(CAST($value AS STRING))) <= 3
+)
 ```
 
 **Performance Recommendations**:

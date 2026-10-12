@@ -128,10 +128,11 @@ def _extract_toolbox_params(
 
 
 # How many parent directories above `output_dir` to search for the experiment's
-# experiment_state.md. Eval output always lives inside the experiment workspace
-# (`.context-engineering/experiments/<name>/`): hill-climb iterations write to
-# `<root>/vN/eval/` (2 levels down) and the holdout pass to `<root>/holdout_eval/`
-# (1 level down). One extra level is allowed as slack.
+# experiment_state.md. Eval output always lives inside the experiment's hill-climb
+# directory (`.context-engineering/experiments/<name>/hillclimb/`, which also holds
+# experiment_state.md): iterations write to `<hillclimb>/vN/eval/` (2 levels down)
+# and the holdout pass to `<hillclimb>/holdout_eval/` (1 level down). One extra
+# level is allowed as slack.
 _STATE_MD_MAX_PARENT_LEVELS = 3
 
 _EXPERIMENT_STATE_FILENAME = "experiment_state.md"
@@ -142,7 +143,7 @@ def _find_experiment_state_md(output_dir: str) -> str | None:
 
     `tools.yaml` and `workspace_state.md` are shared at `.context-engineering/`
     while `experiment_state.md` is per-experiment at
-    `.context-engineering/experiments/<name>/experiment_state.md`, so the two are
+    `.context-engineering/experiments/<name>/hillclimb/experiment_state.md`, so the two are
     not co-located; `output_dir` is the only input that is guaranteed to sit
     inside the experiment workspace. Returns the first `experiment_state.md`
     found in `output_dir` or up to `_STATE_MD_MAX_PARENT_LEVELS` of its parents,

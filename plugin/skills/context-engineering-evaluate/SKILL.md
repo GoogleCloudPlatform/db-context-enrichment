@@ -18,14 +18,14 @@ Score a ContextSet against a dataset by running Evalbench, and return a scored r
 
 ### Inside an experiment (called by hillclimb or the holdout step, or by the user on an existing experiment)
 
-Read `.context-engineering/experiments/<experiment_name>/experiment_state.md` and take:
+Read `.context-engineering/experiments/<experiment_name>/hillclimb/experiment_state.md` and take:
 
 | Input | From |
 | :--- | :--- |
 | Toolbox source | `## Active Database` → **Source Name** (must exist in the shared `.context-engineering/tools.yaml`, which is the `toolbox_config_path` passed to `generate_evalbench_configs`). If its `<source>-*` tools are not visible, the `toolbox` MCP server is stale — tell the user to restart it (see `context-engineering-init`). |
 | Dataset | `Hillclimb dataset` by default; `Holdout dataset` **only** when the caller is the holdout step; `Golden dataset` only if the user explicitly asks for a full-set score. All three live under `<experiment>/dataset/`. Never offer the holdout split as a casual choice — it must stay unseen during optimization. |
 | ContextSet resource | The caller names it: the working copy during the loop and for the holdout step (the bare `<context_set_id>` in the fresh case, `<context_set_id>_draft` in the existing case — per `Draft resource` in `experiment_state.md`), or a resource the user names. |
-| `output_dir` | Supplied by the caller: `<experiment>/vN/eval/` during the loop, `<experiment>/holdout_eval/` for the holdout step. |
+| `output_dir` | Supplied by the caller: `<experiment>/hillclimb/vN/eval/` during the loop, `<experiment>/hillclimb/holdout_eval/` for the holdout step. |
 | GCP project / location | Parsed from the resource name above (Resource naming rule) — never from `workspace_state.md`, which only seeds init. |
 
 If there is no `experiment_state.md` for the experiment the user is talking about, route to [context-engineering-init](../context-engineering-init/SKILL.md) rather than collecting the values inline. If `experiment_state.md` contains `## Generalizability`, the experiment is finished: evaluating its published resource read-only is fine, but never upload into it.

@@ -66,7 +66,7 @@ When a user starts (or asks how to start), give a **short, plain-language briefi
 
 Then ask which situation applies and route:
 
-*   No experiment workspace yet, the shared `.context-engineering/tools.yaml` or `.context-engineering/workspace_state.md` is missing, or `.context-engineering/experiments/<experiment_name>/experiment_state.md` is missing → [context-engineering-init](../context-engineering-init/SKILL.md)
+*   No experiment workspace yet, the shared `.context-engineering/tools.yaml` or `.context-engineering/workspace_state.md` is missing, or `.context-engineering/experiments/<experiment_name>/hillclimb/experiment_state.md` is missing → [context-engineering-init](../context-engineering-init/SKILL.md)
 *   Finished experiment (`experiment_state.md` has `## Final:`) and you want to improve further → [context-engineering-init](../context-engineering-init/SKILL.md) in **clone mode** (see *Next experiment hand-off*); never hill-climb a finished experiment again
 *   No golden dataset (`dataset/golden.json` missing in the experiment) → [context-engineering-dataset-generation](../context-engineering-dataset-generation/SKILL.md)
 *   No base ContextSet → [context-engineering-bootstrap](../context-engineering-bootstrap/SKILL.md)
@@ -177,7 +177,7 @@ Location is resolved **once per workspace**, by `context-engineering-init` when 
 
 ### Inputs & resolution rules (`workspace_state.md` vs `experiment_state.md`)
 
-Two files, two jobs. `.context-engineering/workspace_state.md` holds **what the user entered once for the workspace** — `Project`, `Location`, default `DB source`, `Enrichment sources`, `Auto-approve uploads` (format and example in `context-engineering-hillclimb/references/layout.md`). Each `experiments/<name>/experiment_state.md` holds **the record of one run** — `Context set id`, `Final resource`, `Draft resource`, `Seed resource`, datasets, `## Active Database`, iterations, verdict. Resolution:
+Two files, two jobs. `.context-engineering/workspace_state.md` holds **what the user entered once for the workspace** — `Project`, `Location`, default `DB source`, `Enrichment sources`, `Auto-approve uploads` (format and example in `context-engineering-hillclimb/references/layout.md`). Each `experiments/<name>/hillclimb/experiment_state.md` holds **the record of one run** — `Context set id`, `Final resource`, `Draft resource`, `Seed resource`, datasets, `## Active Database`, iterations, verdict. Resolution:
 
 1.  **Context-set identity never comes from `workspace_state.md` after init.** Every tool call parses `projectId` / `location` / `contextSetId` from `Final resource` / `Draft resource` / `Seed resource` in `experiment_state.md` (Resource naming rule). Init consumes `workspace_state.md`'s `Project`/`Location` exactly once, to construct `Final resource`. Consequence: editing `workspace_state.md` later cannot retarget a running experiment, and improving a resource that lives in another project needs no override.
 2.  **`Auto-approve uploads`** — effective value = `Auto-approve uploads (this experiment)` in `experiment_state.md` if present → else `workspace_state.md` → else `false`. Hillclimb re-reads it on every entry.
@@ -316,9 +316,9 @@ As the master orchestrator, this skill strictly governs phase transitions after 
 
 1.  **Single Read-Only Holdout Evaluation (Autonomous Zero-Prompt Execution)**:
     *   **Do NOT Prompt or Ask Permission**: Reuse `experiment_name`, `toolbox_config_path` (`.context-engineering/tools.yaml`), `toolbox_source_name` (**Source Name** from `## Active Database` in `experiment_state.md`), and the **candidate's** resource string — `Final resource` when `Draft resource` is `(none …)`, otherwise `Draft resource` — exactly as recorded in `experiment_state.md`, without asking the user for any parameters or confirmation.
-    *   **Generate Holdout Evalbench Configs**: Immediately call the `generate_evalbench_configs` MCP tool with `output_dir=".context-engineering/experiments/<experiment_name>/holdout_eval/"`, `dataset_path=".context-engineering/experiments/<experiment_name>/dataset/splits/holdout.json"`, and the candidate resource string as `context_set_id`, plus `toolbox_config_path` and `toolbox_source_name`.
+    *   **Generate Holdout Evalbench Configs**: Immediately call the `generate_evalbench_configs` MCP tool with `output_dir=".context-engineering/experiments/<experiment_name>/hillclimb/holdout_eval/"`, `dataset_path=".context-engineering/experiments/<experiment_name>/dataset/splits/holdout.json"`, and the candidate resource string as `context_set_id`, plus `toolbox_config_path` and `toolbox_source_name`.
     *   **Run Holdout Evaluation**: Immediately execute the canonical Evalbench command:
-        `uvx google-evalbench@1.17.0 --experiment_config=.context-engineering/experiments/<experiment_name>/holdout_eval/eval_configs/run_config.yaml`
+        `uvx google-evalbench@1.17.0 --experiment_config=.context-engineering/experiments/<experiment_name>/hillclimb/holdout_eval/eval_configs/run_config.yaml`
     *   **Extract Scores**: Extract `test_passed` and `test_total` from `holdout_eval/eval_reports/<job_id>/summary.csv`, and retrieve `dev_passed` and `dev_total` from the candidate iteration's (`vK`) entry in the `experiment_state.md` Iteration Log.
 
 2.  **Statistical Significance Testing (Two-Proportion Pooled z-Test)**:
@@ -398,7 +398,7 @@ As the master orchestrator, this skill strictly governs phase transitions after 
             ```
 
 4.  **Save Final Evaluation Report (`final_evaluation_report.md`)**:
-    *   Write the comprehensive audit report to `.context-engineering/experiments/<experiment_name>/final_evaluation_report.md`.
+    *   Write the comprehensive audit report to `.context-engineering/experiments/<experiment_name>/hillclimb/final_evaluation_report.md`.
     *   Ordered strictly by decision relevance (Verdict & Status $\rightarrow$ Recommended Action / Next Steps $\rightarrow$ Performance Overview & Failure Breakdown $\rightarrow$ Statistical Details):
         *   `TL;DR`: Verdict, Next Steps, Generalization Drop, Significance Assessment, Summary.
         *   `1. ACTIONABLE RECOMMENDATIONS`: Concrete recommended action and next steps for the user placed at the top.
@@ -407,7 +407,7 @@ As the master orchestrator, this skill strictly governs phase transitions after 
         *   `4. STATISTICAL DETAILS`: Two-proportion pooled z-test, sample sizes ($N_{\text{dev}}, x_{\text{dev}}, N_{\text{test}}, x_{\text{test}}$), pooled proportion ($\hat{p}$), standard error ($SE$), test statistic ($z$), two-tailed $p$-value, and power analysis check placed at the bottom.
 
 5.  **Log State Tracking (`experiment_state.md`) and hand back**:
-    *   Append a `## Generalizability` section to `.context-engineering/experiments/<experiment_name>/experiment_state.md` recording the holdout evaluation path (`holdout_eval/eval_reports/<job_id>/`), the candidate resource evaluated, holdout score (`passed / total`), the verdict (`PASS`, `INVESTIGATE`, or `INCONCLUSIVE`), and the report path. See the example in `context-engineering-hillclimb/references/layout.md`.
+    *   Append a `## Generalizability` section to `.context-engineering/experiments/<experiment_name>/hillclimb/experiment_state.md` recording the holdout evaluation path (`holdout_eval/eval_reports/<job_id>/`), the candidate resource evaluated, holdout score (`passed / total`), the verdict (`PASS`, `INVESTIGATE`, or `INCONCLUSIVE`), and the report path. See the example in `context-engineering-hillclimb/references/layout.md`.
     *   **Return to `context-engineering-hillclimb` Finalize step 4**, which sets the publication state (fresh: already live; existing: the replace-or-keep HITL) and writes `## Final:`. Only then is the experiment **finished and read-only**. The On-Screen Card (step 3) and the hand-off (step 6) are printed after `## Final:` is written, so they can state where the context set actually is.
 
 6.  **Next Experiment Hand-off (same turn, after the On-Screen Card — for INVESTIGATE and INCONCLUSIVE only)**:
@@ -433,7 +433,7 @@ As the master orchestrator, this skill strictly governs phase transitions after 
         * first action → <one-line recommendation from the report>
 
         Start it with:
-        "Start a new context-engineering experiment named `<experiment_name>-v2`, cloned from `<experiment_name>` for <"context fixes" | "dataset expansion">, seeded from its result, and apply the recommendations in `.context-engineering/experiments/<experiment_name>/final_evaluation_report.md`."
+        "Start a new context-engineering experiment named `<experiment_name>-v2`, cloned from `<experiment_name>` for <"context fixes" | "dataset expansion">, seeded from its result, and apply the recommendations in `.context-engineering/experiments/<experiment_name>/hillclimb/final_evaluation_report.md`."
         ```
     *   The clone itself is performed by [context-engineering-init](../context-engineering-init/SKILL.md) (clone mode) when the user issues that prompt — do **not** copy files or create the new experiment from this phase.
 

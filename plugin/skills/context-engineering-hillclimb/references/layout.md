@@ -4,17 +4,17 @@ The hill-climbing skill maintains an internal workspace to track iterations, eva
 
 - `.context-engineering/tools.yaml` — the **single shared** Toolbox configuration for the workspace (user-owned; may hold several DB sources). The Toolbox MCP server reads it at startup only, so any edit — by a skill or by the user — needs a `toolbox` server restart.
 - `.context-engineering/workspace_state.md` — the **workspace inputs**: what the user entered once (Context Set `Project` / `Location`, default `DB source`, `Enrichment sources`, `Auto-approve uploads`). Written only by `context-engineering-init`; read by everything else. Format below.
-- `<workspace_root>` = `.context-engineering/experiments/<experiment_name>/` — **per experiment**: `experiment_state.md`, `dataset/`, iterations and reports. `experiment_state.md` is the record of that run; it never duplicates the workspace inputs. Unless stated otherwise, paths below are relative to `<workspace_root>`.
+- `<experiment_root>` = `.context-engineering/experiments/<experiment_name>/` — **per experiment**, with two siblings: `dataset/` (owned by `context-engineering-dataset-generation`) and **`hillclimb/`** (owned by the hill-climb loop).
+- `<hillclimb_root>` = `<experiment_root>/hillclimb/` — `experiment_state.md` (the record of the run; it never duplicates the workspace inputs), the iteration directories `v<N>/`, `holdout_eval/` and `final_evaluation_report.md`. **Unless stated otherwise, relative paths below are relative to `<hillclimb_root>`.**
 
 ## Directory structure
 
 ```
 .context-engineering/
 ├── tools.yaml                             # shared Toolbox DB connections (context-engineering-init / user)
-├── workspace_state.md                         # workspace inputs the user entered once (context-engineering-init)
+├── workspace_state.md                     # workspace inputs the user entered once (context-engineering-init)
 └── experiments/
-    └── <experiment_name>/                 # <workspace_root> — one per experiment
-        ├── experiment_state.md                       # written by init; context set identity + which tools.yaml source is used + per-iteration scores
+    └── <experiment_name>/                 # <experiment_root> — one per experiment
         ├── dataset/                       # context-engineering-dataset-generation (deliverables + working files)
         │   ├── golden.json                # full golden dataset
         │   ├── splits/
@@ -25,21 +25,23 @@ The hill-climbing skill maintains an internal workspace to track iterations, eva
         │   ├── temp_golden.json           # interim dataset during generation/expansion
         │   ├── evalset_report_pair_level.md     # audit report 1
         │   └── evalset_report_dataset_level.md  # audit report 2
-        ├── v<N>/                          # one directory per iteration (v0 = base, v1+ = mutations)
-        │   ├── context_set_v<N>.json      # ContextSet snapshot at this version
-        │   ├── analysis_v<N>.md           # findings + reasoning + mutations applied
-        │   └── eval/                      # output_dir for context-engineering-evaluate
-        │       ├── eval_configs/          # generated Evalbench YAMLs + converted dataset
-        │       │   ├── db_config.yaml
-        │       │   ├── model_config.yaml
-        │       │   ├── run_config.yaml
-        │       │   ├── llmrater_config.yaml
-        │       │   └── golden_queries.json
-        │       └── eval_reports/<job_id>/
-        │           ├── scores.csv
-        │           └── summary.csv
-        ├── holdout_eval/                  # output_dir for the single holdout evaluation (after convergence, before any replacement)
-        └── final_evaluation_report.md     # generalizability report (Holdout Evaluation phase)
+        └── hillclimb/                     # <hillclimb_root> — everything the hill-climb run produces
+            ├── experiment_state.md        # written by init; context set identity + which tools.yaml source is used + per-iteration scores
+            ├── v<N>/                      # one directory per iteration (v0 = base, v1+ = mutations)
+            │   ├── context_set_v<N>.json  # ContextSet snapshot at this version
+            │   ├── analysis_v<N>.md       # findings + reasoning + mutations applied
+            │   └── eval/                  # output_dir for context-engineering-evaluate
+            │       ├── eval_configs/      # generated Evalbench YAMLs + converted dataset
+            │       │   ├── db_config.yaml
+            │       │   ├── model_config.yaml
+            │       │   ├── run_config.yaml
+            │       │   ├── llmrater_config.yaml
+            │       │   └── golden_queries.json
+            │       └── eval_reports/<job_id>/
+            │           ├── scores.csv
+            │           └── summary.csv
+            ├── holdout_eval/              # output_dir for the single holdout evaluation (after convergence, before any replacement)
+            └── final_evaluation_report.md # generalizability report (Holdout Evaluation phase)
 ```
 
 An experiment is **self-contained and, once `## Final:` is written, frozen**. Follow-up work happens in a new experiment that `context-engineering-init` **clones** from the finished one: it copies **only `dataset/golden.json`** — never `splits/`, plans or reports — and the new experiment produces its own split with `split_dataset`. The clone points at the **same `tools.yaml` source** (carried over in `## Active Database`; the shared `tools.yaml` is never copied). The finished experiment's result (its published context set, or its best local file if it was not published) becomes the clone's `Seed resource` and is never overwritten. Nothing else about the source experiment is recorded.

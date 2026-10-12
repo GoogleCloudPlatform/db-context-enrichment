@@ -552,12 +552,12 @@ def _write_spanner_workspace(tmp_path, experiment="exp1", graph_ids_line=None):
     """Lays out the real workspace shape:
 
         .context-engineering/tools.yaml                      (shared)
-        .context-engineering/experiments/<exp>/experiment_state.md      (per experiment)
+        .context-engineering/experiments/<exp>/hillclimb/experiment_state.md  (per experiment)
         .context-engineering/experiments/<exp>/dataset.json
     """
     ce_dir = tmp_path / ".context-engineering"
     exp_dir = ce_dir / "experiments" / experiment
-    exp_dir.mkdir(parents=True)
+    (exp_dir / "hillclimb").mkdir(parents=True)
 
     tools_yaml = ce_dir / "tools.yaml"
     tools_yaml.write_text(
@@ -572,7 +572,7 @@ def _write_spanner_workspace(tmp_path, experiment="exp1", graph_ids_line=None):
     )
 
     if graph_ids_line is not None:
-        (exp_dir / "experiment_state.md").write_text(
+        (exp_dir / "hillclimb" / "experiment_state.md").write_text(
             textwrap.dedent(f"""\
                 # Hill-Climbing Experiment: {experiment}
 
@@ -613,7 +613,7 @@ def test_generate_evalbench_configs_spanner_graph_from_experiment_state_md(
     tools_yaml, exp_dir, dataset_json = _write_spanner_workspace(
         tmp_path, graph_ids_line='- **Graph Ids**: ["ResearchGraph", "LogisticsNet"]'
     )
-    out_dir = exp_dir / output_subdir
+    out_dir = exp_dir / "hillclimb" / output_subdir
 
     generate_evalbench_configs(
         output_dir=str(out_dir),
@@ -633,7 +633,7 @@ def test_generate_evalbench_configs_spanner_no_state_md_graphs(tmp_path):
     tools_yaml, exp_dir, dataset_json = _write_spanner_workspace(
         tmp_path, graph_ids_line="- **Graph Ids**: []"
     )
-    out_dir = exp_dir / "v1" / "eval"
+    out_dir = exp_dir / "hillclimb" / "v1" / "eval"
 
     generate_evalbench_configs(
         output_dir=str(out_dir),
@@ -657,7 +657,7 @@ def test_generate_evalbench_configs_spanner_ignores_state_md_next_to_tools_yaml(
     (tools_yaml.parent / "experiment_state.md").write_text(
         '## Active Database\n- **Graph Ids**: ["StaleGraph"]\n'
     )
-    out_dir = exp_dir / "v1" / "eval"
+    out_dir = exp_dir / "hillclimb" / "v1" / "eval"
 
     generate_evalbench_configs(
         output_dir=str(out_dir),

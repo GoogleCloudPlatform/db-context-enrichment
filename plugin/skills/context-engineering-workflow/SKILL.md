@@ -62,7 +62,7 @@ When a user starts (or asks how to start), give a **short, plain-language briefi
 > * **Goal** — build a Context Set (what the Gemini Data Analytics API uses to turn your users' questions into SQL) and improve it until it answers reliably: connect → test questions → first Context Set → improve in rounds → check on unseen questions.
 > * **Experiment** — everything for one attempt lives in `.context-engineering/experiments/<name>/`; you can run several against the same database and compare them.
 > * **Two small files keep track** — `.context-engineering/workspace_state.md` holds what you tell me once (database, project + location, design docs to read, upload approval) and is reused by every experiment; each experiment's `experiment_state.md` holds that run's record (Context Set name, every round's score, the final result). I never ask twice.
-> * **I'll need** — the database connection (if not set up yet), project + location, a name for the Context Set (default: the experiment name), and — because improving the context set takes several rounds that are each uploaded to be scored — whether to upload those rounds automatically or pause for your approval before each upload to review the ContextSet manually first. If `workspace_state.md` already exists I'll show you what it says and ask only whether to keep it.
+> * **I'll need** — the database connection (if not set up yet), project + location, a name for the Context Set (default: the experiment name), and — because improving the context set takes several rounds, each producing a draft version that is uploaded to be scored — whether to upload those draft iterations automatically or pause for your approval before each upload to review the ContextSet manually first. If `workspace_state.md` already exists I'll show you what it says and ask only whether to keep it.
 
 Then ask which situation applies and route:
 
@@ -108,7 +108,7 @@ Every `upload_context_set` in this workflow **must** carry `databases` — the d
 
 Keys are camelCase (`databaseType`, `projectId`, `clusterId`, `instanceId`, `databaseId`), as in the server's tool schema; `get_context_set` returns `databases` in the same shape, so a returned list can be passed back to `upload_context_set` unchanged.
 
-Build it **once, in `context-engineering-init`**, from the experiment's `tools.yaml` source block, and record it verbatim under `## Active Database` as `**Database**` so every later upload copies it from `experiment_state.md` instead of re-deriving it. Mapping from the `kind: source` block (omit fields that do not apply):
+**Derive it at upload time — never record it.** Take the **Source Name** under `## Active Database` in `experiment_state.md` (standalone: the chosen source), read that `kind: source` block from `.context-engineering/tools.yaml`, and map it with the table below (omit fields that do not apply). `tools.yaml` stays the single place connection details live; `experiment_state.md` only names the source.
 
 | `tools.yaml` source `type` | `databaseType` | `projectId` | `location` | `clusterId` | `instanceId` | `databaseId` |
 | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
@@ -119,9 +119,9 @@ Build it **once, in `context-engineering-init`**, from the experiment's `tools.y
 | `firestore` | `FIRESTORE` | `project` | — | — | — | `database` (e.g. `(default)`) |
 
 Rules:
-*   **Always pass it** — iteration uploads, the final candidate upload, bootstrap's optional upload, and evaluate's standalone upload all include `databases` built from the `**Database**` in `experiment_state.md` (standalone evaluate derives it from the chosen `tools.yaml` source with the same table), in the wire shape below. Omitting it on a *new* context set leaves the association empty; the server only preserves an existing list when the field is omitted on an *update*.
+*   **Always pass it** — iteration uploads, the final candidate upload, bootstrap's optional upload, and evaluate's standalone upload all include `databases` derived as above from the experiment's **Source Name** + `tools.yaml` (standalone bootstrap/evaluate: from the chosen source), in the wire shape below. Omitting it on a *new* context set leaves the association empty; the server only preserves an existing list when the field is omitted on an *update*.
 *   **Wire shape — check the live schema once per session (temporary, until every environment serves the structured schema).** Look at the `upload_context_set` tool schema the host shows you:
-    *   `databases.items` is an **object** (has `databaseType`) → send the `**Database**` object(s) as-is: `databases=[{…}]`.
+    *   `databases.items` is an **object** (has `databaseType`) → send the derived object(s): `databases=[{…}]`.
     *   `databases.items` is a **string** (the same servers take identity as one `contextSet` resource-name argument) → send the **same fields as a resource URI string**, one per database, and pass identity as `contextSet=<Final/Draft resource string>`:
 
         | `databaseType` | URI string |
@@ -132,8 +132,11 @@ Rules:
         | `FIRESTORE` | `firestore.googleapis.com/projects/{projectId}/databases/{databaseId}` |
         | `BIGTABLE` | `bigtable.googleapis.com/projects/{projectId}/instances/{instanceId}` |
 
-    *   Never send the object shape to a string-schema server (the whole upload is rejected with `invalid argument`), and never send URI strings to an object-schema server. `**Database**` in `experiment_state.md` is always recorded as the object; only the wire form changes. If `get_context_set` returns no `databases` field (string-schema servers), record `**Seed databases**: []`.
-*   **Replacing an existing context set** (existing-case Finalize): the server **replaces** the whole list when `databases` is provided. Use the `databases` returned by `get_context_set` when `v0` was downloaded (hillclimb records them as `**Seed databases**` under `## Active Database`), merged with the experiment's `**Database**` and de-duplicated, so no previously associated database is dropped.
+    *   Never send the object shape to a string-schema server (the whole upload is rejected with `invalid argument`), and never send URI strings to an object-schema server. The derivation is the same in both cases; only the wire form changes. If `get_context_set` returns no `databases` field at all (string-schema servers), record `**Seed databases**: (not returned)` — see the next rule for what that means at replacement time.
+*   **A context set that already existed keeps its association.** The server semantics are: `databases` **omitted** on an update → the existing list is preserved; `databases` **provided** → the whole list is **replaced**. There is no append call — appending means *read the current list, add to it, send the full list*. So, for an existing set:
+    *   During the run nothing is written to it at all (iterations go to `<id>_draft`, which is a resource this run creates and therefore **does** get the derived `databases` like any fresh upload).
+    *   At the final replacement (existing-case Finalize, after the user's yes), **never send only the experiment's database**. If `**Seed databases**` holds the list that `get_context_set` returned when `v0` was downloaded → send that list **plus** the derived database (appended, de-duplicated) so nothing already associated is dropped. If it is `(not returned)` (the server did not expose `databases`) → **omit `databases` entirely** so the server keeps whatever is there.
+    *   The existing set's association is never otherwise edited — no re-asserting, no pruning, no reordering.
 *   Never invent values: every field comes from `tools.yaml`; if a required field for the type is missing there, stop and route to `context-engineering-init`.
 
 ### Resource naming

@@ -509,33 +509,44 @@ def _documented_state_md_example() -> str:
 def test_parse_graph_ids_from_documented_state_md_example(tmp_path):
     """Regression guard for the documented experiment_state.md shape.
 
-    The layout reference is what agents copy when writing experiment_state.md, so the parser
-    must keep working against it: the ``**Database**`` JSON bullet (which contains
-    ``"projectId"`` / ``"databaseId"`` strings and braces) must not be mistaken for
-    graph ids, and ``**Graph Ids**: []`` must still mean "no graphs".
+    The layout reference is what agents copy when writing experiment_state.md, so
+    the parser must keep working against it as documented, and against the one
+    JSON bullet that can sit next to ``**Graph Ids**`` in ``## Active Database``
+    (``**Seed databases**``, a list of objects with ``"projectId"`` /
+    ``"databaseId"`` strings and braces) without mistaking it for graph ids.
     """
     from google.cloud.db_context_enrichment.evaluate.evaluate_generator import (
         _parse_graph_ids_from_state_md,
     )
 
     example = _documented_state_md_example()
-    assert "- **Database**: {" in example  # the shape we are guarding against
     assert "- **Graph Ids**: []" in example
 
     state_file = tmp_path / "experiment_state.md"
     state_file.write_text(example)
     assert _parse_graph_ids_from_state_md(str(state_file)) is None
 
-    # Same documented layout, Spanner flavour: only the Graph Ids bullet is read.
+    # Existing-case Spanner flavour: a Seed databases JSON bullet directly before
+    # Graph Ids; only the Graph Ids bullet is read.
+    seed = (
+        '- **Seed databases**: [{"databaseType": "SPANNER", "projectId": "my-project", '
+        '"instanceId": "my-instance", "databaseId": "sales"}]\n'
+    )
     spanner = example.replace(
-        '- **Graph Ids**: []', '- **Graph Ids**: ["FinGraph", "SupplyChain"]'
-    ).replace('"databaseType": "ALLOYDB"', '"databaseType": "SPANNER"')
+        "- **Graph Ids**: []",
+        seed + '- **Graph Ids**: ["FinGraph", "SupplyChain"]',
+    )
     state_spanner = tmp_path / "state_spanner.md"
     state_spanner.write_text(spanner)
     assert _parse_graph_ids_from_state_md(str(state_spanner)) == [
         "FinGraph",
         "SupplyChain",
     ]
+
+    # The same bullet with no graphs must still mean "no graphs".
+    state_seed_only = tmp_path / "state_seed_only.md"
+    state_seed_only.write_text(example.replace("- **Graph Ids**: []", seed + "- **Graph Ids**: []"))
+    assert _parse_graph_ids_from_state_md(str(state_seed_only)) is None
 
 def _write_spanner_workspace(tmp_path, experiment="exp1", graph_ids_line=None):
     """Lays out the real workspace shape:

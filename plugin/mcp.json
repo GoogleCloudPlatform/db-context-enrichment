@@ -17,6 +17,10 @@
         ".context-engineering/tools.yaml",
         "--stdio"
       ]
+    },
+    "contextmgmt": {
+      "type": "streamable-http",
+      "url": "https://dataplex.googleapis.com/mcp/managed-context-sets"
     }
   }
 }

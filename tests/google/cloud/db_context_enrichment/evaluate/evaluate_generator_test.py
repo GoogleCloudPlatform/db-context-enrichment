@@ -406,7 +406,7 @@ def test_parse_graph_ids_from_state_md(tmp_path):
         _parse_graph_ids_from_state_md,
     )
 
-    state_file = tmp_path / "state.md"
+    state_file = tmp_path / "experiment_state.md"
     state_file.write_text(
         '# State Tracking\n\n## Active Database\n- **Graph Ids**: ["ResearchGraph", "LogisticsNet"]\n'
     )
@@ -486,11 +486,62 @@ def test_parse_graph_ids_from_state_md(tmp_path):
     assert _parse_graph_ids_from_state_md(str(tmp_path / "nonexistent.md")) is None
 
 
+_LAYOUT_SPEC = os.path.join(
+    os.path.dirname(__file__),
+    *([os.pardir] * 5),
+    "plugin",
+    "skills",
+    "context-engineering-hillclimb",
+    "references",
+    "layout.md",
+)
+
+
+def _documented_state_md_example() -> str:
+    """Returns the example ``experiment_state.md`` block from the layout reference verbatim."""
+    with open(_LAYOUT_SPEC, encoding="utf-8") as f:
+        doc = f.read()
+    start = doc.index("# Hill-Climbing Experiment:")
+    end = doc.index("```", start)
+    return doc[start:end]
+
+
+def test_parse_graph_ids_from_documented_state_md_example(tmp_path):
+    """Regression guard for the documented experiment_state.md shape.
+
+    The layout reference is what agents copy when writing experiment_state.md, so the parser
+    must keep working against it: the ``**Database**`` JSON bullet (which contains
+    ``"projectId"`` / ``"databaseId"`` strings and braces) must not be mistaken for
+    graph ids, and ``**Graph Ids**: []`` must still mean "no graphs".
+    """
+    from google.cloud.db_context_enrichment.evaluate.evaluate_generator import (
+        _parse_graph_ids_from_state_md,
+    )
+
+    example = _documented_state_md_example()
+    assert "- **Database**: {" in example  # the shape we are guarding against
+    assert "- **Graph Ids**: []" in example
+
+    state_file = tmp_path / "experiment_state.md"
+    state_file.write_text(example)
+    assert _parse_graph_ids_from_state_md(str(state_file)) is None
+
+    # Same documented layout, Spanner flavour: only the Graph Ids bullet is read.
+    spanner = example.replace(
+        '- **Graph Ids**: []', '- **Graph Ids**: ["FinGraph", "SupplyChain"]'
+    ).replace('"databaseType": "ALLOYDB"', '"databaseType": "SPANNER"')
+    state_spanner = tmp_path / "state_spanner.md"
+    state_spanner.write_text(spanner)
+    assert _parse_graph_ids_from_state_md(str(state_spanner)) == [
+        "FinGraph",
+        "SupplyChain",
+    ]
+
 def _write_spanner_workspace(tmp_path, experiment="exp1", graph_ids_line=None):
     """Lays out the real workspace shape:
 
         .context-engineering/tools.yaml                      (shared)
-        .context-engineering/experiments/<exp>/state.md      (per experiment)
+        .context-engineering/experiments/<exp>/experiment_state.md      (per experiment)
         .context-engineering/experiments/<exp>/dataset.json
     """
     ce_dir = tmp_path / ".context-engineering"
@@ -510,7 +561,7 @@ def _write_spanner_workspace(tmp_path, experiment="exp1", graph_ids_line=None):
     )
 
     if graph_ids_line is not None:
-        (exp_dir / "state.md").write_text(
+        (exp_dir / "experiment_state.md").write_text(
             textwrap.dedent(f"""\
                 # Hill-Climbing Experiment: {experiment}
 
@@ -587,12 +638,12 @@ def test_generate_evalbench_configs_spanner_no_state_md_graphs(tmp_path):
 def test_generate_evalbench_configs_spanner_ignores_state_md_next_to_tools_yaml(
     tmp_path,
 ):
-    """A stray state.md beside the shared tools.yaml must not leak graph ids into
+    """A stray experiment_state.md beside the shared tools.yaml must not leak graph ids into
     an experiment that has none of its own."""
     tools_yaml, exp_dir, dataset_json = _write_spanner_workspace(
         tmp_path, graph_ids_line=None
     )
-    (tools_yaml.parent / "state.md").write_text(
+    (tools_yaml.parent / "experiment_state.md").write_text(
         '## Active Database\n- **Graph Ids**: ["StaleGraph"]\n'
     )
     out_dir = exp_dir / "v1" / "eval"
@@ -616,10 +667,10 @@ def test_find_experiment_state_md_walks_up_bounded(tmp_path):
 
     root = tmp_path / "exp"
     root.mkdir()
-    state_md = root / "state.md"
+    state_md = root / "experiment_state.md"
     state_md.write_text("# state\n")
 
-    # output_dir itself, and each allowed parent level, resolve to the root state.md.
+    # output_dir itself, and each allowed parent level, resolve to the root experiment_state.md.
     assert _find_experiment_state_md(str(root)) == str(state_md)
     nested = root
     for _ in range(_STATE_MD_MAX_PARENT_LEVELS):
@@ -629,8 +680,24 @@ def test_find_experiment_state_md_walks_up_bounded(tmp_path):
     # One level too deep is out of range.
     assert _find_experiment_state_md(str(nested / "too-deep")) is None
 
-    # No state.md anywhere above → None (and no crash walking to filesystem root).
+    # No experiment_state.md anywhere above → None (and no crash walking to filesystem root).
     assert _find_experiment_state_md(str(tmp_path / "elsewhere")) is None
+
+
+def test_find_experiment_state_md_ignores_other_filenames(tmp_path):
+    """Only `experiment_state.md` is the experiment record; a `state.md` is not."""
+    from google.cloud.db_context_enrichment.evaluate.evaluate_generator import (
+        _find_experiment_state_md,
+    )
+
+    root = tmp_path / "exp"
+    (root / "v1" / "eval").mkdir(parents=True)
+    (root / "state.md").write_text("# not the experiment record\n")
+    assert _find_experiment_state_md(str(root / "v1" / "eval")) is None
+
+    current = root / "experiment_state.md"
+    current.write_text("# current\n")
+    assert _find_experiment_state_md(str(root / "v1" / "eval")) == str(current)
 
 
 def test_generate_evalbench_configs_spanner_postgres():

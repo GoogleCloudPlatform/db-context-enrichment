@@ -11,14 +11,24 @@ Every manifest declares three MCP servers:
 | Key | What | Transport |
 | :--- | :--- | :--- |
 | `db-context-engineering` (`mcp_db_context_engineering` in `plugin/gemini-extension.json`) | This repo's Python server (`main.py`): dataset generation/splitting, Evalbench config generation, `mutate_context_set`, `validate_context_set`, `read_evaluation_result`. | stdio (`uvx` / `uv run`) |
-| `toolbox` | MCP Toolbox for Databases. Reads the single shared `.context-engineering/tools.yaml` (one file for all experiments; it may hold several sources — each experiment records the source/tools it uses in its `state.md`). The client starts Toolbox with a fixed `--config`, so **any edit to `tools.yaml` requires restarting the `toolbox` MCP server** (or the client) before the new sources/tools are visible. | stdio (`uvx`) |
+| `toolbox` | MCP Toolbox for Databases. Reads the single shared `.context-engineering/tools.yaml` (one file for all experiments; it may hold several sources — each experiment records the source/tools it uses in its `experiment_state.md`). Next to it, `.context-engineering/workspace_state.md` holds the workspace inputs the user entered once (Context Set project/location, default DB source, enrichment sources, upload preference); experiments under `.context-engineering/experiments/<name>/experiment_state.md` record only their own run — see `plugin/skills/context-engineering-hillclimb/references/layout.md`. The client starts Toolbox with a fixed `--config`, so **any edit to `tools.yaml` requires restarting the `toolbox` MCP server** (or the client) before the new sources/tools are visible. | stdio (`uvx`) |
 | `contextmgmt` | The **remote OneMCP Context Set server** (Dataplex): `list_context_set_locations`, `upload_context_set`, `get_context_set`, `delete_context_set`, `get_operation`. | Streamable HTTP, Google-credentials auth |
 
 ### Context Set server (`contextmgmt`)
 
 The Context Set tools are **not** implemented in this repo; the agent
-calls the remote server directly. The manifests point at **prod**
-(`https://dataplex.googleapis.com/mcp/managed-context-sets`).
+calls the remote server directly. All manifests point at **prod**
+(`https://dataplex.googleapis.com/mcp/managed-context-sets`). The skills are
+written against the server's advertised tool schema: camelCase arguments
+(`projectId` / `location` / `contextSetId` / `contextPayload` /
+`operationId`) and the structured `databases` field
+(`{databaseType, projectId, location, clusterId, instanceId, databaseId}`,
+cl/995847938). If a change lands on staging first, switch every manifest
+(`plugin/mcp_config.json`, `plugin/gemini-extension.json`,
+`plugin/.claude-plugin/plugin.json`, `plugin/mcp.json`, root
+`gemini-extension.json`, `dev-plugin/*`) to
+`https://staging-dataplex.sandbox.googleapis.com/mcp/managed-context-sets`
+for the test and flip them back afterwards.
 
 Auth is `authProviderType: "google_credentials"`: the client mints a
 bearer token from Application Default Credentials (scope
@@ -44,8 +54,11 @@ Client support:
   expiry. Only dependency: `gcloud` on `PATH`. **Untested by the
   core team so far** — verified by contributors with Claude Code access.
 - **Agent Plugins clients** (`plugin/mcp.json`, VS Code / Cursor / …) —
-  the remote server is **not** declared yet: that spec has no dynamic-header
-  hook, so those clients would need a static token. Follow-up.
+  declared as `type: streamable-http` + `url`. That spec has no auth-provider
+  or dynamic-header hook, so authentication is the **host client's**
+  responsibility (a client that can attach Google credentials to HTTP MCP
+  servers works out of the box; others need a static `headers` entry with a
+  bearer token and `X-Goog-User-Project`, which we do not ship).
 
 ### Antigravity tool-name length limit
 

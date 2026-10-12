@@ -80,7 +80,7 @@ def _extract_toolbox_params(
 ) -> dict[str, Any]:
     """Deterministically extracts connection parameters for a specific database source from tools.yaml.
 
-    For Spanner sources, `state_md_path` (the experiment's `state.md`) is read for
+    For Spanner sources, `state_md_path` (the experiment's `experiment_state.md`) is read for
     the `**Graph Ids**` bullet. If it is None or missing, no graph_ids are set.
     """
     try:
@@ -107,7 +107,7 @@ def _extract_toolbox_params(
                     f"Could not find a 'kind: source' named '{toolbox_source_name}' in {toolbox_config_path}"
                 )
 
-            # For Spanner sources, the experiment's state.md is the authoritative single
+            # For Spanner sources, the experiment's experiment_state.md is the authoritative single
             # source of truth for graph_ids (QueryData API requires explicit graph_ids in
             # model_config.yaml, whereas tools.yaml only configures MCP Toolbox runtime
             # tools and parameters).
@@ -128,25 +128,29 @@ def _extract_toolbox_params(
 
 
 # How many parent directories above `output_dir` to search for the experiment's
-# state.md. Eval output always lives inside the experiment workspace
+# experiment_state.md. Eval output always lives inside the experiment workspace
 # (`.context-engineering/experiments/<name>/`): hill-climb iterations write to
 # `<root>/vN/eval/` (2 levels down) and the holdout pass to `<root>/holdout_eval/`
 # (1 level down). One extra level is allowed as slack.
 _STATE_MD_MAX_PARENT_LEVELS = 3
 
+_EXPERIMENT_STATE_FILENAME = "experiment_state.md"
+
 
 def _find_experiment_state_md(output_dir: str) -> str | None:
-    """Locates the experiment `state.md` by walking up from `output_dir`.
+    """Locates the experiment `experiment_state.md` by walking up from `output_dir`.
 
-    `tools.yaml` is shared at `.context-engineering/` while `state.md` is
-    per-experiment at `.context-engineering/experiments/<name>/state.md`, so the
-    two are not co-located; `output_dir` is the only input that is guaranteed to
-    sit inside the experiment workspace. Returns the first `state.md` found in
-    `output_dir` or up to `_STATE_MD_MAX_PARENT_LEVELS` of its parents, else None.
+    `tools.yaml` and `workspace_state.md` are shared at `.context-engineering/`
+    while `experiment_state.md` is per-experiment at
+    `.context-engineering/experiments/<name>/experiment_state.md`, so the two are
+    not co-located; `output_dir` is the only input that is guaranteed to sit
+    inside the experiment workspace. Returns the first `experiment_state.md`
+    found in `output_dir` or up to `_STATE_MD_MAX_PARENT_LEVELS` of its parents,
+    else None.
     """
     current = os.path.abspath(output_dir)
     for _ in range(_STATE_MD_MAX_PARENT_LEVELS + 1):
-        candidate = os.path.join(current, "state.md")
+        candidate = os.path.join(current, _EXPERIMENT_STATE_FILENAME)
         if os.path.isfile(candidate):
             return candidate
         parent = os.path.dirname(current)
@@ -157,9 +161,9 @@ def _find_experiment_state_md(output_dir: str) -> str | None:
 
 
 def _parse_graph_ids_from_state_md(state_md_path: str) -> list[str] | None:
-    """Parses graph_ids from state.md.
+    """Parses graph_ids from experiment_state.md.
 
-    state.md is the authoritative source of truth for the database and graph scope
+    experiment_state.md is the authoritative source of truth for the database and graph scope
     because QueryData API requires explicit graph_ids in model_config.yaml to evaluate
     property graphs, whereas tools.yaml only configures MCP Toolbox runtime tools.
     """

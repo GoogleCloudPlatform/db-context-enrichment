@@ -34,11 +34,11 @@ This protocol serves as a guide to build a comprehensive, grounded understanding
 *   **Action:** If we identify existing datasets, confirm usage of these datasets by recording the dataset filename and the number of examples provided in `evalset_environment_inputs.md`.
 
 **7. Artifact Scope Cross-Validation**
-*   **Objective:** Identify any discrepancies between the database scope extracted from application artifacts (tables, schemas, property graphs, engines) and the active `state.md` / `tools.yaml` configuration, and expand fields there such as graph ids.
-*   **Action:** Compare the target tables, property graphs and database engines required by the ingested artifacts against `state.md` and database schemas.
+*   **Objective:** Identify any discrepancies between the database scope extracted from application artifacts (tables, schemas, property graphs, engines) and the active `experiment_state.md` / `tools.yaml` configuration, and expand fields there such as graph ids.
+*   **Action:** Compare the target tables, property graphs and database engines required by the ingested artifacts against `experiment_state.md` and database schemas.
     - If the ingested artifacts or schema reveal additional targets beyond what the user initially specified (or if the user provided an initial subset):
       - Identify the complete set relevant from schemas and ingested artifacts.
       - Propose the expanded list of targets in `evalset_gen_plan.md` under **Key Decisions Needing Human Review**.
-      - Update the experiment `state.md` (`.context-engineering/experiments/<experiment_name>/state.md`) under `## Active Database -> - **Graph Ids**: [...]` with the expanded list.
+      - Update the experiment `experiment_state.md` (`.context-engineering/experiments/<experiment_name>/experiment_state.md`) under `## Active Database -> - **Graph Ids**: [...]` with the expanded list.
     - Record scope findings and discrepancies in `evalset_environment_inputs.md`.
-*   **Required State:** Recorded scope findings in `evalset_environment_inputs.md` and updated experiment `state.md` ready to be integrated into `evalset_gen_plan.md`.
+*   **Required State:** Recorded scope findings in `evalset_environment_inputs.md` and updated experiment `experiment_state.md` ready to be integrated into `evalset_gen_plan.md`.

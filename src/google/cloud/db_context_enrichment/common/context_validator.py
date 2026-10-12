@@ -11,7 +11,7 @@ _ATTR_TO_TYPE = {
     "value_searches": "value_search",
 }
 
-# ContextSet accepts camelCase aliases (Context Store returns them on download)
+# ContextSet accepts camelCase aliases (the Context Set server returns them on download)
 # and the deprecated "fragments" name. Map them back to the canonical attribute
 # so every check below only has to handle one spelling.
 _ALIAS_TO_ATTR = {

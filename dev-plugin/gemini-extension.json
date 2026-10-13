@@ -21,8 +21,11 @@
       ]
     },
     "contextmgmt": {
-      "url": "https://dataplex.googleapis.com/mcp/managed-context-sets",
-      "authProviderType": "google_credentials"
+      "httpUrl": "https://dataplex.googleapis.com/mcp/managed-context-sets",
+      "authProviderType": "google_credentials",
+      "oauth": {
+        "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
+      }
     }
   }
 }

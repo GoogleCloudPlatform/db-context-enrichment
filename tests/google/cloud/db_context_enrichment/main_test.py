@@ -5,9 +5,12 @@ from pathlib import Path
 import pytest
 
 from google.cloud.db_context_enrichment.main import (
+    evaluate_generalizability,
+    generate_dataset,
     generate_evalbench_configs,
     mutate_context_set,
     read_evaluation_result,
+    split_dataset,
     validate_context_set,
 )
 
@@ -175,3 +178,44 @@ async def test_read_evaluation_result_tool(tmp_path: Path):
     report = await read_evaluation_result(str(run_dir))
     assert "Evaluation Summary" in report
     assert "No failure cases found (all passed)." in report
+
+
+@pytest.mark.asyncio
+async def test_generate_and_split_dataset_tools(tmp_path: Path):
+    entries = []
+    for t in range(1, 31):
+        for i in range(1, 6):
+            entries.append(
+                {
+                    "id": f"eval_{t}_{i}",
+                    "database": "test_db",
+                    "nlq": f"Question {t} var {i}",
+                    "golden_sql": f"SELECT * FROM table_{t} WHERE id = {i}",
+                }
+            )
+    golden_path = tmp_path / "dataset" / "golden.json"
+    gen_res = await generate_dataset(json.dumps(entries), str(golden_path))
+    assert "Successfully saved dataset" in gen_res
+    assert golden_path.exists()
+
+    split_res = await split_dataset(
+        golden_dataset_path=str(golden_path),
+        output_dir=str(tmp_path / "dataset"),
+    )
+    assert "Successfully partitioned 150 items" in split_res
+    assert (tmp_path / "dataset" / "splits" / "hillclimb.json").exists()
+    assert (tmp_path / "dataset" / "splits" / "holdout.json").exists()
+
+
+def test_evaluate_generalizability_tool():
+    card = evaluate_generalizability(
+        dev_passed=95,
+        dev_total=105,
+        test_passed=39,
+        test_total=45,
+        context_set_id="projects/p/locations/l/contextSets/cs1",
+        context_file="v1/context_set_v1.json",
+    )
+    assert "Evaluation Complete: Context Set Generalizes Reliably" in card
+    assert "projects/p/locations/l/contextSets/cs1" in card
+

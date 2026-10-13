@@ -53,7 +53,7 @@ Workspace-level, written only by `context-engineering-init` (first experiment, o
 ```markdown
 # Context Engineering Inputs
 
-## Context Set server
+## Context Set coordinates
 - **Project**: my-project
 - **Location**: us-central1
 

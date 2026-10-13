@@ -1,12 +1,15 @@
 import json
 import os
+import sys
 import textwrap
+import types
 from unittest.mock import mock_open, patch
 
 import pytest
 import yaml
 
 from google.cloud.db_context_enrichment.evaluate.evaluate_generator import (
+    _get_db_generator,
     generate_evalbench_configs,
 )
 
@@ -711,6 +714,118 @@ def test_find_experiment_state_md_ignores_other_filenames(tmp_path):
     assert _find_experiment_state_md(str(root / "v1" / "eval")) == str(current)
 
 
+def test_generate_evalbench_configs_bigquery_tables_from_state_md(tmp_path):
+    """BigQuery `Table Ids` are read from the experiment's `hillclimb/experiment_state.md`,
+    located by walking up from `output_dir` — never from a file beside `tools.yaml`."""
+    ce_dir = tmp_path / ".context-engineering"
+    exp_dir = ce_dir / "experiments" / "bq-exp"
+    (exp_dir / "hillclimb").mkdir(parents=True)
+
+    tools_yaml = ce_dir / "tools.yaml"
+    tools_yaml.write_text(
+        textwrap.dedent("""\
+            kind: source
+            name: bq-source
+            type: bigquery
+            project: test-project
+            location: US
+            allowedDatasets:
+              - test_dataset
+        """)
+    )
+    # A stray legacy file beside tools.yaml must be ignored.
+    (ce_dir / "state.md").write_text(
+        "## Active Database\n- **Table Ids**: [wrong_table]\n"
+    )
+
+    (exp_dir / "hillclimb" / "experiment_state.md").write_text(
+        textwrap.dedent("""\
+            # Hill-Climbing Experiment: bq-exp
+
+            ## Active Database
+            - **Source Name**: bq-source
+            - **Type**: bigquery
+            - **Table Ids**: [orders, customers]
+        """)
+    )
+
+    dataset_json = exp_dir / "dataset.json"
+    dataset_json.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "1",
+                    "database": "test_dataset",
+                    "nlq": "q",
+                    "golden_sql": "SELECT 1",
+                }
+            ]
+        )
+    )
+
+    out_dir = exp_dir / "hillclimb" / "v0" / "eval"
+
+    generate_evalbench_configs(
+        output_dir=str(out_dir),
+        dataset_path=str(dataset_json),
+        context_set_id="projects/test-project/locations/us-central1/contextSets/context-123",
+        toolbox_config_path=str(tools_yaml),
+        toolbox_source_name="bq-source",
+    )
+
+    db_config = yaml.safe_load(
+        (out_dir / "eval_configs" / "db_config.yaml").read_text()
+    )
+    assert db_config["database_name"] == "test_dataset"
+    assert db_config["location"] == "US"
+
+    model_config = yaml.safe_load(
+        (out_dir / "eval_configs" / "model_config.yaml").read_text()
+    )
+    assert model_config["location"] == "global"
+    bq_ref = model_config["context"]["datasource_references"]["bq"]
+    assert [t["table_id"] for t in bq_ref["table_references"]] == [
+        "orders",
+        "customers",
+    ]
+    assert {t["dataset_id"] for t in bq_ref["table_references"]} == {"test_dataset"}
+
+
+def test_generate_evalbench_configs_bigquery_no_state_md_tables(tmp_path):
+    tools_yaml = tmp_path / "tools.yaml"
+    tools_yaml.write_text(
+        textwrap.dedent("""\
+            kind: source
+            name: bq-source
+            type: bigquery
+            project: test-project
+            allowedDatasets: [test_dataset]
+        """)
+    )
+    dataset_json = tmp_path / "dataset.json"
+    dataset_json.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "1",
+                    "database": "test_dataset",
+                    "nlq": "q",
+                    "golden_sql": "SELECT 1",
+                }
+            ]
+        )
+    )
+
+    with pytest.raises(ValueError, match="Table Ids"):
+        generate_evalbench_configs(
+            output_dir=str(tmp_path / "out"),
+            dataset_path=str(dataset_json),
+            context_set_id="ctx",
+            toolbox_config_path=str(tools_yaml),
+            toolbox_source_name="bq-source",
+        )
+
+
 def test_generate_evalbench_configs_spanner_postgres():
     tools_yaml_content = textwrap.dedent("""\
         kind: source
@@ -793,3 +908,302 @@ def test_generate_evalbench_configs_bigtable():
     calls = [call.args[0] for call in m().write.call_args_list]
     assert any("bigtable" in call for call in calls)
     assert any("bigtable_reference" in call for call in calls)
+
+
+def test_generate_evalbench_configs_custom_type():
+    tools_yaml_content = textwrap.dedent("""\
+        kind: source
+        name: custom-engine-source
+        type: custom
+        connector_class: my_package.connectors.CustomDB
+        generator_class: my_package.generators.CustomGenerator
+        dialect: custom_sql
+        server: /custom/endpoint
+        database: test_db
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=tools_yaml_content)) as m:
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
+            return_value='[{"mock": "data"}]',
+        ):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+            ):
+                generate_evalbench_configs(
+                    output_dir="/test/out",
+                    dataset_path="/fake/dataset.json",
+                    context_set_id="custom-ctx-id",
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="custom-engine-source",
+                )
+
+    written_data = {}
+    for call in m().write.call_args_list:
+        content = call[0][0]
+        if "generator: custom" in content:
+            written_data["model_config"] = content
+        elif "db_type: custom" in content:
+            written_data["db_config"] = content
+        elif "dialect: custom_sql" in content and "dataset_config" in content:
+            written_data["run_config"] = content
+
+    assert "db_config" in written_data
+    db_config = yaml.safe_load(written_data["db_config"])
+    assert db_config["db_type"] == "custom"
+    assert db_config["connector_class"] == "my_package.connectors.CustomDB"
+    assert db_config["dialect"] == "custom_sql"
+    assert db_config["server"] == "/custom/endpoint"
+    assert db_config["database"] == "test_db"
+
+    assert "model_config" in written_data
+    model_config = yaml.safe_load(written_data["model_config"])
+    assert model_config["generator"] == "custom"
+    assert model_config["generator_class"] == "my_package.generators.CustomGenerator"
+    assert model_config["context_set_id"] == "custom-ctx-id"
+    assert model_config["server"] == "/custom/endpoint"
+
+    assert "run_config" in written_data
+    run_config = yaml.safe_load(written_data["run_config"])
+    assert run_config["dialect"] == "custom_sql"
+
+
+def test_generate_evalbench_configs_custom_missing_classes():
+    tools_yaml_content = textwrap.dedent("""\
+        kind: source
+        name: invalid-custom-source
+        type: custom
+        dialect: custom_sql
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=tools_yaml_content)):
+        with pytest.raises(
+            ValueError,
+            match="Custom source configuration must specify at least 'connector_class' or 'generator_class'",
+        ):
+            generate_evalbench_configs(
+                output_dir="/test/out",
+                dataset_path="/fake/dataset.json",
+                context_set_id="custom-ctx-id",
+                toolbox_config_path="/fake/tools.yaml",
+                toolbox_source_name="invalid-custom-source",
+            )
+
+
+def test_generate_evalbench_configs_inferred_custom_from_connector_class():
+    tools_yaml_content = textwrap.dedent("""\
+        kind: source
+        name: inferred-custom-source
+        type: pluggable_engine
+        connector_class: pkg.DBConnector
+        generator_class: pkg.ModelGen
+        dialect: special_sql
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=tools_yaml_content)) as m:
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
+            return_value='[{"mock": "data"}]',
+        ):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+            ):
+                generate_evalbench_configs(
+                    output_dir="/test/out",
+                    dataset_path="/fake/dataset.json",
+                    context_set_id="custom-ctx-id",
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="inferred-custom-source",
+                )
+
+    written_data = {}
+    for call in m().write.call_args_list:
+        content = call[0][0]
+        if "generator: custom" in content:
+            written_data["model_config"] = content
+        elif "db_type: custom" in content:
+            written_data["db_config"] = content
+
+    assert "db_config" in written_data
+    db_config = yaml.safe_load(written_data["db_config"])
+    assert db_config["connector_class"] == "pkg.DBConnector"
+    assert db_config["dialect"] == "special_sql"
+
+
+def test_get_db_generator_plugin_registration(monkeypatch):
+    class MockCustomGenerator:
+        SOURCE_TYPE = "snowflake_test"
+
+        def __init__(self, params):
+            self.params = params
+
+    mock_mod = types.ModuleType("mock_custom_plugin")
+    mock_mod.CUSTOM_GENERATORS = {"snowflake_test": MockCustomGenerator}
+
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "mock_custom_plugin")
+    with patch("importlib.import_module", return_value=mock_mod):
+        gen = _get_db_generator({"type": "snowflake_test"})
+        assert isinstance(gen, MockCustomGenerator)
+
+
+def test_get_db_generator_plugin_import_failure(monkeypatch):
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "nonexistent.module.path")
+    with pytest.raises(
+        RuntimeError, match="Failed to load custom generators from plugin module"
+    ):
+        _get_db_generator({"type": "custom"})
+
+
+def test_get_db_generator_plugin_missing_custom_generators_attr(monkeypatch):
+    mock_mod = types.ModuleType("empty_plugin")
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "empty_plugin")
+    with patch("importlib.import_module", return_value=mock_mod):
+        with pytest.raises(RuntimeError, match="must define 'CUSTOM_GENERATORS' dict"):
+            _get_db_generator({"type": "custom"})
+
+
+def test_get_db_generator_plugin_custom_generators_not_a_dict(monkeypatch):
+    mock_mod = types.ModuleType("invalid_plugin")
+    mock_mod.CUSTOM_GENERATORS = ["not", "a", "dict"]
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "invalid_plugin")
+    with patch("importlib.import_module", return_value=mock_mod):
+        with pytest.raises(RuntimeError, match="must be a dictionary, got list"):
+            _get_db_generator({"type": "custom"})
+
+
+def test_get_db_generator_known_type_override_warning(caplog):
+    import logging
+
+    params = {
+        "type": "cloud-sql-postgres",
+        "connector_class": "my_pkg.connectors.CustomPostgres",
+        "dialect": "postgres",
+    }
+    with caplog.at_level(logging.WARNING):
+        gen = _get_db_generator(params)
+        from google.cloud.db_context_enrichment.evaluate.db_generators.custom import (
+            CustomDBConfigGenerator,
+        )
+
+        assert isinstance(gen, CustomDBConfigGenerator)
+        assert (
+            "Source type 'cloud-sql-postgres' is being overridden by custom connector_class 'my_pkg.connectors.CustomPostgres'"
+            in caplog.text
+        )
+
+
+def test_generate_evalbench_configs_custom_connector_only():
+    tools_yaml_content = textwrap.dedent("""\
+        kind: source
+        name: custom-connector-only
+        type: custom
+        connector_class: my_package.connectors.CustomDB
+        dialect: custom_sql
+        server: /custom/endpoint
+    """).strip()
+
+    with patch("builtins.open", mock_open(read_data=tools_yaml_content)) as m:
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
+            return_value='[{"mock": "data"}]',
+        ):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+            ):
+                generate_evalbench_configs(
+                    output_dir="/test/out",
+                    dataset_path="/fake/dataset.json",
+                    context_set_id="custom-ctx-id",
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="custom-connector-only",
+                )
+
+    written_data = {}
+    for call in m().write.call_args_list:
+        content = call[0][0]
+        if "generator: query_data_api" in content:
+            written_data["model_config"] = content
+        elif "db_type: custom" in content:
+            written_data["db_config"] = content
+
+    assert "db_config" in written_data
+    db_config = yaml.safe_load(written_data["db_config"])
+    assert db_config["db_type"] == "custom"
+    assert db_config["connector_class"] == "my_package.connectors.CustomDB"
+    assert db_config["dialect"] == "custom_sql"
+
+    # Falls back cleanly to base model config (query_data_api) with empty datasource_references
+    assert "model_config" in written_data
+    model_config = yaml.safe_load(written_data["model_config"])
+    assert model_config["generator"] == "query_data_api"
+    assert model_config["context"]["datasource_references"] == {}
+
+
+def test_get_db_generator_plugin_cwd_fallback(tmp_path, monkeypatch):
+    real_tmp = os.path.abspath(os.path.realpath(str(tmp_path)))
+    plugin_file = tmp_path / "uvx_cwd_plugin.py"
+    plugin_file.write_text(
+        textwrap.dedent("""\
+        class MockCwdGenerator:
+            SOURCE_TYPE = "cwd_engine"
+            def __init__(self, params):
+                self.params = params
+
+        CUSTOM_GENERATORS = {"cwd_engine": MockCwdGenerator}
+    """)
+    )
+
+    monkeypatch.chdir(real_tmp)
+    clean_path = [
+        p
+        for p in sys.path
+        if p not in ("", ".") and os.path.abspath(os.path.realpath(p)) != real_tmp
+    ]
+    monkeypatch.setattr(sys, "path", clean_path)
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "uvx_cwd_plugin")
+
+    try:
+        gen = _get_db_generator({"type": "cwd_engine"})
+        assert gen.__class__.__name__ == "MockCwdGenerator"
+        assert sys.path[-1] == real_tmp
+    finally:
+        sys.modules.pop("uvx_cwd_plugin", None)
+
+
+def test_get_db_generator_plugin_cwd_already_in_sys_path_does_not_duplicate(
+    tmp_path, monkeypatch
+):
+    real_tmp = os.path.abspath(os.path.realpath(str(tmp_path)))
+    monkeypatch.chdir(real_tmp)
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "missing_plugin_xyz")
+
+    for existing_entry in (real_tmp, "", "."):
+        path_with_cwd = [existing_entry]
+        monkeypatch.setattr(sys, "path", path_with_cwd)
+        with pytest.raises(RuntimeError, match="missing_plugin_xyz"):
+            _get_db_generator({"type": "custom"})
+        assert sys.path == [existing_entry]
+
+
+def test_get_db_generator_plugin_transitive_import_error_does_not_mutate_sys_path(
+    tmp_path, monkeypatch
+):
+    real_tmp = os.path.abspath(os.path.realpath(str(tmp_path)))
+    pkg_dir = os.path.join(real_tmp, "pkg_on_path")
+    other_cwd = os.path.join(real_tmp, "other_cwd")
+    os.makedirs(pkg_dir)
+    os.makedirs(other_cwd)
+    with open(os.path.join(pkg_dir, "broken_dep_plugin.py"), "w") as f:
+        f.write("import missing_third_party_pkg_xyz\n")
+
+    monkeypatch.chdir(other_cwd)
+    clean_path = [pkg_dir]
+    monkeypatch.setattr(sys, "path", clean_path)
+    monkeypatch.setenv("AUTOCTX_CUSTOM_GENERATORS", "broken_dep_plugin")
+
+    try:
+        with pytest.raises(RuntimeError, match="missing_third_party_pkg_xyz"):
+            _get_db_generator({"type": "custom"})
+        assert sys.path == [pkg_dir]
+    finally:
+        sys.modules.pop("broken_dep_plugin", None)

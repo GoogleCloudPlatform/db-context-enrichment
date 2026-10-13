@@ -82,7 +82,7 @@ Ask only for what is missing:
      export EVAL_GCP_PROJECT_ID="<project_id>"
      export EVAL_GCP_PROJECT_REGION="global"
      ```
-   - Shell out from the caller's cwd: `uvx google-evalbench@1.17.0 --experiment_config=<output_dir>/eval_configs/run_config.yaml`
+   - Shell out from the caller's cwd: `uvx google-evalbench@1.18.0 --experiment_config=<output_dir>/eval_configs/run_config.yaml`
    - Reports materialize under `<output_dir>/eval_reports/<job_id>/` (the `job_id` appears in the tool's stdout). The run can take many minutes for larger datasets — let it complete; do not kill or restart on apparent stalls. Treat a non-zero exit code as a hard failure and surface stderr verbatim.
 
 6. **Read and return results.** Call `read_evaluation_result` on `<output_dir>/eval_reports/<job_id>/`. Return to the caller:
@@ -120,7 +120,7 @@ Ask only for what is missing:
 - `read_evaluation_result` — parses `scores.csv` / `summary.csv` into a markdown summary.
 
 **Shell:**
-- `uvx google-evalbench@1.17.0 --experiment_config=<path>` — runs the eval job against the published release.
+- `uvx google-evalbench@1.18.0 --experiment_config=<path>` — runs the eval job against the published release.
 
 **References:**
-- `references/<db_type>.md` (`alloydb-postgres.md`, `cloud-sql-mysql.md`, `cloud-sql-postgres.md`, `spanner.md`) — per-engine schema examples for fixing `tools.yaml` source blocks if `generate_evalbench_configs` reports a validation failure.
+- `references/<db_type>.md` — per-engine schema examples for fixing `tools.yaml` source blocks if `generate_evalbench_configs` reports a validation failure, and the extra `experiment_state.md` inputs some engines need: [AlloyDB Postgres](references/alloydb-postgres.md), [BigQuery](references/bigquery.md) (`Table Ids`), [Cloud Bigtable](references/cloud-bigtable.md), [Cloud SQL MySQL](references/cloud-sql-mysql.md), [Cloud SQL Postgres](references/cloud-sql-postgres.md), [Spanner GoogleSQL](references/spanner-googlesql.md) (`Graph Ids`), [Spanner PostgreSQL](references/spanner-postgresql.md), [Custom / Pluggable Engine](references/custom-engine.md).

@@ -21,7 +21,7 @@ From a target database and optional user-supplied enrichment sources (design doc
 ## Guidance
 
 1. **Confirm scope with the user:**
-   - Which Toolbox `<source>` to introspect (default: `DB source` in `.context-engineering/workspace_state.md` when it exists; else auto-select if exactly one supported source exists in `tools.yaml`; otherwise prompt).
+   - Which Toolbox `<source>` to introspect (default: `Default DB source` in `.context-engineering/workspace_state.md` when it exists; else auto-select if exactly one supported source exists in `tools.yaml`; otherwise prompt).
    - Which schemas / tables to focus on (or all, if the DB is small).
    - Output path for the ContextSet JSON.
    - Whether to upload to Context Set server after generation. If yes, take `projectId` and `location` from `.context-engineering/workspace_state.md` when it exists (show them; ask only if missing or the user wants different ones) and ask for `contextSetId`; call `list_context_set_locations(projectId)` and confirm the chosen location is in the returned list (if not, let the user pick one from it). Tell the user the exact resource name that will be written.

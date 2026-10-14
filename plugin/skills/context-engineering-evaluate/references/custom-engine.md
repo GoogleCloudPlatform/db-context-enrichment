@@ -19,7 +19,7 @@ EvalBench dynamically imports `connector_class` using standard Python module imp
 ```yaml
 generator: custom
 generator_class: my_package.generators.CustomGenerator
-context_set_id: projects/my-project/locations/us-central1/contextSets/my-context-set@v1
+context_set_id: projects/my-project/locations/us-central1/contextSets/my-context-set
 ```
 EvalBench dynamically imports `generator_class` to execute generation requests.
 

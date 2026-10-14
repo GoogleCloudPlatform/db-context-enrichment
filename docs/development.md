@@ -2,7 +2,7 @@
 
 This project ships as a Gemini CLI extension, a Claude Code plugin,
 and an Antigravity CLI extension, all from a shared `plugin/` payload
-(skills/commands/`GEMINI.md`). Each client has its own local-dev flow.
+(`plugin/skills/`). Each client has its own local-dev flow.
 
 ## MCP servers
 

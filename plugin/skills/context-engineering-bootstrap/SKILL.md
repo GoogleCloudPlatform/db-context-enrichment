@@ -40,15 +40,14 @@ From a target database and optional user-supplied enrichment sources (design doc
 
 5. **Generate the ContextSet:** invoke the `context-engineering-generation-guide` skill with the approved candidates. Save items incrementally to the output path via the `mutate_context_set` MCP tool. For a new file, construct `"operation": "add"` mutations for each item.
 
-6. **Validate**: Call `validate_context_set` on `bootstrap_context.json`. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
+6. **Validate**: Call `validate_context_set` on the output file. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
 
-8. **Optionally upload:** if the user opted to upload:
+7. **Optionally upload:** if the user opted to upload:
    - Form the target resource name from `projectId`, `location`, `contextSetId` per the **Resource naming rule** in `context-engineering-workflow` and show it to the user. Remind them that if a context set with this name already exists, the upload **overwrites it** and the previous contents cannot be recovered; proceed only on explicit confirmation.
-   - Run `validate_context_set` on the output file; do not upload if it fails.
-   - Read the output file and call `upload_context_set(projectId=<project_id>, location=<location>, contextSetId=<context_set_id>, contextPayload=<exact file contents>, description=<short description>, databases=<Database>)` — `<Database>` is derived from the experiment's `## Active Database` **Source Name** (standalone: the chosen source) and that source's block in `tools.yaml`, using the mapping table under *Database association* in `context-engineering-workflow`, sent in the wire shape the live schema accepts (object list or URI-string list — see that section). There is no file-path argument.
+   - Read the validated output file and call `upload_context_set(projectId=<project_id>, location=<location>, contextSetId=<context_set_id>, contextPayload=<exact file contents>, description=<short description>, databases=<Database>)` — `<Database>` is derived at upload time from the experiment's `## Active Database` **Source Name** (standalone: the chosen source) and that source's block in `tools.yaml`, using the mapping table under *Database association* in `context-engineering-workflow`, sent in the wire shape the live schema accepts (object list or URI-string list — see that section).
    - Poll `get_operation(projectId, location, operationId)` on the returned operation (≥5 s between polls, 5-minute ceiling) until `done: true` before continuing — see the Context Set (OneMCP) Protocol in `context-engineering-workflow`. On `done: true` the upload is complete; on an `error` field, surface it verbatim and stop.
 
-9. **Summarize:** report the local file path and (if uploaded) the resource name and the operation name that completed.
+8. **Summarize:** report the local file path and (if uploaded) the resource name and the operation name that completed.
 
 ## Rules
 - Caller supplies (or explicitly confirms a default for) the output path.

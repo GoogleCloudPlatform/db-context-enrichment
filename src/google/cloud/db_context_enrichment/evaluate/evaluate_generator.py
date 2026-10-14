@@ -407,7 +407,7 @@ def _generate_run_config(output_dir: str, dialect: str) -> str:
         ############################################################
         runners:
           eval_runners: 4
-          sqlgen_runners: 20
+          sqlgen_runners: 5
 
         ############################################################
         ### Scorer Related Configs

@@ -1,6 +1,6 @@
 ---
 name: context-engineering-dataset-generation
-description: Generate or expand a golden evaluation dataset of SQL/Question (NLQ+SQL) pairs for evaluating NL-to-SQL translation accuracy on a target database.
+description: Generate or expand a golden evaluation dataset of SQL/Question (NLQ+SQL) pairs for evaluating NL-to-SQL translation accuracy on a target database. Don't use for generating context items (Templates, Facets, Value Searches) or running Evalbench evaluations.
 ---
 
 > **Load the `context-engineering-workflow` skill first.** It holds the shared context this phase depends on: workspace layout, state file conventions, phase order, and safety protocol. Do not proceed with this phase without reading it.
@@ -51,17 +51,15 @@ You must prepend this exact block to the very top of every single response you g
 *   **Goal:** Create `<dataset_dir>/evalset_gen_plan.md` and get explicit user approval on the dataset requirements and holdout evaluation structure.
 *   **Mandatory Actions:**
     1.  Read `<skill_dir>/references/generation-plan-requirements.md`.
-    2.  **Dataset Generation Proposal (Chat Display)**: Unless the user provides an existing dataset or requests custom sizing, present the standardized proposal directly in chat:
+    2.  **Dataset Generation Proposal (Chat Display)**: Unless the user provides an existing dataset or requests custom sizing, present the standardized proposal in plain, user-friendly language directly in chat:
         ```text
         Dataset Generation Proposal:
-        - Total Questions Generated: 150 questions across 30 core database query patterns (default size before split).
-        - Hillclimbing Questions: 105 questions (default split ratio 0.7, used for iterative optimization).
-        - Holdout Questions: 45 questions (minimum holdout size 45, alternate phrasings and parameter variations held out to test generalizability).
-        - Query Coverage: 100% of query patterns appear in both sets, ensuring holdout questions evaluate generalizability to new phrasing rather than unseen schemas.
-        - Zero-Leakage Guarantee: The holdout partition (splits/holdout.json) is strictly isolated during the entire hill-climbing optimization loop (zero data leakage) and evaluated strictly once in a read-only pass after hillclimbing convergence.
-        - Internal Partitions: Preserved in splits/hillclimb.json and splits/holdout.json.
+        - Total Questions: 150 questions across 30 core database query patterns (default size).
+        - Hillclimbing Questions: 105 questions (70%, used during iterative optimization).
+        - Holdout Questions: 45 questions (30%, alternate phrasings and parameter variations reserved to test whether the final context set generalizes to new ways of asking).
+        - Query Coverage: Every query pattern in the holdout set also appears in the hillclimbing set, so holdout evaluation tests phrasing generalization rather than unseen tables.
         ```
-    3.  **Compose and Update Plan (`evalset_gen_plan.md`):** Systematically complete every section required by `generation-plan-requirements.md`. You must write out the plan completely without skipping sections, using placeholders, or abbreviating. Place the main decisions requiring user-review at the top of the plan.
+    3.  **Compose and Update Plan (`evalset_gen_plan.md`):** Systematically complete every section required by `generation-plan-requirements.md`. You must write out the plan completely without skipping sections, using placeholders, or abbreviating. Place the main decisions requiring user-review at the top of the plan, and briefly summarize those key decisions in chat (e.g., tables/entities covered and sample query categories).
     4.  **[USER APPROVAL GATE]:** STOP. You MUST halt and wait for user approval of `evalset_gen_plan.md`. **DO NOT proceed to the next phase until explicitly given permission.**
 *   **Exit Criteria:** User explicitly approved `evalset_gen_plan.md` and indicated we may proceed to the next phase.
 

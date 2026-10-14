@@ -202,7 +202,7 @@ def test_generate_evalbench_configs():
         ############################################################
         runners:
           eval_runners: 4
-          sqlgen_runners: 20
+          sqlgen_runners: 5
 
         ############################################################
         ### Scorer Related Configs

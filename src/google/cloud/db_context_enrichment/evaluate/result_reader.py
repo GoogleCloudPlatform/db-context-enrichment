@@ -1,8 +1,23 @@
 import csv
 import os
 import re
+import sys
 import textwrap
 from dataclasses import dataclass
+
+
+def _ensure_csv_field_size_limit() -> None:
+    """Raises csv.field_size_limit so large QueryData debug traces in evals.csv do not fail."""
+    max_int = sys.maxsize
+    while True:
+        try:
+            csv.field_size_limit(max_int)
+            break
+        except OverflowError:
+            max_int = int(max_int / 10)
+
+
+_ensure_csv_field_size_limit()
 
 
 @dataclass
@@ -37,6 +52,7 @@ def read_eval_results(
     Returns:
         A string in markdown format containing the summary and failure cases.
     """
+    _ensure_csv_field_size_limit()
     scores_path = os.path.join(run_folder_path, "scores.csv")
     evals_path = os.path.join(run_folder_path, "evals.csv")
 

@@ -1,6 +1,15 @@
 ---
 name: context-engineering-init
-description: Ensure the environment is ready for context-engineering work — manage the Toolbox `tools.yaml` for database connections, verify runtime and GCP setup (uv, evalbench, ADC, Dataplex/GDA APIs, IAM), record the workspace inputs once in `workspace_state.md` (Context Set project/location, Default DB source, enrichment sources, upload preference), initialise each experiment's `experiment_state.md`, and diagnose readiness failures raised by other skills.
+description: >-
+  Configures the workspace and environment for database context engineering —
+  manages Toolbox `tools.yaml` database connections, verifies runtime and GCP
+  readiness (uv, Evalbench, ADC, Dataplex/GDA APIs, IAM), records workspace
+  defaults once in `workspace_state.md`, initializes or clones each experiment's
+  `experiment_state.md`, and diagnoses setup or MCP connection errors. Use when
+  starting or cloning an experiment, connecting a new database, changing
+  workspace defaults, or troubleshooting environment/MCP readiness failures.
+  Don't use for generating evaluation datasets, authoring context items, or
+  running evaluations directly.
 ---
 
 # Skill: Environment & Connection Setup
@@ -62,7 +71,7 @@ Restart instructions per client:
 Run this when `.context-engineering/workspace_state.md` is missing (first experiment in a workspace) or when the user asks to change a default. Everything here is asked **once per workspace**; downstream skills read the answers from the file and never re-ask.
 
 1. **DB connection** — if `.context-engineering/tools.yaml` does not exist, run **Create new** above first (and give the restart reminder).
-2. **Project** — the GCP project id the context sets are published in (default: ADC's project). At the same time read the **ADC quota project** (`quota_project_id` in `~/.config/gcloud/application_default_credentials.json`) and tell the user plainly: *"Context Set API calls are authorised and billed against your ADC quota project `<quota>` (sent as `X-Goog-User-Project`); the context sets themselves will live in `<project>`."* If the quota project is missing, stop and give the fix (`gcloud auth application-default set-quota-project <project>`); if it differs from `<project>`, say so and continue only if the user confirms that is intended. The quota project is **not** recorded in the file.
+2. **Project** — the GCP project id the context sets are published in (default: ADC's project). At the same time check the **ADC quota project** (`quota_project_id` in `~/.config/gcloud/application_default_credentials.json`): if missing, stop and give the fix (`gcloud auth application-default set-quota-project <project>`); if it differs from `<project>`, tell the user that API calls are billed/authorized against `<quota>` while context sets live in `<project>`, and continue only if they confirm that is intended. The quota project is **not** recorded in the file.
 3. **Location** — call `list_context_set_locations(projectId)` and ask, naming the purpose: *"Which location should be used for storing your context sets? Available: `<list>`."* If the user already named one, confirm it is in the list. Do not assume a default.
 4. **Default DB source** — the `tools.yaml` source experiments use by default. One source in `tools.yaml` → record it **without asking**. Several → ask which one. (When a source is added later through **Add to existing**, ask whether it should become the default.)
 5. **Enrichment sources** (optional) — material about the database that helps both the **evaluation dataset** (realistic questions) and the **initial context set** (business terms, join rules). Ask in plain words, no skill names: *"Do you have any design docs, application code, sample SQL queries or notes about this database that I should read when creating the evaluation questions and the initial context set? Share file paths, or say none."* Record the list, or `(none)`.
@@ -74,7 +83,7 @@ Write the file in the format shown in `context-engineering-hillclimb/references/
 
 Run this when a user is starting a hill-climb experiment, or when a downstream skill routes here because `.context-engineering/experiments/<experiment_name>/hillclimb/experiment_state.md` is missing or incomplete. If `workspace_state.md` is missing, run **Record the workspace inputs** first. Everything below is asked **once**; downstream skills (`dataset-generation`, `bootstrap`, `hillclimb`, `evaluate`, `workflow`) read the answers from `experiment_state.md` and never re-ask. If the file already exists, only fill in the missing bullets — do not overwrite existing values or any `## Iteration Log`. If the file already contains `## Final:`, the experiment is **finished**: do not modify it; offer the clone flow below instead.
 
-**Review the workspace inputs (always, before anything else).** Print the recorded inputs verbatim and ask **one** question:
+**Review the workspace inputs (when `workspace_state.md` already existed from an earlier setup — skip if you just created `workspace_state.md` in this turn).** Print the recorded inputs verbatim and ask **one** question:
 
 > *"I'll use the inputs recorded in `.context-engineering/workspace_state.md` for this experiment:*
 > *– Project `<project>`, location `<location>`*

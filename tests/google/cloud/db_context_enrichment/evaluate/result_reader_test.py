@@ -258,4 +258,3 @@ def test_read_eval_results_large_csv_field():
         result = read_eval_results("/fake/path")
 
     assert large_debug_trace in result
-

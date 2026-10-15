@@ -149,7 +149,11 @@ instance: test-i
         )
         assert "Successfully generated all configs for evaluation" in result
         eval_dir = (
-            tmp_path / ".context-engineering" / "experiments" / "test_exp" / "eval_configs"
+            tmp_path
+            / ".context-engineering"
+            / "experiments"
+            / "test_exp"
+            / "eval_configs"
         )
         assert (eval_dir / "db_config.yaml").exists()
         assert (eval_dir / "model_config.yaml").exists()
@@ -218,4 +222,3 @@ def test_evaluate_generalizability_tool():
     )
     assert "Evaluation Complete: Context Set Generalizes Reliably" in card
     assert "projects/p/locations/l/contextSets/cs1" in card
-

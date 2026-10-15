@@ -12,11 +12,17 @@ def test_calculate_z_test_invalid_inputs():
         calculate_z_test(0, 0, 10, 45)
     with pytest.raises(ValueError, match="must be positive integers"):
         calculate_z_test(10, 105, 0, 0)
-    with pytest.raises(ValueError, match="Passed counts must be between 0 and total counts"):
+    with pytest.raises(
+        ValueError, match="Passed counts must be between 0 and total counts"
+    ):
         calculate_z_test(-1, 105, 40, 45)
-    with pytest.raises(ValueError, match="Passed counts must be between 0 and total counts"):
+    with pytest.raises(
+        ValueError, match="Passed counts must be between 0 and total counts"
+    ):
         calculate_z_test(106, 105, 40, 45)
-    with pytest.raises(ValueError, match="Passed counts must be between 0 and total counts"):
+    with pytest.raises(
+        ValueError, match="Passed counts must be between 0 and total counts"
+    ):
         calculate_z_test(90, 105, 46, 45)
 
 
@@ -30,7 +36,9 @@ def test_calculate_z_test_inconclusive_underpowered():
 
 
 def test_calculate_z_test_investigate_significant_drop():
-    stats = calculate_z_test(dev_passed=97, dev_total=105, test_passed=32, test_total=45)
+    stats = calculate_z_test(
+        dev_passed=97, dev_total=105, test_passed=32, test_total=45
+    )
     assert stats["verdict_type"] == "INVESTIGATE"
     assert "INVESTIGATE" in stats["verdict"]
     assert stats["status"] == "Needs Optimization"
@@ -39,7 +47,9 @@ def test_calculate_z_test_investigate_significant_drop():
 
 
 def test_calculate_z_test_pass_within_variance():
-    stats = calculate_z_test(dev_passed=95, dev_total=105, test_passed=39, test_total=45)
+    stats = calculate_z_test(
+        dev_passed=95, dev_total=105, test_passed=39, test_total=45
+    )
     assert stats["verdict_type"] == "PASS"
     assert "PASS" in stats["verdict"]
     assert stats["status"] == "Ready for Production"
@@ -48,7 +58,9 @@ def test_calculate_z_test_pass_within_variance():
 
 def test_calculate_z_test_pass_when_holdout_exceeds_dev():
     # Even if p < 0.05, test accuracy > dev accuracy is a PASS
-    stats = calculate_z_test(dev_passed=60, dev_total=105, test_passed=44, test_total=45)
+    stats = calculate_z_test(
+        dev_passed=60, dev_total=105, test_passed=44, test_total=45
+    )
     assert stats["verdict_type"] == "PASS"
     assert stats["p_value"] < 0.05
     assert stats["test_accuracy"] > stats["dev_accuracy"]
@@ -95,9 +107,15 @@ def test_format_on_screen_card_pass_defaults_and_overrides():
         next_step="Deploy immediately.",
         context_set_id="projects/p/locations/l/contextSets/cs1",
     )
-    assert "**Holdout Questions** | **87%** | **39 / 45** | **Consistent with hillclimbing**" in card_custom
+    assert (
+        "**Holdout Questions** | **87%** | **39 / 45** | **Consistent with hillclimbing**"
+        in card_custom
+    )
     assert "Custom diagnosis text." in card_custom
-    assert "Deploy immediately. (Full Context Set ID: `projects/p/locations/l/contextSets/cs1`)" in card_custom
+    assert (
+        "Deploy immediately. (Full Context Set ID: `projects/p/locations/l/contextSets/cs1`)"
+        in card_custom
+    )
 
     # Custom next_step already containing context_set_id
     card_included = format_on_screen_card(
@@ -114,7 +132,9 @@ def test_format_on_screen_card_inconclusive():
     assert "Evaluation Inconclusive: Sample Size Too Small" in card
     assert "**Status**: More Data Needed" in card
     assert "2 failures; sample size underpowered" in card
-    assert "With only 10 holdout questions, each question changes accuracy by 10%." in card
+    assert (
+        "With only 10 holdout questions, each question changes accuracy by 10%." in card
+    )
     assert "Expand Evaluation Dataset" in card
 
 

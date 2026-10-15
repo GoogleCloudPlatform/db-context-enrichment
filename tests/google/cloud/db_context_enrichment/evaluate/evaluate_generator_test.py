@@ -548,15 +548,18 @@ def test_parse_graph_ids_from_documented_state_md_example(tmp_path):
 
     # The same bullet with no graphs must still mean "no graphs".
     state_seed_only = tmp_path / "state_seed_only.md"
-    state_seed_only.write_text(example.replace("- **Graph Ids**: []", seed + "- **Graph Ids**: []"))
+    state_seed_only.write_text(
+        example.replace("- **Graph Ids**: []", seed + "- **Graph Ids**: []")
+    )
     assert _parse_graph_ids_from_state_md(str(state_seed_only)) is None
+
 
 def _write_spanner_workspace(tmp_path, experiment="exp1", graph_ids_line=None):
     """Lays out the real workspace shape:
 
-        .context-engineering/tools.yaml                      (shared)
-        .context-engineering/experiments/<exp>/hillclimb/experiment_state.md  (per experiment)
-        .context-engineering/experiments/<exp>/dataset.json
+    .context-engineering/tools.yaml                      (shared)
+    .context-engineering/experiments/<exp>/hillclimb/experiment_state.md  (per experiment)
+    .context-engineering/experiments/<exp>/dataset.json
     """
     ce_dir = tmp_path / ".context-engineering"
     exp_dir = ce_dir / "experiments" / experiment

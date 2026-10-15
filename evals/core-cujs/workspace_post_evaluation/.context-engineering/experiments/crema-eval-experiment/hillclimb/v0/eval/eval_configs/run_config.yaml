@@ -1,10 +1,10 @@
 ############################################################
 ### Dataset / Eval Items
 ############################################################
-dataset_config: autoctx/experiments/crema-eval-experiment/eval_configs/golden_queries.json
+dataset_config: .context-engineering/experiments/crema-eval-experiment/hillclimb/v0/eval/eval_configs/golden_queries.json
 dataset_format: evalbench-standard-format
 database_configs:
- - autoctx/experiments/crema-eval-experiment/eval_configs/db_config.yaml
+ - .context-engineering/experiments/crema-eval-experiment/hillclimb/v0/eval/eval_configs/db_config.yaml
 dialect: postgres    # DB connection mapping
 query_types:
  - dql
@@ -12,7 +12,7 @@ query_types:
 ############################################################
 ### Prompt and Generation Modules
 ############################################################
-model_config: autoctx/experiments/crema-eval-experiment/eval_configs/model_config.yaml
+model_config: .context-engineering/experiments/crema-eval-experiment/hillclimb/v0/eval/eval_configs/model_config.yaml
 prompt_generator: 'NOOPGenerator'
 
 ############################################################
@@ -20,18 +20,18 @@ prompt_generator: 'NOOPGenerator'
 ############################################################
 runners:
   eval_runners: 4
-  sqlgen_runners: 20
+  sqlgen_runners: 5
 
 ############################################################
 ### Scorer Related Configs
 ############################################################
 scorers:
   llmrater:
-    model_config: autoctx/experiments/crema-eval-experiment/eval_configs/llmrater_config.yaml
+    model_config: .context-engineering/experiments/crema-eval-experiment/hillclimb/v0/eval/eval_configs/llmrater_config.yaml
 
 ############################################################
 ### Reporting Related Configs
 ############################################################
 reporting:
   csv:
-    output_directory: 'autoctx/experiments/crema-eval-experiment/eval_reports/'
+    output_directory: '.context-engineering/experiments/crema-eval-experiment/hillclimb/v0/eval/eval_reports/'

@@ -1,6 +1,7 @@
 ---
 name: context-engineering-bootstrap
 description: Generate a baseline ContextSet (Templates, Facets, Value Searches) from a target database's schema (and optional design docs / application code) and save to a caller-specified path. Optionally upload to the Context Set server.  Don't use when a user asks to build, validate, or improve a context set from scratch end-to-end (use `context-engineering-workflow` instead).
+---
 
 > **Load [`context-engineering-workflow`](../context-engineering-workflow/SKILL.md) first** for shared terminology, lifecycle overview, and safety protocol. If the user is asking to build a context set from scratch (end-to-end with evaluation and optimization), route through `context-engineering-workflow` (`init` $\rightarrow$ `dataset-generation` $\rightarrow$ `hillclimb`) rather than running standalone bootstrap.
 

@@ -21,7 +21,7 @@
     {
       "id": "plugin:list-skills-and-mcp-tools",
       "starting_prompt": "Show the FULL list of Agent Skills and MCP tools you have available",
-      "conversation_plan": "Verify the db-context-engineering plugin loaded correctly. The agent should list its db-context-engineering skills (e.g., context-engineering-workflow, context-engineering-generation-guide) and the MCP tools provided by the two plugin-configured servers: the `db-context-engineering` MCP server (e.g., generate_dataset, split_dataset, generate_evalbench_configs, mutate_context_set, validate_context_set, read_evaluation_result, evaluate_generalizability, upload_context_set, get_context_set, delete_context_set, list_context_set_locations, get_operation) and the `toolbox` MCP server (*-list-schemas, *-execute-sql). Terminate the conversation immediately after the agent provides the list.",
+      "conversation_plan": "Verify the db-context-engineering plugin loaded correctly. The agent should list its db-context-engineering skills (e.g., context-engineering-workflow, context-engineering-generation-guide) and the MCP tools provided by the plugin-configured servers: the `db-context-engineering` / `mcp_db_context_engineering` MCP server (e.g., generate_dataset, split_dataset, generate_evalbench_configs, mutate_context_set, validate_context_set, read_evaluation_result, evaluate_generalizability), the `contextmgmt` MCP server (upload_context_set, get_context_set, delete_context_set, list_context_set_locations, get_operation), and the `toolbox` / `mcp_toolbox` MCP server (*-list-schemas, *-execute-sql). Terminate the conversation immediately after the agent provides the list.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_init/",

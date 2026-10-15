@@ -1,83 +1,93 @@
 {
   "scenarios": [
     {
-      "id": "autoctx:generate-dataset-resolve-biz-rule-shift",
-      "starting_prompt": "Generate an evaluation dataset consisting of 5 SQL/Question pairs for petstore application named golden.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the petstore application whose design doc and source codes can be found in the directory `./app_data`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps. At the end of the conversation.",
+      "id": "context-engineering:generate-dataset-resolve-biz-rule-shift",
+      "starting_prompt": "Generate an evaluation dataset consisting of 5 SQL/Question pairs for petstore application in experiment 'petstore-eval' named golden.json",
+      "conversation_plan": "Ask the agent to generate an evaluation dataset of 5 SQL/Question pairs in postgres dialect for the petstore application in experiment 'petstore-eval' whose design doc and source codes can be found in the directory `./app_data`, saving the generated pairs in `.context-engineering/experiments/petstore-eval/dataset/golden.json` and splitting them into `splits/hillclimb.json` and `splits/holdout.json` (approve the generation plan `evalset_gen_plan.md` when presented). You should terminate the conversation immediately after the agent successfully generated the dataset and splits, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_resolve_biz_rule_shift/",
       "max_turns": 15,
       "mandatory_output_files": [
-        "golden.json",
-        "evalset_environment_inputs.md",
-        "evalset_gen_plan.md",
-        "evalset_report_pair_level.md",
-        "evalset_report_dataset_level.md"
+        ".context-engineering/experiments/petstore-eval/dataset/golden.json",
+        ".context-engineering/experiments/petstore-eval/dataset/splits/hillclimb.json",
+        ".context-engineering/experiments/petstore-eval/dataset/splits/holdout.json",
+        ".context-engineering/experiments/petstore-eval/dataset/evalset_environment_inputs.md",
+        ".context-engineering/experiments/petstore-eval/dataset/evalset_gen_plan.md",
+        ".context-engineering/experiments/petstore-eval/dataset/evalset_report_pair_level.md",
+        ".context-engineering/experiments/petstore-eval/dataset/evalset_report_dataset_level.md"
       ]
     },
     {
-      "id": "autoctx:generate-dataset-resolve-cryptic-schema",
-      "starting_prompt": "Generate an evaluation dataset consisting of 5 SQL/Question pairs for ecommerce application named golden.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the ecommerce application whose business context doc can be found in the directory `./app_data`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps. At the end of the conversation.",
+      "id": "context-engineering:generate-dataset-resolve-cryptic-schema",
+      "starting_prompt": "Generate an evaluation dataset consisting of 5 SQL/Question pairs for ecommerce application in experiment 'ecommerce-eval' named golden.json",
+      "conversation_plan": "Ask the agent to generate an evaluation dataset of 5 SQL/Question pairs in postgres dialect for the ecommerce application in experiment 'ecommerce-eval' whose business context doc can be found in the directory `./app_data`, saving the generated pairs in `.context-engineering/experiments/ecommerce-eval/dataset/golden.json` and splitting them into `splits/hillclimb.json` and `splits/holdout.json` (approve the generation plan `evalset_gen_plan.md` when presented). You should terminate the conversation immediately after the agent successfully generated the dataset and splits, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_resolve_cryptic_schema/",
       "max_turns": 15,
       "mandatory_output_files": [
-        "golden.json",
-        "evalset_environment_inputs.md",
-        "evalset_gen_plan.md",
-        "evalset_report_pair_level.md",
-        "evalset_report_dataset_level.md"
+        ".context-engineering/experiments/ecommerce-eval/dataset/golden.json",
+        ".context-engineering/experiments/ecommerce-eval/dataset/splits/hillclimb.json",
+        ".context-engineering/experiments/ecommerce-eval/dataset/splits/holdout.json",
+        ".context-engineering/experiments/ecommerce-eval/dataset/evalset_environment_inputs.md",
+        ".context-engineering/experiments/ecommerce-eval/dataset/evalset_gen_plan.md",
+        ".context-engineering/experiments/ecommerce-eval/dataset/evalset_report_pair_level.md",
+        ".context-engineering/experiments/ecommerce-eval/dataset/evalset_report_dataset_level.md"
       ]
     },
     {
-      "id": "autoctx:generate-dataset-grounding-local-code",
-      "starting_prompt": "Generate an evaluation dataset consisting of 5 SQL/Question pairs for hr application named golden.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the hr application whose source codes can be found in the directory `./app_data`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps. At the end of the conversation.",
+      "id": "context-engineering:generate-dataset-grounding-local-code",
+      "starting_prompt": "Generate an evaluation dataset consisting of 5 SQL/Question pairs for hr application in experiment 'hr-eval' named golden.json",
+      "conversation_plan": "Ask the agent to generate an evaluation dataset of 5 SQL/Question pairs in postgres dialect for the hr application in experiment 'hr-eval' whose source codes can be found in the directory `./app_data`, saving the generated pairs in `.context-engineering/experiments/hr-eval/dataset/golden.json` and splitting them into `splits/hillclimb.json` and `splits/holdout.json` (approve the generation plan `evalset_gen_plan.md` when presented). You should terminate the conversation immediately after the agent successfully generated the dataset and splits, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_grounding_local_code/",
       "max_turns": 15,
       "mandatory_output_files": [
-        "golden.json",
-        "evalset_environment_inputs.md",
-        "evalset_gen_plan.md",
-        "evalset_report_pair_level.md",
-        "evalset_report_dataset_level.md"
+        ".context-engineering/experiments/hr-eval/dataset/golden.json",
+        ".context-engineering/experiments/hr-eval/dataset/splits/hillclimb.json",
+        ".context-engineering/experiments/hr-eval/dataset/splits/holdout.json",
+        ".context-engineering/experiments/hr-eval/dataset/evalset_environment_inputs.md",
+        ".context-engineering/experiments/hr-eval/dataset/evalset_gen_plan.md",
+        ".context-engineering/experiments/hr-eval/dataset/evalset_report_pair_level.md",
+        ".context-engineering/experiments/hr-eval/dataset/evalset_report_dataset_level.md"
       ]
     },
     {
-      "id": "autoctx:generate-dataset-grounding-github-code",
-      "starting_prompt": "Generate an evaluation dataset consisting of 5 SQL/Question pairs for property search application named golden.json",
-      "conversation_plan": "Ask the agent (trigger `context-engineering-workflow` skill) to generate a evaluation dataset of SQL/Question pairs in postgres dialect for the application at https://github.com/kupp0/google-dach-summit26-database-labs/tree/main/labs/03_fullstack_ai_app_property_search, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps. At the end of the conversation.",
+      "id": "context-engineering:generate-dataset-grounding-github-code",
+      "starting_prompt": "Generate an evaluation dataset consisting of 5 SQL/Question pairs for property search application in experiment 'property-search-eval' named golden.json",
+      "conversation_plan": "Ask the agent (trigger `context-engineering-workflow` / `context-engineering-dataset-generation` skill) to generate an evaluation dataset of 5 SQL/Question pairs in postgres dialect for the application at https://github.com/kupp0/google-dach-summit26-database-labs/tree/main/labs/03_fullstack_ai_app_property_search in experiment 'property-search-eval', saving the generated pairs in `.context-engineering/experiments/property-search-eval/dataset/golden.json` and splitting them into `splits/hillclimb.json` and `splits/holdout.json` (approve the generation plan `evalset_gen_plan.md` when presented). You should terminate the conversation immediately after the agent successfully generated the dataset and splits, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_grounding_github_code/",
       "max_turns": 15,
       "mandatory_output_files": [
-        "golden.json",
-        "evalset_environment_inputs.md",
-        "evalset_gen_plan.md",
-        "evalset_report_pair_level.md",
-        "evalset_report_dataset_level.md"
+        ".context-engineering/experiments/property-search-eval/dataset/golden.json",
+        ".context-engineering/experiments/property-search-eval/dataset/splits/hillclimb.json",
+        ".context-engineering/experiments/property-search-eval/dataset/splits/holdout.json",
+        ".context-engineering/experiments/property-search-eval/dataset/evalset_environment_inputs.md",
+        ".context-engineering/experiments/property-search-eval/dataset/evalset_gen_plan.md",
+        ".context-engineering/experiments/property-search-eval/dataset/evalset_report_pair_level.md",
+        ".context-engineering/experiments/property-search-eval/dataset/evalset_report_dataset_level.md"
       ]
     },
     {
-      "id": "autoctx:generate-dataset-grounding-querylog",
-      "starting_prompt": "Generate an evaluation dataset consisting of 5 SQL/Question pairs for my alloydb database financial named golden.json",
-      "conversation_plan": "Ask the agent to generate a evaluation dataset consisting of 5 SQL/Question pairs in postgres dialect for my alloydb database financial whose query log can be found in the file `./app_data/querylog.txt`, save the generated pairs in output file named golden.json. You should terminate the conversation immediately after the agent successfully generated the dataset, even if the agent prompts you to perform evaluation or take next steps. At the end of the conversation.",
+      "id": "context-engineering:generate-dataset-grounding-querylog",
+      "starting_prompt": "Generate an evaluation dataset consisting of 5 SQL/Question pairs for my alloydb database financial in experiment 'financial-eval' named golden.json",
+      "conversation_plan": "Ask the agent to generate an evaluation dataset consisting of 5 SQL/Question pairs in postgres dialect for my alloydb database financial in experiment 'financial-eval' whose query log can be found in the file `./app_data/querylog.txt`, saving the generated pairs in `.context-engineering/experiments/financial-eval/dataset/golden.json` and splitting them into `splits/hillclimb.json` and `splits/holdout.json` (approve the generation plan `evalset_gen_plan.md` when presented). You should terminate the conversation immediately after the agent successfully generated the dataset and splits, even if the agent prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_grounding_querylog/",
       "max_turns": 15,
       "mandatory_output_files": [
-        "golden.json",
-        "evalset_environment_inputs.md",
-        "evalset_gen_plan.md",
-        "evalset_report_pair_level.md",
-        "evalset_report_dataset_level.md"
+        ".context-engineering/experiments/financial-eval/dataset/golden.json",
+        ".context-engineering/experiments/financial-eval/dataset/splits/hillclimb.json",
+        ".context-engineering/experiments/financial-eval/dataset/splits/holdout.json",
+        ".context-engineering/experiments/financial-eval/dataset/evalset_environment_inputs.md",
+        ".context-engineering/experiments/financial-eval/dataset/evalset_gen_plan.md",
+        ".context-engineering/experiments/financial-eval/dataset/evalset_report_pair_level.md",
+        ".context-engineering/experiments/financial-eval/dataset/evalset_report_dataset_level.md"
       ]
     }
   ]

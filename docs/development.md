@@ -112,8 +112,6 @@ gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enri
   at a time. Always uninstall before switching.
 - The MCP subprocess launches via `uv run --directory
   ${extensionPath}/..`, which resolves to the repo root.
-- The MCP subprocess launches via `uv run --directory
-  ${extensionPath}/..`, which resolves to the repo root.
 
 ## Claude Code plugin
 

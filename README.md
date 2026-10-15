@@ -40,7 +40,7 @@ gcloud auth application-default login
 gcloud auth application-default set-quota-project <your-project>
 ```
 
-Antigravity and Gemini CLI attach the credentials automatically; Claude Code does so through a small helper script bundled with the plugin (needs `gcloud` on your `PATH`). Details in [docs/development.md](docs/development.md#context-store-contextmgmt).
+Antigravity and Gemini CLI attach the credentials automatically; Claude Code does so through a small helper script bundled with the plugin (needs `gcloud` on your `PATH`). Details in [docs/development.md](docs/development.md#context-set-server-contextmgmt).
 
 ---
 

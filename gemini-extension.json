@@ -2,7 +2,7 @@
   "name": "google-cloud-db-context-engineering",
   "version": "0.7.5",
   "mcpServers": {
-    "db-context-engineering": {
+    "engine": {
       "command": "uvx",
       "args": [
         "google-cloud-db-context-engineering@0.7.5"
@@ -17,7 +17,7 @@
         "--stdio"
       ]
     },
-    "contextmgmt": {
+    "ctxset": {
       "httpUrl": "https://dataplex.googleapis.com/mcp/managed-context-sets",
       "authProviderType": "google_credentials",
       "oauth": {

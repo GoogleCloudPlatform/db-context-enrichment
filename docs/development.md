@@ -10,11 +10,11 @@ Every manifest declares three MCP servers:
 
 | Key | What | Transport |
 | :--- | :--- | :--- |
-| `db-context-engineering` (`mcp_db_context_engineering` in `plugin/gemini-extension.json`) | This repo's Python server (`main.py`): dataset generation/splitting, Evalbench config generation, `mutate_context_set`, `validate_context_set`, `read_evaluation_result`. | stdio (`uvx` / `uv run`) |
+| `engine` (`mcp_db_context_engineering` in `plugin/gemini-extension.json`) | This repo's Python server (`main.py`): dataset generation/splitting, Evalbench config generation, `mutate_context_set`, `validate_context_set`, `read_evaluation_result`. | stdio (`uvx` / `uv run`) |
 | `toolbox` | MCP Toolbox for Databases. Reads the single shared `.context-engineering/tools.yaml` (one file for all experiments; it may hold several sources — each experiment records the source/tools it uses in its `experiment_state.md`). Next to it, `.context-engineering/workspace_state.md` holds the workspace inputs the user entered once (Context Set project/location, Default DB source, enrichment sources, upload preference); experiments under `.context-engineering/experiments/<name>/hillclimb/experiment_state.md` record only their own run — see `plugin/skills/context-engineering-hillclimb/references/layout.md`. The client starts Toolbox with a fixed `--config`, so **any edit to `tools.yaml` requires restarting the `toolbox` MCP server** (or the client) before the new sources/tools are visible. | stdio (`uvx`) |
-| `contextmgmt` | The **remote OneMCP Context Set server** (Dataplex): `list_context_set_locations`, `upload_context_set`, `get_context_set`, `delete_context_set`, `get_operation`. | Streamable HTTP, Google-credentials auth |
+| `ctxset` | The **remote OneMCP Context Set server** (Dataplex): `list_context_set_locations`, `upload_context_set`, `get_context_set`, `delete_context_set`, `get_operation`. | Streamable HTTP, Google-credentials auth |
 
-### Context Set server (`contextmgmt`)
+### Context Set server (`ctxset`)
 
 The Context Set tools are **not** implemented in this repo; the agent
 calls the remote server directly. All manifests point at **prod**
@@ -62,23 +62,7 @@ Client support:
 
 ### Antigravity tool-name length limit
 
-Antigravity (desktop and `agy`) exposes plugin MCP tools to the model as
-`mcp_<plugin-name>_<server-key>_<tool>` and rejects any name longer than
-**64 characters** (the tool is logged as `encountered invalid tool` and
-is not callable). The budget is therefore
-`64 − 4 − len(plugin) − len(server-key) − 2` characters for the tool
-name; the longest tools are `list_context_set_locations` and
-`generate_evalbench_configs` (26 each).
-
-- `dev-plugin/gemini-extension.json` uses the short plugin name
-  `dbce-dev` so every tool fits during local testing
-  (`mcp_dbce-dev_contextmgmt_list_context_set_locations` = 51,
-  `mcp_dbce-dev_db-context-engineering_generate_evalbench_configs` = 62).
-- The shipped Antigravity manifest (root `gemini-extension.json`, name
-  `google-cloud-db-context-engineering`) currently **overflows for most
-  tools** of all three servers. Shortening the shipped plugin name
-  and/or the `db-context-engineering` server key is tracked as a
-  follow-up; keep every new server key short.
+Antigravity exposes plugin MCP tools as `mcp_<plugin-name>_<server-key>_<tool>` and enforces a 64-character limit. Server keys are kept short (`engine`, `toolbox`, `ctxset`) to stay within this limit across both `db-context-engineering` and `db-context-engineering-dev`.
 
 ## Gemini CLI extension
 
@@ -92,7 +76,7 @@ Verify:
 
 ```bash
 gemini extensions list   # Type: link, Path: .../plugin
-gemini mcp list          # mcp_db_context_engineering ✓ Connected, contextmgmt ✓ Connected
+gemini mcp list          # mcp_db_context_engineering ✓ Connected, ctxset ✓ Connected
 ```
 
 Both `src/` and `plugin/` edits are picked up on the next `gemini`
@@ -160,10 +144,10 @@ step — `--plugin-dir` only affects the session it's passed to.
 
 Edit `dev-plugin/mcp_config.json`:
 
-1. Replace `<local-repo-path>` in `mcpServers.db-context-engineering.args`
+1. Replace `<local-repo-path>` in `mcpServers.engine.args`
    with the absolute path to this repo's root.
 2. Replace `<local-workspace-path>` in the `cwd` of **both** stdio servers
-   (`db-context-engineering` and `toolbox`) with the absolute path of the
+   (`engine` and `toolbox`) with the absolute path of the
    directory you will launch `agy` in — the one that holds
    `.context-engineering/tools.yaml`.
 
@@ -180,7 +164,7 @@ Edit `dev-plugin/mcp_config.json`:
 > same gap — tracked as a follow-up.
 
 Make sure ADC is in place (see
-[Context Set server](#context-set-server-contextmgmt)), then install the dev plugin:
+[Context Set server](#context-set-server-ctxset)), then install the dev plugin:
 
 ```bash
 agy plugin install /absolute/path/to/db-context-enrichment/dev-plugin
@@ -189,14 +173,14 @@ agy plugin install /absolute/path/to/db-context-enrichment/dev-plugin
 Verify:
 
 ```bash
-agy plugin list                                   # dbce-dev
-cat ~/.gemini/config/plugins/dbce-dev/mcp_config.json   # must still contain "authProviderType"
+agy plugin list                                                      # db-context-engineering-dev
+cat ~/.gemini/config/plugins/db-context-engineering-dev/mcp_config.json   # must still contain "authProviderType"
 ```
 
 Then launch `agy` in a workspace directory and open `/mcp`: the plugin
-should show three servers (`db-context-engineering`, `toolbox`,
-`contextmgmt`) and the model-facing tool names
-`mcp_dbce-dev_<server>_<tool>` must all be connected (none flagged
+should show three servers (`engine`, `toolbox`,
+`ctxset`) and the model-facing tool names
+`mcp_db-context-engineering-dev_<server>_<tool>` must all be connected (none flagged
 invalid). A quick end-to-end check is asking the agent to call
 `list_context_set_locations` for a project you can access.
 
@@ -208,24 +192,20 @@ directory, so re-run the install command after changing
 ### Revert
 
 ```bash
-agy plugin uninstall dbce-dev
+agy plugin uninstall db-context-engineering-dev
 ```
 
 ### Notes
 
 - `dev-plugin/plugin.json` + `dev-plugin/mcp_config.json` are the
   native Antigravity manifest pair and are what `agy plugin install`
-  reads when `plugin.json` is present. Do **not** rely on
+  reads when `plugin.json` is present (mirroring `plugin/plugin.json` +
+  `plugin/mcp_config.json` for the shipped plugin). Do **not** rely on
   `dev-plugin/gemini-extension.json` for agy: when a directory has only
   a `gemini-extension.json`, agy runs its Gemini-extension importer,
   which keeps `url` but **drops `authProviderType`**, so the remote
   Context Set server would come up unauthenticated. The
   `gemini-extension.json` is kept in sync for reference only.
-- The dev plugin is named `dbce-dev` (not
-  `google-cloud-db-context-engineering-dev`) because Antigravity rejects
-  model-facing tool names longer than 64 characters — see
-  [Antigravity tool-name length limit](#antigravity-tool-name-length-limit).
-  With the long name every tool of every server was invalid.
 - The dev manifest runs the server via `uv run --project
   <local-repo-path>` instead of `uvx pkg@<version>`, so no PyPI fetch
   and no version sync with `pyproject.toml` is required. It takes a
@@ -238,8 +218,9 @@ agy plugin uninstall dbce-dev
   `skills` symlink also targets `plugin/skills/`, so all three variants
   (Gemini CLI, Claude Code, Antigravity) share skill files. The
   manifests themselves are hand-maintained — when changing the prod
-  root manifest, mirror any structural change (e.g. adding an MCP
-  server entry) into `dev-plugin/mcp_config.json`.
+  manifests (`plugin/mcp_config.json` or root `gemini-extension.json`),
+  mirror any structural change (e.g. adding an MCP server entry) into
+  `dev-plugin/mcp_config.json` and `dev-plugin/gemini-extension.json`.
 - See [releasing.md](releasing.md) for the version-pin atomicity that
   the dev flow sidesteps; the agy root manifest shares the same
   `uvx pkg@<version>` invariant as the Claude Code plugin manifest.

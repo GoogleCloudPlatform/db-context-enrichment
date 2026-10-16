@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
   "mcpServers": {
-    "db-context-engineering": {
+    "engine": {
       "type": "stdio",
       "command": "uvx",
       "args": [
@@ -18,7 +18,7 @@
         "--stdio"
       ]
     },
-    "contextmgmt": {
+    "ctxset": {
       "type": "streamable-http",
       "url": "https://dataplex.googleapis.com/mcp/managed-context-sets"
     }

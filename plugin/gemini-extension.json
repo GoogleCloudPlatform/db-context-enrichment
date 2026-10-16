@@ -11,7 +11,7 @@
         "google-cloud-db-context-engineering"
       ]
     },
-    "contextmgmt": {
+    "ctxset": {
       "httpUrl": "https://dataplex.googleapis.com/mcp/managed-context-sets",
       "authProviderType": "google_credentials",
       "oauth": {

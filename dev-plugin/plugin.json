@@ -1,5 +1,5 @@
 {
-  "name": "dbce-dev",
+  "name": "db-context-engineering-dev",
   "version": "0.0.0-dev",
-  "description": "Local-dev variant of the Context Engineering Agent plugin for Antigravity / agy. Short name keeps model-facing MCP tool names under 64 characters."
+  "description": "Local-dev variant of the Context Engineering Agent plugin for Antigravity / agy."
 }

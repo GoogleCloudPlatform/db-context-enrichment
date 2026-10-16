@@ -1,8 +1,8 @@
 {
-  "name": "dbce-dev",
+  "name": "google-cloud-db-context-engineering-dev",
   "version": "0.0.0-dev",
   "mcpServers": {
-    "db-context-engineering": {
+    "engine": {
       "command": "uv",
       "args": [
         "run",
@@ -20,7 +20,7 @@
         "--stdio"
       ]
     },
-    "contextmgmt": {
+    "ctxset": {
       "httpUrl": "https://dataplex.googleapis.com/mcp/managed-context-sets",
       "authProviderType": "google_credentials",
       "oauth": {

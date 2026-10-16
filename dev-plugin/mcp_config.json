@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "db-context-engineering": {
+    "engine": {
       "command": "uv",
       "args": [
         "run",
@@ -20,7 +20,7 @@
       ],
       "cwd": "<local-workspace-path>"
     },
-    "contextmgmt": {
+    "ctxset": {
       "url": "https://dataplex.googleapis.com/mcp/managed-context-sets",
       "authProviderType": "google_credentials"
     }

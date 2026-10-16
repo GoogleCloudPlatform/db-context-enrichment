@@ -6,7 +6,7 @@
     "name": "Google Cloud Platform"
   },
   "mcpServers": {
-    "db-context-engineering": {
+    "engine": {
       "command": "uvx",
       "args": [
         "google-cloud-db-context-engineering@0.7.5"
@@ -21,7 +21,7 @@
         "--stdio"
       ]
     },
-    "contextmgmt": {
+    "ctxset": {
       "type": "http",
       "url": "https://dataplex.googleapis.com/mcp/managed-context-sets",
       "headersHelper": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/adc_headers.sh\""

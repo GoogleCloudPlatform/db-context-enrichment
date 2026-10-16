@@ -2,7 +2,7 @@
 # Prints the HTTP headers (as a JSON object) that the remote Context Set server
 # MCP server needs, derived from Application Default Credentials.
 #
-# Used as Claude Code's `headersHelper` for the `contextmgmt` server
+# Used as Claude Code's `headersHelper` for the `ctxset` server
 # (https://code.claude.com/docs/en/mcp#use-dynamic-headers-for-custom-authentication):
 # Claude runs it at connect time and again automatically after a 401/403, so
 # token expiry is handled without user action. Must finish in < 10 s and print

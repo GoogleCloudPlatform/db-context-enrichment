@@ -105,7 +105,7 @@ Every tool identifies a context set by three separate arguments — `projectId`,
 | :--- | :--- | :--- |
 | `list_context_set_locations(projectId)` | Discover which locations accept context sets. | `{"locations": [...]}`. |
 | `upload_context_set(projectId, location, contextSetId, contextPayload, description?, databases?)` | Create **or overwrite** a context set from an inline JSON string. There is **no file-path argument**; see *Writing a context set from disk*. `databases` associates the context set with the database(s) it describes — see *Database association*. | A long-running operation (`name`). |
-| `get_context_set(projectId, location, contextSetId)` | Read a context set. | `{"payload": "<ContextSet JSON string>", "description", "databases": [...]}`. |
+| `get_context_set(projectId, location, contextSetId)` | Read a context set. | `{"payload": "<ContextSet JSON string>", "description", "displayName", "databases": [...]}`. |
 | `delete_context_set(projectId, location, contextSetId)` | Delete a context set. | A long-running operation (`name`). |
 | `get_operation(projectId, location, operationId)` | Poll a long-running operation. | `{"done": bool, ...}` plus `error` on failure. |
 
@@ -131,23 +131,10 @@ Keys are camelCase (`databaseType`, `projectId`, `clusterId`, `instanceId`, `dat
 | `bigquery`, `custom` | *(no `databaseType` exists for these)* — **omit the `databases` argument** for this source; tell the user once that the context set will not be linked to a database. | | | | | |
 
 Rules:
-*   **Always pass it** — iteration uploads, the final candidate upload, bootstrap's optional upload, and evaluate's standalone upload all include `databases` derived as above from the experiment's **Source Name** + `tools.yaml` (standalone bootstrap/evaluate: from the chosen source), in the wire shape below. Omitting it on a *new* context set leaves the association empty; the server only preserves an existing list when the field is omitted on an *update*.
-*   **Wire shape — check the live schema once per session (temporary, until every environment serves the structured schema).** Look at the `upload_context_set` tool schema the host shows you:
-    *   `databases.items` is an **object** (has `databaseType`) → send the derived object(s): `databases=[{…}]`.
-    *   `databases.items` is a **string** (the same servers take identity as one `contextSet` resource-name argument) → send the **same fields as a resource URI string**, one per database, and pass identity as `contextSet=<Final/Draft Context Set resource string>`:
-
-        | `databaseType` | URI string |
-        | :-- | :-- |
-        | `ALLOYDB` | `alloydb.googleapis.com/projects/{projectId}/locations/{location}/clusters/{clusterId}/instances/{instanceId}/databases/{databaseId}` |
-        | `CLOUD_SQL` | `sqladmin.googleapis.com/projects/{projectId}/instances/{instanceId}/databases/{databaseId}` |
-        | `SPANNER` | `spanner.googleapis.com/projects/{projectId}/instances/{instanceId}/databases/{databaseId}` |
-        | `FIRESTORE` | `firestore.googleapis.com/projects/{projectId}/databases/{databaseId}` |
-        | `BIGTABLE` | `bigtable.googleapis.com/projects/{projectId}/instances/{instanceId}` |
-
-    *   Never send the object shape to a string-schema server (the whole upload is rejected with `invalid argument`), and never send URI strings to an object-schema server. The derivation is the same in both cases; only the wire form changes. If `get_context_set` returns no `databases` field at all (string-schema servers), record `**Seed databases**: (not returned)` — see the next rule for what that means at replacement time.
+*   **Always pass it** — iteration uploads, the final candidate upload, bootstrap's optional upload, and evaluate's standalone upload all include `databases` derived as above from the experiment's **Source Name** + `tools.yaml` (standalone bootstrap/evaluate: from the chosen source). Omitting it on a *new* context set leaves the association empty; the server only preserves an existing list when the field is omitted on an *update*.
 *   **A context set that already existed keeps its association.** The server semantics are: `databases` **omitted** on an update → the existing list is preserved; `databases` **provided** → the whole list is **replaced**. There is no append call — appending means *read the current list, add to it, send the full list*. So, for an existing set:
     *   During the run nothing is written to it at all (iterations go to `<id>_draft`, which is a resource this run creates and therefore **does** get the derived `databases` like any fresh upload).
-    *   At the final replacement (existing-case Finalize, after the user's yes), **never send only the experiment's database**. If `**Seed databases**` holds the list that `get_context_set` returned when `v0` was downloaded → send that list **plus** the derived database (appended, de-duplicated) so nothing already associated is dropped. If it is `(not returned)` (the server did not expose `databases`) → **omit `databases` entirely** so the server keeps whatever is there.
+    *   At the final replacement (existing-case Finalize, after the user's yes), **never send only the experiment's database**. Send the `**Seed databases**` list that `get_context_set` returned when `v0` was downloaded **plus** the derived database (appended, de-duplicated) so nothing already associated is dropped.
     *   The existing set's association is never otherwise edited — no re-asserting, no pruning, no reordering.
 *   Never invent values: every field comes from `tools.yaml`; if a required field for the type is missing there, stop and route to `context-engineering-init`.
 

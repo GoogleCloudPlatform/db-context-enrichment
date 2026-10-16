@@ -109,7 +109,7 @@ def format_on_screen_card(
     if v_type == "PASS":
         notes_test = (
             "Consistent with hillclimbing (1-question variance)"
-            if (dev_passed - test_passed <= 2)
+            if (stats["dev_accuracy"] - stats["test_accuracy"]) * test_total <= 2
             else "Consistent with hillclimbing"
         )
         diag_text = (
@@ -124,8 +124,13 @@ def format_on_screen_card(
                 else f"{next_step} (Full Context Set ID: `{context_set_id}`)"
             )
         else:
+            export_target = (
+                f"`{context_file}` or the context set (`{cs_id_display}`)"
+                if context_file
+                else f"the context set (`{cs_id_display}`)"
+            )
             next_text = (
-                f"Export `{context_file}` or the context set (`{cs_id_display}`) of the final hill climb to production. "
+                f"Export {export_target} of the final hill climb to production. "
                 f"No further optimization iterations required."
             )
 
@@ -203,7 +208,8 @@ def format_final_evaluation_report(
     dev_pct = f"{stats['dev_accuracy'] * 100:.1f}%"
     test_pct = f"{stats['test_accuracy'] * 100:.1f}%"
     diff_pct = f"{stats['difference'] * 100:.1f}%"
-    diff_queries = stats["test_passed"] - stats["dev_passed"]
+    expected_test_passed = round(stats["dev_accuracy"] * stats["test_total"])
+    diff_queries = stats["test_passed"] - expected_test_passed
 
     if stats["verdict_type"] == "PASS":
         sig_text = f"Not Statistically Significant (p = {stats['p_value']:.2f})"

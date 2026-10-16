@@ -222,3 +222,20 @@ def test_evaluate_generalizability_tool():
     )
     assert "Evaluation Complete: Context Set Generalizes Reliably" in card
     assert "projects/p/locations/l/contextSets/cs1" in card
+    assert "Statistical Details (for `final_evaluation_report.md`)" in card
+    assert "Pooled Proportion (`p_hat`)" in card
+
+    full_output = evaluate_generalizability(
+        dev_passed=95,
+        dev_total=105,
+        test_passed=39,
+        test_total=45,
+        context_set_id="projects/p/locations/l/contextSets/cs1",
+        failure_breakdown_md="- Query 1 failed",
+        actionable_recommendations_md="- Add facet",
+        tldr_summary="Good generalization.",
+        tldr_next_steps="Deploy to prod.",
+    )
+    assert "FINAL EVALUATION & GENERALIZABILITY REPORT" in full_output
+    assert "- Query 1 failed" in full_output
+    assert "- Add facet" in full_output

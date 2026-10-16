@@ -130,6 +130,14 @@ async def split_dataset(
     if max_possible_holdout < target_holdout:
         num_singletons = sum(1 for g in groups if len(g) == 1)
         num_multi = len(groups) - num_singletons
+        small_dataset_hint = (
+            f" (Note: if the user explicitly requested a small custom dataset of {total_items} items, "
+            f"ensure at least {max(1, int(round(total_items * (1.0 - hillclimb_ratio))))} item(s) are "
+            f"template-preserving variations of other items in the dataset and pass "
+            f"min_holdout_size={max(1, int(round(total_items * (1.0 - hillclimb_ratio))))} to split_dataset.)"
+            if total_items < 150
+            else ""
+        )
         raise ValueError(
             f"Dataset has {total_items} items across {len(groups)} normalized SQL templates "
             f"({num_multi} multi-variation templates, {num_singletons} single-variation templates), "
@@ -138,7 +146,7 @@ async def split_dataset(
             f"the required minimum holdout size of {min_holdout_size} (or target {target_holdout}). "
             f"Please expand existing query templates using template-preserving strategies (Paraphrasing, "
             f"Distraction Injection, Linguistic Variation, or Value Substitution) so that there are at least "
-            f"150 items with sufficient multi-variation templates (105 hillclimbing / 45 holdout)."
+            f"150 items with sufficient multi-variation templates (105 hillclimbing / 45 holdout).{small_dataset_hint}"
         )
 
     # Initial holdout allocation per group:

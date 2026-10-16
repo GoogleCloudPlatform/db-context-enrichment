@@ -87,8 +87,8 @@ def test_calculate_z_test_boundary_zero_or_hundred_percent():
 
 
 def test_format_on_screen_card_pass_defaults_and_overrides():
-    # dev_passed - test_passed <= 2 branch (e.g., 45 vs 44)
-    stats_close = calculate_z_test(45, 50, 44, 50)
+    # (dev_accuracy - test_accuracy) * test_total <= 2 branch (e.g., 95/105 vs 39/45 -> 1.71 <= 2)
+    stats_close = calculate_z_test(95, 105, 39, 45)
     card_close = format_on_screen_card(
         stats_close,
         context_set_id="projects/p/locations/l/contextSets/cs1",
@@ -99,8 +99,8 @@ def test_format_on_screen_card_pass_defaults_and_overrides():
     assert "projects/p/locations/l/contextSets/cs1" in card_close
     assert "v2/context_set_v2.json" in card_close
 
-    # dev_passed - test_passed > 2 branch + custom next_step without context_set_id
-    stats_normal = calculate_z_test(95, 105, 39, 45)
+    # (dev_accuracy - test_accuracy) * test_total > 2 branch (e.g., 95/105 vs 38/45 -> 2.71 > 2, still PASS)
+    stats_normal = calculate_z_test(95, 105, 38, 45)
     card_custom = format_on_screen_card(
         stats_normal,
         diagnosis="Custom diagnosis text.",
@@ -108,7 +108,7 @@ def test_format_on_screen_card_pass_defaults_and_overrides():
         context_set_id="projects/p/locations/l/contextSets/cs1",
     )
     assert (
-        "**Holdout Questions** | **87%** | **39 / 45** | **Consistent with hillclimbing**"
+        "**Holdout Questions** | **84%** | **38 / 45** | **Consistent with hillclimbing**"
         in card_custom
     )
     assert "Custom diagnosis text." in card_custom
@@ -124,6 +124,17 @@ def test_format_on_screen_card_pass_defaults_and_overrides():
         context_set_id="projects/p/locations/l/contextSets/cs1",
     )
     assert card_included.count("projects/p/locations/l/contextSets/cs1") == 1
+
+    # Default next_step when context_file is None should not render `None`
+    card_no_file = format_on_screen_card(
+        stats_normal,
+        context_set_id="projects/p/locations/l/contextSets/cs1",
+    )
+    assert "`None`" not in card_no_file
+    assert (
+        "Export the context set (`projects/p/locations/l/contextSets/cs1`)"
+        in card_no_file
+    )
 
 
 def test_format_on_screen_card_inconclusive():

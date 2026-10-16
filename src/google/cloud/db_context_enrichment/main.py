@@ -67,7 +67,7 @@ async def split_dataset(
         golden_dataset_path: The absolute path to the golden dataset JSON file.
         output_dir: Output directory where splits/hillclimb.json and splits/holdout.json are saved.
         hillclimb_ratio: Ratio of data for hillclimbing (default: 0.7).
-        min_holdout_size: Minimum required items for holdout split (default: 45).
+        min_holdout_size: Minimum required items for holdout split (default: 45; if the user explicitly requested a small custom dataset of N < 150 items, pass max(1, round(N * (1 - hillclimb_ratio)))).
 
     Returns:
         A concise summary message confirming the split creation.
@@ -89,11 +89,17 @@ def evaluate_generalizability(
     next_step: str | None = None,
     context_set_id: str | None = None,
     context_file: str | None = None,
+    failure_breakdown_md: str | None = None,
+    actionable_recommendations_md: str | None = None,
+    tldr_summary: str | None = None,
+    tldr_next_steps: str | None = None,
 ) -> str:
     """Evaluates generalizability across hillclimbing and holdout splits.
 
     Calculates a two-proportion pooled z-test, derives the verdict (PASS, INVESTIGATE,
-    INCONCLUSIVE), and returns the formatted On-Screen Summary Card for novice users.
+    INCONCLUSIVE), and returns the formatted On-Screen Summary Card along with
+    pre-computed statistical metrics (or the full final_evaluation_report.md content
+    when report sections are provided).
 
     Args:
         dev_passed: Number of passed queries in Hillclimbing Questions.
@@ -106,14 +112,18 @@ def evaluate_generalizability(
         next_step: Optional immediate next step text.
         context_set_id: Optional full ContextSet resource name of the final hill-climbing iteration.
         context_file: Optional filename of the final mutated ContextSet JSON file.
+        failure_breakdown_md: Optional markdown breakdown of holdout failures for final_evaluation_report.md.
+        actionable_recommendations_md: Optional markdown recommendations for final_evaluation_report.md.
+        tldr_summary: Optional TL;DR summary for final_evaluation_report.md.
+        tldr_next_steps: Optional TL;DR next steps for final_evaluation_report.md.
 
     Returns:
-        The markdown string for the On-Screen Summary Card.
+        The markdown string for the On-Screen Summary Card and statistical report details.
     """
     stats = generalizability.calculate_z_test(
         dev_passed, dev_total, test_passed, test_total, alpha
     )
-    return generalizability.format_on_screen_card(
+    card = generalizability.format_on_screen_card(
         stats,
         diagnosis,
         recommended_action,
@@ -121,6 +131,33 @@ def evaluate_generalizability(
         context_set_id,
         context_file,
     )
+    if (
+        failure_breakdown_md is not None
+        or actionable_recommendations_md is not None
+        or tldr_summary is not None
+        or tldr_next_steps is not None
+    ):
+        report = generalizability.format_final_evaluation_report(
+            stats=stats,
+            failure_breakdown_md=failure_breakdown_md or "None.",
+            actionable_recommendations_md=actionable_recommendations_md or "None.",
+            tldr_summary=tldr_summary or stats["verdict"],
+            tldr_next_steps=tldr_next_steps or stats["status"],
+        )
+        return f"{card}\n\n---\n\n{report}"
+
+    stats_summary = (
+        f"\n\n---\n"
+        f"**Statistical Details (for `final_evaluation_report.md`)**:\n"
+        f"- Verdict: `{stats['verdict']}`\n"
+        f"- Sample Sizes: `N_dev = {stats['dev_total']}` (`x_dev = {stats['dev_passed']}`), "
+        f"`N_test = {stats['test_total']}` (`x_test = {stats['test_passed']}`)\n"
+        f"- Pooled Proportion (`p_hat`): `{stats['p_hat']:.4f}`\n"
+        f"- Standard Error (`SE`): `{stats['standard_error']:.4f}`\n"
+        f"- Test Statistic (`z`): `{stats['z_statistic']:.2f}`\n"
+        f"- Two-Tailed `p-value`: `{stats['p_value']:.4f}` (`alpha = {stats['alpha']}`)"
+    )
+    return f"{card}{stats_summary}"
 
 
 @mcp.tool

@@ -31,7 +31,7 @@ sequenceDiagram
 
 
 1. **`plugin/.claude-plugin/plugin.json` keeps `$.version` and the
-   `mcpServers.db-context-engineering.args[0]` uvx pin
+   `mcpServers.engine.args[0]` uvx pin
    (`google-cloud-db-context-engineering@<version>`) in sync.**
    - `release-please` bumps `$.version` directly via its `json` updater.
    - `.github/workflows/sync-mcp-version.yml` runs on each

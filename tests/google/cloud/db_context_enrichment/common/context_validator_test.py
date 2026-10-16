@@ -218,7 +218,7 @@ def test_triplicate_reports_two_issues(tmp_path: Path):
 
 
 def test_camel_case_alias_is_checked_like_snake_case(tmp_path: Path):
-    # Context Store returns camelCase on download; checks must still apply.
+    # The Context Set server returns camelCase on download; checks must still apply.
     v = _valid_value_search()
     camel = _write(tmp_path / "camel.json", {"valueSearches": [v, v]})
     snake = _write(tmp_path / "snake.json", {"value_searches": [v, v]})

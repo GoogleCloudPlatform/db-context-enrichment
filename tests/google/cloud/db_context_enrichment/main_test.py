@@ -5,10 +5,12 @@ from pathlib import Path
 import pytest
 
 from google.cloud.db_context_enrichment.main import (
+    evaluate_generalizability,
+    generate_dataset,
     generate_evalbench_configs,
-    generate_upload_url,
     mutate_context_set,
     read_evaluation_result,
+    split_dataset,
     validate_context_set,
 )
 
@@ -111,121 +113,6 @@ def test_validate_context_set_missing_file(tmp_path: Path):
     assert "missing.json" in parsed["issues"][0]["message"]
 
 
-def test_generate_upload_url_bigtable_success():
-    url = generate_upload_url(
-        db_engine="bigtable",
-        project_id="test-project",
-        instance_id="test-instance",
-    )
-    assert (
-        url
-        == "https://console.cloud.google.com/bigtable/instances/test-instance/overview?project=test-project"
-    )
-
-
-def test_generate_upload_url_bigtable_missing_instance_id():
-    result = generate_upload_url(
-        db_engine="bigtable",
-        project_id="test-project",
-    )
-    assert result == "Error: Missing instance_id or project_id for bigtable."
-
-
-def test_generate_upload_url_bigtable_missing_project_id():
-    result = generate_upload_url(
-        db_engine="bigtable",
-        project_id="",
-        instance_id="test-instance",
-    )
-    assert result == "Error: Missing instance_id or project_id for bigtable."
-
-
-def test_generate_upload_url_bigtable_none_instance():
-    result = generate_upload_url(
-        db_engine="bigtable",
-        project_id="test-project",
-        instance_id=None,
-    )
-    assert result == "Error: Missing instance_id or project_id for bigtable."
-
-
-def test_generate_upload_url_alloydb_success():
-    url = generate_upload_url(
-        db_engine="alloydb",
-        project_id="test-project",
-        location="us-central1",
-        cluster_id="test-cluster",
-    )
-    assert (
-        url
-        == "https://console.cloud.google.com/alloydb/locations/us-central1/clusters/test-cluster/studio?project=test-project"
-    )
-
-
-def test_generate_upload_url_alloydb_missing_params():
-    result = generate_upload_url(
-        db_engine="alloydb",
-        project_id="test-project",
-        location="us-central1",
-    )
-    assert result == "Error: Missing location, cluster_id, or project_id for alloydb."
-
-
-def test_generate_upload_url_cloudsql_success():
-    url = generate_upload_url(
-        db_engine="cloudsql",
-        project_id="test-project",
-        instance_id="test-instance",
-    )
-    assert (
-        url
-        == "https://console.cloud.google.com/sql/instances/test-instance/studio?project=test-project"
-    )
-
-
-def test_generate_upload_url_cloudsql_missing_params():
-    result = generate_upload_url(
-        db_engine="cloudsql",
-        project_id="test-project",
-    )
-    assert result == "Error: Missing instance_id or project_id for cloudsql."
-
-
-def test_generate_upload_url_spanner_success():
-    url = generate_upload_url(
-        db_engine="spanner",
-        project_id="test-project",
-        instance_id="test-instance",
-        database_id="test-database",
-    )
-    assert (
-        url
-        == "https://console.cloud.google.com/spanner/instances/test-instance/databases/test-database/details/query?project=test-project"
-    )
-
-
-def test_generate_upload_url_spanner_missing_params():
-    result = generate_upload_url(
-        db_engine="spanner",
-        project_id="test-project",
-        instance_id="test-instance",
-    )
-    assert (
-        result == "Error: Missing instance_id, database_id, or project_id for spanner."
-    )
-
-
-def test_generate_upload_url_invalid_db_engine():
-    result = generate_upload_url(
-        db_engine="oracle",
-        project_id="test-project",
-    )
-    assert (
-        result
-        == "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', 'spanner', or 'bigtable'."
-    )
-
-
 def test_generate_evalbench_configs_tool_bigtable(tmp_path: Path):
     golden_file = tmp_path / "golden.json"
     golden_file.write_text(
@@ -252,7 +139,7 @@ instance: test-i
     cwd = os.getcwd()
     try:
         os.chdir(tmp_path)
-        out_dir = str(tmp_path / "autoctx" / "experiments" / "test_exp")
+        out_dir = str(tmp_path / ".context-engineering" / "experiments" / "test_exp")
         result = generate_evalbench_configs(
             output_dir=out_dir,
             dataset_path=str(golden_file),
@@ -261,7 +148,13 @@ instance: test-i
             toolbox_source_name="my-bigtable-source",
         )
         assert "Successfully generated all configs for evaluation" in result
-        eval_dir = tmp_path / "autoctx" / "experiments" / "test_exp" / "eval_configs"
+        eval_dir = (
+            tmp_path
+            / ".context-engineering"
+            / "experiments"
+            / "test_exp"
+            / "eval_configs"
+        )
         assert (eval_dir / "db_config.yaml").exists()
         assert (eval_dir / "model_config.yaml").exists()
         assert (eval_dir / "run_config.yaml").exists()
@@ -289,3 +182,60 @@ async def test_read_evaluation_result_tool(tmp_path: Path):
     report = await read_evaluation_result(str(run_dir))
     assert "Evaluation Summary" in report
     assert "No failure cases found (all passed)." in report
+
+
+@pytest.mark.asyncio
+async def test_generate_and_split_dataset_tools(tmp_path: Path):
+    entries = []
+    for t in range(1, 31):
+        for i in range(1, 6):
+            entries.append(
+                {
+                    "id": f"eval_{t}_{i}",
+                    "database": "test_db",
+                    "nlq": f"Question {t} var {i}",
+                    "golden_sql": f"SELECT * FROM table_{t} WHERE id = {i}",
+                }
+            )
+    golden_path = tmp_path / "dataset" / "golden.json"
+    gen_res = await generate_dataset(json.dumps(entries), str(golden_path))
+    assert "Successfully saved dataset" in gen_res
+    assert golden_path.exists()
+
+    split_res = await split_dataset(
+        golden_dataset_path=str(golden_path),
+        output_dir=str(tmp_path / "dataset"),
+    )
+    assert "Successfully partitioned 150 items" in split_res
+    assert (tmp_path / "dataset" / "splits" / "hillclimb.json").exists()
+    assert (tmp_path / "dataset" / "splits" / "holdout.json").exists()
+
+
+def test_evaluate_generalizability_tool():
+    card = evaluate_generalizability(
+        dev_passed=95,
+        dev_total=105,
+        test_passed=39,
+        test_total=45,
+        context_set_id="projects/p/locations/l/contextSets/cs1",
+        context_file="v1/context_set_v1.json",
+    )
+    assert "Evaluation Complete: Context Set Generalizes Reliably" in card
+    assert "projects/p/locations/l/contextSets/cs1" in card
+    assert "Statistical Details (for `final_evaluation_report.md`)" in card
+    assert "Pooled Proportion (`p_hat`)" in card
+
+    full_output = evaluate_generalizability(
+        dev_passed=95,
+        dev_total=105,
+        test_passed=39,
+        test_total=45,
+        context_set_id="projects/p/locations/l/contextSets/cs1",
+        failure_breakdown_md="- Query 1 failed",
+        actionable_recommendations_md="- Add facet",
+        tldr_summary="Good generalization.",
+        tldr_next_steps="Deploy to prod.",
+    )
+    assert "FINAL EVALUATION & GENERALIZABILITY REPORT" in full_output
+    assert "- Query 1 failed" in full_output
+    assert "- Add facet" in full_output

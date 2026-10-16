@@ -47,7 +47,10 @@ def generate_evalbench_configs(
     `run_config.yaml` also points evalbench at `<output_dir>/eval_reports/`
     for its results.
     """
-    params = _extract_toolbox_params(toolbox_config_path, toolbox_source_name)
+    state_md_path = _find_experiment_state_md(output_dir)
+    params = _extract_toolbox_params(
+        toolbox_config_path, toolbox_source_name, state_md_path
+    )
     generator = _get_db_generator(params)
 
     db_config_yaml = generator.generate_db_config()
@@ -79,9 +82,16 @@ def generate_evalbench_configs(
 
 
 def _extract_toolbox_params(
-    toolbox_config_path: str, toolbox_source_name: str
+    toolbox_config_path: str,
+    toolbox_source_name: str,
+    state_md_path: str | None = None,
 ) -> dict[str, Any]:
-    """Deterministically extracts connection parameters for a specific database source from tools.yaml."""
+    """Deterministically extracts connection parameters for a specific database source from tools.yaml.
+
+    For Spanner sources, `state_md_path` (the experiment's `experiment_state.md`) is read for
+    the `**Graph Ids**` bullet; for BigQuery sources it is read for the `**Table Ids**`
+    bullet. If it is None or missing, no graph_ids / tables are set.
+    """
     try:
         with open(toolbox_config_path) as f:
             content = f.read()
@@ -106,20 +116,18 @@ def _extract_toolbox_params(
                     f"Could not find a 'kind: source' named '{toolbox_source_name}' in {toolbox_config_path}"
                 )
 
-            # For Spanner sources, state.md is the authoritative single source of truth for graph_ids
-            # (QueryData API requires explicit graph_ids in model_config.yaml, whereas tools.yaml
-            # only configures MCP Toolbox runtime tools and parameters).
-            if source_doc.get("type") == "spanner":
-                state_md_dir = os.path.dirname(toolbox_config_path)
-                state_md_path = os.path.join(state_md_dir, "state.md")
+            # For Spanner sources, the experiment's experiment_state.md is the authoritative single
+            # source of truth for graph_ids (QueryData API requires explicit graph_ids in
+            # model_config.yaml, whereas tools.yaml only configures MCP Toolbox runtime
+            # tools and parameters).
+            if source_doc.get("type") == "spanner" and state_md_path:
                 if graph_ids := _parse_graph_ids_from_state_md(state_md_path):
                     source_doc["graph_ids"] = graph_ids
 
             # Likewise for BigQuery, the QueryData API requires explicit table references,
-            # which have no place in a toolbox BigQuery source block.
-            if source_doc.get("type") == "bigquery":
-                state_md_dir = os.path.dirname(toolbox_config_path)
-                state_md_path = os.path.join(state_md_dir, "state.md")
+            # which have no place in a toolbox BigQuery source block; they come from the
+            # same experiment_state.md (`**Table Ids**` under `## Active Database`).
+            if source_doc.get("type") == "bigquery" and state_md_path:
                 if table_ids := _parse_table_ids_from_state_md(state_md_path):
                     source_doc["tables"] = table_ids
 
@@ -135,10 +143,44 @@ def _extract_toolbox_params(
         raise ValueError(f"Failed to parse {toolbox_config_path} as YAML: {e}")
 
 
-def _parse_graph_ids_from_state_md(state_md_path: str) -> list[str] | None:
-    """Parses graph_ids from state.md.
+# How many parent directories above `output_dir` to search for the experiment's
+# experiment_state.md. Eval output always lives inside the experiment's hill-climb
+# directory (`.context-engineering/experiments/<name>/hillclimb/`, which also holds
+# experiment_state.md): iterations write to `<hillclimb>/vN/eval/` (2 levels down)
+# and the holdout pass to `<hillclimb>/holdout_eval/` (1 level down). One extra
+# level is allowed as slack.
+_STATE_MD_MAX_PARENT_LEVELS = 3
 
-    state.md is the authoritative source of truth for the database and graph scope
+_EXPERIMENT_STATE_FILENAME = "experiment_state.md"
+
+
+def _find_experiment_state_md(output_dir: str) -> str | None:
+    """Locates the experiment `experiment_state.md` by walking up from `output_dir`.
+
+    `tools.yaml` and `workspace_state.md` are shared at `.context-engineering/`
+    while `experiment_state.md` is per-experiment at
+    `.context-engineering/experiments/<name>/hillclimb/experiment_state.md`, so the two are
+    not co-located; `output_dir` is the only input that is guaranteed to sit
+    inside the experiment workspace. Returns the first `experiment_state.md`
+    found in `output_dir` or up to `_STATE_MD_MAX_PARENT_LEVELS` of its parents,
+    else None.
+    """
+    current = os.path.abspath(output_dir)
+    for _ in range(_STATE_MD_MAX_PARENT_LEVELS + 1):
+        candidate = os.path.join(current, _EXPERIMENT_STATE_FILENAME)
+        if os.path.isfile(candidate):
+            return candidate
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    return None
+
+
+def _parse_graph_ids_from_state_md(state_md_path: str) -> list[str] | None:
+    """Parses graph_ids from experiment_state.md.
+
+    experiment_state.md is the authoritative source of truth for the database and graph scope
     because QueryData API requires explicit graph_ids in model_config.yaml to evaluate
     property graphs, whereas tools.yaml only configures MCP Toolbox runtime tools.
     """
@@ -146,14 +188,14 @@ def _parse_graph_ids_from_state_md(state_md_path: str) -> list[str] | None:
 
 
 def _parse_table_ids_from_state_md(state_md_path: str) -> list[str] | None:
-    """Parses BigQuery table ids from the `Table Ids` field in state.md."""
+    """Parses BigQuery table ids from the `Table Ids` field in experiment_state.md."""
     return _parse_list_field_from_state_md(state_md_path, r"Table\s+Ids?")
 
 
 def _parse_list_field_from_state_md(
     state_md_path: str, label_pattern: str
 ) -> list[str] | None:
-    """Parses a `- **<Label>**: [a, b]` (or sub-bulleted) list field from state.md."""
+    """Parses a `- **<Label>**: [a, b]` (or sub-bulleted) list field from experiment_state.md."""
     if not os.path.exists(state_md_path):
         return None
     with open(state_md_path, encoding="utf-8") as f:
@@ -365,7 +407,7 @@ def _generate_run_config(output_dir: str, dialect: str) -> str:
         ############################################################
         runners:
           eval_runners: 4
-          sqlgen_runners: 20
+          sqlgen_runners: 5
 
         ############################################################
         ### Scorer Related Configs

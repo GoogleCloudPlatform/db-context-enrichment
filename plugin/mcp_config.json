@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "db-context-engineering": {
+    "engine": {
       "command": "uvx",
       "args": [
         "google-cloud-db-context-engineering@0.7.5"
@@ -11,9 +11,13 @@
       "args": [
         "toolbox-server@1.14.0",
         "--config",
-        "autoctx/tools.yaml",
+        ".context-engineering/tools.yaml",
         "--stdio"
       ]
+    },
+    "ctxset": {
+      "url": "https://dataplex.googleapis.com/mcp/managed-context-sets",
+      "authProviderType": "google_credentials"
     }
   }
 }

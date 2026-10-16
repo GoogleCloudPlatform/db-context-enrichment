@@ -6,7 +6,7 @@ class _BaseContextModel(BaseModel):
     """Shared base for all ContextSet models.
 
     Accepts both snake_case field names and their camelCase aliases on
-    validation — needed because the Context Store API returns camelCase for
+    validation — needed because the Context Set server returns camelCase for
     proto-known fields on download. Serialization stays snake_case by default
     (Pydantic's `by_alias` defaults to False), so upload output is unchanged.
     """

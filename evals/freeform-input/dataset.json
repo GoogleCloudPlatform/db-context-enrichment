@@ -74,7 +74,7 @@
     },
     {
       "id": "freeform:reasoning:type-selection",
-      "starting_prompt": "I keep writing the filter `account.frequency = 'POPLATEK PO OBRATU'` across many different queries. What's the best way to capture this?",
+      "starting_prompt": "I keep writing the filter `account.frequency = 'POPLATEK PO OBRATU'` across many different queries. What's the best way to capture this? Only provide the recommendation and the JSON snippet.",
       "conversation_plan": "Verify the agent recommends a Facet (not a Template) because the user described a reusable filter fragment rather than a full NL→SQL mapping, and produces a valid Facet JSON. The facet's sql_snippet must keep the column reference qualified as `account.frequency = 'POPLATEK PO OBRATU'` (not strip it down to bare `frequency = ...`). Terminate after the recommendation and JSON.",
       "kind": "agents",
       "work_dir": "workspace_type_selection/",
@@ -90,7 +90,7 @@
     },
     {
       "id": "freeform:reasoning:fix-query-gap",
-      "starting_prompt": "I have a query that fails: 'How many accounts who choose issuance after transaction are staying in East Bohemia region?'. The LLM cannot match the term 'East Bohemia' to the database value. Help me fix this.",
+      "starting_prompt": "I have a query that fails: 'How many accounts who choose issuance after transaction are staying in East Bohemia region?'. The LLM cannot match the term 'East Bohemia' to the database value. Help me fix this by recommending and generating the appropriate context item (do not initialize an experiment or run evaluation).",
       "conversation_plan": "Verify that the agent identifies the need for a Value Search or Facet to fix the matching issue for 'East Bohemia'. It should produce the appropriate context item to resolve the gap. Terminate after the agent provides the solution.",
       "kind": "agents",
       "work_dir": "workspace_fix_query_gap/",

@@ -29,7 +29,7 @@
     },
     {
       "id": "core-cujs:dataset-expansion",
-      "starting_prompt": "Use context engineering, generate an evaluation dataset consisting of 10 questions by expanding my evaluation dataset in experiment 'crema-eval-experiment' (golden.json) with more diverse examples using variation strategies. Also save the audit reports as 'evalset_expansion_report_pair_level.md' and 'evalset_expansion_report_dataset_level.md'.",
+      "starting_prompt": "Use context engineering, generate an evaluation dataset consisting of 10 questions by expanding my evaluation dataset in experiment 'crema-eval-experiment' (golden.json) with more diverse examples using all six variation strategies: paraphrasing, merging, difficulty adjustment (both upscaling and simplification), distraction injection, linguistic variation (typos and synonyms), and value substitution. Also save the audit reports as 'evalset_expansion_report_pair_level.md' and 'evalset_expansion_report_dataset_level.md'.",
       "conversation_plan": "Ask the agent to expand the existing golden.json evaluation dataset in experiment 'crema-eval-experiment' by applying variation strategies to the existing pairs. The agent should apply all six strategies: paraphrasing, merging, difficulty adjustment (both upscaling and simplification), distraction injection, linguistic variation (typos and synonyms), and value substitution (which requires running SELECT DISTINCT queries on the database). When the agent presents an expansion plan (evalset_gen_plan.md), confirm it and approve all strategies. When the agent runs SQL execution validation or asks for approval of the validation reports, approve them. Verify that the agent writes the expanded pairs to golden.json, updates splits/hillclimb.json and splits/holdout.json, and produces the audit reports. Terminate the conversation immediately after the agent finishes, even if it prompts you to perform evaluation or take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
@@ -60,7 +60,7 @@
     {
       "id": "core-cujs:hillclimb-continue",
       "starting_prompt": "improve the context set based on eval failure (max 1 more iteration) for experiment 'crema-eval-experiment'. Resume the in-progress experiment recorded in the .context-engineering/experiments/crema-eval-experiment/",
-      "conversation_plan": "Ask the agent to perform 1 more iteration of hillclimbing for experiment 'crema-eval-experiment' to improve the context set based on eval failure. Terminate the conversation immediately after the agent completes the hillclimbing iteration (v1) and reports the result, even if the agent prompts you to take next steps.",
+      "conversation_plan": "Ask the agent to perform hillclimbing for experiment 'crema-eval-experiment' to improve the context set based on eval failure. The agent should run at least one new iteration (v1), and it is acceptable if the agent performs additional retry/recovery iterations (e.g., v2 or re-evaluating v1) to recover from transient API/auth errors or SQL syntax/quoting issues, as well as finalization steps such as holdout evaluation, generalizability analysis, and updating the final report. Terminate the conversation immediately after the agent finishes and reports the results, even if the agent prompts you to take next steps.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_post_evaluation/",
@@ -69,7 +69,7 @@
     {
       "id": "core-cujs:hillclimb-fresh",
       "starting_prompt": "improve my context set from scratch (max iterations 1) using the local base context at ./bootstrap_context.json for experiment 'crema-eval-experiment'",
-      "conversation_plan": "Ask the agent to run hillclimb (max iterations 1) for experiment 'crema-eval-experiment' using the local base context at ./bootstrap_context.json. Terminate immediately after the agent successfully performs the hillclimbing task, even if the agent prompts you to continue.",
+      "conversation_plan": "Ask the agent to run hillclimb for experiment 'crema-eval-experiment' using the local base context at ./bootstrap_context.json. The agent should evaluate the baseline (v0) and run at least one improvement iteration (v1); it is acceptable if the agent performs additional retry/recovery iterations (e.g., v2 or re-evaluating v1) to recover from transient API/auth errors or SQL syntax/quoting issues, as well as finalization steps such as holdout evaluation, generalizability analysis, and updating the final report. Terminate immediately after the agent successfully performs the hillclimbing task, even if the agent prompts you to continue.",
       "expected_trajectory": [],
       "kind": "agents",
       "work_dir": "workspace_fresh_hillclimb/",

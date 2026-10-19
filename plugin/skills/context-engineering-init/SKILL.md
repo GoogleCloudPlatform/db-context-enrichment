@@ -148,8 +148,8 @@ Commands in parentheses are examples — the agent may use its own approach.
 
 ### GCP IAM (operational probes)
 - **Context Set server connected** — the five Context Set tools (`list_context_set_locations`, `upload_context_set`, `get_context_set`, `delete_context_set`, `get_operation`) are served by the **remote OneMCP Context Set server** registered in the plugin manifests under the key `ctxset` (Google-credentials auth). Check that all five appear in your tool list. If they do not, do not continue the preflight: tell the user the remote server is not connected and give the fix — ADC present with a quota project (checks above), then reload MCP servers in the client (Antigravity / Jetski: open the MCP panel; Gemini CLI: `/mcp refresh`). A `401`/`UNAUTHENTICATED` on the first call to any of these tools means the client could not mint an ADC token: re-run `gcloud auth application-default login`, then reload.
-- **Context Set access** — required by every Context Set tool and by QueryData's context lookup. Probe by calling `get_context_set(projectId=<project>, location=us-central1, contextSetId=preflight-probe-does-not-exist)` — a well-formed identity that is known not to exist. Interpret the outcome:
-  - **NOT_FOUND** (or INVALID_ARGUMENT) → the request was authenticated and authorized and reached the API; the probe **passes**. This is the expected result.
+- **Context Set access** — required by every Context Set tool and by QueryData's context lookup. Probe by calling `get_context_set(projectId=<project>, location=<location>, contextSetId=preflight-probe-does-not-exist)` in the chosen `<location>` (or `us-central1` if not yet chosen) — a well-formed identity that is known not to exist. Interpret the outcome:
+  - **NOT_FOUND** → the request was authenticated and authorized and reached the API; the probe **passes**. This is the expected result.
   - **UNAUTHENTICATED** → ADC is missing or expired; point the user back to the GCP authentication checks above.
   - **PERMISSION_DENIED** → surface the error verbatim and ask the user to request the appropriate Context Set IAM role from their IAM admin.
   - Anything else → surface the error verbatim; do not guess at the cause.
@@ -164,7 +164,7 @@ Commands in parentheses are examples — the agent may use its own approach.
 
 ## Rules
 - Never execute mutating actions (`gcloud services enable`, `gcloud projects add-iam-policy-binding`, package installs, file writes) without explicit user consent — surface the exact command and let the user run it, or ask consent before running.
-- ADC only for DB auth. Never write username/password into `tools.yaml`.
+- ADC only for DB auth. Never write username/password into `tools.yaml`. Strongly recommend a **read-only** database principal / IAM role.
 - `tools.yaml` always lives at `.context-engineering/tools.yaml` — one shared file per workspace; do not offer or accept a different path and never copy it into an experiment. If the file exists, ask whether to append or overwrite. Every write ends with the Toolbox restart reminder.
 - `workspace_state.md` always lives at `.context-engineering/workspace_state.md` and is written **only by this skill**. It holds workspace inputs (Project, Location, Default DB source, Enrichment sources, Auto-approve uploads) — never per-experiment values. Every change appends a `## History` line.
 - Experiment `experiment_state.md` never duplicates the workspace inputs: no `Project` / `Location` / `Auto-approve uploads` / `Enrichment sources` bullets except the explicit `(this experiment)` overrides from the review step. Identity is carried by the resource names (`Final Context Set resource`, `Draft Context Set resource`, `Seed Context Set resource`).
@@ -174,7 +174,7 @@ Commands in parentheses are examples — the agent may use its own approach.
 
 ## Credentials message (use when collecting DB info for `tools.yaml`)
 
-> "I'll help you configure the database connection in `tools.yaml`. The Toolbox server uses Application Default Credentials (ADC) for authentication, so you don't need to provide a username or password. Please ensure the IAM account you're using has the required permissions to access the database.
+> "I'll help you configure the database connection in `tools.yaml`. The Toolbox server uses Application Default Credentials (ADC) for authentication, so you don't need to provide a username or password. **Strongly recommended:** use a **read-only** database principal / IAM role.
 >
 > Could you please provide the following details:
 > - Google Cloud Project ID:

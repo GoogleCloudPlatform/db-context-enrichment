@@ -18,18 +18,19 @@ token="$(gcloud auth application-default print-access-token 2>/dev/null)" || {
   exit 1
 }
 
-# X-Goog-User-Project (the Context Set server returns 400 without it). Resolution order:
-#   1. GOOGLE_CLOUD_QUOTA_PROJECT   explicit override
-#   2. quota_project_id in the ADC file   (set by: gcloud auth application-default set-quota-project <p>)
-#   3. GOOGLE_CLOUD_PROJECT         common convention, usually the same project
-quota="${GOOGLE_CLOUD_QUOTA_PROJECT:-}"
-if [ -z "$quota" ]; then
-  adc_file="${GOOGLE_APPLICATION_CREDENTIALS:-${CLOUDSDK_CONFIG:-$HOME/.config/gcloud}/application_default_credentials.json}"
-  if [ -f "$adc_file" ]; then
-    quota="$(sed -n 's/.*"quota_project_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$adc_file" | head -n 1)"
-  fi
+# X-Goog-User-Project (the Context Set server returns 400 without it).
+# Derived strictly from quota_project_id in the ADC file (set by:
+# gcloud auth application-default set-quota-project <project>)
+quota=""
+adc_file="${GOOGLE_APPLICATION_CREDENTIALS:-${CLOUDSDK_CONFIG:-$HOME/.config/gcloud}/application_default_credentials.json}"
+if [ -f "$adc_file" ]; then
+  quota="$(sed -n 's/.*"quota_project_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$adc_file" | head -n 1)"
 fi
-quota="${quota:-${GOOGLE_CLOUD_PROJECT:-}}"
+
+if [ -n "$quota" ] && ! [[ "$quota" =~ ^[a-zA-Z0-9.:-]+$ ]]; then
+  echo "adc_headers.sh: warning: ignoring invalid quota project format: $quota" >&2
+  quota=""
+fi
 
 if [ -n "$quota" ]; then
   printf '{"Authorization":"Bearer %s","X-Goog-User-Project":"%s"}' "$token" "$quota"

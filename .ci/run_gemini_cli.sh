@@ -32,6 +32,10 @@ cp -r "/workspace/evals/${SUITE}" "${WORK_DIR}/"
 cp -r "/workspace/evals/model_configs" "${WORK_DIR}/"
 cd "${WORK_DIR}"
 
+escape_sed() {
+  printf '%s' "$1" | sed 's/[&|\\]/\\&/g'
+}
+
 # Point the Gemini CLI extension installer at the locally built extension.
 sed -i "s|<extension-source>|/workspace/staging|g" "model_configs/gemini_cli_model.yaml"
 
@@ -39,8 +43,8 @@ sed -i "s|<extension-source>|/workspace/staging|g" "model_configs/gemini_cli_mod
 # extension can talk to the right GCP project without the values being
 # committed to the repo.
 sed -i \
-  -e "s|<gcp-project>|${EVAL_GCP_PROJECT_ID}|g" \
-  -e "s|<gcp-location>|${EVAL_GCP_PROJECT_REGION}|g" \
+  -e "s|<gcp-project>|$(escape_sed "${EVAL_GCP_PROJECT_ID}")|g" \
+  -e "s|<gcp-location>|$(escape_sed "${EVAL_GCP_PROJECT_REGION}")|g" \
   "model_configs/gemini_cli_model.yaml"
 
 # Append the runtime release_version and resolve the reporting-project
@@ -48,18 +52,18 @@ sed -i \
 RELEASE_VERSION="$(cat /workspace/RELEASE_VERSION 2>/dev/null || echo unknown)"
 CONFIG="${SUITE}/run_gemini_cli.yaml"
 printf '\nrelease_version: %s\n' "${RELEASE_VERSION}" >> "${CONFIG}"
-sed -i "s|\${EVAL_REPORTING_PROJECT}|${EVAL_REPORTING_PROJECT:-}|g" "${CONFIG}"
+sed -i "s|\${EVAL_REPORTING_PROJECT}|$(escape_sed "${EVAL_REPORTING_PROJECT:-}")|g" "${CONFIG}"
 
 # evalbench runtime
 export PYTHONPATH=/evalbench:/evalbench/evalproto
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
 # Optional scenario filter: set EVAL_SCENARIOS=<id>[,<id>...] to run a subset.
-SCENARIO_ARG=""
-[ -n "${EVAL_SCENARIOS:-}" ] && SCENARIO_ARG="--scenarios=${EVAL_SCENARIOS}"
+SCENARIO_ARGS=()
+[ -n "${EVAL_SCENARIOS:-}" ] && SCENARIO_ARGS+=("--scenarios=${EVAL_SCENARIOS}")
 
-echo "Launching ${SUT}/${SUITE} evaluation${SCENARIO_ARG:+ (scenarios: ${EVAL_SCENARIOS})}..."
-uv run --no-sync --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config="${SUITE}/run_gemini_cli.yaml" ${SCENARIO_ARG}
+echo "Launching ${SUT}/${SUITE} evaluation${EVAL_SCENARIOS:+ (scenarios: ${EVAL_SCENARIOS})}..."
+uv run --no-sync --project /evalbench python /evalbench/evalbench/evalbench.py --experiment_config="${SUITE}/run_gemini_cli.yaml" "${SCENARIO_ARGS[@]}"
 
 echo "Validating mandatory output files for ${SUITE}..."
 python3 /workspace/.ci/check_eval_outputs.py "${WORK_DIR}/${SUITE}" "${WORK_DIR}/${SUITE}/dataset.json"

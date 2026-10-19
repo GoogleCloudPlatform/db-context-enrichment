@@ -1,20 +1,24 @@
 import csv
 import os
 import re
-import sys
 import textwrap
 from dataclasses import dataclass
 
+# 64 MiB bound is sufficient for large QueryData pipeline_debug_info traces in evals.csv
+# while avoiding an unbounded sys.maxsize allocation limit.
+_MAX_CSV_FIELD_SIZE = 64 * 1024 * 1024
+
 
 def _ensure_csv_field_size_limit() -> None:
-    """Raises csv.field_size_limit so large QueryData debug traces in evals.csv do not fail."""
-    max_int = sys.maxsize
-    while True:
+    """Raises csv.field_size_limit to a bounded 64 MiB limit so large QueryData debug traces do not fail."""
+    limit = _MAX_CSV_FIELD_SIZE
+    while limit > 131072:
         try:
-            csv.field_size_limit(max_int)
+            if csv.field_size_limit() < limit:
+                csv.field_size_limit(limit)
             break
         except OverflowError:
-            max_int = int(max_int / 10)
+            limit = limit // 2
 
 
 _ensure_csv_field_size_limit()

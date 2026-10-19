@@ -1,4 +1,5 @@
 import collections
+import hashlib
 import json
 import os
 import re
@@ -7,19 +8,36 @@ from typing import Any
 
 def _normalize_sql_template(sql: str) -> str:
     """Normalizes a SQL query into a structural template key to group variations."""
-    cleaned = sql.strip().rstrip(";").strip()
-    # Mask single-quoted string literals (including escaped '' quotes)
-    normalized = re.sub(r"'(?:''|[^'])*'", "'?'", cleaned)
-    # Mask numeric literals (integers and decimals)
-    normalized = re.sub(r"\b\d+(?:\.\d+)?\b", "?", normalized)
-    # Normalize whitespace
+    # Strip block comments (/* ... */) and line comments (-- ...)
+    no_comments = re.sub(r"/\*.*?\*/", " ", sql, flags=re.DOTALL)
+    no_comments = re.sub(r"--[^\n]*", " ", no_comments)
+    cleaned = no_comments.strip().rstrip(";").strip()
+    # Mask single-quoted string literals (including escaped '' or \' quotes)
+    normalized = re.sub(r"'(?:''|\\'|[^'])*'", "'?'", cleaned)
+    # Mask signed and unsigned numeric literals (integers and decimals)
+    normalized = re.sub(r"(?<![a-zA-Z0-9_])-?\b\d+(?:\.\d+)?\b", "?", normalized)
+    # Normalize whitespace and case
     normalized = re.sub(r"\s+", " ", normalized).strip().lower()
+    # Collapse IN lists of masked literals into a single placeholder
+    normalized = re.sub(
+        r"\bin\s*\(\s*(?:\?|'\?')(?:\s*,\s*(?:\?|'\?'))*\s*\)",
+        "in (?)",
+        normalized,
+    )
     return normalized
 
 
 def _extract_template_key(entry: dict[str, Any]) -> str:
-    """Extracts the structural query template from a dataset entry's golden_sql."""
-    return _normalize_sql_template(entry.get("golden_sql", ""))
+    """Extracts the database-scoped structural query template from a dataset entry."""
+    db = str(entry.get("database", "")).strip().lower()
+    sql_key = _normalize_sql_template(entry.get("golden_sql", ""))
+    return f"{db}::{sql_key}"
+
+
+def _deterministic_item_sort_key(entry: dict[str, Any]) -> str:
+    """Deterministic pseudo-random sort key so holdout selection is unbiased by ID order."""
+    item_id = str(entry.get("id", ""))
+    return hashlib.sha256(f"crema_split_v1:{item_id}".encode()).hexdigest()
 
 
 def _load_and_validate_dataset(file_path: str) -> list[dict[str, Any]]:
@@ -56,7 +74,6 @@ def _resolve_split_paths(output_dir: str) -> tuple[str, str]:
     else:
         splits_dir = os.path.join(norm_dir, "splits")
 
-    os.makedirs(splits_dir, exist_ok=True)
     dev_path = os.path.join(splits_dir, "hillclimb.json")
     test_path = os.path.join(splits_dir, "holdout.json")
     return dev_path, test_path
@@ -109,32 +126,32 @@ async def split_dataset(
     total_items = len(golden_data)
     dev_path, test_path = _resolve_split_paths(output_dir)
 
-    # Group entries by normalized SQL template key to guarantee every holdout template exists in hillclimb
+    # Group entries by database-scoped normalized SQL template key to guarantee every holdout template exists in hillclimb
     groups_dict: dict[str, list[dict[str, Any]]] = collections.defaultdict(list)
     for entry in golden_data:
         key = _extract_template_key(entry)
         groups_dict[key].append(entry)
 
-    # Sort groups deterministically by template key, and sort items within each group by id
+    # Sort groups deterministically by template key, and sort items within each group by deterministic hash of id
     sorted_keys = sorted(groups_dict.keys())
     groups: list[list[dict[str, Any]]] = [
-        sorted(groups_dict[k], key=lambda x: str(x.get("id", ""))) for k in sorted_keys
+        sorted(groups_dict[k], key=_deterministic_item_sort_key) for k in sorted_keys
     ]
 
     # Calculate maximum possible holdout items while keeping at least 1 item per template in hillclimb.json
     max_possible_holdout = sum(len(g) - 1 for g in groups if len(g) >= 2)
-    target_holdout = max(
+    desired_holdout = max(
         min_holdout_size, int(round(total_items * (1.0 - hillclimb_ratio)))
     )
 
-    if max_possible_holdout < target_holdout:
+    if max_possible_holdout < min_holdout_size:
         num_singletons = sum(1 for g in groups if len(g) == 1)
         num_multi = len(groups) - num_singletons
         small_dataset_hint = (
             f" (Note: if the user explicitly requested a small custom dataset of {total_items} items, "
-            f"ensure at least {max(1, int(round(total_items * (1.0 - hillclimb_ratio))))} item(s) are "
+            f"ensure at least {min_holdout_size} item(s) are "
             f"template-preserving variations of other items in the dataset and pass "
-            f"min_holdout_size={max(1, int(round(total_items * (1.0 - hillclimb_ratio))))} to split_dataset.)"
+            f"min_holdout_size={min(min_holdout_size, max(1, int(round(total_items * (1.0 - hillclimb_ratio)))))} to split_dataset.)"
             if total_items < 150
             else ""
         )
@@ -143,11 +160,13 @@ async def split_dataset(
             f"({num_multi} multi-variation templates, {num_singletons} single-variation templates), "
             f"which can yield at most {max_possible_holdout} holdout items while ensuring every normalized SQL "
             f"template in holdout.json is included in hillclimb.json. This is smaller than "
-            f"the required minimum holdout size of {min_holdout_size} (or target {target_holdout}). "
+            f"the required minimum holdout size of {min_holdout_size} (or target {desired_holdout}). "
             f"Please expand existing query templates using template-preserving strategies (Paraphrasing, "
             f"Distraction Injection, Linguistic Variation, or Value Substitution) so that there are at least "
             f"150 items with sufficient multi-variation templates (105 hillclimbing / 45 holdout).{small_dataset_hint}"
         )
+
+    target_holdout = min(max_possible_holdout, desired_holdout)
 
     # Initial holdout allocation per group:
     # - Single-item groups (n == 1) MUST have holdout_count = 0 so their template goes to hillclimb.json.
@@ -227,6 +246,7 @@ async def split_dataset(
             f"are not included in hillclimb.json."
         )
 
+    os.makedirs(os.path.dirname(dev_path), exist_ok=True)
     with open(dev_path, "w", encoding="utf-8") as f:
         json.dump(dev_items, f, indent=2)
 

@@ -99,34 +99,32 @@ jobs:
             echo "::error file=$FILE::toolbox pin mismatch: pyproject toolbox_version=$TOOLBOX_VERSION but args[0]=$ARG (expected $EXPECTED)"
             exit 1
           fi
-      - name: Check autoctx-init SKILL.md toolbox pins match pyproject toolbox_version
+      - name: Check plugin skills toolbox pins match pyproject toolbox_version
         run: |
           set -euo pipefail
-          FILE=plugin/skills/context-engineering-init/SKILL.md
           EXPECTED="toolbox-server@$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)"
-          FOUND=$(grep -oE 'toolbox-server@[0-9]+\.[0-9]+\.[0-9]+' "$FILE" | sort -u || true)
+          FOUND=$(grep -rh -oE 'toolbox-server@[0-9]+\.[0-9]+\.[0-9]+' plugin/skills/ | sort -u || true)
           if [ -z "$FOUND" ]; then
-            echo "::error file=$FILE::no 'toolbox-server@X.Y.Z' pin found; SKILL.md must pin to $EXPECTED"
+            echo "::error::no 'toolbox-server@X.Y.Z' pin found in plugin/skills/; skills must pin to $EXPECTED"
             exit 1
           fi
           MISMATCHES=$(echo "$FOUND" | grep -v "^${EXPECTED}$" || true)
           if [ -n "$MISMATCHES" ]; then
-            echo "::error file=$FILE::SKILL.md toolbox pin(s) don't match pyproject (expected $EXPECTED): $MISMATCHES"
+            echo "::error::plugin/skills/ toolbox pin(s) don't match pyproject (expected $EXPECTED): $MISMATCHES"
             exit 1
           fi
-      - name: Check autoctx-evaluate SKILL.md evalbench pins match pyproject evalbench_version
+      - name: Check plugin skills evalbench pins match pyproject evalbench_version
         run: |
           set -euo pipefail
-          FILE=plugin/skills/context-engineering-evaluate/SKILL.md
           EXPECTED="google-evalbench@$(grep -o '^evalbench_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)"
-          FOUND=$(grep -oE 'google-evalbench@[0-9]+\.[0-9]+\.[0-9]+' "$FILE" | sort -u || true)
+          FOUND=$(grep -rh -oE 'google-evalbench@[0-9]+\.[0-9]+\.[0-9]+' plugin/skills/ | sort -u || true)
           if [ -z "$FOUND" ]; then
-            echo "::error file=$FILE::no 'google-evalbench@X.Y.Z' pin found; SKILL.md must pin to $EXPECTED"
+            echo "::error::no 'google-evalbench@X.Y.Z' pin found in plugin/skills/; skills must pin to $EXPECTED"
             exit 1
           fi
           MISMATCHES=$(echo "$FOUND" | grep -v "^${EXPECTED}$" || true)
           if [ -n "$MISMATCHES" ]; then
-            echo "::error file=$FILE::SKILL.md evalbench pin(s) don't match pyproject (expected $EXPECTED): $MISMATCHES"
+            echo "::error::plugin/skills/ evalbench pin(s) don't match pyproject (expected $EXPECTED): $MISMATCHES"
             exit 1
           fi
 

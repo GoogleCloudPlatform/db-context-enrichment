@@ -169,3 +169,46 @@ async def test_split_dataset_enforces_all_holdout_keys_in_hillclimb_with_singlet
     # Every normalized SQL key in holdout.json MUST be included in hillclimb.json
     assert holdout_keys.issubset(hillclimb_keys)
     assert len(holdout_keys - hillclimb_keys) == 0
+
+
+@pytest.mark.asyncio
+async def test_split_dataset_small_min_holdout_and_does_not_create_dir_on_error(
+    tmp_path: pathlib.Path,
+):
+    items = [
+        {
+            "id": f"eval_{i:03d}",
+            "nlq": f"Revenue for {2000 + i}",
+            "golden_sql": f"SELECT SUM(x) FROM s WHERE y = {2000 + i}",
+            "database": "db",
+        }
+        for i in range(2)
+    ] + [
+        {
+            "id": f"single_{i}",
+            "nlq": f"Single {i}",
+            "golden_sql": f"SELECT COUNT(*) FROM t_{i}",
+            "database": "db",
+        }
+        for i in range(3)
+    ]
+    input_file = tmp_path / "small5.json"
+    with open(input_file, "w", encoding="utf-8") as f:
+        json.dump(items, f)
+
+    # 5 items with 1 multi-variation pair (max_possible_holdout = 1) succeeds when min_holdout_size=1
+    out_dir = tmp_path / "small5_out"
+    await split_dataset(str(input_file), str(out_dir), 0.7, 1)
+    assert (out_dir / "splits" / "holdout.json").exists()
+
+    # Verify failed split does not leave behind an empty splits/ directory
+    fail_out = tmp_path / "fail_out"
+    with pytest.raises(ValueError):
+        await split_dataset(str(input_file), str(fail_out), 0.7, 45)
+    assert not (fail_out / "splits").exists()
+
+
+def test_normalize_sql_template_comments_in_list_and_negatives():
+    q1 = "SELECT * FROM t WHERE x IN (1, 2) AND y > -5 -- trailing comment"
+    q2 = "/* block */ SELECT * FROM t WHERE x IN (10, 20, 30) AND y > -100;"
+    assert _normalize_sql_template(q1) == _normalize_sql_template(q2)

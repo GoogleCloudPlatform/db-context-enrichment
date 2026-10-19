@@ -21,7 +21,7 @@
     *   **Extract Scores**: Extract `test_passed` and `test_total` from `holdout_eval/eval_reports/<job_id>/summary.csv`, and retrieve `dev_passed` and `dev_total` from the candidate iteration's (`vK`) entry in the `experiment_state.md` Iteration Log.
 
 2.  **Statistical Significance Testing (Two-Proportion Pooled z-Test)**:
-    *   Call the `evaluate_generalizability` tool with `dev_passed`, `dev_total`, `test_passed`, `test_total`, and the candidate's resource string as `context_set_id` (the significance threshold `alpha = 0.05` is fixed server-side).
+    *   Call the `evaluate_generalizability` tool with `dev_passed`, `dev_total`, `test_passed`, `test_total`, and the candidate's resource string as `context_set_id` (plus optional `context_file`, `diagnosis`, `recommended_action`, and `next_step` overrides; the significance threshold `alpha = 0.05` is fixed server-side).
     *   **Statistical Formulation**:
         *   $p_{\text{dev}} = \frac{x_{\text{dev}}}{N_{\text{dev}}}$, $p_{\text{test}} = \frac{x_{\text{test}}}{N_{\text{test}}}$
         *   $p_{\text{pool}} = \frac{x_{\text{dev}} + x_{\text{test}}}{N_{\text{dev}} + N_{\text{test}}}$
@@ -32,7 +32,20 @@
         *   **INVESTIGATE**: $p < 0.05$ AND $p_{\text{dev}} > p_{\text{test}}$ (statistically significant drop indicating overfitting to hillclimbing wording).
         *   **PASS**: $p \ge 0.05$ with $N_{\text{test}} \ge 45$, OR $p_{\text{test}} \ge p_{\text{dev}}$ (no statistically significant drop; context generalizes reliably).
 
-3.  **Agent On-Screen Interface (Primary Chat Output)**:
+3.  **Save Final Evaluation Report (`final_evaluation_report.md`)**:
+    *   Write the comprehensive audit report to `.context-engineering/experiments/<experiment_name>/hillclimb/final_evaluation_report.md`.
+    *   Ordered strictly by decision relevance (Verdict & Status $\rightarrow$ Recommended Action / Next Steps $\rightarrow$ Performance Overview & Failure Breakdown $\rightarrow$ Statistical Details):
+        *   `TL;DR`: Verdict, Next Steps, Generalization Drop, Significance Assessment, Summary.
+        *   `1. ACTIONABLE RECOMMENDATIONS`: Concrete recommended action and next steps for the user placed at the top.
+        *   `2. PERFORMANCE OVERVIEW`: Table and counts for hillclimbing vs holdout, difference note, pattern coverage.
+        *   `3. HOLDOUT SET FAILURE BREAKDOWN`: Query-by-query breakdown of failed holdout cases with category and root cause.
+        *   `4. STATISTICAL DETAILS`: Two-proportion pooled z-test, sample sizes ($N_{\text{dev}}, x_{\text{dev}}, N_{\text{test}}, x_{\text{test}}$), pooled proportion ($\hat{p}$), standard error ($SE$), test statistic ($z$), two-tailed $p$-value, and power analysis check placed at the bottom.
+
+4.  **Log State Tracking (`experiment_state.md`) and Return to Hillclimb Finalize Step 4**:
+    *   Append a `## Generalizability` section to `.context-engineering/experiments/<experiment_name>/hillclimb/experiment_state.md` recording the holdout evaluation path (`holdout_eval/eval_reports/<job_id>/`), the candidate resource evaluated, holdout score (`passed / total`), the verdict (`PASS`, `INVESTIGATE`, or `INCONCLUSIVE`), and the report path. See the example in `context-engineering-hillclimb/references/layout.md`.
+    *   **Return to `context-engineering-hillclimb` Finalize step 4**, which sets the publication state (fresh: already live; existing: the replace-or-keep HITL) and writes `## Final:`. Only then is the experiment **finished and read-only**. Once `## Final:` is written, proceed to step 5 (On-Screen Card) and step 6 (Next Experiment Hand-off) so they accurately state where the context set lives.
+
+5.  **Agent On-Screen Interface (Primary Chat Output — after `## Final:` is written)**:
     *   **Core Principle**: The chat card is the primary user interface. Novice users should never be required to open a markdown file to understand the verdict, performance, or next steps.
     *   **Order by Decision Relevance**: Status & Verdict $\rightarrow$ Performance Overview (4-column table) $\rightarrow$ Plain-Language Summary & Diagnosis $\rightarrow$ Immediate Next Step (including the **full published `context_set_id`** resource name when ready for production).
     *   **Plain-Language Terminology**: Use "Hillclimbing Questions" and "Holdout Questions" (not ML jargon). Explain differences humanely (e.g. `Difference: -3.8% (within expected variance)`). Restrict formulas, z-scores, and p-values to `final_evaluation_report.md`.
@@ -75,7 +88,7 @@
             ```
 
         *   **Case 3: INVESTIGATE — Performance Drop on Holdout Questions**:
-            Inspect the holdout failure breakdown (step 4) to identify whether the dominant failures come from **Path A (Context & Metadata Gaps — missing business-rule Facets or unmapped enum/synonym Value Searches)** or **Path B (Question Phrasing & Curriculum Gaps — informal wording, acronyms, or shorthand not represented in the dataset)**, and show the specific diagnosed recommendation rather than a generic menu:
+            Inspect the holdout failure breakdown (step 3) to identify whether the dominant failures come from **Path A (Context & Metadata Gaps — missing business-rule Facets or unmapped enum/synonym Value Searches)** or **Path B (Question Phrasing & Curriculum Gaps — informal wording, acronyms, or shorthand not represented in the dataset)**, and show the specific diagnosed recommendation rather than a generic menu:
             ```markdown
             ❌ **Evaluation Alert: Performance Drop on Holdout Questions**
 
@@ -92,19 +105,6 @@
             * **Diagnosis**: <X> of <Y> holdout failures (<Z>%) occurred because of <plain-language root cause from the failure breakdown, e.g., unmapped status/enum values and missing business-rule filters | informal phrasing and shorthand not covered in the dataset>.
             * **Recommended Action**: <If Path A (Context Fixes): "**Add Business-Rule Facets / Value Searches** for <specific gaps> while keeping the same dataset splits so the before/after scores are directly comparable." | If Path B (Dataset Expansion): "**Expand Question Phrasings in the Dataset** to cover <specific informal phrasing/acronyms/patterns> and re-run optimization."> Use the copy-paste prompt under **Next step** below to start a cloned experiment.
             ```
-
-4.  **Save Final Evaluation Report (`final_evaluation_report.md`)**:
-    *   Write the comprehensive audit report to `.context-engineering/experiments/<experiment_name>/hillclimb/final_evaluation_report.md`.
-    *   Ordered strictly by decision relevance (Verdict & Status $\rightarrow$ Recommended Action / Next Steps $\rightarrow$ Performance Overview & Failure Breakdown $\rightarrow$ Statistical Details):
-        *   `TL;DR`: Verdict, Next Steps, Generalization Drop, Significance Assessment, Summary.
-        *   `1. ACTIONABLE RECOMMENDATIONS`: Concrete recommended action and next steps for the user placed at the top.
-        *   `2. PERFORMANCE OVERVIEW`: Table and counts for hillclimbing vs holdout, difference note, pattern coverage.
-        *   `3. HOLDOUT SET FAILURE BREAKDOWN`: Query-by-query breakdown of failed holdout cases with category and root cause.
-        *   `4. STATISTICAL DETAILS`: Two-proportion pooled z-test, sample sizes ($N_{\text{dev}}, x_{\text{dev}}, N_{\text{test}}, x_{\text{test}}$), pooled proportion ($\hat{p}$), standard error ($SE$), test statistic ($z$), two-tailed $p$-value, and power analysis check placed at the bottom.
-
-5.  **Log State Tracking (`experiment_state.md`) and hand back**:
-    *   Append a `## Generalizability` section to `.context-engineering/experiments/<experiment_name>/hillclimb/experiment_state.md` recording the holdout evaluation path (`holdout_eval/eval_reports/<job_id>/`), the candidate resource evaluated, holdout score (`passed / total`), the verdict (`PASS`, `INVESTIGATE`, or `INCONCLUSIVE`), and the report path. See the example in `context-engineering-hillclimb/references/layout.md`.
-    *   **Return to `context-engineering-hillclimb` Finalize step 4**, which sets the publication state (fresh: already live; existing: the replace-or-keep HITL) and writes `## Final:`. Only then is the experiment **finished and read-only**. The On-Screen Card (step 3) and the hand-off (step 6) are printed after `## Final:` is written, so they can state where the context set actually is.
 
 6.  **Next Experiment Hand-off (same turn, after the On-Screen Card — for INVESTIGATE and INCONCLUSIVE only)**:
     *   **PASS → no card.** The context set is production-ready and nothing needs doing; a clone card here only confuses. End with one line: *"If you later want to extend coverage or push accuracy further, say so and I'll start a new experiment cloned from `<experiment_name>`."*

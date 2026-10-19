@@ -62,7 +62,7 @@ def calculate_z_test(
     elif p_value < alpha and p_dev > p_test:
         verdict_type = "INVESTIGATE"
         verdict = "NOT PASS — INVESTIGATE (Statistically Significant Performance Drop)"
-        status = "Needs Optimization"
+        status = "Needs Optimization (Gaps Identified)"
     else:
         verdict_type = "PASS"
         verdict = "PASS — Ready for Production"
@@ -110,11 +110,12 @@ def format_on_screen_card(
 
     if v_type == "PASS":
         notes_test = "Consistent with hillclimbing"
-        diag_text = (
-            diagnosis
-            or "The model generalizes well to new phrasings and literal values across the covered query patterns rather than memorizing exact hillclimbing questions. The minor difference between hillclimbing and holdout is well within normal statistical expectations."
+        diag_text = diagnosis or (
+            "The model generalizes well to new phrasings and literal values across the covered query patterns "
+            "rather than memorizing exact hillclimbing questions. The minor difference between hillclimbing "
+            f"and holdout ({test_pct}% vs {dev_pct}%) is well within normal statistical expectations."
         )
-        cs_id_display = context_set_id or "<full_context_set_id>"
+        cs_id_display = context_set_id or "<Final Context Set resource>"
         if next_step:
             next_text = (
                 next_step
@@ -122,14 +123,10 @@ def format_on_screen_card(
                 else f"{next_step} (Full Context Set ID: `{context_set_id}`)"
             )
         else:
-            export_target = (
-                f"`{context_file}` or the context set (`{cs_id_display}`)"
-                if context_file
-                else f"the context set (`{cs_id_display}`)"
-            )
+            file_note = f" (local file `{context_file}`)" if context_file else ""
             next_text = (
-                f"Export {export_target} of the final hill climb to production. "
-                f"No further optimization iterations required."
+                f"The context set is live at `{cs_id_display}`{file_note}. "
+                f"Point your application at it. No further optimization iterations required."
             )
 
         return (
@@ -152,7 +149,7 @@ def format_on_screen_card(
         )
         action_text = (
             recommended_action
-            or "**Expand Evaluation Dataset**. Add questions to reach at least **150 total pairs** (>= 105 Hillclimbing / >= 45 Holdout) and restart context engineering."
+            or "**Expand Evaluation Dataset** to at least **150 total questions** (>= 105 Hillclimbing / >= 45 Holdout) in a new cloned experiment — use the copy-paste prompt under **Next step** below."
         )
 
         return (
@@ -170,97 +167,25 @@ def format_on_screen_card(
 
     else:  # INVESTIGATE
         diff_pct = abs(int(round(stats["difference"] * 100)))
-        p_val_str = f"{stats['p_value']:.3f}"
+        failed_count = test_total - test_passed
         diag_text = (
             diagnosis
-            or "Evaluation revealed statistically significant drops on holdout question phrasings due to missing domain contexts or phrasing gaps."
+            or "Evaluation revealed a significant drop on holdout question phrasings due to missing context definitions or unseen phrasing patterns."
         )
         action_text = (
             recommended_action
-            or "Review the failure breakdown below, generate missing facets/values, and re-run optimization with a fresh holdout set."
+            or "Inspect `final_evaluation_report.md` and use the copy-paste prompt under **Next step** below to start a cloned experiment."
         )
 
         return (
             f"❌ **Evaluation Alert: Performance Drop on Holdout Questions**\n\n"
-            f"**Status**: Needs Optimization\n\n"
-            f"The model passed hillclimbing questions but dropped on holdout phrasings.\n\n"
+            f"**Status**: Needs Optimization (Gaps Identified)\n\n"
+            f"The model passed hillclimbing questions but dropped on holdout phrasings due to missing context definitions or unseen phrasing patterns.\n\n"
             f"| Split | Accuracy | Correct Queries | Notes |\n"
             f"| :---- | :---: | :---: | :---- |\n"
             f"| **Hillclimbing Questions** | **{dev_pct}%** | **{dev_passed} / {dev_total}** | **Baseline optimization accuracy** |\n"
-            f"| **Holdout Questions** | **{test_pct}%** | **{test_passed} / {test_total}** | **Statistically significant drop (-{diff_pct}%, p = {p_val_str})** |\n\n"
+            f"| **Holdout Questions** | **{test_pct}%** | **{test_passed} / {test_total}** | **Significant drop (-{diff_pct}% across {failed_count} queries)** |\n\n"
             f"**Summary & Recommendation**:\n"
             f"* **Diagnosis**: {diag_text}\n"
             f"* **Recommended Action**: {action_text}"
         )
-
-
-def format_final_evaluation_report(
-    stats: dict[str, Any],
-    failure_breakdown_md: str,
-    actionable_recommendations_md: str,
-    tldr_summary: str,
-    tldr_next_steps: str,
-) -> str:
-    """Formats the complete final_evaluation_report.md artifact for disk persistence."""
-    drop_pct = f"{stats['generalization_drop'] * 100:.1f}%"
-    dev_pct = f"{stats['dev_accuracy'] * 100:.1f}%"
-    test_pct = f"{stats['test_accuracy'] * 100:.1f}%"
-    diff_pct = f"{stats['difference'] * 100:.1f}%"
-
-    if stats["verdict_type"] == "PASS":
-        sig_text = f"Not Statistically Significant (p = {stats['p_value']:.2f})"
-        decision_text = (
-            f"Retain null hypothesis (H0: p_dev - p_test = 0).\n"
-            f"Because p = {stats['p_value']:.4f} >= {stats['alpha']} with N_test = {stats['test_total']}, "
-            f"the observed difference is not statistically significant."
-        )
-    elif stats["verdict_type"] == "INCONCLUSIVE":
-        sig_text = (
-            f"Inconclusive (p = {stats['p_value']:.2f}, sample size underpowered)"
-        )
-        decision_text = (
-            f"Inconclusive. Holdout sample size is underpowered to reliably detect a drop at alpha = {stats['alpha']}.\n"
-            f"Minimum recommended holdout sample size is N_test >= 45."
-        )
-    else:
-        sig_text = f"Statistically Significant Drop (p = {stats['p_value']:.4f} < {stats['alpha']})"
-        decision_text = f"Reject H0 (p < {stats['alpha']}). Statistically significant performance drop."
-
-    return (
-        f"================================================================================\n"
-        f"FINAL EVALUATION & GENERALIZABILITY REPORT\n"
-        f"================================================================================\n"
-        f"TL;DR\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"Verdict: {stats['verdict']}\n"
-        f"Next Steps: {tldr_next_steps}\n"
-        f"Generalization Drop: {drop_pct} ({dev_pct} Hillclimbing -> {test_pct} Holdout)\n"
-        f"Significance Assessment: {sig_text}\n"
-        f"Summary: {tldr_summary}\n\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"1. ACTIONABLE RECOMMENDATIONS\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"{actionable_recommendations_md.strip()}\n\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"2. PERFORMANCE OVERVIEW\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"Hillclimbing Set:            {stats['dev_passed']:3d} / {stats['dev_total']:3d} passed ({dev_pct})\n"
-        f"Holdout Set (New Phrasings): {stats['test_passed']:3d} / {stats['test_total']:3d} passed ({test_pct})\n"
-        f"Difference:                  {diff_pct}\n\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"3. HOLDOUT SET FAILURE BREAKDOWN\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"{failure_breakdown_md.strip()}\n\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"4. STATISTICAL DETAILS\n"
-        f"--------------------------------------------------------------------------------\n"
-        f"- Test Method: Two-proportion pooled z-test\n"
-        f"- Significance Level: alpha = {stats['alpha']}\n"
-        f"- Sample Sizes: N_dev = {stats['dev_total']} (x_dev = {stats['dev_passed']}), N_test = {stats['test_total']} (x_test = {stats['test_passed']})\n"
-        f"- Pooled Proportion: p_hat = {stats['p_hat']:.4f}\n"
-        f"- Standard Error (SE): {stats['standard_error']:.4f}\n"
-        f"- Test Statistic (z): {stats['z_statistic']:.2f}\n"
-        f"- Two-Tailed p-value: p = {stats['p_value']:.4f}\n"
-        f"- Statistical Decision: {decision_text}\n"
-        f"================================================================================\n"
-    )

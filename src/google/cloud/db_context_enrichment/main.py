@@ -88,17 +88,12 @@ def evaluate_generalizability(
     next_step: str | None = None,
     context_set_id: str | None = None,
     context_file: str | None = None,
-    failure_breakdown_md: str | None = None,
-    actionable_recommendations_md: str | None = None,
-    tldr_summary: str | None = None,
-    tldr_next_steps: str | None = None,
 ) -> str:
     """Evaluates generalizability across hillclimbing and holdout splits.
 
     Calculates a two-proportion pooled z-test, derives the verdict (PASS, INVESTIGATE,
     INCONCLUSIVE), and returns the formatted On-Screen Summary Card along with
-    pre-computed statistical metrics (or the full final_evaluation_report.md content
-    when report sections are provided).
+    pre-computed statistical metrics for `final_evaluation_report.md`.
 
     Args:
         dev_passed: Number of passed queries in Hillclimbing Questions.
@@ -108,12 +103,8 @@ def evaluate_generalizability(
         diagnosis: Optional specific diagnosis text.
         recommended_action: Optional recommended action text.
         next_step: Optional immediate next step text.
-        context_set_id: Optional full ContextSet resource name of the final hill-climbing iteration.
-        context_file: Optional filename of the final mutated ContextSet JSON file.
-        failure_breakdown_md: Optional markdown breakdown of holdout failures for final_evaluation_report.md.
-        actionable_recommendations_md: Optional markdown recommendations for final_evaluation_report.md.
-        tldr_summary: Optional TL;DR summary for final_evaluation_report.md.
-        tldr_next_steps: Optional TL;DR next steps for final_evaluation_report.md.
+        context_set_id: Optional full ContextSet resource name of the candidate hill-climbing iteration.
+        context_file: Optional filename of the candidate ContextSet JSON file.
 
     Returns:
         The markdown string for the On-Screen Summary Card and statistical report details.
@@ -129,21 +120,6 @@ def evaluate_generalizability(
         context_set_id,
         context_file,
     )
-    if (
-        failure_breakdown_md is not None
-        or actionable_recommendations_md is not None
-        or tldr_summary is not None
-        or tldr_next_steps is not None
-    ):
-        report = generalizability.format_final_evaluation_report(
-            stats=stats,
-            failure_breakdown_md=failure_breakdown_md or "None.",
-            actionable_recommendations_md=actionable_recommendations_md or "None.",
-            tldr_summary=tldr_summary or stats["verdict"],
-            tldr_next_steps=tldr_next_steps or stats["status"],
-        )
-        return f"{card}\n\n---\n\n{report}"
-
     stats_summary = (
         f"\n\n---\n"
         f"**Statistical Details (for `final_evaluation_report.md`)**:\n"

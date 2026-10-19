@@ -2,13 +2,22 @@
   "name": "google-cloud-db-context-engineering",
   "version": "0.7.5",
   "mcpServers": {
-    "mcp_db_context_engineering": {
+    "engine": {
       "command": "uv",
       "args": [
         "run",
         "--directory",
         "${extensionPath}/..",
         "google-cloud-db-context-engineering"
+      ]
+    },
+    "toolbox": {
+      "command": "uvx",
+      "args": [
+        "toolbox-server@1.14.0",
+        "--config",
+        ".context-engineering/tools.yaml",
+        "--stdio"
       ]
     },
     "ctxset": {

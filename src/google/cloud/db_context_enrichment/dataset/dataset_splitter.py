@@ -37,7 +37,7 @@ def _extract_template_key(entry: dict[str, Any]) -> str:
 def _deterministic_item_sort_key(entry: dict[str, Any]) -> str:
     """Deterministic pseudo-random sort key so holdout selection is unbiased by ID order."""
     item_id = str(entry.get("id", ""))
-    return hashlib.sha256(f"crema_split_v1:{item_id}".encode()).hexdigest()
+    return hashlib.sha256(f"db_context_split_v1:{item_id}".encode()).hexdigest()
 
 
 def _load_and_validate_dataset(file_path: str) -> list[dict[str, Any]]:
@@ -109,8 +109,8 @@ async def split_dataset(
         raise ValueError(
             "[ERROR] InvalidDatasetConfiguration: Providing pre-partitioned hillclimbing and holdout datasets is not supported.\n"
             "Reason: To guarantee that every normalized SQL query template in the holdout set is included in the "
-            "hillclimbing set with distinct phrasing variations, Crema must perform expansion and stratified splitting internally.\n"
-            "Action Required: Provide a single golden dataset (User-Supplied Dataset scenario) or allow Crema to "
+            "hillclimbing set with distinct phrasing variations, the Context Engineering agent must perform expansion and stratified splitting internally.\n"
+            "Action Required: Provide a single golden dataset (User-Supplied Dataset scenario) or allow the Context Engineering agent to "
             "generate and split the dataset from your schema (Full Automated Flow)."
         )
 

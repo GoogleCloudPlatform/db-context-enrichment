@@ -2,7 +2,6 @@ import pytest
 
 from google.cloud.db_context_enrichment.evaluate.generalizability import (
     calculate_z_test,
-    format_final_evaluation_report,
     format_on_screen_card,
 )
 
@@ -41,7 +40,7 @@ def test_calculate_z_test_investigate_significant_drop():
     )
     assert stats["verdict_type"] == "INVESTIGATE"
     assert "INVESTIGATE" in stats["verdict"]
-    assert stats["status"] == "Needs Optimization"
+    assert stats["status"] == "Needs Optimization (Gaps Identified)"
     assert stats["p_value"] < 0.05
     assert stats["generalization_drop"] > 0
 
@@ -133,7 +132,7 @@ def test_format_on_screen_card_pass_defaults_and_overrides():
     )
     assert "`None`" not in card_no_file
     assert (
-        "Export the context set (`projects/p/locations/l/contextSets/cs1`)"
+        "The context set is live at `projects/p/locations/l/contextSets/cs1`."
         in card_no_file
     )
 
@@ -158,32 +157,8 @@ def test_format_on_screen_card_investigate():
         recommended_action="Add facets and clone experiment.",
     )
     assert "Evaluation Alert: Performance Drop on Holdout Questions" in card
-    assert "**Status**: Needs Optimization" in card
-    assert "Statistically significant drop (-21%," in card
+    assert "**Status**: Needs Optimization (Gaps Identified)" in card
+    assert "Significant drop (-21% across 13 queries)" in card
+    assert "p =" not in card
     assert "Missing business rule facets." in card
     assert "Add facets and clone experiment." in card
-
-
-def test_format_final_evaluation_report_all_verdicts():
-    for dev_p, dev_t, test_p, test_t, expected_verdict in [
-        (95, 105, 39, 45, "PASS — Ready for Production"),
-        (36, 40, 8, 10, "NOT PASS — INCONCLUSIVE"),
-        (97, 105, 32, 45, "NOT PASS — INVESTIGATE"),
-    ]:
-        stats = calculate_z_test(dev_p, dev_t, test_p, test_t)
-        report = format_final_evaluation_report(
-            stats=stats,
-            failure_breakdown_md="- Query 1 failed due to missing join",
-            actionable_recommendations_md="- Add facet for active status",
-            tldr_summary="Summary of run.",
-            tldr_next_steps="Proceed with recommended action.",
-        )
-        assert "FINAL EVALUATION & GENERALIZABILITY REPORT" in report
-        assert expected_verdict in report
-        assert "1. ACTIONABLE RECOMMENDATIONS" in report
-        assert "- Add facet for active status" in report
-        assert "2. PERFORMANCE OVERVIEW" in report
-        assert "3. HOLDOUT SET FAILURE BREAKDOWN" in report
-        assert "- Query 1 failed due to missing join" in report
-        assert "4. STATISTICAL DETAILS" in report
-        assert "Two-proportion pooled z-test" in report

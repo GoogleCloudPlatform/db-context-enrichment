@@ -59,7 +59,6 @@ Thumbs.db
 .context-engineering/
 !evals/**/workspace_*/.context-engineering/
 !evals/**/workspace_*/.context-engineering/**
-.context-engineer/
 autoctx/experiments/
 .evalbench/
 .bin/

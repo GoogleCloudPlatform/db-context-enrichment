@@ -107,11 +107,7 @@ def format_on_screen_card(
     test_total = stats["test_total"]
 
     if v_type == "PASS":
-        notes_test = (
-            "Consistent with hillclimbing (1-question variance)"
-            if (stats["dev_accuracy"] - stats["test_accuracy"]) * test_total <= 2
-            else "Consistent with hillclimbing"
-        )
+        notes_test = "Consistent with hillclimbing"
         diag_text = (
             diagnosis
             or "The model is generalizing well and not simply memorizing hillclimbing phrases. The minor difference between hillclimbing and holdout is well within normal statistical expectations."
@@ -208,8 +204,6 @@ def format_final_evaluation_report(
     dev_pct = f"{stats['dev_accuracy'] * 100:.1f}%"
     test_pct = f"{stats['test_accuracy'] * 100:.1f}%"
     diff_pct = f"{stats['difference'] * 100:.1f}%"
-    expected_test_passed = round(stats["dev_accuracy"] * stats["test_total"])
-    diff_queries = stats["test_passed"] - expected_test_passed
 
     if stats["verdict_type"] == "PASS":
         sig_text = f"Not Statistically Significant (p = {stats['p_value']:.2f})"
@@ -248,7 +242,7 @@ def format_final_evaluation_report(
         f"--------------------------------------------------------------------------------\n"
         f"Hillclimbing Set:            {stats['dev_passed']:3d} / {stats['dev_total']:3d} passed ({dev_pct})\n"
         f"Holdout Set (New Phrasings): {stats['test_passed']:3d} / {stats['test_total']:3d} passed ({test_pct})\n"
-        f"Difference:                  {diff_queries:+d} queries ({diff_pct})\n\n"
+        f"Difference:                  {diff_pct}\n\n"
         f"--------------------------------------------------------------------------------\n"
         f"3. HOLDOUT SET FAILURE BREAKDOWN\n"
         f"--------------------------------------------------------------------------------\n"

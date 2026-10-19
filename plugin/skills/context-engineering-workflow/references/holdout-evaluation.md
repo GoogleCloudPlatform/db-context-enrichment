@@ -35,7 +35,7 @@
 3.  **Agent On-Screen Interface (Primary Chat Output)**:
     *   **Core Principle**: The chat card is the primary user interface. Novice users should never be required to open a markdown file to understand the verdict, performance, or next steps.
     *   **Order by Decision Relevance**: Status & Verdict $\rightarrow$ Performance Overview (4-column table) $\rightarrow$ Plain-Language Summary & Diagnosis $\rightarrow$ Immediate Next Step (including the **full published `context_set_id`** resource name when ready for production).
-    *   **Plain-Language Terminology**: Use "Hillclimbing Questions" and "Holdout Questions" (not ML jargon). Explain differences humanely (e.g. `Difference: -1 queries (-3.3%, within expected variance)`). Restrict formulas, z-scores, and p-values to `final_evaluation_report.md`.
+    *   **Plain-Language Terminology**: Use "Hillclimbing Questions" and "Holdout Questions" (not ML jargon). Explain differences humanely (e.g. `Difference: -3.8% (within expected variance)`). Restrict formulas, z-scores, and p-values to `final_evaluation_report.md`.
     *   **On-Screen Card Templates**:
 
         *   **Case 1: PASS — Ready for Production**:
@@ -49,7 +49,7 @@
             | Split | Accuracy | Correct Queries | Notes |
             | :---- | :---: | :---: | :---- |
             | **Hillclimbing Questions** | **90%** | **95 / 105** | **Baseline optimization accuracy** |
-            | **Holdout Questions** | **87%** | **39 / 45** | **Consistent with hillclimbing (1-question variance)** |
+            | **Holdout Questions** | **87%** | **39 / 45** | **Consistent with hillclimbing** |
 
             **Summary**:
             * **Robustness**: The model is generalizing well and not simply memorizing hillclimbing phrases. The minor difference between hillclimbing and holdout (87% vs 90%) is well within normal statistical expectations.

@@ -213,9 +213,11 @@ def format_final_evaluation_report(
             f"the observed difference is not statistically significant."
         )
     elif stats["verdict_type"] == "INCONCLUSIVE":
-        sig_text = f"Inconclusive (p = {stats['p_value']:.2f}, statistical power < 25%)"
+        sig_text = (
+            f"Inconclusive (p = {stats['p_value']:.2f}, sample size underpowered)"
+        )
         decision_text = (
-            f"Inconclusive. Statistical power < 25% to detect a drop at alpha = {stats['alpha']}.\n"
+            f"Inconclusive. Holdout sample size is underpowered to reliably detect a drop at alpha = {stats['alpha']}.\n"
             f"Minimum recommended holdout sample size is N_test >= 45."
         )
     else:

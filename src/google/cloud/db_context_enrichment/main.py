@@ -83,7 +83,6 @@ def evaluate_generalizability(
     dev_total: int,
     test_passed: int,
     test_total: int,
-    alpha: float = 0.05,
     diagnosis: str | None = None,
     recommended_action: str | None = None,
     next_step: str | None = None,
@@ -106,7 +105,6 @@ def evaluate_generalizability(
         dev_total: Total queries in Hillclimbing Questions (N_dev).
         test_passed: Number of passed queries in Holdout Questions.
         test_total: Total queries in Holdout Questions (N_test).
-        alpha: Significance level (default: 0.05).
         diagnosis: Optional specific diagnosis text.
         recommended_action: Optional recommended action text.
         next_step: Optional immediate next step text.
@@ -121,7 +119,7 @@ def evaluate_generalizability(
         The markdown string for the On-Screen Summary Card and statistical report details.
     """
     stats = generalizability.calculate_z_test(
-        dev_passed, dev_total, test_passed, test_total, alpha
+        dev_passed, dev_total, test_passed, test_total
     )
     card = generalizability.format_on_screen_card(
         stats,

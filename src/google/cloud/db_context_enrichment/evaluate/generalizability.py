@@ -1,13 +1,15 @@
 import math
 from typing import Any
 
+DEFAULT_ALPHA: float = 0.05
+
 
 def calculate_z_test(
     dev_passed: int,
     dev_total: int,
     test_passed: int,
     test_total: int,
-    alpha: float = 0.05,
+    alpha: float = DEFAULT_ALPHA,
 ) -> dict[str, Any]:
     """Calculates a two-proportion pooled z-test and derives the verdict.
 

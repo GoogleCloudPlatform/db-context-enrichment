@@ -110,7 +110,7 @@ def format_on_screen_card(
         notes_test = "Consistent with hillclimbing"
         diag_text = (
             diagnosis
-            or "The model is generalizing well and not simply memorizing hillclimbing phrases. The minor difference between hillclimbing and holdout is well within normal statistical expectations."
+            or "The model generalizes well to new phrasings and literal values across the covered query patterns rather than memorizing exact hillclimbing questions. The minor difference between hillclimbing and holdout is well within normal statistical expectations."
         )
         cs_id_display = context_set_id or "<full_context_set_id>"
         if next_step:
@@ -133,7 +133,7 @@ def format_on_screen_card(
         return (
             f"🎯 **Evaluation Complete: Context Set Generalizes Reliably**\n\n"
             f"**Status**: Ready for Production\n\n"
-            f"Your context set successfully handles new ways of asking questions without performance drops.\n\n"
+            f"Your context set successfully handles unseen phrasings and parameter variations across the covered query patterns without performance drops.\n\n"
             f"| Split | Accuracy | Correct Queries | Notes |\n"
             f"| :---- | :---: | :---: | :---- |\n"
             f"| **Hillclimbing Questions** | **{dev_pct}%** | **{dev_passed} / {dev_total}** | **Baseline optimization accuracy** |\n"

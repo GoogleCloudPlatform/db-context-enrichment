@@ -44,7 +44,7 @@
 
             **Status**: Ready for Production
 
-            Your context set successfully handles new ways of asking questions without performance drops.
+            Your context set successfully handles unseen phrasings and parameter variations across the covered query patterns without performance drops.
 
             | Split | Accuracy | Correct Queries | Notes |
             | :---- | :---: | :---: | :---- |
@@ -52,7 +52,7 @@
             | **Holdout Questions** | **87%** | **39 / 45** | **Consistent with hillclimbing** |
 
             **Summary**:
-            * **Robustness**: The model is generalizing well and not simply memorizing hillclimbing phrases. The minor difference between hillclimbing and holdout (87% vs 90%) is well within normal statistical expectations.
+            * **Robustness**: The model generalizes well to new phrasings and literal values across the covered query patterns rather than memorizing exact hillclimbing questions. The minor difference between hillclimbing and holdout (87% vs 90%) is well within normal statistical expectations.
             * **Next Step**: <fresh case: "The context set is live at `<Final Context Set resource>` (from iteration `vK`, local file `vK/context_set_vK.json`). Point your application at it." | existing case, replaced: "`<Final Context Set resource>` now holds this version (from `vK`); the previous contents are kept in `v0/context_set_v0.json`." | existing case, kept: "`<Final Context Set resource>` was left unchanged; the candidate is in `vK/context_set_vK.json`."> No further optimization iterations required.
             ```
 

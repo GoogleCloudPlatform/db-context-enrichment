@@ -224,4 +224,5 @@ def test_evaluate_generalizability_tool():
     assert "projects/p/locations/l/contextSets/cs1" in card
     assert "v1/context_set_v1.json" in card
     assert "Statistical Details (for `final_evaluation_report.md`)" in card
+    assert "Min Holdout Accuracy Threshold: `0.85`" in card
     assert "Pooled Proportion (`p_hat`)" in card

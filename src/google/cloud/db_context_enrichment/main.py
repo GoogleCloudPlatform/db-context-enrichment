@@ -83,6 +83,7 @@ def evaluate_generalizability(
     dev_total: int,
     test_passed: int,
     test_total: int,
+    tuning_target: float = 1.0,
     diagnosis: str | None = None,
     recommended_action: str | None = None,
     next_step: str | None = None,
@@ -91,15 +92,17 @@ def evaluate_generalizability(
 ) -> str:
     """Evaluates generalizability across hillclimbing and holdout splits.
 
-    Calculates a two-proportion pooled z-test, derives the verdict (PASS, INVESTIGATE,
-    INCONCLUSIVE), and returns the formatted On-Screen Summary Card along with
-    pre-computed statistical metrics for `final_evaluation_report.md`.
+    Calculates a two-proportion pooled z-test, checks whether holdout accuracy meets
+    the minimum target threshold (`tuning_target - 0.15`, i.e., 85% when tuning_target=1.0),
+    derives the verdict (PASS, INVESTIGATE, INCONCLUSIVE), and returns the formatted
+    On-Screen Summary Card along with pre-computed statistical metrics for `final_evaluation_report.md`.
 
     Args:
         dev_passed: Number of passed queries in Hillclimbing Questions.
         dev_total: Total queries in Hillclimbing Questions (N_dev).
         test_passed: Number of passed queries in Holdout Questions.
         test_total: Total queries in Holdout Questions (N_test).
+        tuning_target: Target accuracy for hillclimbing (default: 1.0). Minimum holdout accuracy for PASS is `tuning_target - 0.15`.
         diagnosis: Optional specific diagnosis text.
         recommended_action: Optional recommended action text.
         next_step: Optional immediate next step text.
@@ -110,7 +113,11 @@ def evaluate_generalizability(
         The markdown string for the On-Screen Summary Card and statistical report details.
     """
     stats = generalizability.calculate_z_test(
-        dev_passed, dev_total, test_passed, test_total
+        dev_passed,
+        dev_total,
+        test_passed,
+        test_total,
+        tuning_target=tuning_target,
     )
     card = generalizability.format_on_screen_card(
         stats,
@@ -126,6 +133,7 @@ def evaluate_generalizability(
         f"- Verdict: `{stats['verdict']}`\n"
         f"- Sample Sizes: `N_dev = {stats['dev_total']}` (`x_dev = {stats['dev_passed']}`), "
         f"`N_test = {stats['test_total']}` (`x_test = {stats['test_passed']}`)\n"
+        f"- Tuning Target: `{stats['tuning_target']:.2f}` (Min Holdout Accuracy Threshold: `{stats['min_test_accuracy']:.2f}`)\n"
         f"- Pooled Proportion (`p_hat`): `{stats['p_hat']:.4f}`\n"
         f"- Standard Error (`SE`): `{stats['standard_error']:.4f}`\n"
         f"- Test Statistic (`z`): `{stats['z_statistic']:.2f}`\n"

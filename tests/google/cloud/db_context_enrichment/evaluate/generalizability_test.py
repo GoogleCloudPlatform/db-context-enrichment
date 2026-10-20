@@ -23,6 +23,10 @@ def test_calculate_z_test_invalid_inputs():
         ValueError, match="Passed counts must be between 0 and total counts"
     ):
         calculate_z_test(90, 105, 46, 45)
+    with pytest.raises(ValueError, match="tuning_target must be in"):
+        calculate_z_test(90, 105, 40, 45, tuning_target=0.0)
+    with pytest.raises(ValueError, match="tuning_target must be in"):
+        calculate_z_test(90, 105, 40, 45, tuning_target=1.1)
 
 
 def test_calculate_z_test_inconclusive_underpowered():
@@ -45,6 +49,37 @@ def test_calculate_z_test_investigate_significant_drop():
     assert stats["generalization_drop"] > 0
 
 
+def test_calculate_z_test_investigate_below_target_threshold_and_custom_target():
+    # Low plateau: 10/105 (9.5%) dev, 4/45 (8.9%) test -> p >= 0.05, but < 85% threshold
+    stats_low = calculate_z_test(
+        dev_passed=10, dev_total=105, test_passed=4, test_total=45
+    )
+    assert stats_low["p_value"] >= 0.05
+    assert stats_low["verdict_type"] == "INVESTIGATE"
+    assert "Below Target Threshold" in stats_low["verdict"]
+    assert stats_low["status"] == "Needs Optimization (Below Accuracy Target)"
+
+    # 80% dev (84/105), 71% test (32/45) -> p = 0.23 >= 0.05, fails default 85% threshold (tuning_target=1.0)
+    stats_default = calculate_z_test(
+        dev_passed=84, dev_total=105, test_passed=32, test_total=45
+    )
+    assert stats_default["p_value"] >= 0.05
+    assert stats_default["verdict_type"] == "INVESTIGATE"
+    assert stats_default["status"] == "Needs Optimization (Below Accuracy Target)"
+
+    # With custom tuning_target=0.85 -> min_test_accuracy=0.70 -> 32/45 (71.1%) passes!
+    stats_custom = calculate_z_test(
+        dev_passed=84,
+        dev_total=105,
+        test_passed=32,
+        test_total=45,
+        tuning_target=0.85,
+    )
+    assert stats_custom["min_test_accuracy"] == pytest.approx(0.70)
+    assert stats_custom["verdict_type"] == "PASS"
+    assert stats_custom["status"] == "Ready for Production"
+
+
 def test_calculate_z_test_pass_within_variance():
     stats = calculate_z_test(
         dev_passed=95, dev_total=105, test_passed=39, test_total=45
@@ -56,7 +91,7 @@ def test_calculate_z_test_pass_within_variance():
 
 
 def test_calculate_z_test_pass_when_holdout_exceeds_dev():
-    # Even if p < 0.05, test accuracy > dev accuracy is a PASS
+    # Even if p < 0.05, test accuracy > dev accuracy and >= 85% is a PASS
     stats = calculate_z_test(
         dev_passed=60, dev_total=105, test_passed=44, test_total=45
     )
@@ -82,7 +117,8 @@ def test_calculate_z_test_boundary_zero_or_hundred_percent():
     assert stats_all_fail["standard_error"] == 0.0
     assert stats_all_fail["z_statistic"] == 0.0
     assert stats_all_fail["p_value"] == 1.0
-    assert stats_all_fail["verdict_type"] == "PASS"
+    assert stats_all_fail["verdict_type"] == "INVESTIGATE"
+    assert stats_all_fail["status"] == "Needs Optimization (Below Accuracy Target)"
 
 
 def test_format_on_screen_card_pass_defaults_and_overrides():
@@ -100,7 +136,7 @@ def test_format_on_screen_card_pass_defaults_and_overrides():
     assert "projects/p/locations/l/contextSets/cs1" in card_close
     assert "v2/context_set_v2.json" in card_close
 
-    stats_normal = calculate_z_test(95, 105, 38, 45)
+    stats_normal = calculate_z_test(95, 105, 39, 45)
     card_custom = format_on_screen_card(
         stats_normal,
         diagnosis="Custom diagnosis text.",
@@ -108,7 +144,7 @@ def test_format_on_screen_card_pass_defaults_and_overrides():
         context_set_id="projects/p/locations/l/contextSets/cs1",
     )
     assert (
-        "**Holdout Questions** | **84%** | **38 / 45** | **Consistent with hillclimbing**"
+        "**Holdout Questions** | **87%** | **39 / 45** | **Consistent with hillclimbing**"
         in card_custom
     )
     assert "Custom diagnosis text." in card_custom
@@ -162,3 +198,9 @@ def test_format_on_screen_card_investigate():
     assert "p =" not in card
     assert "Missing business rule facets." in card
     assert "Add facets and clone experiment." in card
+
+    stats_below = calculate_z_test(10, 105, 4, 45)
+    card_below = format_on_screen_card(stats_below)
+    assert "Evaluation Alert: Holdout Accuracy Below Target Threshold" in card_below
+    assert "**Status**: Needs Optimization (Below Accuracy Target)" in card_below
+    assert "Below 85% threshold (41 failed queries)" in card_below

@@ -2,6 +2,8 @@ import math
 from typing import Any
 
 DEFAULT_ALPHA: float = 0.05
+DEFAULT_TUNING_TARGET: float = 1.0
+ACCURACY_MARGIN: float = 0.15
 
 
 def calculate_z_test(
@@ -10,6 +12,7 @@ def calculate_z_test(
     test_passed: int,
     test_total: int,
     alpha: float = DEFAULT_ALPHA,
+    tuning_target: float = DEFAULT_TUNING_TARGET,
 ) -> dict[str, Any]:
     """Calculates a two-proportion pooled z-test and derives the verdict.
 
@@ -19,6 +22,9 @@ def calculate_z_test(
         test_passed: Number of passed queries in holdout split (Holdout Questions).
         test_total: Total queries in holdout split (N_test).
         alpha: Significance level (default: 0.05).
+        tuning_target: Target accuracy for hillclimbing (default: 1.0). The minimum
+            holdout accuracy required for a PASS verdict is `tuning_target - 0.15`
+            (e.g., 85% when tuning_target is 1.0).
 
     Returns:
         Dict containing statistical metrics, p-value, and plain-language verdict.
@@ -32,11 +38,14 @@ def calculate_z_test(
         or test_passed > test_total
     ):
         raise ValueError("Passed counts must be between 0 and total counts.")
+    if not (0.0 < tuning_target <= 1.0):
+        raise ValueError("tuning_target must be in (0.0, 1.0].")
 
     p_dev = dev_passed / dev_total
     p_test = test_passed / test_total
     drop = p_dev - p_test
     diff = p_test - p_dev
+    min_test_accuracy = max(0.0, round(tuning_target - ACCURACY_MARGIN, 10))
 
     total_queries = dev_total + test_total
     total_passed = dev_passed + test_passed
@@ -51,10 +60,11 @@ def calculate_z_test(
         z = 0.0
         p_value = 1.0
 
-    # Decision logic based on design doc & simulated outputs:
+    # Decision logic:
     # 1. Underpowered holdout size (N_test < 45) -> Inconclusive
-    # 2. Statistically significant drop (p < alpha and p_dev > p_test) -> Investigate
-    # 3. No statistically significant drop or holdout >= hillclimbing -> Pass
+    # 2. Statistically significant drop (p < alpha and p_dev > p_test) -> Investigate (Gaps Identified)
+    # 3. Holdout accuracy below target threshold (p_test < tuning_target - 0.15) -> Investigate (Below Accuracy Target)
+    # 4. Otherwise -> Pass
     if test_total < 45:
         verdict_type = "INCONCLUSIVE"
         verdict = "NOT PASS — INCONCLUSIVE (Sample Size Too Small)"
@@ -63,6 +73,10 @@ def calculate_z_test(
         verdict_type = "INVESTIGATE"
         verdict = "NOT PASS — INVESTIGATE (Statistically Significant Performance Drop)"
         status = "Needs Optimization (Gaps Identified)"
+    elif p_test < min_test_accuracy:
+        verdict_type = "INVESTIGATE"
+        verdict = "NOT PASS — INVESTIGATE (Holdout Accuracy Below Target Threshold)"
+        status = "Needs Optimization (Below Accuracy Target)"
     else:
         verdict_type = "PASS"
         verdict = "PASS — Ready for Production"
@@ -82,6 +96,8 @@ def calculate_z_test(
         "z_statistic": z,
         "p_value": p_value,
         "alpha": alpha,
+        "tuning_target": tuning_target,
+        "min_test_accuracy": min_test_accuracy,
         "verdict_type": verdict_type,
         "verdict": verdict,
         "status": status,
@@ -168,23 +184,51 @@ def format_on_screen_card(
     else:  # INVESTIGATE
         diff_pct = abs(int(round(stats["difference"] * 100)))
         failed_count = test_total - test_passed
-        diag_text = (
-            diagnosis
-            or "Evaluation revealed a significant drop on holdout question phrasings due to missing context definitions or unseen phrasing patterns."
+        is_sig_drop = (
+            stats["p_value"] < stats["alpha"]
+            and stats["dev_accuracy"] > stats["test_accuracy"]
         )
+        min_acc_pct = int(round(stats.get("min_test_accuracy", 0.85) * 100))
+        target_pct = int(round(stats.get("tuning_target", 1.0) * 100))
+
+        if is_sig_drop:
+            header_title = (
+                "❌ **Evaluation Alert: Performance Drop on Holdout Questions**"
+            )
+            status_line = "**Status**: Needs Optimization (Gaps Identified)"
+            subtitle = "The model passed hillclimbing questions but dropped on holdout phrasings due to missing context definitions or unseen phrasing patterns."
+            holdout_note = (
+                f"**Significant drop (-{diff_pct}% across {failed_count} queries)**"
+            )
+            default_diag = "Evaluation revealed a significant drop on holdout question phrasings due to missing context definitions or unseen phrasing patterns."
+        else:
+            header_title = (
+                "❌ **Evaluation Alert: Holdout Accuracy Below Target Threshold**"
+            )
+            status_line = "**Status**: Needs Optimization (Below Accuracy Target)"
+            subtitle = f"Holdout accuracy ({test_pct}%) is below the {min_acc_pct}% minimum threshold (tied to the {target_pct}% tuning target), so the context set is not yet ready for production."
+            holdout_note = (
+                f"**Below {min_acc_pct}% threshold ({failed_count} failed queries)**"
+            )
+            default_diag = (
+                f"Although holdout accuracy ({test_pct}%) is statistically consistent with hillclimbing ({dev_pct}%), "
+                f"overall accuracy remains below the {min_acc_pct}% production readiness threshold (derived from the {target_pct}% tuning target)."
+            )
+
+        diag_text = diagnosis or default_diag
         action_text = (
             recommended_action
             or "Inspect `final_evaluation_report.md` and use the copy-paste prompt under **Next step** below to start a cloned experiment."
         )
 
         return (
-            f"❌ **Evaluation Alert: Performance Drop on Holdout Questions**\n\n"
-            f"**Status**: Needs Optimization (Gaps Identified)\n\n"
-            f"The model passed hillclimbing questions but dropped on holdout phrasings due to missing context definitions or unseen phrasing patterns.\n\n"
+            f"{header_title}\n\n"
+            f"{status_line}\n\n"
+            f"{subtitle}\n\n"
             f"| Split | Accuracy | Correct Queries | Notes |\n"
             f"| :---- | :---: | :---: | :---- |\n"
             f"| **Hillclimbing Questions** | **{dev_pct}%** | **{dev_passed} / {dev_total}** | **Baseline optimization accuracy** |\n"
-            f"| **Holdout Questions** | **{test_pct}%** | **{test_passed} / {test_total}** | **Significant drop (-{diff_pct}% across {failed_count} queries)** |\n\n"
+            f"| **Holdout Questions** | **{test_pct}%** | **{test_passed} / {test_total}** | {holdout_note} |\n\n"
             f"**Summary & Recommendation**:\n"
             f"* **Diagnosis**: {diag_text}\n"
             f"* **Recommended Action**: {action_text}"

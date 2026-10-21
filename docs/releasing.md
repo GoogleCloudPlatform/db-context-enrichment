@@ -31,7 +31,7 @@ sequenceDiagram
 
 
 1. **`plugin/.claude-plugin/plugin.json` keeps `$.version` and the
-   `mcpServers.engine.args[0]` uvx pin
+   `mcpServers.ctxeng.args[0]` uvx pin
    (`google-cloud-db-context-engineering@<version>`) in sync.**
    - `release-please` bumps `$.version` directly via its `json` updater.
    - `.github/workflows/sync-mcp-version.yml` runs on each
@@ -66,7 +66,7 @@ same release tarball, so there is nothing to coordinate across pins.
    - On the release tag, `release.yml` → `build-artifacts` builds a
      PyInstaller binary per platform.
    - The job rewrites
-     `mcpServers.engine.command` to point at the
+     `mcpServers.ctxeng.command` to point at the
      bundled `${extensionPath}/google-cloud-db-context-engineering`
      binary, then archives skills + manifest + binary into a single
      `<platform>.<arch>.google-cloud-db-context-engineering.tar.gz`.

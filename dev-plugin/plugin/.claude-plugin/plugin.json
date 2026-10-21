@@ -6,7 +6,7 @@
     "name": "Google Cloud Platform"
   },
   "mcpServers": {
-    "engine": {
+    "ctxeng": {
       "command": "uv",
       "args": [
         "run",

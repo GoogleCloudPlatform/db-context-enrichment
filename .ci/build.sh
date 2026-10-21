@@ -58,7 +58,7 @@ mv evalbench staging/skills/context-engineering-evaluate/scripts/
 BINARY_NAME="\${extensionPath}/google-cloud-db-context-engineering"
 TOOLBOX_NAME="\${extensionPath}/skills/context-engineering-init/scripts/toolbox"
 
-jq ".mcpServers.engine.command = \"$BINARY_NAME\" | .mcpServers.engine.args = [] | .mcpServers.toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\", \"--config\", \".context-engineering/tools.yaml\"]}" plugin/gemini-extension.json > staging/gemini-extension.json
+jq ".mcpServers.ctxeng.command = \"$BINARY_NAME\" | .mcpServers.ctxeng.args = [] | .mcpServers.toolbox = {\"command\": \"$TOOLBOX_NAME\", \"args\": [\"--stdio\", \"--config\", \".context-engineering/tools.yaml\"]}" plugin/gemini-extension.json > staging/gemini-extension.json
 
 cp LICENSE staging/
 

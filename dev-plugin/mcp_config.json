@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "engine": {
+    "ctxeng": {
       "command": "uv",
       "args": [
         "run",

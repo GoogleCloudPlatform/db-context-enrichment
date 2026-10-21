@@ -40,7 +40,7 @@ jobs:
             VERSION=$(jq -r '.version' "$FILE")
             PIN="google-cloud-db-context-engineering@${VERSION}"
             jq --arg pin "$PIN" \
-              '.mcpServers["engine"].args[0] = $pin' \
+              '.mcpServers["ctxeng"].args[0] = $pin' \
               "$FILE" > "$FILE.tmp"
             mv "$FILE.tmp" "$FILE"
           done
@@ -51,7 +51,7 @@ jobs:
           PIN="google-cloud-db-context-engineering@${MCP_VERSION}"
           for FILE in plugin/mcp.json plugin/mcp_config.json; do
             jq --arg pin "$PIN" \
-              '.mcpServers["engine"].args[0] = $pin' \
+              '.mcpServers["ctxeng"].args[0] = $pin' \
               "$FILE" > "$FILE.tmp"
             mv "$FILE.tmp" "$FILE"
           done

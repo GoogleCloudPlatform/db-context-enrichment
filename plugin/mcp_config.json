@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "engine": {
+    "ctxeng": {
       "command": "uvx",
       "args": [
         "google-cloud-db-context-engineering@0.7.5"

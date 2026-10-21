@@ -10,7 +10,7 @@ Every manifest declares three MCP servers:
 
 | Key | What | Transport |
 | :--- | :--- | :--- |
-| `engine` | This repo's Python server (`main.py`): dataset generation/splitting, Evalbench config generation, `mutate_context_set`, `validate_context_set`, `read_evaluation_result`, `evaluate_generalizability`. | stdio (`uvx` / `uv run`) |
+| `ctxeng` | This repo's Python server (`main.py`): dataset generation/splitting, Evalbench config generation, `mutate_context_set`, `validate_context_set`, `read_evaluation_result`, `evaluate_generalizability`. | stdio (`uvx` / `uv run`) |
 | `toolbox` | MCP Toolbox for Databases. Reads `.context-engineering/tools.yaml`. The client starts Toolbox with a fixed `--config`, so **any edit to `tools.yaml` requires restarting the `toolbox` MCP server** (or the client) before the new sources/tools are visible. | stdio (`uvx`) |
 | `ctxset` | The **remote Dataplex managed Context Sets MCP server**: `list_context_set_locations`, `upload_context_set`, `get_context_set`, `delete_context_set`, `get_operation`. | Streamable HTTP, Google-credentials auth |
 
@@ -59,7 +59,7 @@ Verify:
 
 ```bash
 gemini extensions list   # Type: link, Path: .../plugin
-gemini mcp list          # engine ✓ Connected, toolbox ✓ Connected, ctxset ✓ Connected
+gemini mcp list          # ctxeng ✓ Connected, toolbox ✓ Connected, ctxset ✓ Connected
 ```
 
 Both `src/` and `plugin/` edits are picked up on the next `gemini`
@@ -127,10 +127,10 @@ step — `--plugin-dir` only affects the session it's passed to.
 
 Edit `dev-plugin/mcp_config.json`:
 
-1. Replace `<local-repo-path>` in `mcpServers.engine.args`
+1. Replace `<local-repo-path>` in `mcpServers.ctxeng.args`
    with the absolute path to this repo's root.
 2. Replace `<local-workspace-path>` in the `cwd` of **both** stdio servers
-   (`engine` and `toolbox`) with the absolute path of the
+   (`ctxeng` and `toolbox`) with the absolute path of the
    directory you will launch `agy` in — the one that holds
    `.context-engineering/tools.yaml`.
 
@@ -154,7 +154,7 @@ cat ~/.gemini/config/plugins/db-context-engineering-dev/mcp_config.json   # must
 ```
 
 Then launch `agy` in a workspace directory and open `/mcp`: the plugin
-should show all three servers (`engine`, `toolbox`, `ctxset`) connected. A
+should show all three servers (`ctxeng`, `toolbox`, `ctxset`) connected. A
 quick end-to-end check is asking the agent to call
 `list_context_set_locations` for a project you can access.
 

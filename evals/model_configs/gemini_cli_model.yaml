@@ -3,9 +3,11 @@ generator: gemini_cli
 env:
   GOOGLE_GENAI_USE_VERTEXAI: "true"
   GEMINI_MODEL: "gemini-3-flash-preview"
+  GOOGLE_CLOUD_PROJECT: "<gcp-project>"
+  GOOGLE_CLOUD_LOCATION: "<gcp-location>"
 setup:
   extensions:
-    "https://github.com/GoogleCloudPlatform/db-context-enrichment":
+    "<extension-source>":
       settings: {
       }
 

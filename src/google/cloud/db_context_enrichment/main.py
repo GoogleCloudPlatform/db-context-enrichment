@@ -1,19 +1,20 @@
 import json
-import pathlib
 
 from fastmcp import FastMCP
 
 from google.cloud.db_context_enrichment.common import (
     context_mutator,
-    context_store_client,
     context_validator,
 )
-from google.cloud.db_context_enrichment.dataset import dataset_generator
+from google.cloud.db_context_enrichment.dataset import (
+    dataset_generator,
+    dataset_splitter,
+)
 from google.cloud.db_context_enrichment.evaluate import (
     evaluate_generator,
+    generalizability,
     result_reader,
 )
-from google.cloud.db_context_enrichment.model import context
 
 mcp = FastMCP("Context Engineering Agent MCP")
 
@@ -46,6 +47,99 @@ async def generate_dataset(
     return await dataset_generator.generate_dataset(
         dataset_entries_json, output_file_path
     )
+
+
+@mcp.tool
+async def split_dataset(
+    golden_dataset_path: str,
+    output_dir: str,
+    hillclimb_ratio: float = 0.7,
+    min_holdout_size: int = 45,
+) -> str:
+    """Splits a golden dataset into Hillclimbing and Holdout splits.
+
+    Strictly enforces that every normalized SQL query template (key) in Holdout (holdout.json)
+    is also included in Hillclimbing (hillclimb.json) with different natural language phrasings and parameters.
+    Enforces a minimum holdout set size (default: 45, default ratio: 0.7, e.g., 105 Hillclimbing / 45 Holdout for 150 items).
+    Saves internal partitions to <output_dir>/splits/hillclimb.json and <output_dir>/splits/holdout.json.
+
+    Args:
+        golden_dataset_path: The absolute path to the golden dataset JSON file.
+        output_dir: Output directory where splits/hillclimb.json and splits/holdout.json are saved.
+        hillclimb_ratio: Ratio of data for hillclimbing (default: 0.7).
+        min_holdout_size: Minimum required items for holdout split (default: 45; if the user explicitly requested a small custom dataset of N < 150 items, pass max(1, round(N * (1 - hillclimb_ratio)))).
+
+    Returns:
+        A concise summary message confirming the split creation.
+    """
+    return await dataset_splitter.split_dataset(
+        golden_dataset_path, output_dir, hillclimb_ratio, min_holdout_size
+    )
+
+
+@mcp.tool
+def evaluate_generalizability(
+    dev_passed: int,
+    dev_total: int,
+    test_passed: int,
+    test_total: int,
+    tuning_target: float = 1.0,
+    diagnosis: str | None = None,
+    recommended_action: str | None = None,
+    next_step: str | None = None,
+    context_set_id: str | None = None,
+    context_file: str | None = None,
+) -> str:
+    """Evaluates generalizability across hillclimbing and holdout splits.
+
+    Calculates a two-proportion pooled z-test, checks whether holdout accuracy meets
+    the minimum target threshold (`tuning_target - 0.15`, i.e., 85% when tuning_target=1.0),
+    derives the verdict (PASS, INVESTIGATE, INCONCLUSIVE), and returns the formatted
+    On-Screen Summary Card along with pre-computed statistical metrics for `final_evaluation_report.md`.
+
+    Args:
+        dev_passed: Number of passed queries in Hillclimbing Questions.
+        dev_total: Total queries in Hillclimbing Questions (N_dev).
+        test_passed: Number of passed queries in Holdout Questions.
+        test_total: Total queries in Holdout Questions (N_test).
+        tuning_target: Target accuracy for hillclimbing (default: 1.0). Minimum holdout accuracy for PASS is `tuning_target - 0.15`.
+        diagnosis: Optional specific diagnosis text.
+        recommended_action: Optional recommended action text.
+        next_step: Optional immediate next step text.
+        context_set_id: Optional full ContextSet resource name of the candidate hill-climbing iteration.
+        context_file: Optional filename of the candidate ContextSet JSON file.
+
+    Returns:
+        The markdown string for the On-Screen Summary Card and statistical report details.
+    """
+    stats = generalizability.calculate_z_test(
+        dev_passed,
+        dev_total,
+        test_passed,
+        test_total,
+        tuning_target=tuning_target,
+    )
+    card = generalizability.format_on_screen_card(
+        stats,
+        diagnosis,
+        recommended_action,
+        next_step,
+        context_set_id,
+        context_file,
+    )
+    stats_summary = (
+        f"\n\n---\n"
+        f"**Statistical Details (for `final_evaluation_report.md`)**:\n"
+        f"- Verdict: `{stats['verdict']}`\n"
+        f"- Sample Sizes: `N_dev = {stats['dev_total']}` (`x_dev = {stats['dev_passed']}`), "
+        f"`N_test = {stats['test_total']}` (`x_test = {stats['test_passed']}`)\n"
+        f"- Tuning Target: `{stats['tuning_target']:.2f}` (Min Holdout Accuracy Threshold: `{stats['min_test_accuracy']:.2f}`)\n"
+        f"- Pooled Proportion (`p_hat`): `{stats['p_hat']:.4f}`\n"
+        f"- Standard Error (`SE`): `{stats['standard_error']:.4f}`\n"
+        f"- Test Statistic (`z`): `{stats['z_statistic']:.2f}`\n"
+        f"- Two-Tailed `p-value`: `{stats['p_value']:.4f}` (`alpha = {stats['alpha']}`)"
+    )
+    return f"{card}{stats_summary}"
 
 
 @mcp.tool
@@ -90,123 +184,6 @@ def generate_evalbench_configs(
 
 
 @mcp.tool
-def generate_upload_url(
-    db_engine: str,
-    project_id: str,
-    location: str | None = None,
-    cluster_id: str | None = None,
-    instance_id: str | None = None,
-    database_id: str | None = None,
-) -> str:
-    """
-    Generates a URL for uploading the template file based on the database engine.
-
-    Args:
-        db_engine: The database engine. Accepted values are 'alloydb',
-                 'cloudsql', 'spanner', or 'bigtable'. This can be derived from
-                 the 'kind' field in the tools.yaml file. For example,
-                 'alloydb-postgres' becomes 'alloydb', 'cloud-sql-postgres'
-                 becomes 'cloudsql', and 'bigtable' becomes 'bigtable'.
-        project_id: The Google Cloud project ID.
-        location: The location of the AlloyDB cluster.
-        cluster_id: The ID of the AlloyDB cluster.
-        instance_id: The ID of the Cloud SQL, Spanner, or Bigtable instance.
-        database_id: The ID of the Spanner database.
-
-    Returns:
-        The generated URL as a string, or an error message if the source kind is invalid.
-    """
-    if db_engine == "alloydb":
-        if location and cluster_id and project_id:
-            return f"https://console.cloud.google.com/alloydb/locations/{location}/clusters/{cluster_id}/studio?project={project_id}"
-        else:
-            return "Error: Missing location, cluster_id, or project_id for alloydb."
-    elif db_engine == "cloudsql":
-        if instance_id and project_id:
-            return f"https://console.cloud.google.com/sql/instances/{instance_id}/studio?project={project_id}"
-        else:
-            return "Error: Missing instance_id or project_id for cloudsql."
-    elif db_engine == "spanner":
-        if instance_id and database_id and project_id:
-            return f"https://console.cloud.google.com/spanner/instances/{instance_id}/databases/{database_id}/details/query?project={project_id}"
-        else:
-            return "Error: Missing instance_id, database_id, or project_id for spanner."
-    elif db_engine == "bigtable":
-        if instance_id and project_id:
-            return f"https://console.cloud.google.com/bigtable/instances/{instance_id}/overview?project={project_id}"
-        else:
-            return "Error: Missing instance_id or project_id for bigtable."
-    else:
-        return "Error: Invalid db_engine. Must be one of 'alloydb', 'cloudsql', 'spanner', or 'bigtable'."
-
-
-# NOTE: `@mcp.tool` is intentionally NOT applied to upload_context_set /
-# download_context_set. The Context Store client library ships in this
-# release, but the MCP tool wrappers are held back until the Context Store
-# API is stable in production. Re-add the decorator to expose these to
-# agents when ready.
-def upload_context_set(
-    local_file_path: str,
-    project_id: str,
-    csg_id: str,
-    cs_id: str,
-    version: str,
-) -> str:
-    """
-    Upload a local ContextSet JSON file to the Context Store.
-
-    Resource hierarchy: a ContextSetGroup (CSG) is a logical container that
-    holds versioned ContextSets — typically one CSG per experiment, one
-    cs_id per lineage (eg. "autoctx"), and versions like "v0", "v1", "v2".
-
-    The CSG and the (cs_id, version) ContextSet resource are created if they
-    don't already exist; then the file contents are written as the
-    ContextSet body. Re-uploading the same (csg_id, cs_id, version)
-    overwrites the body.
-
-    Args:
-        local_file_path: Absolute path to a ContextSet JSON file.
-        project_id: GCP project where the CSG / CS should live. Typically
-            the same project the target DB lives in.
-        csg_id: ContextSetGroup ID (eg. an experiment name).
-        cs_id: ContextSet ID (eg. "autoctx"). Stable across versions.
-        version: Version label (eg. "baseline", "v1").
-
-    Returns:
-        Full ContextSet resource name, eg.
-        `projects/<p>/locations/<l>/contextSetGroups/<csg_id>/contextSets/<cs_id>@<version>`.
-    """
-    text = pathlib.Path(local_file_path).read_text()
-    ctx = context.ContextSet.model_validate_json(text)
-    client = context_store_client.ContextStoreClient()
-    cs_resource_name = client.ensure_context_set(project_id, csg_id, cs_id, version)
-    client.upload_context_set(cs_resource_name, ctx)
-    return cs_resource_name
-
-
-def download_context_set(cs_resource_name: str, output_file_path: str) -> str:
-    """
-    Download a ContextSet from the Context Store and write it to a local
-    JSON file. Parent directories are created as needed; the output file
-    is overwritten if it exists.
-
-    Args:
-        cs_resource_name: Full ContextSet resource name, eg.
-            `projects/<p>/locations/<l>/contextSetGroups/<csg_id>/contextSets/<cs_id>@<version>`.
-        output_file_path: Absolute path where the JSON file should be written.
-
-    Returns:
-        The output file path.
-    """
-    client = context_store_client.ContextStoreClient()
-    ctx = client.download_context_set(cs_resource_name)
-    out = pathlib.Path(output_file_path)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(ctx.model_dump_json(exclude_none=True, indent=2))
-    return output_file_path
-
-
-@mcp.tool
 def mutate_context_set(
     file_path: str,
     mutations_json: str,
@@ -222,7 +199,7 @@ def mutate_context_set(
       - 'type': "template", "facet", or "value_search"
       - 'identifier' (dict): Required for "delete" and "update" to find the target item (e.g., {"nl_query": "What are all users?"}).
       - 'value' (dict): Required for "add" and "update".
-        - For "add": Must be the FULL item body. Follow the formatting guidance in the `context-generation-guide` skill to produce well-formed content.
+        - For "add": Must be the FULL item body. Follow the formatting guidance in the `context-engineering-generation-guide` skill to produce well-formed content.
         - For "update": Can be a PARTIAL body containing only the fields to change (it will be merged with the existing item).
 
     Example 'mutations_json':

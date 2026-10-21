@@ -1,0 +1,5 @@
+{
+  "name": "db-context-engineering-dev",
+  "version": "0.0.0-dev",
+  "description": "Local-dev variant of the Context Engineering Agent plugin for Antigravity / agy."
+}

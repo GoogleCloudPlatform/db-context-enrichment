@@ -1,80 +1,67 @@
 ---
 name: context-engineering-bootstrap
-description: Guides the agent to bootstrap an initial ContextSet (templates, facets, and value searches) by deducing key information from the database schema and generating a ContextSet file.
+description: Generate a baseline ContextSet (Templates, Facets, Value Searches) from a target database's schema (and optional design docs / application code) and save to a caller-specified path. Optionally upload to the Context Set server.  Don't use when a user asks to build, validate, or improve a context set from scratch end-to-end (use `context-engineering-workflow` instead).
 ---
 
-> **Load the `context-engineering-workflow` skill first.** It holds the shared context this phase depends on: workspace layout, state file conventions, phase order, and safety protocol. Do not proceed with this phase without reading it.
+> **Load [`context-engineering-workflow`](../context-engineering-workflow/SKILL.md) first** for shared terminology, lifecycle overview, and safety protocol. If the user is asking to build a context set from scratch (end-to-end with evaluation and optimization), route through `context-engineering-workflow` (`init` $\rightarrow$ `dataset-generation` $\rightarrow$ `hillclimb`) rather than running standalone bootstrap.
 
-> [!NOTE]
-> For detailed schema specifications and explanation of context set types, see the central [Context Set Concept Types](../context-generation-guide/SKILL.md) guide.
-
-# Phase: Baseline Bootstrapping
+# Skill: Baseline ContextSet Bootstrapping
 
 ## Goal
-Deduce query concepts and generate a baseline `ContextSet` (templates, facets, value searches) directly from database schemas and metadata to act as the starting point for optimization.
+From a target database and optional user-supplied enrichment sources (design docs, ORM models, sample SQL, glossary), produce a baseline `ContextSet` JSON at a caller-specified path. Optionally upload to the Context Set server and return the resource name.
 
-## Input
+## Prerequisites
+- A working DB connection — Toolbox MCP tools (`<source>-list-schemas`) must be visible to the agent throughout the run. If missing or unreachable at any point, stop and route through `context-engineering-init`; do not work around it (no bash `uvx toolbox-server invoke` fallback).
+- Target output path for the ContextSet JSON. If not supplied, prompt the user; default `./bootstrap_context.json` at cwd.
+- (Optional) Design docs, application code, sample SQL, glossary, or other enrichment sources.
+- (Optional, for upload) The target Context Set resource: `projectId`, `location`, and a `contextSetId` (project and location default to `.context-engineering/workspace_state.md` when it exists). Together they form `projects/<project_id>/locations/<location>/contextSets/<context_set_id>` — see the Context Set MCP Protocol in `context-engineering-workflow`.
 
-Before beginning the workflow, you explicitly require:
-- An active `tools.yaml` configuration (located in `autoctx/`) with database schema fetching tools configured (e.g., `<source>-list-schemas`).
-- Target database schemas to act upon.
+**When invoked by `context-engineering-hillclimb` inside an experiment** (`.context-engineering/experiments/<experiment_name>/hillclimb/experiment_state.md` exists): read the Toolbox source from `experiment_state.md ## Active Database` and the enrichment sources per *Inputs & resolution rules* in `context-engineering-workflow` (`Enrichment sources (this experiment)` in `experiment_state.md` if present, otherwise `Enrichment sources` in `.context-engineering/workspace_state.md`), write the output to `.context-engineering/experiments/<experiment_name>/hillclimb/v0/context_set_v0.json`, skip steps 1–2 below unless a value is missing from both files, **run steps 3–6 autonomously without pausing for interactive schema or candidate approval** (the hill-climb loop's `Auto-approve uploads` setting governs whether `v0` pauses before upload), and **do not upload** — the hill-climb loop owns all uploads.
 
-## Workflow
+## Guidance
 
-Follow these steps exactly in order:
+1. **Confirm scope with the user (standalone only):**
+   - Which Toolbox `<source>` to introspect (default: `Default DB source` in `.context-engineering/workspace_state.md` when it exists; else auto-select if exactly one supported source exists in `tools.yaml`; otherwise prompt).
+   - Which schemas / tables to focus on (or all, if the DB is small).
+   - Output path for the ContextSet JSON.
+   - Whether to upload to Context Set server after generation. If yes, take `projectId` and `location` from `.context-engineering/workspace_state.md` when it exists (show them; ask only if missing or the user wants different ones) and ask for `contextSetId`; call `list_context_set_locations(projectId)` and confirm the chosen location is in the returned list (if not, let the user pick one from it). Tell the user the exact resource name that will be written.
 
-1. **Experiment Setup & Scope Validation:**
-   - **Ask for Experiment Name & Handle Existing Folders**: You must explicitly ask the user for a descriptive name for this tuning experiment (e.g., `sales_db_tuning`).
-     - **If the experiment folder already exists inside `autoctx/experiments/`**: You **MUST** detect it and explicitly ask the user for confirmation:
-       - *"An experiment named `<experiment_name>` already exists. Do you want to resume it (update its baseline context), fork it (create a new version, e.g., `<experiment_name>_v2`), or overwrite it completely?"*
-       - If the user selects **resume**: proceed with the bootstrap in the same folder, updating `bootstrap_context.json`.
-       - If the user selects **fork**: prompt for a new name or suggest `<experiment_name>_v2`, create the folder, and proceed there.
-       - If the user selects **overwrite**: clear the existing folder's contents and proceed.
-     - **If it does not exist**: Create a new dedicated subfolder inside `autoctx/experiments/` using this name.
-     - Do not proceed until the experiment folder structure is finalized.
-   - **Source Enrichment**: Prompt the user for any existing **Design Docs** or **Application Code** (e.g., ORM models, SQL queries) they wish to provide to enrich the context generation. Wait for the user's response before proceeding.
-   - **Artifact Scope Cross-Validation Gate**:
-     Compare the required database scope derived from the provided design docs, application code, or query patterns against the active `autoctx/tools.yaml` configuration.
-     - Check if the artifacts reference schemas, tables, or graphs that are not enabled or present in `tools.yaml`.
-     - If a discrepancy is detected between the artifact requirements and `tools.yaml`:
-       1. Pause execution and surface the exact mismatch clearly to the user.
-       2. Present actionable resolution options (e.g., update `tools.yaml` to include the required graph or missing tables vs. limit the context scope to the current `tools.yaml` definition).
-       3. Wait for the user's explicit decision before proceeding. If approved, update `tools.yaml` and `state.md`.
+2. **Collect enrichment sources (standalone only):** default to `Enrichment sources` in `.context-engineering/workspace_state.md` when it exists (show them and ask whether to add more for this run); otherwise prompt for design docs, ORM models, sample SQL, glossary, etc. Wait for the user's response before proceeding.
 
-2. **Deduce Key Info (Core Execution):**
-   - **Targeted Schema & Graph Retrieval**: Informed by the ingested application artifacts and design docs, use the available Toolbox MCP tools configured in the active `autoctx/tools.yaml` (e.g., `<source>-list-schemas`, `<source>-list-graphs`) to fetch the schemas for the target database and relevant tables/graphs.
-   - Present the retrieved schema summary **structurally and cleanly** to the user. Ask the user if they want to filter or focus on specific schemas, tables, or graphs.
+3. **Deduce Key Info (Core Execution):**
+   - **Targeted Schema & Graph Retrieval**: Informed by the ingested application artifacts and design docs, use the available Toolbox MCP tools (e.g., `<source>-list-schemas`, `<source>-list-graphs`) to fetch the schemas for the target database and relevant tables/graphs. The sources come from the shared `.context-engineering/tools.yaml`; inside an experiment, use the **Source Name** (and its listed **Tools**) recorded under `## Active Database` in the experiment's `experiment_state.md` rather than picking a source ad hoc.
+   - **Standalone only:** Present the retrieved schema summary **structurally and cleanly** to the user and ask if they want to filter or focus on specific schemas, tables, or graphs. (Inside `hillclimb`, proceed directly using the experiment's active database scope.)
    - Perform a **deep analysis** of the retrieved **schema and any provided documentation or code** to identify important concepts, relationships, and likely query patterns.
    - **GQL Preference for Graph Entities**: When querying entities or relationships that are modeled within a property graph, **always prefer GQL (`GRAPH <graph_name> MATCH ...`)** over writing relational SQL `JOIN` queries against the underlying node/edge tables.
-   - **Collect Candidates**: Identify representative natural language queries with their corresponding SQL/GQL, common filter conditions or business rules (and graph pattern facets), and **columns that require specialized value searching** (e.g., names needing fuzzy match, descriptions needing semantic search).
-   - *Review Check:* Briefly display these candidates to the user for approval or modifications before proceeding.
 
-3. **Context Generation (Core Execution):**
-   - **Invoke the `context-generation-guide` skill** to produce the context (Templates, Facets, and Value Searches).
-   - Provide the deduced candidates collected in Step 2 as input to that skill.
-   - That skill will handle phrase extraction, parameterization, and constructing the final valid JSON structure according to dialect best practices for all context types.
-   - Once generated, use the `mutate_context_set` MCP tool to save the context items to `bootstrap_context.json` inside the approved experiment folder. Since this is a new file, construct a list of `"operation": "add"` mutations for each generated item (Template, Facet, Value Search) and pass them to the tool.
+4. **Identify candidate items:** analyze schema + enrichment to identify representative natural language queries with their corresponding SQL/GQL (Templates), common filter conditions or business rules and graph pattern fragments (Facets), and columns that require specialized fuzzy/semantic value searching (Value Searches). **In standalone mode**, present these candidates to the user for review and approval before generating; **when invoked by `hillclimb`**, proceed directly to step 5.
 
-4. **Validate**: Call `validate_context_set` on `bootstrap_context.json`. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
+5. **Generate the ContextSet:** invoke the `context-engineering-generation-guide` skill with the approved candidates. Save items incrementally to the output path via the `mutate_context_set` MCP tool. For a new file, construct `"operation": "add"` mutations for each item.
 
-## Output
+6. **Validate**: Call `validate_context_set` on the output file. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
 
-Upon successful completion, the workspace must contain:
-- A generated `.json` file (`bootstrap_context.json`) representing the baseline `ContextSet`, stored successfully at the requested `output_file_path`.
+7. **Optionally upload (standalone only):** if running standalone and the user opted to upload (when invoked by `hillclimb`, skip this step — the hill-climb loop owns all uploads):
+   - Form the target resource name from `projectId`, `location`, `contextSetId` per the **Resource naming rule** in `context-engineering-workflow` and show it to the user. Remind them that if a context set with this name already exists, the upload **overwrites it** and the previous contents cannot be recovered; proceed only on explicit confirmation.
+   - Read the validated output file and call `upload_context_set(projectId=<project_id>, location=<location>, contextSetId=<context_set_id>, contextPayload=<exact file contents>, description=<short description>, databases=<Database>)` — `<Database>` is derived at upload time from the chosen Toolbox `<source>`'s block in `tools.yaml`, using the mapping table under *Database association* in `context-engineering-workflow`.
+   - Poll `get_operation(projectId, location, operationId)` on the returned operation (≥5 s between polls, 5-minute ceiling) until `done: true` before continuing — see the Context Set MCP Protocol in `context-engineering-workflow`. On `done: true` the upload is complete; on an `error` field, surface it verbatim and stop.
 
-## Upload Advice & Next Steps
+8. **Summarize:** report the local file path and (if uploaded) the resource name and the operation name that completed.
 
-Conclude by providing a succinct summary to the user:
-1. **Summarize Results**:
-   - Confirm that the bootstrap context file has been successfully generated and saved.
-   - Mention the final file path.
-2. **Upload Instructions**:
-   - **Read Database Details**: Read `autoctx/tools.yaml` to fetch the specific project, location, and instance/cluster details for the active database.
-   - **Generate URL**: Call the `generate_upload_url` tool passing the extracted values to provide the direct console link to the user.
-   - Present the local file path to `bootstrap_context.json` and the generated console link together in a single clear message.
-3. **Instruct Next Step Evaluation**:
-   - Instruct the user to upload the file to Database Studio and then run evaluation using the evaluating workflow on this new ContextSet to establish a baseline.
+## Rules
+- Caller supplies (or explicitly confirms a default for) the output path.
+- Never upload without explicit user consent.
+- Always use the `mutate_context_set` MCP tool for ContextSet file changes — pass mutation payloads directly. Do not read the target file beforehand.
+- Do not invoke `context-engineering-evaluate` or `context-engineering-hillclimb`.
 
+## Tools
 
-> [!IMPORTANT]
-> **Tool Modification Rule**: Always use the `mutate_context_set` tool for all ContextSet changes. Pass mutation payloads directly to the tool — it handles all file I/O internally. **Do not read the target context set file beforehand**.
+**MCP:**
+- `<source>-list-schemas` (Toolbox) — schema introspection.
+- `mutate_context_set` — incremental writes to the output JSON.
+- `list_context_set_locations` (remote Context Set server) — confirm the upload location before uploading.
+- `upload_context_set` (remote Context Set server) — optional Context Set server upload; takes the file contents inline in `contextPayload`; returns an operation.
+- `get_operation` (remote Context Set server) — poll the upload operation until `done: true`.
+- `validate_context_set` — check the output file before uploading.
+
+**Sibling skill:**
+- `context-engineering-generation-guide` — produces well-formed Template / Facet / Value Search JSON. Also the reference for context-item schema and authoring standards.

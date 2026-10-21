@@ -228,3 +228,33 @@ def test_read_eval_results_batching():
 def test_read_eval_results_file_not_found():
     with pytest.raises(FileNotFoundError):
         read_eval_results("/fake/path")
+
+
+def test_read_eval_results_large_csv_field():
+    """Ensures fields larger than Python's default 131072-byte csv limit do not raise csv.Error."""
+    import csv
+
+    csv.field_size_limit(131072)
+    large_debug_trace = "x" * 200000
+    summary_data = "metric_name,metric_score,correct_results_count,total_results_count,run_time\nm1,0,0,1,1s\n"
+    scores_data = "id,score,comparison_logs\n1,0,Mismatch\n"
+    evals_data = (
+        "id,nl_prompt,golden_sql,generated_sql,sql_generator_error,generated_error,other\n"
+        f"1,Prompt 1,SELECT 1,SELECT 2,,,{large_debug_trace}\n"
+    )
+
+    m_summary = mock_open(read_data=summary_data)
+    m_scores = mock_open(read_data=scores_data)
+    m_evals = mock_open(read_data=evals_data)
+
+    with patch(
+        "builtins.open",
+        side_effect=[
+            m_summary.return_value,
+            m_scores.return_value,
+            m_evals.return_value,
+        ],
+    ):
+        result = read_eval_results("/fake/path")
+
+    assert large_debug_trace in result

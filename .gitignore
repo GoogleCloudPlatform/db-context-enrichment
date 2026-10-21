@@ -57,7 +57,8 @@ Thumbs.db
 
 # Context engineering runtime experiments & artifacts
 .context-engineering/
-.context-engineer/
+!evals/**/workspace_*/.context-engineering/
+!evals/**/workspace_*/.context-engineering/**
 autoctx/experiments/
 .evalbench/
 .bin/

@@ -19,18 +19,19 @@ EvalBench dynamically imports `connector_class` using standard Python module imp
 ```yaml
 generator: custom
 generator_class: my_package.generators.CustomGenerator
-context_set_id: projects/my-project/locations/us-central1/contextSets/my-context-set@v1
+context_set_id: projects/my-project/locations/us-central1/contextSets/my-context-set
 ```
 EvalBench dynamically imports `generator_class` to execute generation requests.
 
 ### 3. `run_config.yaml`
+Paths are relative to the evaluation's `output_dir` (inside the experiment, e.g. `.context-engineering/experiments/<experiment_name>/hillclimb/v<N>/eval/`):
 ```yaml
-dataset_config: autoctx/experiments/<experiment_name>/eval_configs/golden_queries.json
+dataset_config: <output_dir>/eval_configs/golden_queries.json
 dataset_format: evalbench-standard-format
 database_configs:
- - autoctx/experiments/<experiment_name>/eval_configs/db_config.yaml
+ - <output_dir>/eval_configs/db_config.yaml
 dialect: googlesql
-model_config: autoctx/experiments/<experiment_name>/eval_configs/model_config.yaml
+model_config: <output_dir>/eval_configs/model_config.yaml
 ...
 ```
 

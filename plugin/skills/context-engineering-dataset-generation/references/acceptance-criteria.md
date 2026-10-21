@@ -41,8 +41,8 @@ For *every* candidate pair - irrespective of the source - execute the following 
 1. **Execute the Query:** Run `golden_sql` against the active database configuration identified from `tools.yaml`. Batch SQL calls **efficiently** rather than one at a time.
 2. **Handle Syntax & Schema Errors:** If execution fails due to syntax error, unknown column/table, or type mismatch, immediately refine the query and re-verify. If unfixable, mark as `dropped` and log the exact error. Always state why a candidate was dropped — execution error, Blind Test failure, schema violation, etc.
 3. **Handle Empty Results (0 Rows Returned):**
-   - If the query executes without errors but returns 0 rows, check whether it stems from a logically impossible condition (`WHERE x = 1 AND x = 2`). If so, fix or drop.
-   - If the query represents a realistic filter (`WHERE region = 'Antarctica'`) that currently matches 0 records, mark the candidate with tag `"flagged:empty_result"`. Do NOT automatically drop realistic 0-row queries. We batch them for HITL review later.
+   - If the query executes without errors but returns 0 rows, check whether it stems from a logically impossible condition (`WHERE x = 1 AND x = 2`) or an unpopulated filter value that can be substituted with a populated value from the database. If so, fix or drop.
+   - If the query intentionally tests a realistic empty-result condition (per the approved plan in `evalset_gen_plan.md`), mark the candidate with tag `"flagged:empty_result"` and document it in the audit report; do not stop for a second user approval gate.
 4. **Validation Log Rule:** For every successfully verified query, state in your reasoning: *"Verified eval_XXX against [Source Name]."*
 
 ### Step 4: Uniqueness & Deduplication Check

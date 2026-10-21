@@ -4,6 +4,25 @@ import re
 import textwrap
 from dataclasses import dataclass
 
+# 64 MiB bound is sufficient for large QueryData pipeline_debug_info traces in evals.csv
+# while avoiding an unbounded sys.maxsize allocation limit.
+_MAX_CSV_FIELD_SIZE = 64 * 1024 * 1024
+
+
+def _ensure_csv_field_size_limit() -> None:
+    """Raises csv.field_size_limit to a bounded 64 MiB limit so large QueryData debug traces do not fail."""
+    limit = _MAX_CSV_FIELD_SIZE
+    while limit > 131072:
+        try:
+            if csv.field_size_limit() < limit:
+                csv.field_size_limit(limit)
+            break
+        except OverflowError:
+            limit = limit // 2
+
+
+_ensure_csv_field_size_limit()
+
 
 @dataclass
 class ScoreRecord:
@@ -37,6 +56,7 @@ def read_eval_results(
     Returns:
         A string in markdown format containing the summary and failure cases.
     """
+    _ensure_csv_field_size_limit()
     scores_path = os.path.join(run_folder_path, "scores.csv")
     evals_path = os.path.join(run_folder_path, "evals.csv")
 

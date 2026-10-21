@@ -1,9 +1,8 @@
 {
   "name": "google-cloud-db-context-engineering",
   "version": "0.7.5",
-  "contextFileName": "./GEMINI.md",
   "mcpServers": {
-    "mcp_db_context_engineering": {
+    "ctxeng": {
       "command": "uv",
       "args": [
         "run",
@@ -11,6 +10,22 @@
         "${extensionPath}/..",
         "google-cloud-db-context-engineering"
       ]
+    },
+    "toolbox": {
+      "command": "uvx",
+      "args": [
+        "toolbox-server@1.14.0",
+        "--config",
+        ".context-engineering/tools.yaml",
+        "--stdio"
+      ]
+    },
+    "ctxset": {
+      "httpUrl": "https://dataplex.googleapis.com/mcp/managed-context-sets",
+      "authProviderType": "google_credentials",
+      "oauth": {
+        "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
+      }
     }
   }
 }

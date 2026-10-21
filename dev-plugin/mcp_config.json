@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "ctxeng": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "<local-repo-path>",
+        "google-cloud-db-context-engineering"
+      ],
+      "cwd": "<local-workspace-path>"
+    },
+    "toolbox": {
+      "command": "uvx",
+      "args": [
+        "toolbox-server@1.14.0",
+        "--config",
+        ".context-engineering/tools.yaml",
+        "--stdio"
+      ],
+      "cwd": "<local-workspace-path>"
+    },
+    "ctxset": {
+      "url": "https://dataplex.googleapis.com/mcp/managed-context-sets",
+      "authProviderType": "google_credentials"
+    }
+  }
+}

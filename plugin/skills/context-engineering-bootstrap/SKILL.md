@@ -40,9 +40,9 @@ From a target database and optional user-supplied enrichment sources (design doc
 
 6. **Validate**: Call `validate_context_set` on the output file. If invalid, fix each issue via `mutate_context_set` and re-validate until clean. Stop after two failed attempts and surface remaining issues to the user.
 
-7. **Optionally upload:** if the user opted to upload:
+7. **Optionally upload (standalone only):** if running standalone and the user opted to upload (when invoked by `hillclimb`, skip this step — the hill-climb loop owns all uploads):
    - Form the target resource name from `projectId`, `location`, `contextSetId` per the **Resource naming rule** in `context-engineering-workflow` and show it to the user. Remind them that if a context set with this name already exists, the upload **overwrites it** and the previous contents cannot be recovered; proceed only on explicit confirmation.
-   - Read the validated output file and call `upload_context_set(projectId=<project_id>, location=<location>, contextSetId=<context_set_id>, contextPayload=<exact file contents>, description=<short description>, databases=<Database>)` — `<Database>` is derived at upload time from the experiment's `## Active Database` **Source Name** (standalone: the chosen source) and that source's block in `tools.yaml`, using the mapping table under *Database association* in `context-engineering-workflow`.
+   - Read the validated output file and call `upload_context_set(projectId=<project_id>, location=<location>, contextSetId=<context_set_id>, contextPayload=<exact file contents>, description=<short description>, databases=<Database>)` — `<Database>` is derived at upload time from the chosen Toolbox `<source>`'s block in `tools.yaml`, using the mapping table under *Database association* in `context-engineering-workflow`.
    - Poll `get_operation(projectId, location, operationId)` on the returned operation (≥5 s between polls, 5-minute ceiling) until `done: true` before continuing — see the Context Set MCP Protocol in `context-engineering-workflow`. On `done: true` the upload is complete; on an `error` field, surface it verbatim and stop.
 
 8. **Summarize:** report the local file path and (if uploaded) the resource name and the operation name that completed.

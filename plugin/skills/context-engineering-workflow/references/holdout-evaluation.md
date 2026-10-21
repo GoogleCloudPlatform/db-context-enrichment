@@ -37,7 +37,7 @@
     *   Write the comprehensive audit report to `.context-engineering/experiments/<experiment_name>/hillclimb/final_evaluation_report.md`.
     *   Ordered strictly by decision relevance (Verdict & Status $\rightarrow$ Recommended Action / Next Steps $\rightarrow$ Performance Overview & Failure Breakdown $\rightarrow$ Statistical Details):
         *   `TL;DR`: Verdict, Next Steps, Generalization Drop, Significance Assessment, Summary.
-        *   `1. ACTIONABLE RECOMMENDATIONS`: Concrete recommended action and next steps for the user placed at the top.
+        *   `1. ACTIONABLE RECOMMENDATIONS`: Concrete recommended action and next steps for the user placed at the top. Frame recommendations at the general schema-concept or query-pattern level (e.g., a column-level Value Search, a reusable business-rule Facet, or broader phrasing coverage) rather than targeting specific failed holdout examples, literal values, or exact `golden_sql` queries from `splits/holdout.json`.
         *   `2. PERFORMANCE OVERVIEW`: Table and counts for hillclimbing vs holdout, difference note, pattern coverage.
         *   `3. HOLDOUT SET FAILURE BREAKDOWN`: Query-by-query breakdown of failed holdout cases with category and root cause.
         *   `4. STATISTICAL DETAILS`: Two-proportion pooled z-test, sample sizes ($N_{\text{dev}}, x_{\text{dev}}, N_{\text{test}}, x_{\text{test}}$), tuning target and minimum holdout accuracy threshold, pooled proportion ($\hat{p}$), standard error ($SE$), test statistic ($z$), two-tailed $p$-value, and power analysis check placed at the bottom.
@@ -104,7 +104,7 @@
 
             **Summary & Recommendation**:
             * **Diagnosis**: <X> of <Y> holdout failures (<Z>%) occurred because of <plain-language root cause from the failure breakdown, e.g., unmapped status/enum values and missing business-rule filters | informal phrasing and shorthand not covered in the dataset>.
-            * **Recommended Action**: <If Path A (Context Fixes): "**Add Business-Rule Facets / Value Searches** for <specific gaps>, expand the dataset with fresh variations, and re-split so the new experiment has an uncontaminated holdout split." | If Path B (Dataset Expansion): "**Expand Question Phrasings in the Dataset** to cover <specific informal phrasing/acronyms/patterns>, re-split, and re-run optimization."> Use the copy-paste prompt under **Next step** below to start a cloned experiment.
+            * **Recommended Action**: <If Path A (Context Fixes): "**Add General Business-Rule Facets / Value Searches** for <concept/column-level gaps>, expand the dataset with fresh variations, and re-split so the new experiment has an uncontaminated holdout split." | If Path B (Dataset Expansion): "**Expand Question Phrasings in the Dataset** to cover <general informal phrasing/acronyms/patterns>, re-split, and re-run optimization."> Use the copy-paste prompt under **Next step** below to start a cloned experiment.
             ```
 
 6.  **Next Experiment Hand-off (same turn, after the On-Screen Card — for INVESTIGATE and INCONCLUSIVE only)**:
@@ -124,7 +124,7 @@
 
         The new experiment will be cloned from this one:
         * database → same `tools.yaml` source: `<Source Name>` (no connection setup needed)
-        * project, location, upload approval → reused from `.context-engineering/workspace_state.md` (you'll see them once and can change them)
+        * Context Set project, Context Set location, upload approval → reused from `.context-engineering/workspace_state.md` (you'll see them once and can change them)
         * dataset → `dataset/golden.json` is copied, expanded with fresh variations, and re-split into a new `splits/holdout.json` (preserving domain distribution without reusing the previous holdout split)
         * seed context set → <`<Final Context Set resource>` | `vK/context_set_vK.json`>
         * first action → <one-line recommendation from the report>
@@ -149,13 +149,15 @@ When a user asks to act on a `final_evaluation_report.md` (typically with the ha
 When the verdict is INVESTIGATE, the model either suffered a statistically significant generalization drop or finished with holdout accuracy below the target threshold ($\text{tuning\_target} - 0.15$).
 
 > [!IMPORTANT]
-> **Anti-Data Leakage & Full Multi-Variation Expansion Rule:** You are STRICTLY FORBIDDEN from manually patching ContextSet Templates to memorize the specific `golden_sql` answers from the holdout set, from reusing the previous experiment's `splits/holdout.json`, or from merely appending 1 example per suggestion in `final_evaluation_report.md`. Always run the full dataset expansion workflow on the copied `golden.json` — generating **at least 4–5 distinct template-preserving variations for each suggested pattern** so `split_dataset` distributes variations across **both** `splits/hillclimb.json` (~70% train) and `splits/holdout.json` (~30% test) — save the expanded set to `dataset/golden.json`, and **only then** run `split_dataset`.
+> **Anti-Overfitting & Data-Leakage Rule:** Avoid overfitting the cloned experiment to the previous holdout failures. Do not memorize specific `golden_sql` queries or literal values from `splits/holdout.json`, do not add one-off `Templates`, `Facets`, or `Value Searches` tailored to individual failed holdout examples, and do not reuse the previous experiment's `splits/holdout.json`.
+>
+> Any context additions must be general and schema-level (e.g., reusable column-level `Value Searches` or parameterized business-rule `Facets`), and any dataset updates must expand `dataset/golden.json` with multi-variation groups (**at least 4–5 distinct template-preserving variations per pattern**) before running `split_dataset` so ~70% land in `splits/hillclimb.json` (train) and ~30% land in `splits/holdout.json` (test).
 
 Read the report's actionable recommendations and route to the corresponding skill:
 *   **Path A: Context & Metadata Deficiencies (Value Linking / Business Rule Gaps)**
     *   **Trigger:** Failures stem from a missing structural bridge between the user's intent and the database schema. This includes unmapped terminology, failure to link fuzzy search strings to strict database enums/IDs, or omitted table joins and filters.
     *   **Dataset handling:** expand the copied `golden.json` with full multi-variation groups (at least 4–5 template-preserving variations per suggested pattern informed by `final_evaluation_report.md`), save the expanded dataset to `dataset/golden.json`, and **only then** split with `split_dataset` so both `splits/hillclimb.json` and `splits/holdout.json` receive the new variations.
-    *   **Action:** In the new experiment, run `context-engineering-dataset-generation` to expand the copied `golden.json` (generating full multi-variation sets for any recommendations in `final_evaluation_report.md`), save to `dataset/golden.json`, and run `split_dataset` to produce new `splits/hillclimb.json` and `splits/holdout.json`; seed `v0` from the previous experiment's context set, route to [context-engineering-generation-guide](../../context-engineering-generation-guide/SKILL.md) to author universally applicable `Value Searches` (for fuzzy logic) or parameterized `Facets` (for business filters) that bridge the missing logic, apply them to `v0/context_set_v0.json` via `mutate_context_set`, then run `context-engineering-hillclimb`.
+    *   **Action:** In the new experiment, run `context-engineering-dataset-generation` to expand the copied `golden.json` (generating full multi-variation sets for any recommendations in `final_evaluation_report.md`), save to `dataset/golden.json`, and run `split_dataset` to produce new `splits/hillclimb.json` and `splits/holdout.json`; seed `v0` from the previous experiment's context set, route to [context-engineering-generation-guide](../../context-engineering-generation-guide/SKILL.md) to author general, reusable `Value Searches` (for column-level fuzzy lookup) or parameterized `Facets` (for business filters) that bridge the missing schema logic — never example-specific `Templates` or hardcoded holdout values — apply them to `v0/context_set_v0.json` via `mutate_context_set`, then run `context-engineering-hillclimb`.
 *   **Path B: Curriculum Deficiencies (Phrasing Diversity Gaps)**
     *   **Trigger:** Failures stem from unseen concepts, colloquialisms, shorthand, or linguistic structures that the model was never exposed to within the training dataset.
     *   **Dataset handling:** run full multi-variation expansion on the copied `golden.json` for every phrasing/curriculum suggestion in `final_evaluation_report.md` (at least 4–5 distinct variations per suggested pattern, never single isolated items), save to `dataset/golden.json`, and **only then** split with `split_dataset`.

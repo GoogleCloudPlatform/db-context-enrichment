@@ -11,7 +11,7 @@ Every manifest declares three MCP servers:
 | Key | What | Transport |
 | :--- | :--- | :--- |
 | `engine` | This repo's Python server (`main.py`): dataset generation/splitting, Evalbench config generation, `mutate_context_set`, `validate_context_set`, `read_evaluation_result`, `evaluate_generalizability`. | stdio (`uvx` / `uv run`) |
-| `toolbox` | MCP Toolbox for Databases. Reads the single shared `.context-engineering/tools.yaml` (one file for all experiments; it may hold several sources — each experiment records the source/tools it uses in its `experiment_state.md`). Next to it, `.context-engineering/workspace_state.md` holds the workspace inputs the user entered once (Context Set project/location, Default DB source, enrichment sources, upload preference); experiments under `.context-engineering/experiments/<name>/hillclimb/experiment_state.md` record only their own run — see `plugin/skills/context-engineering-hillclimb/references/layout.md`. The client starts Toolbox with a fixed `--config`, so **any edit to `tools.yaml` requires restarting the `toolbox` MCP server** (or the client) before the new sources/tools are visible. | stdio (`uvx`) |
+| `toolbox` | MCP Toolbox for Databases. Reads `.context-engineering/tools.yaml`. The client starts Toolbox with a fixed `--config`, so **any edit to `tools.yaml` requires restarting the `toolbox` MCP server** (or the client) before the new sources/tools are visible. | stdio (`uvx`) |
 | `ctxset` | The **remote Dataplex managed Context Sets MCP server**: `list_context_set_locations`, `upload_context_set`, `get_context_set`, `delete_context_set`, `get_operation`. | Streamable HTTP, Google-credentials auth |
 
 ### Context Set server (`ctxset`)
@@ -45,18 +45,7 @@ Client support:
   provider, so `plugin/scripts/adc_headers.sh` mints the headers from ADC
   (`Authorization: Bearer <token>` and `X-Goog-User-Project` from the ADC
   quota project). Claude re-runs the helper on 401/403, which covers token
-  expiry. Only dependency: `gcloud` on `PATH`. **Untested by the
-  core team so far** — verified by contributors with Claude Code access.
-- **Agent Plugins clients** (`plugin/mcp.json`, VS Code / Cursor / …) —
-  declared as `type: streamable-http` + `url`. That spec has no auth-provider
-  or dynamic-header hook, so authentication is the **host client's**
-  responsibility (a client that can attach Google credentials to HTTP MCP
-  servers works out of the box; others need a static `headers` entry with a
-  bearer token and `X-Goog-User-Project`, which we do not ship).
-
-### Antigravity tool-name length limit
-
-Antigravity exposes plugin MCP tools as `mcp_<plugin-name>_<server-key>_<tool>` and enforces a 64-character limit. Server keys are kept short (`engine`, `toolbox`, `ctxset`) to stay within this limit across both `db-context-engineering` and `db-context-engineering-dev`.
+  expiry. Requires `gcloud` on `PATH`.
 
 ## Gemini CLI extension
 
@@ -145,17 +134,10 @@ Edit `dev-plugin/mcp_config.json`:
    directory you will launch `agy` in — the one that holds
    `.context-engineering/tools.yaml`.
 
-> **Why `cwd` is required on Antigravity.** For plugin MCP servers,
-> Antigravity resolves an empty `cwd` to the *plugin directory*
-> (`~/.gemini/config/plugins/<name>/`), not to the workspace. Toolbox then
-> looks for `.context-engineering/tools.yaml` inside the plugin directory
-> and fails with `no such file or directory`, and relative paths passed to
-> the local server's tools resolve there too. There is no
-> workspace-root variable for plugin manifests today (only `${PLUGIN_ROOT}`
-> and `${PLUGIN_DATA}`), so the dev manifest pins an absolute `cwd`. Gemini
-> CLI and Claude Code start plugin servers in the workspace, so their
-> manifests do not need this. The shipped Antigravity manifest has the
-> same gap — tracked as a follow-up.
+> **Note:** For plugin MCP servers, Antigravity resolves an empty `cwd` to
+> the plugin directory (`~/.gemini/config/plugins/<name>/`) rather than
+> the current workspace, so `dev-plugin/mcp_config.json` sets an explicit
+> `cwd` pointing to your workspace directory (where `.context-engineering/tools.yaml` lives).
 
 Make sure ADC is in place (see
 [Context Set server](#context-set-server-ctxset)), then install the dev plugin:
@@ -172,10 +154,8 @@ cat ~/.gemini/config/plugins/db-context-engineering-dev/mcp_config.json   # must
 ```
 
 Then launch `agy` in a workspace directory and open `/mcp`: the plugin
-should show three servers (`engine`, `toolbox`,
-`ctxset`) and the model-facing tool names
-`mcp_db-context-engineering-dev_<server>_<tool>` must all be connected (none flagged
-invalid). A quick end-to-end check is asking the agent to call
+should show all three servers (`engine`, `toolbox`, `ctxset`) connected. A
+quick end-to-end check is asking the agent to call
 `list_context_set_locations` for a project you can access.
 
 `src/` and `plugin/skills/` edits are picked up on the next `agy`

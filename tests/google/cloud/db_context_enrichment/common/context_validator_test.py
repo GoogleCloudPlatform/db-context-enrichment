@@ -300,3 +300,113 @@ def test_multiple_issues_reported_together(tmp_path: Path):
     messages = " ".join(i["message"] for i in result["issues"])
     assert "duplicate" in messages.lower()
     assert "$value" in messages
+
+
+# ===== Server-side 400 prevention checks =====
+
+
+def test_unknown_top_level_key_reports_issue(tmp_path: Path):
+    file_path = _write(
+        tmp_path / "ctx.json",
+        {"template": [_valid_template()]},
+    )
+    result = validate_context_set(str(file_path))
+    assert result["valid"] is False
+    assert any(
+        "Unknown top-level key 'template'" in i["message"] and i["location"] is None
+        for i in result["issues"]
+    )
+
+
+def test_empty_or_whitespace_required_strings_report_issues(tmp_path: Path):
+    tpl = _valid_template()
+    tpl["manifest"] = "   "
+    tpl["parameterized"]["parameterized_sql"] = ""
+
+    facet = _valid_facet()
+    facet["sql_snippet"] = ""
+
+    vs = _valid_value_search()
+    vs["concept_type"] = "  "
+
+    file_path = _write(
+        tmp_path / "ctx.json",
+        {
+            "templates": [tpl],
+            "facets": [facet],
+            "value_searches": [vs],
+        },
+    )
+    result = validate_context_set(str(file_path))
+    assert result["valid"] is False
+    messages = [i["message"] for i in result["issues"]]
+    assert any("manifest must not be empty" in m for m in messages)
+    assert any(
+        "parameterized.parameterized_sql must not be empty" in m for m in messages
+    )
+    assert any("sql_snippet must not be empty" in m for m in messages)
+    assert any("concept_type must not be empty" in m for m in messages)
+
+
+def test_duplicate_value_search_primary_key_with_different_description(tmp_path: Path):
+    v1 = _valid_value_search()
+    v2 = _valid_value_search()
+    v2["description"] = "Different description but same (concept_type, query) PK"
+
+    file_path = _write(tmp_path / "ctx.json", {"value_searches": [v1, v2]})
+    result = validate_context_set(str(file_path))
+    assert result["valid"] is False
+    assert any(
+        "Duplicate value_search (concept_type, query) key" in i["message"]
+        and i["location"] == {"type": "value_search", "index": 1}
+        for i in result["issues"]
+    )
+
+
+def test_template_mismatched_positional_placeholders_reports_issue(tmp_path: Path):
+    tpl = _valid_template()
+    tpl["parameterized"] = {
+        "parameterized_sql": "SELECT * FROM users WHERE city = $1 AND age > $2",
+        "parameterized_intent": "Users in $1",
+    }
+    file_path = _write(tmp_path / "ctx.json", {"templates": [tpl]})
+    result = validate_context_set(str(file_path))
+    assert result["valid"] is False
+    assert any(
+        "mismatched positional placeholders" in i["message"]
+        and i["location"] == {"type": "template", "index": 0}
+        for i in result["issues"]
+    )
+
+
+def test_facet_non_contiguous_positional_placeholders_reports_issue(tmp_path: Path):
+    f = _valid_facet()
+    f["parameterized"] = {
+        "parameterized_sql_snippet": "users.city = $1 AND users.age > $3",
+        "parameterized_intent": "users in $1 older than $3",
+    }
+    file_path = _write(tmp_path / "ctx.json", {"facets": [f]})
+    result = validate_context_set(str(file_path))
+    assert result["valid"] is False
+    assert any(
+        "numbered contiguously starting from $1" in i["message"]
+        and i["location"] == {"type": "facet", "index": 0}
+        for i in result["issues"]
+    )
+
+
+def test_unparameterized_sql_with_positional_placeholder_reports_issue(tmp_path: Path):
+    tpl = _valid_template()
+    tpl["sql"] = "SELECT * FROM users WHERE city = $1"
+    tpl["parameterized"] = {
+        "parameterized_sql": "SELECT * FROM users WHERE city = $1",
+        "parameterized_intent": "Users in $1",
+    }
+    file_path = _write(tmp_path / "ctx.json", {"templates": [tpl]})
+    result = validate_context_set(str(file_path))
+    assert result["valid"] is False
+    assert any(
+        "sql must contain literal values, not positional placeholders ($1)"
+        in i["message"]
+        for i in result["issues"]
+    )

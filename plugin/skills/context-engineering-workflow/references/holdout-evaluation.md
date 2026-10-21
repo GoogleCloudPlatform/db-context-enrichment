@@ -67,7 +67,7 @@
 
             **Summary**:
             * **Robustness**: The model generalizes well to new phrasings and literal values across the covered query patterns rather than memorizing exact hillclimbing questions. The minor difference between hillclimbing and holdout (87% vs 90%) is well within normal statistical expectations.
-            * **Next Step**: <fresh case: "The context set is live at `<Final Context Set resource>` (from iteration `vK`, local file `vK/context_set_vK.json`). Point your application at it." | existing case, replaced: "`<Final Context Set resource>` now holds this version (from `vK`); the previous contents are kept in `v0/context_set_v0.json`." | existing case, kept: "`<Final Context Set resource>` was left unchanged; the candidate is in `vK/context_set_vK.json`."> No further optimization iterations required.
+            * **Next Step**: <fresh case: "The context set is live at `<Final Context Set resource>` (from iteration `vK`, local file `vK/context_set_vK.json`; if you chose to also update `<Seed Context Set resource>`, it holds `vK` as well). Point your application at it." | existing case, replaced: "`<Final Context Set resource>` now holds this version (from `vK`); the previous contents are kept in `v0/context_set_v0.json`." | existing case, kept: "`<Final Context Set resource>` was left unchanged; the candidate is in `vK/context_set_vK.json`."> No further optimization iterations required.
             ```
 
         *   **Case 2: INCONCLUSIVE — Sample Size Too Small**:
@@ -115,7 +115,7 @@
         | :--- | :--- | :--- |
         | **INVESTIGATE — Path A** (context gaps: facets / value searches / templates) | **expand** with fresh template-preserving variations, then split | avoids reusing the already-inspected holdout split while preserving the base dataset distribution |
         | **INVESTIGATE — Path B** (phrasing diversity) and **INCONCLUSIVE** (dataset too small) | **expand** with new phrasing/curriculum variations, then split | grows coverage/volume and produces a fresh holdout split |
-    *   **Seed**: the new experiment starts from this experiment's result — the published `Final Context Set resource` when it was published, otherwise the best local file `vK/context_set_vK.json` — as `Seed Context Set resource` of the clone (read once, never overwritten). Its own `Context set id` defaults to the new experiment name (a fresh context set). The clone uses the **same `tools.yaml` source** (`## Active Database` is carried over; `tools.yaml` itself is shared and is not copied).
+    *   **Seed**: the new experiment starts from this experiment's result — the published `Final Context Set resource` when it was published, otherwise the best local file `vK/context_set_vK.json` — as `Seed Context Set resource` of the clone (read once at `v0` and untouched during the loop; at Finalize, if the clone improves over `v0`, the user is asked whether to also upload the improved contents back to `Seed Context Set resource` or keep the two context sets separate). Its own `Context set id` defaults to the new experiment name (`<next_experiment_name>`, computed by stripping any trailing `-v<N>` from `<experiment_name>` and picking the next unused `-v<N>` in `.context-engineering/experiments/`, e.g. `exp` → `exp-v2`, `exp-v2` → `exp-v3`, or a third clone from `exp` when `exp-v2` already exists → `exp-v3`). The clone uses the **same `tools.yaml` source** (`## Active Database` is carried over; `tools.yaml` itself is shared and is not copied).
     *   **Print this card** (fill every placeholder; keep the prompt on one line so it can be copy-pasted):
         ```markdown
         ### Next step: start a new experiment
@@ -130,7 +130,7 @@
         * first action → <one-line recommendation from the report>
 
         Start it with:
-        "Start a new context-engineering experiment named `<experiment_name>-v2`, cloned from `<experiment_name>` for <"context fixes" | "dataset expansion">, seeded from its result, and apply the recommendations in `.context-engineering/experiments/<experiment_name>/hillclimb/final_evaluation_report.md`."
+        "Start a new context-engineering experiment named `<next_experiment_name>`, cloned from `<experiment_name>` for <"context fixes" | "dataset expansion">, seeded from its result, and apply the recommendations in `.context-engineering/experiments/<experiment_name>/hillclimb/final_evaluation_report.md`."
         ```
     *   The clone itself is performed by [context-engineering-init](../../context-engineering-init/SKILL.md) (clone mode) when the user issues that prompt — do **not** copy files or create the new experiment from this phase.
 

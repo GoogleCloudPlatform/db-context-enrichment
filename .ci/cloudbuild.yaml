@@ -312,6 +312,7 @@ substitutions:
   _PROJECT_LOCATION: 'global'
 
 options:
+  machineType: 'E2_HIGHCPU_32'
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
 
 # Steps run in parallel; overall timeout must cover the slowest step

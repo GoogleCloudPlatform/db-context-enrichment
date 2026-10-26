@@ -109,7 +109,7 @@ steps:
     entrypoint: 'bash'
     secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
-    timeout: 2700s
+    timeout: 5400s
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
@@ -156,7 +156,7 @@ steps:
     entrypoint: 'bash'
     secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
-    timeout: 2700s
+    timeout: 5400s
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
       - 'EVAL_GCP_PROJECT_REGION=$_PROJECT_LOCATION'
@@ -316,5 +316,5 @@ options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
 
 # Steps run in parallel; overall timeout must cover the slowest step
-# (45 min) plus build-extension + preflight + upload + gate overhead.
-timeout: 3600s
+# (90 min) plus build-extension + preflight + upload + gate overhead.
+timeout: 7200s

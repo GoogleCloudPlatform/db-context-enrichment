@@ -22,7 +22,7 @@
 ### v0 (base)
 - Local file: v0/context_set_v0.json
 - Upload op: projects/cloud-db-nl2sql/locations/us-central1/operations/operation-crema-eval-v0
-- Score: 0.75 (3 / 4)
+- Score: 0.67 (2 / 3)
 - Analysis: (baseline — no analysis)
 - Eval report: v0/eval/eval_reports/e637c96e-ab21-411b-99a2-47ec808ad968/
 - Notes: baseline uploaded from bootstrap_context.json

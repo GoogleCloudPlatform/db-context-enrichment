@@ -210,3 +210,150 @@ def test_invalid_mutation_raises_validation_error(tmp_path: pathlib.Path):
 
     with pytest.raises(ValueError, match="Validation Error on mutation 0"):
         mutate_context_set(str(file_path), [mutation])
+
+
+def test_delete_or_update_with_empty_identifier_raises_error(tmp_path: pathlib.Path):
+    file_path = tmp_path / "empty_id.json"
+    file_path.write_text(
+        json.dumps({"value_searches": [{"query": "Q1", "concept_type": "City"}]})
+    )
+
+    with pytest.raises(
+        ValueError, match="'identifier' is required and cannot be empty"
+    ):
+        mutate_context_set(
+            str(file_path),
+            [Mutation(operation="delete", type="value_search", identifier={})],
+        )
+
+    with pytest.raises(
+        ValueError, match="'identifier' is required and cannot be empty"
+    ):
+        mutate_context_set(
+            str(file_path),
+            [
+                Mutation(
+                    operation="update",
+                    type="value_search",
+                    identifier={},
+                    value={"query": "Q2"},
+                )
+            ],
+        )
+
+
+def test_camel_case_identifier_and_existing_file_keys(tmp_path: pathlib.Path):
+    file_path = tmp_path / "camel_context.json"
+    # Simulate payload downloaded from get_context_set with camelCase keys
+    file_path.write_text(
+        json.dumps(
+            {
+                "templates": [
+                    {
+                        "nlQuery": "How many users?",
+                        "sql": "SELECT COUNT(*) FROM users WHERE year = 2023",
+                        "intent": "Count users in 2023",
+                        "manifest": "Count users in a year",
+                        "parameterized": {
+                            "parameterizedSql": "SELECT COUNT(*) FROM users WHERE year = $1",
+                            "parameterizedIntent": "Count users in $1",
+                        },
+                    }
+                ],
+                "valueSearches": [{"query": "SELECT $value", "conceptType": "City"}],
+            }
+        )
+    )
+
+    # Update template using camelCase identifier and delete value_search using camelCase identifier
+    mutate_context_set(
+        str(file_path),
+        [
+            Mutation(
+                operation="update",
+                type="template",
+                identifier={"nlQuery": "How many users?"},
+                value={"manifest": "Updated manifest"},
+            ),
+            Mutation(
+                operation="delete",
+                type="value_search",
+                identifier={"conceptType": "City"},
+            ),
+        ],
+    )
+
+    data = load_context_from_file(file_path)
+    assert data["templates"][0]["manifest"] == "Updated manifest"
+    assert data.get("value_searches", []) == []
+
+
+def test_repair_broken_file_via_update_or_delete(tmp_path: pathlib.Path):
+    file_path = tmp_path / "broken_context.json"
+    # Template at index 0 is missing required 'manifest' field
+    file_path.write_text(
+        json.dumps(
+            {
+                "templates": [
+                    {
+                        "nl_query": "Broken query",
+                        "sql": "SELECT 1",
+                        "intent": "Broken intent",
+                        "parameterized": {
+                            "parameterized_sql": "SELECT 1",
+                            "parameterized_intent": "Broken intent",
+                        },
+                    }
+                ]
+            }
+        )
+    )
+
+    # Repair the broken item via 'update'
+    mutate_context_set(
+        str(file_path),
+        [
+            Mutation(
+                operation="update",
+                type="template",
+                identifier={"nl_query": "Broken query"},
+                value={"manifest": "Fixed manifest"},
+            )
+        ],
+    )
+    data = load_context_from_file(file_path)
+    assert data["templates"][0]["manifest"] == "Fixed manifest"
+
+
+def test_duplicate_detection_raises_value_error(tmp_path: pathlib.Path):
+    file_path = tmp_path / "dup_context.json"
+    file_path.write_text(
+        json.dumps(
+            {
+                "value_searches": [
+                    {
+                        "query": "SELECT name FROM cities WHERE name = $value",
+                        "concept_type": "City",
+                        "description": "Original",
+                    }
+                ]
+            }
+        )
+    )
+
+    # Adding another value_search with the same (concept_type, query) primary key should fail
+    with pytest.raises(ValueError, match="Duplicate"):
+        mutate_context_set(
+            str(file_path),
+            [
+                Mutation(
+                    operation="add",
+                    type="value_search",
+                    value={
+                        "query": "SELECT name FROM cities WHERE name = $value",
+                        "concept_type": "City",
+                        "description": "Different description",
+                    },
+                )
+            ],
+        )

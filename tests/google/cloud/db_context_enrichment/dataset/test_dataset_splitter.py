@@ -212,3 +212,102 @@ def test_normalize_sql_template_comments_in_list_and_negatives():
     q1 = "SELECT * FROM t WHERE x IN (1, 2) AND y > -5 -- trailing comment"
     q2 = "/* block */ SELECT * FROM t WHERE x IN (10, 20, 30) AND y > -100;"
     assert _normalize_sql_template(q1) == _normalize_sql_template(q2)
+
+
+def test_normalize_sql_template_bigtable_mql_and_group_by_positions():
+    # 1. Bigtable column qualifiers cf['col'] should stay distinct
+    bt1 = "SELECT cf['clicks'] FROM my_bt WHERE rowkey = 'user_1'"
+    bt2 = "SELECT cf['views'] FROM my_bt WHERE rowkey = 'user_1'"
+    bt1_var = "SELECT cf['clicks'] FROM my_bt WHERE rowkey = 'user_2'"
+    assert _normalize_sql_template(bt1) != _normalize_sql_template(bt2)
+    assert _normalize_sql_template(bt1) == _normalize_sql_template(bt1_var)
+
+    # 2. JSON / MQL double-quoted values after colons should be masked
+    mql1 = 'db.users.find({"city": "Prague", "age": 25})'
+    mql2 = 'db.users.find({"city": "Brno", "age": 40})'
+    assert _normalize_sql_template(mql1) == _normalize_sql_template(mql2)
+
+    # 3. Positional integers in GROUP BY / ORDER BY stay distinct while LIMIT literals are masked
+    gb1 = "SELECT a, b, COUNT(*) FROM t WHERE yr = 2022 GROUP BY 1 ORDER BY 1 DESC LIMIT 5"
+    gb1_var = "SELECT a, b, COUNT(*) FROM t WHERE yr = 2023 GROUP BY 1 ORDER BY 1 DESC LIMIT 10"
+    gb2 = "SELECT a, b, COUNT(*) FROM t WHERE yr = 2022 GROUP BY 2 ORDER BY 2 DESC LIMIT 5"
+    assert _normalize_sql_template(gb1) == _normalize_sql_template(gb1_var)
+    assert _normalize_sql_template(gb1) != _normalize_sql_template(gb2)
+
+
+@pytest.mark.asyncio
+async def test_split_dataset_excludes_previous_holdout_explicit_and_autodetected(
+    tmp_path: pathlib.Path, sample_golden_entries
+):
+    # Experiment 1: 150 items (30 templates x 5 vars) -> 105 hillclimb, 45 holdout
+    exp1_dir = tmp_path / ".context-engineering" / "experiments" / "exp1"
+    exp1_dataset_dir = exp1_dir / "dataset"
+    exp1_dataset_dir.mkdir(parents=True)
+    exp1_golden = exp1_dataset_dir / "golden.json"
+    exp1_golden.write_text(json.dumps(sample_golden_entries), encoding="utf-8")
+
+    await split_dataset(str(exp1_golden), str(exp1_dataset_dir))
+    exp1_holdout_path = exp1_dataset_dir / "splits" / "holdout.json"
+    exp1_holdout = json.loads(exp1_holdout_path.read_text(encoding="utf-8"))
+    exp1_holdout_ids = {item["id"] for item in exp1_holdout}
+    assert len(exp1_holdout_ids) == 45
+
+    # Expand dataset for Experiment 2: add 2 new variations per template (60 new items -> 210 total)
+    expanded_entries = list(sample_golden_entries)
+    for t in range(1, 31):
+        for i in range(6, 8):
+            expanded_entries.append(
+                {
+                    "id": f"eval_template_{t}_var_{i}",
+                    "database": "test_db",
+                    "nlq": f"Query template {t} variation {i}",
+                    "golden_sql": f"SELECT COUNT(*) FROM table_{t} WHERE year = {2020 + i}",
+                }
+            )
+
+    # Case B: Explicit previous_holdout_path
+    exp2_explicit_dir = (
+        tmp_path / ".context-engineering" / "experiments" / "exp2-explicit" / "dataset"
+    )
+    exp2_explicit_dir.mkdir(parents=True)
+    exp2_golden = exp2_explicit_dir / "golden.json"
+    exp2_golden.write_text(json.dumps(expanded_entries), encoding="utf-8")
+
+    await split_dataset(
+        str(exp2_golden),
+        str(exp2_explicit_dir),
+        previous_holdout_path=str(exp1_holdout_path),
+    )
+    exp2_explicit_holdout = json.loads(
+        (exp2_explicit_dir / "splits" / "holdout.json").read_text(encoding="utf-8")
+    )
+    exp2_explicit_holdout_ids = {item["id"] for item in exp2_explicit_holdout}
+    # Zero overlap with Experiment 1's holdout IDs!
+    assert exp1_holdout_ids.isdisjoint(exp2_explicit_holdout_ids)
+
+    # Case A: Auto-detected from <exp_root>/hillclimb/experiment_state.md
+    exp2_auto_root = tmp_path / ".context-engineering" / "experiments" / "exp1-v2"
+    exp2_auto_dataset = exp2_auto_root / "dataset"
+    exp2_auto_hillclimb = exp2_auto_root / "hillclimb"
+    exp2_auto_dataset.mkdir(parents=True)
+    exp2_auto_hillclimb.mkdir(parents=True)
+    (exp2_auto_dataset / "golden.json").write_text(
+        json.dumps(expanded_entries), encoding="utf-8"
+    )
+    (exp2_auto_hillclimb / "experiment_state.md").write_text(
+        "# Hill-Climbing Experiment: exp1-v2\n\n"
+        "## Metadata\n"
+        "- Cloned from: exp1\n"
+        "- Source evaluation report: ./.context-engineering/experiments/exp1/hillclimb/final_evaluation_report.md\n",
+        encoding="utf-8",
+    )
+
+    await split_dataset(
+        str(exp2_auto_dataset / "golden.json"),
+        str(exp2_auto_dataset),
+    )
+    exp2_auto_holdout = json.loads(
+        (exp2_auto_dataset / "splits" / "holdout.json").read_text(encoding="utf-8")
+    )
+    exp2_auto_holdout_ids = {item["id"] for item in exp2_auto_holdout}
+    assert exp1_holdout_ids.isdisjoint(exp2_auto_holdout_ids)

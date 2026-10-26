@@ -19,12 +19,19 @@ token="$(gcloud auth application-default print-access-token 2>/dev/null)" || {
 }
 
 # X-Goog-User-Project (the Context Set server returns 400 without it).
-# Derived strictly from quota_project_id in the ADC file (set by:
-# gcloud auth application-default set-quota-project <project>)
+# Derived from quota_project_id in the ADC file (set by:
+# gcloud auth application-default set-quota-project <project>), falling back
+# to project_id (for service-account JSON keys in CI) or GOOGLE_CLOUD_QUOTA_PROJECT / GOOGLE_CLOUD_PROJECT.
 quota=""
 adc_file="${GOOGLE_APPLICATION_CREDENTIALS:-${CLOUDSDK_CONFIG:-$HOME/.config/gcloud}/application_default_credentials.json}"
 if [ -f "$adc_file" ]; then
   quota="$(sed -n 's/.*"quota_project_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$adc_file" | head -n 1)"
+  if [ -z "$quota" ]; then
+    quota="$(sed -n 's/.*"project_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$adc_file" | head -n 1)"
+  fi
+fi
+if [ -z "$quota" ]; then
+  quota="${GOOGLE_CLOUD_QUOTA_PROJECT:-${GOOGLE_CLOUD_PROJECT:-}}"
 fi
 
 if [ -n "$quota" ] && ! [[ "$quota" =~ ^[a-zA-Z0-9.:-]+$ ]]; then

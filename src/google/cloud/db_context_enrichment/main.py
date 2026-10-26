@@ -1,4 +1,5 @@
 import json
+import os
 
 from fastmcp import FastMCP
 
@@ -55,6 +56,7 @@ async def split_dataset(
     output_dir: str,
     hillclimb_ratio: float = 0.7,
     min_holdout_size: int = 45,
+    previous_holdout_path: str | None = None,
 ) -> str:
     """Splits a golden dataset into Hillclimbing and Holdout splits.
 
@@ -68,12 +70,17 @@ async def split_dataset(
         output_dir: Output directory where splits/hillclimb.json and splits/holdout.json are saved.
         hillclimb_ratio: Ratio of data for hillclimbing (default: 0.7).
         min_holdout_size: Minimum required items for holdout split (default: 45; if the user explicitly requested a small custom dataset of N < 150 items, pass max(1, round(N * (1 - hillclimb_ratio)))).
+        previous_holdout_path: Optional path to a parent experiment's `splits/holdout.json` when splitting an expanded dataset in a cloned experiment (also auto-detected from `experiment_state.md` if omitted) so previously inspected holdout items are routed to `hillclimb.json` and `holdout.json` is drawn from fresh variations.
 
     Returns:
         A concise summary message confirming the split creation.
     """
     return await dataset_splitter.split_dataset(
-        golden_dataset_path, output_dir, hillclimb_ratio, min_holdout_size
+        golden_dataset_path,
+        output_dir,
+        hillclimb_ratio,
+        min_holdout_size,
+        previous_holdout_path=previous_holdout_path,
     )
 
 
@@ -87,30 +94,41 @@ def evaluate_generalizability(
     diagnosis: str | None = None,
     recommended_action: str | None = None,
     next_step: str | None = None,
+    failure_breakdown_md: str | None = None,
+    actionable_recommendations_md: str | None = None,
+    tldr_summary: str | None = None,
+    tldr_next_steps: str | None = None,
+    report_output_path: str | None = None,
     context_set_id: str | None = None,
     context_file: str | None = None,
 ) -> str:
     """Evaluates generalizability across hillclimbing and holdout splits.
 
-    Calculates a two-proportion pooled z-test, checks whether holdout accuracy meets
-    the minimum target threshold (`tuning_target - 0.15`, i.e., 85% when tuning_target=1.0),
+    Calculates a two-proportion pooled z-test, checks whether both hillclimbing and holdout
+    accuracy meet the minimum target threshold (`tuning_target - 0.15`, i.e., 85% when tuning_target=1.0),
     derives the verdict (PASS, INVESTIGATE, INCONCLUSIVE), and returns the formatted
-    On-Screen Summary Card along with pre-computed statistical metrics for `final_evaluation_report.md`.
+    On-Screen Summary Card and `final_evaluation_report.md` content (writing the report to
+    `report_output_path` if provided).
 
     Args:
         dev_passed: Number of passed queries in Hillclimbing Questions.
         dev_total: Total queries in Hillclimbing Questions (N_dev).
         test_passed: Number of passed queries in Holdout Questions.
         test_total: Total queries in Holdout Questions (N_test).
-        tuning_target: Target accuracy for hillclimbing (default: 1.0). Minimum holdout accuracy for PASS is `tuning_target - 0.15`.
-        diagnosis: Optional specific diagnosis text.
-        recommended_action: Optional recommended action text.
-        next_step: Optional immediate next step text.
+        tuning_target: Target accuracy for hillclimbing (default: 1.0). Minimum accuracy for PASS is `tuning_target - 0.15`.
+        diagnosis: Optional specific diagnosis text for the On-Screen Summary Card.
+        recommended_action: Optional recommended action text for the On-Screen Summary Card.
+        next_step: Optional immediate next step text for the On-Screen Summary Card.
+        failure_breakdown_md: Optional markdown for Section 3 (Holdout Set Failure Breakdown) of `final_evaluation_report.md`.
+        actionable_recommendations_md: Optional markdown for Section 1 (Actionable Recommendations) of `final_evaluation_report.md`.
+        tldr_summary: Optional TL;DR summary line for `final_evaluation_report.md`.
+        tldr_next_steps: Optional TL;DR next steps line for `final_evaluation_report.md`.
+        report_output_path: Optional path to write `final_evaluation_report.md` directly to disk.
         context_set_id: Optional full ContextSet resource name of the candidate hill-climbing iteration.
         context_file: Optional filename of the candidate ContextSet JSON file.
 
     Returns:
-        The markdown string for the On-Screen Summary Card and statistical report details.
+        The markdown string for the On-Screen Summary Card and `final_evaluation_report.md`.
     """
     stats = generalizability.calculate_z_test(
         dev_passed,
@@ -127,19 +145,21 @@ def evaluate_generalizability(
         context_set_id,
         context_file,
     )
-    stats_summary = (
-        f"\n\n---\n"
-        f"**Statistical Details (for `final_evaluation_report.md`)**:\n"
-        f"- Verdict: `{stats['verdict']}`\n"
-        f"- Sample Sizes: `N_dev = {stats['dev_total']}` (`x_dev = {stats['dev_passed']}`), "
-        f"`N_test = {stats['test_total']}` (`x_test = {stats['test_passed']}`)\n"
-        f"- Tuning Target: `{stats['tuning_target']:.2f}` (Min Holdout Accuracy Threshold: `{stats['min_test_accuracy']:.2f}`)\n"
-        f"- Pooled Proportion (`p_hat`): `{stats['p_hat']:.4f}`\n"
-        f"- Standard Error (`SE`): `{stats['standard_error']:.4f}`\n"
-        f"- Test Statistic (`z`): `{stats['z_statistic']:.2f}`\n"
-        f"- Two-Tailed `p-value`: `{stats['p_value']:.4f}` (`alpha = {stats['alpha']}`)"
+    report = generalizability.format_final_evaluation_report(
+        stats,
+        failure_breakdown_md,
+        actionable_recommendations_md,
+        tldr_summary,
+        tldr_next_steps,
+        context_set_id,
+        context_file,
     )
-    return f"{card}{stats_summary}"
+    if report_output_path:
+        abs_report_path = os.path.abspath(report_output_path)
+        os.makedirs(os.path.dirname(abs_report_path), exist_ok=True)
+        with open(abs_report_path, "w", encoding="utf-8") as f:
+            f.write(report)
+    return f"### On-Screen Summary Card\n\n{card}\n\n---\n\n### Content for `final_evaluation_report.md`\n\n{report}"
 
 
 @mcp.tool

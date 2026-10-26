@@ -6,16 +6,56 @@ import re
 from typing import Any
 
 
+def _preserve_clause_positions(match: re.Match[str]) -> str:
+    """Marks positional column numbers in GROUP BY / ORDER BY so they are not masked as literals."""
+    return re.sub(r"\b(\d+)\b", r"__pos_\1__", match.group(0))
+
+
 def _normalize_sql_template(sql: str) -> str:
     """Normalizes a SQL query into a structural template key to group variations."""
     # Strip block comments (/* ... */) and line comments (-- ...)
     no_comments = re.sub(r"/\*.*?\*/", " ", sql, flags=re.DOTALL)
     no_comments = re.sub(r"--[^\n]*", " ", no_comments)
     cleaned = no_comments.strip().rstrip(";").strip()
+
+    # Protect Bigtable column qualifiers like cf['col'] so distinct columns don't collapse to cf['?']
+    bt_qualifiers: list[str] = []
+
+    def _stash_bt_qualifier(match: re.Match[str]) -> str:
+        idx = len(bt_qualifiers)
+        bt_qualifiers.append(match.group(0))
+        return f"__bt_qual_{idx}__"
+
+    protected = re.sub(
+        r"\b[a-zA-Z_][a-zA-Z0-9_]*\s*\[\s*'(?:''|\\'|[^'])*'\s*\]",
+        _stash_bt_qualifier,
+        cleaned,
+    )
+
     # Mask single-quoted string literals (including escaped '' or \' quotes)
-    normalized = re.sub(r"'(?:''|\\'|[^'])*'", "'?'", cleaned)
+    normalized = re.sub(r"'(?:''|\\'|[^'])*'", "'?'", protected)
+
+    # Restore Bigtable column qualifiers after single-quote masking
+    for idx, qual in enumerate(bt_qualifiers):
+        normalized = normalized.replace(f"__bt_qual_{idx}__", qual)
+
+    # Mask JSON / MQL double-quoted string values after colons (e.g., {"field": "val"})
+    normalized = re.sub(r':\s*"(?:\\"|[^"])*"', ': "?"', normalized)
+
+    # Protect positional column integers in GROUP BY / ORDER BY (e.g., GROUP BY 1, 2 or ORDER BY 1 DESC)
+    normalized = re.sub(
+        r"\b(?:group|order)\s+by\s+\d+(?:\s+(?:asc|desc|nulls\s+first|nulls\s+last))?(?:\s*,\s*\d+(?:\s+(?:asc|desc|nulls\s+first|nulls\s+last))?)*",
+        _preserve_clause_positions,
+        normalized,
+        flags=re.IGNORECASE,
+    )
+
     # Mask signed and unsigned numeric literals (integers and decimals)
     normalized = re.sub(r"(?<![a-zA-Z0-9_])-?\b\d+(?:\.\d+)?\b", "?", normalized)
+
+    # Restore protected GROUP BY / ORDER BY positional integers
+    normalized = re.sub(r"__pos_(\d+)__", r"\1", normalized)
+
     # Normalize whitespace and case
     normalized = re.sub(r"\s+", " ", normalized).strip().lower()
     # Collapse IN lists of masked literals into a single placeholder
@@ -79,12 +119,79 @@ def _resolve_split_paths(output_dir: str) -> tuple[str, str]:
     return dev_path, test_path
 
 
+def _resolve_previous_holdout_ids(
+    output_dir: str, previous_holdout_path: str | None = None
+) -> set[str]:
+    """Resolves item IDs from a previous experiment's holdout split so they are routed to hillclimb.json.
+
+    Supports both an explicit `previous_holdout_path` and automatic detection from
+    `<experiment_root>/hillclimb/experiment_state.md` (`Source evaluation report` line) in cloned experiments.
+    """
+    candidate_path: str | None = None
+    if previous_holdout_path and previous_holdout_path.strip():
+        candidate_path = os.path.abspath(previous_holdout_path.strip())
+        if not os.path.exists(candidate_path):
+            raise FileNotFoundError(
+                f"Previous holdout dataset file not found: {candidate_path}"
+            )
+    else:
+        norm_dir = os.path.normpath(os.path.abspath(output_dir))
+        if os.path.basename(norm_dir) == "splits":
+            dataset_dir = os.path.dirname(norm_dir)
+        else:
+            dataset_dir = norm_dir
+        exp_root = os.path.dirname(dataset_dir)
+        state_path = os.path.join(exp_root, "hillclimb", "experiment_state.md")
+        if os.path.exists(state_path):
+            try:
+                with open(state_path, encoding="utf-8") as f:
+                    state_text = f.read()
+                match = re.search(
+                    r"^-\s*Source evaluation report:\s*(.+)$",
+                    state_text,
+                    flags=re.MULTILINE,
+                )
+                if match:
+                    raw_report_path = match.group(1).strip().strip("`")
+                    # Resolve relative to workspace root (3 levels above exp_root: .context-engineering/experiments/<name>)
+                    workspace_root = os.path.dirname(
+                        os.path.dirname(os.path.dirname(exp_root))
+                    )
+                    resolved_report = (
+                        raw_report_path
+                        if os.path.isabs(raw_report_path)
+                        else os.path.normpath(
+                            os.path.join(workspace_root, raw_report_path)
+                        )
+                    )
+                    source_exp_root = os.path.dirname(os.path.dirname(resolved_report))
+                    auto_holdout = os.path.join(
+                        source_exp_root, "dataset", "splits", "holdout.json"
+                    )
+                    if os.path.exists(auto_holdout):
+                        candidate_path = auto_holdout
+            except OSError:
+                candidate_path = None
+
+    if not candidate_path:
+        return set()
+
+    with open(candidate_path, encoding="utf-8") as f:
+        prev_data = json.load(f)
+    if not isinstance(prev_data, list):
+        return set()
+    return {
+        str(item["id"]) for item in prev_data if isinstance(item, dict) and "id" in item
+    }
+
+
 async def split_dataset(
     golden_dataset_path: str,
     output_dir: str,
     hillclimb_ratio: float = 0.7,
     min_holdout_size: int = 45,
     custom_test_dataset_path: str | None = None,
+    previous_holdout_path: str | None = None,
 ) -> str:
     """Splits a golden dataset into Hillclimbing and Holdout splits.
 
@@ -101,6 +208,9 @@ async def split_dataset(
         hillclimb_ratio: Ratio of data to assign to the Hillclimbing split (default: 0.7).
         min_holdout_size: Minimum required number of items in the Holdout split (default: 45).
         custom_test_dataset_path: Must be None. If provided, fails early per spec.
+        previous_holdout_path: Optional path to a parent experiment's `splits/holdout.json` (also auto-detected
+            from `experiment_state.md` in cloned experiments). Items present in the previous holdout split are
+            prioritized into `hillclimb.json` so the new `holdout.json` is drawn from fresh variations.
 
     Returns:
         A concise summary message confirming the split creation.
@@ -125,6 +235,9 @@ async def split_dataset(
     golden_data = _load_and_validate_dataset(golden_dataset_path)
     total_items = len(golden_data)
     dev_path, test_path = _resolve_split_paths(output_dir)
+    previous_holdout_ids = _resolve_previous_holdout_ids(
+        output_dir, previous_holdout_path
+    )
 
     # Group entries by database-scoped normalized SQL template key to guarantee every holdout template exists in hillclimb
     groups_dict: dict[str, list[dict[str, Any]]] = collections.defaultdict(list)
@@ -132,10 +245,19 @@ async def split_dataset(
         key = _extract_template_key(entry)
         groups_dict[key].append(entry)
 
-    # Sort groups deterministically by template key, and sort items within each group by deterministic hash of id
+    # Sort groups deterministically by template key, and sort items within each group by deterministic hash of id.
+    # If previous_holdout_ids is non-empty (cloned experiment), place previously-used holdout items first (prefix 0)
+    # so they land in hillclimb.json (g[:dev_count]) and holdout.json (g[dev_count:]) is drawn from fresh items.
     sorted_keys = sorted(groups_dict.keys())
     groups: list[list[dict[str, Any]]] = [
-        sorted(groups_dict[k], key=_deterministic_item_sort_key) for k in sorted_keys
+        sorted(
+            groups_dict[k],
+            key=lambda entry: (
+                0 if str(entry.get("id", "")) in previous_holdout_ids else 1,
+                _deterministic_item_sort_key(entry),
+            ),
+        )
+        for k in sorted_keys
     ]
 
     # Calculate maximum possible holdout items while keeping at least 1 item per template in hillclimb.json

@@ -211,7 +211,8 @@ async def test_generate_and_split_dataset_tools(tmp_path: Path):
     assert (tmp_path / "dataset" / "splits" / "holdout.json").exists()
 
 
-def test_evaluate_generalizability_tool():
+def test_evaluate_generalizability_tool(tmp_path: Path):
+    report_path = tmp_path / "final_evaluation_report.md"
     card = evaluate_generalizability(
         dev_passed=95,
         dev_total=105,
@@ -219,10 +220,13 @@ def test_evaluate_generalizability_tool():
         test_total=45,
         context_set_id="projects/p/locations/l/contextSets/cs1",
         context_file="v1/context_set_v1.json",
+        report_output_path=str(report_path),
     )
     assert "Evaluation Complete: Context Set Generalizes Reliably" in card
     assert "projects/p/locations/l/contextSets/cs1" in card
     assert "v1/context_set_v1.json" in card
-    assert "Statistical Details (for `final_evaluation_report.md`)" in card
-    assert "Min Holdout Accuracy Threshold: `0.85`" in card
-    assert "Pooled Proportion (`p_hat`)" in card
+    assert "## 4. STATISTICAL DETAILS" in card
+    assert "Min Accuracy Threshold: 0.85" in card
+    assert "Pooled Proportion (p_hat)" in card
+    assert report_path.exists()
+    assert "## 1. ACTIONABLE RECOMMENDATIONS" in report_path.read_text()

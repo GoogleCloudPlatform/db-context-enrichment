@@ -63,7 +63,7 @@ def calculate_z_test(
     # Decision logic:
     # 1. Underpowered holdout size (N_test < 45) -> Inconclusive
     # 2. Statistically significant drop (p < alpha and p_dev > p_test) -> Investigate (Gaps Identified)
-    # 3. Holdout accuracy below target threshold (p_test < tuning_target - 0.15) -> Investigate (Below Accuracy Target)
+    # 3. Holdout or hillclimbing accuracy below target threshold (p_test < min_test_accuracy or p_dev < min_test_accuracy) -> Investigate (Below Accuracy Target)
     # 4. Otherwise -> Pass
     if test_total < 45:
         verdict_type = "INCONCLUSIVE"
@@ -73,9 +73,13 @@ def calculate_z_test(
         verdict_type = "INVESTIGATE"
         verdict = "NOT PASS — INVESTIGATE (Statistically Significant Performance Drop)"
         status = "Needs Optimization (Gaps Identified)"
-    elif p_test < min_test_accuracy:
+    elif p_test < min_test_accuracy or p_dev < min_test_accuracy:
         verdict_type = "INVESTIGATE"
-        verdict = "NOT PASS — INVESTIGATE (Holdout Accuracy Below Target Threshold)"
+        verdict = (
+            "NOT PASS — INVESTIGATE (Holdout Accuracy Below Target Threshold)"
+            if p_test < min_test_accuracy
+            else "NOT PASS — INVESTIGATE (Hillclimbing Accuracy Below Target Threshold)"
+        )
         status = "Needs Optimization (Below Accuracy Target)"
     else:
         verdict_type = "PASS"
@@ -126,11 +130,26 @@ def format_on_screen_card(
 
     if v_type == "PASS":
         notes_test = "Consistent with hillclimbing"
-        diag_text = diagnosis or (
-            "The model generalizes well to new phrasings and literal values across the covered query patterns "
-            "rather than memorizing exact hillclimbing questions. The minor difference between hillclimbing "
-            f"and holdout ({test_pct}% vs {dev_pct}%) is well within normal statistical expectations."
-        )
+        if diagnosis:
+            diag_text = diagnosis
+        elif test_pct > dev_pct:
+            diag_text = (
+                "The model generalizes well to new phrasings and literal values across the covered query patterns "
+                "rather than memorizing exact hillclimbing questions. Holdout accuracy "
+                f"({test_pct}%) exceeded hillclimbing accuracy ({dev_pct}%) without any performance drop."
+            )
+        elif test_pct == dev_pct:
+            diag_text = (
+                "The model generalizes well to new phrasings and literal values across the covered query patterns "
+                "rather than memorizing exact hillclimbing questions. Holdout accuracy "
+                f"({test_pct}%) matches hillclimbing accuracy ({dev_pct}%)."
+            )
+        else:
+            diag_text = (
+                "The model generalizes well to new phrasings and literal values across the covered query patterns "
+                "rather than memorizing exact hillclimbing questions. The minor difference between hillclimbing "
+                f"and holdout ({test_pct}% vs {dev_pct}%) is well within normal statistical expectations."
+            )
         cs_id_display = context_set_id or "<Final Context Set resource>"
         if next_step:
             next_text = (
@@ -188,7 +207,8 @@ def format_on_screen_card(
             stats["p_value"] < stats["alpha"]
             and stats["dev_accuracy"] > stats["test_accuracy"]
         )
-        min_acc_pct = int(round(stats.get("min_test_accuracy", 0.85) * 100))
+        min_acc = stats.get("min_test_accuracy", 0.85)
+        min_acc_pct = int(round(min_acc * 100))
         target_pct = int(round(stats.get("tuning_target", 1.0) * 100))
 
         if is_sig_drop:
@@ -201,7 +221,7 @@ def format_on_screen_card(
                 f"**Significant drop (-{diff_pct}% across {failed_count} queries)**"
             )
             default_diag = "Evaluation revealed a significant drop on holdout question phrasings due to missing context definitions or unseen phrasing patterns."
-        else:
+        elif stats["test_accuracy"] < min_acc:
             header_title = (
                 "❌ **Evaluation Alert: Holdout Accuracy Below Target Threshold**"
             )
@@ -213,6 +233,19 @@ def format_on_screen_card(
             default_diag = (
                 f"Although holdout accuracy ({test_pct}%) is statistically consistent with hillclimbing ({dev_pct}%), "
                 f"overall accuracy remains below the {min_acc_pct}% production readiness threshold (derived from the {target_pct}% tuning target)."
+            )
+        else:
+            header_title = (
+                "❌ **Evaluation Alert: Hillclimbing Accuracy Below Target Threshold**"
+            )
+            status_line = "**Status**: Needs Optimization (Below Accuracy Target)"
+            subtitle = f"Hillclimbing accuracy ({dev_pct}%) is below the {min_acc_pct}% minimum threshold (tied to the {target_pct}% tuning target), so the context set is not yet ready for production."
+            holdout_note = (
+                f"**Consistent with hillclimbing ({failed_count} failed queries)**"
+            )
+            default_diag = (
+                f"Although holdout accuracy ({test_pct}%) met the {min_acc_pct}% threshold, "
+                f"hillclimbing accuracy ({dev_pct}%) remains below the {min_acc_pct}% production readiness threshold (derived from the {target_pct}% tuning target)."
             )
 
         diag_text = diagnosis or default_diag
@@ -233,3 +266,155 @@ def format_on_screen_card(
             f"* **Diagnosis**: {diag_text}\n"
             f"* **Recommended Action**: {action_text}"
         )
+
+
+def format_final_evaluation_report(
+    stats: dict[str, Any],
+    failure_breakdown_md: str | None = None,
+    actionable_recommendations_md: str | None = None,
+    tldr_summary: str | None = None,
+    tldr_next_steps: str | None = None,
+    context_set_id: str | None = None,
+    context_file: str | None = None,
+) -> str:
+    """Formats the comprehensive final_evaluation_report.md document.
+
+    Ordered strictly by decision relevance:
+    TL;DR -> 1. ACTIONABLE RECOMMENDATIONS -> 2. PERFORMANCE OVERVIEW ->
+    3. HOLDOUT SET FAILURE BREAKDOWN -> 4. STATISTICAL DETAILS.
+    """
+    v_type = stats["verdict_type"]
+    dev_pct = stats["dev_accuracy"] * 100.0
+    test_pct = stats["test_accuracy"] * 100.0
+    diff_pct = stats["difference"] * 100.0
+    diff_sign = "+" if diff_pct > 0 else ""
+    min_acc = stats.get("min_test_accuracy", 0.85)
+    min_acc_pct = int(round(min_acc * 100))
+    target_pct = int(round(stats.get("tuning_target", 1.0) * 100))
+
+    if v_type == "PASS":
+        sig_label = (
+            f"Not Statistically Significant (p = {stats['p_value']:.4f} >= {stats['alpha']}) — "
+            "difference is within expected random variation"
+            if stats["dev_accuracy"] >= stats["test_accuracy"]
+            else f"Holdout Exceeded Hillclimbing (p = {stats['p_value']:.4f}) — no performance drop"
+        )
+        default_next = "Ready for deployment. No further optimization loops required."
+        if context_set_id:
+            file_note = f" (local file `{context_file}`)" if context_file else ""
+            default_next = (
+                f"Deploy ContextSet `{context_set_id}`{file_note} to production. "
+                "No further optimization loops required."
+            )
+        default_summary = (
+            "The ContextSet generalizes reliably to unseen question phrasings and literal values "
+            "across the covered query patterns."
+        )
+        diff_note = "(within expected variance)"
+        power_check = f"Sufficiently Powered (N_test = {stats['test_total']} >= 45)"
+    elif v_type == "INCONCLUSIVE":
+        sig_label = (
+            f"Underpowered Sample Size (N_test = {stats['test_total']} < 45; "
+            f"p = {stats['p_value']:.4f})"
+        )
+        default_next = (
+            "Expand the evaluation dataset to at least 150 total queries "
+            "(105 Hillclimbing / 45 Holdout) in a new cloned experiment."
+        )
+        default_summary = "The holdout sample size is too small to statistically confirm generalization reliability."
+        diff_note = "(sample size underpowered)"
+        power_check = (
+            f"Underpowered (N_test = {stats['test_total']} < 45 minimum required)"
+        )
+    else:  # INVESTIGATE
+        is_sig_drop = (
+            stats["p_value"] < stats["alpha"]
+            and stats["dev_accuracy"] > stats["test_accuracy"]
+        )
+        if is_sig_drop:
+            sig_label = (
+                f"Statistically Significant Drop (p = {stats['p_value']:.4f} < {stats['alpha']}) — "
+                "context set overfit to hillclimbing phrasings or lacks general concepts"
+            )
+            default_summary = (
+                "The ContextSet achieved high accuracy on Hillclimbing Questions but suffered a "
+                "statistically significant drop on Holdout Questions."
+            )
+            diff_note = "(statistically significant drop)"
+        elif stats["test_accuracy"] < min_acc:
+            sig_label = (
+                f"Holdout Accuracy Below Target Threshold ({test_pct:.1f}% < {min_acc_pct}% minimum "
+                f"derived from {target_pct}% tuning target; p = {stats['p_value']:.4f})"
+            )
+            default_summary = (
+                f"Holdout accuracy ({test_pct:.1f}%) is below the {min_acc_pct}% production readiness "
+                f"threshold (derived from the {target_pct}% tuning target)."
+            )
+            diff_note = f"(below {min_acc_pct}% accuracy threshold)"
+        else:
+            sig_label = (
+                f"Hillclimbing Accuracy Below Target Threshold ({dev_pct:.1f}% < {min_acc_pct}% minimum "
+                f"derived from {target_pct}% tuning target; p = {stats['p_value']:.4f})"
+            )
+            default_summary = (
+                f"Hillclimbing accuracy ({dev_pct:.1f}%) is below the {min_acc_pct}% production readiness "
+                f"threshold (derived from the {target_pct}% tuning target)."
+            )
+            diff_note = f"(hillclimbing below {min_acc_pct}% accuracy threshold)"
+
+        default_next = (
+            "Start a new cloned experiment to address the identified gaps in "
+            "Section 1 (Actionable Recommendations) and Section 3 (Holdout Set Failure Breakdown)."
+        )
+        power_check = f"Sufficiently Powered (N_test = {stats['test_total']} >= 45)"
+
+    next_steps_line = tldr_next_steps or default_next
+    summary_line = tldr_summary or default_summary
+    breakdown_section = (
+        failure_breakdown_md
+        or "*No holdout failures recorded, or see evaluation run report for details.*"
+    )
+    recommendations_section = actionable_recommendations_md or f"* {next_steps_line}"
+
+    candidate_meta = ""
+    if context_set_id or context_file:
+        cs_str = f"`{context_set_id}`" if context_set_id else "N/A"
+        cf_str = f"`{context_file}`" if context_file else "N/A"
+        candidate_meta = (
+            f"* **Candidate ContextSet**: {cs_str} (Local file: {cf_str})\n"
+        )
+
+    return (
+        f"#CONTEXT ENGINEERING — FINAL EVALUATION & GENERALIZABILITY REPORT\n\n"
+        f"## TL;DR\n"
+        f"* **Verdict**: **{stats['verdict']}**\n"
+        f"{candidate_meta}"
+        f"* **Next Steps**: {next_steps_line}\n"
+        f"* **Generalization Drop**: {diff_sign}{diff_pct:.1f}% ({dev_pct:.1f}% Hillclimbing -> {test_pct:.1f}% Holdout)\n"
+        f"* **Significance Assessment**: {sig_label}\n"
+        f"* **Summary**: {summary_line}\n\n"
+        f"---\n\n"
+        f"## 1. ACTIONABLE RECOMMENDATIONS\n\n"
+        f"{recommendations_section}\n\n"
+        f"---\n\n"
+        f"## 2. PERFORMANCE OVERVIEW\n\n"
+        f"| Split | Passed / Total | Accuracy | Notes |\n"
+        f"| :---- | :---: | :---: | :---- |\n"
+        f"| **Hillclimbing Questions** | {stats['dev_passed']} / {stats['dev_total']} | {dev_pct:.1f}% | Optimization set (used during iterative tuning) |\n"
+        f"| **Holdout Questions** | {stats['test_passed']} / {stats['test_total']} | {test_pct:.1f}% | Unseen phrasing & parameter variations |\n\n"
+        f"* **Difference**: {diff_sign}{diff_pct:.1f}% {diff_note}\n"
+        f"* **Pattern Coverage**: 100% of query patterns in Holdout Questions are represented in Hillclimbing Questions.\n\n"
+        f"---\n\n"
+        f"## 3. HOLDOUT SET FAILURE BREAKDOWN\n\n"
+        f"{breakdown_section}\n\n"
+        f"---\n\n"
+        f"## 4. STATISTICAL DETAILS\n\n"
+        f"* **Test Applied**: Two-Proportion Pooled z-Test (Null Hypothesis H_0: p_dev - p_test = 0)\n"
+        f"* **Sample Sizes**: N_dev = {stats['dev_total']} (x_dev = {stats['dev_passed']}), N_test = {stats['test_total']} (x_test = {stats['test_passed']})\n"
+        f"* **Tuning Target**: {stats['tuning_target']:.2f} (Min Accuracy Threshold: {min_acc:.2f})\n"
+        f"* **Pooled Proportion (p_hat)**: {stats['p_hat']:.4f}\n"
+        f"* **Standard Error (SE)**: {stats['standard_error']:.4f}\n"
+        f"* **Test Statistic (z)**: {stats['z_statistic']:.2f}\n"
+        f"* **Two-Tailed p-value**: {stats['p_value']:.4f} (Significance threshold alpha = {stats['alpha']})\n"
+        f"* **Power Analysis Check**: {power_check}\n"
+    )

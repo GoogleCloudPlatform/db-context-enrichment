@@ -21,6 +21,20 @@ _ALIAS_TO_ATTR = {
 }
 
 _POSITIONAL_PARAM_RE = re.compile(r"(?<!\$)\$(\d+)\b")
+_VALUE_PARAM_RE = re.compile(r"(?<!\$)\$value\b")
+
+
+def _strip_sql_comments_and_strings(sql: str) -> str:
+    """Strips SQL comments and single-quoted string literals before scanning for placeholders."""
+    no_comments = re.sub(r"/\*.*?\*/", " ", sql, flags=re.DOTALL)
+    no_comments = re.sub(r"--[^\n]*", " ", no_comments)
+    return re.sub(r"'(?:''|\\'|[^'])*'", "''", no_comments)
+
+
+def _strip_sql_comments(sql: str) -> str:
+    """Strips SQL block and line comments."""
+    no_comments = re.sub(r"/\*.*?\*/", " ", sql, flags=re.DOTALL)
+    return re.sub(r"--[^\n]*", " ", no_comments)
 
 
 def validate_context_set(file_path: str) -> dict[str, Any]:
@@ -297,8 +311,9 @@ def _check_duplicates(raw: dict[str, Any]) -> list[dict[str, Any]]:
     return issues
 
 
-def _extract_positional_params(text: str) -> set[int]:
-    return {int(m.group(1)) for m in _POSITIONAL_PARAM_RE.finditer(text)}
+def _extract_positional_params(text: str, strip_sql_literals: bool = False) -> set[int]:
+    cleaned = _strip_sql_comments_and_strings(text) if strip_sql_literals else text
+    return {int(m.group(1)) for m in _POSITIONAL_PARAM_RE.finditer(cleaned)}
 
 
 def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
@@ -335,7 +350,9 @@ def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
 
             sql_field_name, raw_sql = _get_first_present(item, sql_keys)
             if isinstance(raw_sql, str):
-                unparam_placeholders = _extract_positional_params(raw_sql)
+                unparam_placeholders = _extract_positional_params(
+                    raw_sql, strip_sql_literals=True
+                )
                 if unparam_placeholders:
                     formatted = ", ".join(f"${n}" for n in sorted(unparam_placeholders))
                     issues.append(
@@ -356,7 +373,7 @@ def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
             if not isinstance(param_sql, str) or not isinstance(param_intent, str):
                 continue
 
-            sql_params = _extract_positional_params(param_sql)
+            sql_params = _extract_positional_params(param_sql, strip_sql_literals=True)
             intent_params = _extract_positional_params(param_intent)
 
             if sql_params != intent_params:
@@ -397,7 +414,9 @@ def _check_value_search_value_param(raw: dict[str, Any]) -> list[dict[str, Any]]
         if not isinstance(item, dict):
             continue
         query = item.get("query")
-        if isinstance(query, str) and "$value" not in query:
+        if isinstance(query, str) and not _VALUE_PARAM_RE.search(
+            _strip_sql_comments(query)
+        ):
             descriptor = _describe("value_search", item)
             suffix = f" ({descriptor})" if descriptor else ""
             issues.append(

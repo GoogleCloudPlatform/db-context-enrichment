@@ -2,6 +2,7 @@ import pytest
 
 from google.cloud.db_context_enrichment.evaluate.generalizability import (
     calculate_z_test,
+    format_final_evaluation_report,
     format_on_screen_card,
 )
 
@@ -91,13 +92,53 @@ def test_calculate_z_test_pass_within_variance():
 
 
 def test_calculate_z_test_pass_when_holdout_exceeds_dev():
-    # Even if p < 0.05, test accuracy > dev accuracy and >= 85% is a PASS
+    # Even if p < 0.05, test accuracy > dev accuracy and both >= 85% is a PASS
     stats = calculate_z_test(
-        dev_passed=60, dev_total=105, test_passed=44, test_total=45
+        dev_passed=90, dev_total=105, test_passed=44, test_total=45
     )
     assert stats["verdict_type"] == "PASS"
     assert stats["p_value"] < 0.05
     assert stats["test_accuracy"] > stats["dev_accuracy"]
+
+    # If dev accuracy is below min_test_accuracy (e.g., 60/105 = 57.1%), it is INVESTIGATE even if holdout is 44/45
+    stats_low_dev = calculate_z_test(
+        dev_passed=60, dev_total=105, test_passed=44, test_total=45
+    )
+    assert stats_low_dev["verdict_type"] == "INVESTIGATE"
+    assert "Hillclimbing Accuracy Below Target Threshold" in stats_low_dev["verdict"]
+    card_low_dev = format_on_screen_card(stats_low_dev)
+    assert (
+        "Evaluation Alert: Hillclimbing Accuracy Below Target Threshold" in card_low_dev
+    )
+
+    # Verify PASS card wording when holdout exceeds hillclimbing does not say "minor difference"
+    card_exceeds = format_on_screen_card(stats)
+    assert (
+        "exceeded hillclimbing accuracy (86%) without any performance drop"
+        in card_exceeds
+    )
+    assert "minor difference" not in card_exceeds
+
+
+def test_format_final_evaluation_report_sections():
+    stats = calculate_z_test(95, 105, 39, 45)
+    report = format_final_evaluation_report(
+        stats,
+        failure_breakdown_md="* Query `eval_010` failed due to casing.",
+        actionable_recommendations_md="* Add Value Search on `region`.",
+        context_set_id="projects/p/locations/l/contextSets/cs1",
+        context_file="v2/context_set_v2.json",
+    )
+    assert "## 1. ACTIONABLE RECOMMENDATIONS" in report
+    assert "## 2. PERFORMANCE OVERVIEW" in report
+    assert "## 3. HOLDOUT SET FAILURE BREAKDOWN" in report
+    assert "## 4. STATISTICAL DETAILS" in report
+    assert report.index("## 1. ACTIONABLE RECOMMENDATIONS") < report.index(
+        "## 2. PERFORMANCE OVERVIEW"
+    )
+    assert "Add Value Search on `region`." in report
+    assert "Query `eval_010` failed due to casing." in report
+    assert "Min Accuracy Threshold: 0.85" in report
 
 
 def test_calculate_z_test_boundary_zero_or_hundred_percent():

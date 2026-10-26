@@ -410,3 +410,29 @@ def test_unparameterized_sql_with_positional_placeholder_reports_issue(tmp_path:
         in i["message"]
         for i in result["issues"]
     )
+
+
+def test_dollar_amount_inside_sql_string_literal_or_comment_is_allowed(tmp_path: Path):
+    tpl = _valid_template()
+    tpl["sql"] = "SELECT * FROM plans WHERE tier = '$100 plan' -- $2 comment"
+    tpl["parameterized"] = {
+        "parameterized_sql": "SELECT * FROM plans WHERE tier = '$100 plan' AND org = $1",
+        "parameterized_intent": "Plans in $1",
+    }
+    file_path = _write(tmp_path / "ctx.json", {"templates": [tpl]})
+    result = validate_context_set(str(file_path))
+    assert result["valid"] is True
+    assert result["issues"] == []
+
+
+def test_value_search_rejects_prefix_only_or_commented_value_param(tmp_path: Path):
+    v1 = _valid_value_search()
+    v1["query"] = "SELECT name FROM cities WHERE name = $value_id"
+    v2 = _valid_value_search()
+    v2["concept_type"] = "Country"
+    v2["query"] = "SELECT name FROM countries -- $value"
+    file_path = _write(tmp_path / "ctx.json", {"value_searches": [v1, v2]})
+    result = validate_context_set(str(file_path))
+    assert result["valid"] is False
+    issues = [i for i in result["issues"] if "$value" in i["message"]]
+    assert len(issues) == 2

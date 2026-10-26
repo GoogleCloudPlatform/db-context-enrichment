@@ -1,6 +1,5 @@
 comparator,comparison_error,comparison_logs,database,dialects,generated_error,generated_sql,id,job_id,score
 llmrater,,Skipped. Exact Match was found.,financial,['postgres'],,"SELECT count(DISTINCT ""account"".""account_id"") FROM ""account"" JOIN ""district"" ON ""account"".""district_id"" = ""district"".""district_id"" JOIN ""loan"" ON ""account"".""account_id"" = ""loan"".""account_id"" WHERE ""district"".""A3"" = 'Prague';",eval_002,e637c96e-ab21-411b-99a2-47ec808ad968,100
-llmrater,,Skipped. Exact Match was found.,financial,['postgres'],,"SELECT COUNT(DISTINCT ""account"".""account_id"") FROM ""account"" JOIN ""district"" ON ""account"".""district_id"" = ""district"".""district_id"" JOIN ""loan"" ON ""account"".""account_id"" = ""loan"".""account_id"" WHERE ""district"".""A3"" = 'south Bohemia';",eval_004,e637c96e-ab21-411b-99a2-47ec808ad968,100
 llmrater,,Skipped. Exact Match was found.,financial,['postgres'],,"SELECT COUNT(""account"".""account_id"") FROM ""account"" JOIN ""district"" ON ""account"".""district_id"" = ""district"".""district_id"" WHERE ""account"".""frequency"" = 'POPLATEK MESICNE' AND ""district"".""A3"" = 'south Moravia';",eval_003,e637c96e-ab21-411b-99a2-47ec808ad968,100
 llmrater,,"The generated query returns `0` for the count, while the gold standard expects `13`. This is a direct mathematical discrepancy.
 

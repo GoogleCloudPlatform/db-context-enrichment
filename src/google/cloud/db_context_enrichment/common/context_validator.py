@@ -21,6 +21,8 @@ _ALIAS_TO_ATTR = {
 }
 
 _POSITIONAL_PARAM_RE = re.compile(r"(?<!\$)\$(\d+)\b")
+_SQL_QMARK_PARAM_RE = re.compile(r"(?<![?|&])\?(?![?|&])")
+_INTENT_QMARK_PARAM_RE = re.compile(r"(?:^|(?<=[\s=(<>:,\[]))['\"]?\?")
 _VALUE_PARAM_RE = re.compile(r"(?<!\$)\$value\b")
 
 
@@ -316,6 +318,13 @@ def _extract_positional_params(text: str, strip_sql_literals: bool = False) -> s
     return {int(m.group(1)) for m in _POSITIONAL_PARAM_RE.finditer(cleaned)}
 
 
+def _count_qmark_params(text: str, *, is_sql: bool) -> int:
+    if is_sql:
+        cleaned = _strip_sql_comments_and_strings(text)
+        return sum(1 for _ in _SQL_QMARK_PARAM_RE.finditer(cleaned))
+    return sum(1 for _ in _INTENT_QMARK_PARAM_RE.finditer(text))
+
+
 def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
     """Validate placeholder consistency in templates and facets."""
     issues: list[dict[str, Any]] = []
@@ -353,8 +362,12 @@ def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
                 unparam_placeholders = _extract_positional_params(
                     raw_sql, strip_sql_literals=True
                 )
-                if unparam_placeholders:
-                    formatted = ", ".join(f"${n}" for n in sorted(unparam_placeholders))
+                unparam_qmarks = _count_qmark_params(raw_sql, is_sql=True)
+                if unparam_placeholders or unparam_qmarks:
+                    formatted_parts = [
+                        f"${n}" for n in sorted(unparam_placeholders)
+                    ] + (["?"] * unparam_qmarks)
+                    formatted = ", ".join(formatted_parts)
                     issues.append(
                         _make_issue(
                             f"{sql_field_name} must contain literal values, not "
@@ -374,17 +387,30 @@ def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
                 continue
 
             sql_params = _extract_positional_params(param_sql, strip_sql_literals=True)
+            sql_qmarks = _count_qmark_params(param_sql, is_sql=True)
             intent_params = _extract_positional_params(param_intent)
+            intent_qmarks = _count_qmark_params(param_intent, is_sql=False)
 
-            if sql_params != intent_params:
-                sql_fmt = [f"${n}" for n in sorted(sql_params)]
-                intent_fmt = [f"${n}" for n in sorted(intent_params)]
+            sql_fmt = [f"${n}" for n in sorted(sql_params)] + ["?"] * sql_qmarks
+            intent_fmt = [f"${n}" for n in sorted(intent_params)] + [
+                "?"
+            ] * intent_qmarks
+
+            if sql_params != intent_params or sql_qmarks != intent_qmarks:
                 issues.append(
                     _make_issue(
                         f"parameterized.{param_sql_name} and "
                         "parameterized.parameterized_intent have mismatched "
                         f"positional placeholders: sql has {sql_fmt}, "
                         f"intent has {intent_fmt}{suffix}",
+                        location=loc,
+                    )
+                )
+            elif sql_params and sql_qmarks:
+                issues.append(
+                    _make_issue(
+                        f"parameterized.{param_sql_name} cannot mix $N and ? "
+                        f"positional placeholders (got {sql_fmt}){suffix}",
                         location=loc,
                     )
                 )

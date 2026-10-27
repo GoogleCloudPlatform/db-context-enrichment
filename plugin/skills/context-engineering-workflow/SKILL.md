@@ -13,9 +13,9 @@ This skill defines the shared vocabulary, lifecycle, and safety rules used by th
 
 A **ContextSet** is the structured knowledge blob the Gemini Data Analytics API consumes when translating a natural-language question to SQL. It contains three item types:
 
-*   **Template** — a full NLQ → SQL mapping, generalized with placeholders (e.g., `$1`, `$2`). Teaches end-to-end query patterns.
-*   **Facet** — a reusable SQL fragment (e.g., a `WHERE` predicate or a specialized join), tied to specific vocabulary. Composed into generated queries dynamically.
-*   **Value Search** — a query that maps user-supplied terms (with typos, casing differences, or synonyms) to their exact database values. Resolves the value-linking problem.
+*   **Template** — a full NLQ → SQL mapping, generalized with placeholders (e.g., `$1`, `$2` or dialect-specific `?` in `parameterized_sql`, and `$1`, `$2` in `parameterized_intent` — never `$value`). Teaches end-to-end query patterns.
+*   **Facet** — a reusable SQL fragment (e.g., a `WHERE` predicate or a specialized join), tied to specific vocabulary and parameterized like a Template. Composed into generated queries dynamically.
+*   **Value Search** — a query that maps user-supplied terms (with typos, casing differences, or synonyms) to their exact database values. Resolves the value-linking problem. *(Note: On Cloud Bigtable BTQL, limit `value_searches` to **at most 1 entry** per ContextSet because `GDAToolService` combines multiple entries with `UNION ALL` / `SetOperationScan`, which BTQL does not support.)*
 
 See [context-engineering-generation-guide](../context-engineering-generation-guide/SKILL.md) for the JSON schemas and dialect-specific authoring standards.
 
@@ -99,13 +99,13 @@ The Context Set tools are served **directly by the remote Context Set MCP server
 
 ### Tools
 
-Every tool identifies a context set by three separate arguments — `projectId`, `location`, `contextSetId` — never by a single resource-name string. Parameter names are exactly as the server advertises them in its tool schema; the schema the host shows you is authoritative if it ever differs from this table.
+Every tool identifies a context set by three separate arguments — `projectId`, `location`, `contextSetId` — never by a single resource-name string. Parameter names are camelCase (`projectId`, `location`, `contextSetId`, `contextPayload`) as defined in the tool input JSON schema.
 
 | Tool | Purpose | Returns |
 | :--- | :--- | :--- |
 | `list_context_set_locations(projectId)` | Discover which locations accept context sets. | `{"locations": [...]}`. |
-| `upload_context_set(projectId, location, contextSetId, contextPayload, description?, databases?)` | Create **or overwrite** a context set from an inline JSON string. There is **no file-path argument**; see *Writing a context set from disk*. `databases` associates the context set with the database(s) it describes — see *Database association*. | A long-running operation (`name`). |
-| `get_context_set(projectId, location, contextSetId)` | Read a context set. | `{"payload": "<ContextSet JSON string>", "description", "displayName", "databases": [...]}`. |
+| `upload_context_set(projectId, location, contextSetId, contextPayload, description?, databases?)` | Create **or overwrite** a context set from an inline **stringified JSON string** (`contextPayload` must be a JSON string, never a parsed dict/object). There is **no file-path argument**; see *Writing a context set from disk*. `databases` associates the context set with the database(s) it describes — see *Database association*. | A long-running operation (`name`). |
+| `get_context_set(projectId, location, contextSetId)` | Read a context set. | `{"payload": "<ContextSet JSON string>", "description", "displayName", "databases": [...]}`. When called on a non-existent or deleted `contextSetId` (e.g., probing existence during `init` or verifying deletion), the server returns plain text `"Resource was not found."` in `content[0].text` with `isError: true` rather than a JSON object — treat this response as `NOT_FOUND`. |
 | `delete_context_set(projectId, location, contextSetId)` | Delete a context set. | A long-running operation (`name`). |
 | `get_operation(projectId, location, operationId)` | Poll a long-running operation. | `{"done": bool, ...}` plus `error` on failure. |
 
@@ -255,7 +255,7 @@ As the master orchestrator, this skill strictly governs phase transitions after 
             *   **HALT Hill-Climbing Immediately**: Do **not** enter `Optimization & Hill-Climbing Phase` and do **not** suggest another refinement loop.
             *   **Finalize (hillclimb skill)**: put the best-scoring iteration `vK` in the **working copy** (re-upload if the last iteration was not the best; poll gate) and record `## Finalizing: vK`.
             *   **Zero-Confirmation / No-Yield Rule (Strictly Enforced)**: Do **NOT** conclude or yield your turn after scoring `splits/hillclimb.json`, and do **NOT** ask the user for permission, confirmation, or approval to proceed to the generalizability test.
-            *   **Immediately Execute Generalizability Test in the Same Turn** against the **working copy** per [references/holdout-evaluation.md](references/holdout-evaluation.md) (`generate_evalbench_configs` on `splits/holdout.json` $\rightarrow$ `uvx google-evalbench@1.18.0` $\rightarrow$ `evaluate_generalizability` $\rightarrow$ write `final_evaluation_report.md` + `## Generalizability`).
+            *   **Immediately Execute Generalizability Test in the Same Turn** against the **working copy** per [references/holdout-evaluation.md](references/holdout-evaluation.md) (`generate_evalbench_configs` on `splits/holdout.json` $\rightarrow$ `uvx google-evalbench@1.19.0` $\rightarrow$ `evaluate_generalizability` $\rightarrow$ write `final_evaluation_report.md` + `## Generalizability`).
             *   **Then set the publication state** (hillclimb Finalize step 4): fresh context set → it is already live under `<context_set_id>`, write `## Final:`; existing context set → the **one** HITL of the run (previous vs new, only if `vK` beats `v0`; replace or keep), delete `_draft`, write `## Final:`. Then display the On-Screen Card and, for non-PASS verdicts, the hand-off card per [references/holdout-evaluation.md](references/holdout-evaluation.md).
         2.  **When no Stopping Condition fires (`pass_rate < tuning_target` and `failed > 0`)**:
             *   Proceed to `Optimization & Hill-Climbing Phase` (`context-engineering-hillclimb`) to perform Gap Analysis and Context Mutation on the failed queries, then re-evaluate.

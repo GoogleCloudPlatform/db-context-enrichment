@@ -78,6 +78,26 @@ def test_build_datasource_reference_success(mock_params):
     }
 
 
+def test_build_datasource_reference_with_tables(mock_params):
+    params = {**mock_params, "tables": ["hotels", "hotels_view"]}
+    gen = BigtableConfigGenerator(params)
+    ref = gen.build_datasource_reference(
+        "projects/test-project/locations/global/contextSets/my-context"
+    )
+    assert ref == {
+        "bigtable_reference": {
+            "database_reference": {
+                "project_id": "test-project",
+                "instance_id": "test-instance",
+                "table_ids": ["hotels", "hotels_view"],
+            },
+            "agent_context_reference": {
+                "context_set_id": "projects/test-project/locations/global/contextSets/my-context"
+            },
+        }
+    }
+
+
 def test_bigtable_generator_validation_missing_fields():
     bad_params = {"project": "test-project"}
     with pytest.raises(

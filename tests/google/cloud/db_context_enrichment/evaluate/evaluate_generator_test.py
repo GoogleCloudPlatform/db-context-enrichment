@@ -897,6 +897,67 @@ def test_generate_evalbench_configs_bigtable():
     assert any("bigtable_reference" in call for call in calls)
 
 
+def test_generate_evalbench_configs_bigtable_tables_from_state_md(tmp_path):
+    """Bigtable optional `Table Ids` are read from `experiment_state.md` and passed as `table_ids`."""
+    ce_dir = tmp_path / ".context-engineering"
+    exp_dir = ce_dir / "experiments" / "bt-exp"
+    (exp_dir / "hillclimb").mkdir(parents=True)
+
+    tools_yaml = ce_dir / "tools.yaml"
+    tools_yaml.write_text(
+        textwrap.dedent("""\
+            kind: source
+            name: bt-source
+            type: bigtable
+            project: test-project
+            instance: test-instance
+        """)
+    )
+    (exp_dir / "hillclimb" / "experiment_state.md").write_text(
+        textwrap.dedent("""\
+            # Hill-Climbing Experiment: bt-exp
+
+            ## Active Database
+            - **Source Name**: bt-source
+            - **Type**: bigtable
+            - **Table Ids**: ["hotels", "hotels_view"]
+        """)
+    )
+
+    dataset_json = exp_dir / "dataset.json"
+    dataset_json.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "1",
+                    "database": "test-instance",
+                    "nlq": "q",
+                    "golden_sql": "SELECT 1",
+                }
+            ]
+        )
+    )
+
+    out_dir = exp_dir / "hillclimb" / "v0" / "eval"
+    generate_evalbench_configs(
+        output_dir=str(out_dir),
+        dataset_path=str(dataset_json),
+        context_set_id="projects/test-project/locations/global/contextSets/context-123",
+        toolbox_config_path=str(tools_yaml),
+        toolbox_source_name="bt-source",
+    )
+
+    model_config = yaml.safe_load(
+        (out_dir / "eval_configs" / "model_config.yaml").read_text()
+    )
+    bt_ref = model_config["context"]["datasource_references"]["bigtable_reference"]
+    assert bt_ref["database_reference"] == {
+        "project_id": "test-project",
+        "instance_id": "test-instance",
+        "table_ids": ["hotels", "hotels_view"],
+    }
+
+
 def test_generate_evalbench_configs_custom_type():
     tools_yaml_content = textwrap.dedent("""\
         kind: source

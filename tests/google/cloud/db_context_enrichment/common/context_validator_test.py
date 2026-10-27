@@ -38,7 +38,7 @@ def _valid_facet() -> dict:
         "manifest": "active users",
         "parameterized": {
             "parameterized_sql_snippet": "users.active = ?",
-            "parameterized_intent": "active users",
+            "parameterized_intent": "users with active = ?",
         },
     }
 
@@ -436,3 +436,63 @@ def test_value_search_rejects_prefix_only_or_commented_value_param(tmp_path: Pat
     assert result["valid"] is False
     issues = [i for i in result["issues"] if "$value" in i["message"]]
     assert len(issues) == 2
+
+
+def test_question_mark_placeholders_valid_and_mismatched(tmp_path: Path):
+    # 1. Valid `?` in both parameterized_sql and parameterized_intent (including trailing `?` question mark)
+    tpl_valid = _valid_template()
+    tpl_valid["sql"] = (
+        "SELECT name, city FROM `hotels_view` WHERE city = 'Basel' LIMIT 5"
+    )
+    tpl_valid["parameterized"] = {
+        "parameterized_sql": "SELECT name, city FROM `hotels_view` WHERE city = ? LIMIT ?",
+        "parameterized_intent": "Find up to ? hotels in '?'?",
+    }
+    file_path = _write(tmp_path / "ctx_valid.json", {"templates": [tpl_valid]})
+    assert validate_context_set(str(file_path)) == {"valid": True, "issues": []}
+
+    # 2. Mismatched: `?` in parameterized_sql vs `$1` in parameterized_intent
+    tpl_mixed = _valid_template()
+    tpl_mixed["parameterized"] = {
+        "parameterized_sql": "SELECT name FROM `hotels_view` WHERE city = ?",
+        "parameterized_intent": "Find hotels in $1",
+    }
+    file_mixed = _write(tmp_path / "ctx_mixed.json", {"templates": [tpl_mixed]})
+    res_mixed = validate_context_set(str(file_mixed))
+    assert res_mixed["valid"] is False
+    assert any(
+        "mismatched positional placeholders: sql has ['?'], intent has ['$1']"
+        in i["message"]
+        for i in res_mixed["issues"]
+    )
+
+    # 3. Mismatched count of `?` between parameterized_sql and parameterized_intent
+    tpl_count = _valid_template()
+    tpl_count["parameterized"] = {
+        "parameterized_sql": "SELECT name FROM `hotels_view` WHERE city = ? LIMIT ?",
+        "parameterized_intent": "Find hotels in '?'",
+    }
+    file_count = _write(tmp_path / "ctx_count.json", {"templates": [tpl_count]})
+    res_count = validate_context_set(str(file_count))
+    assert res_count["valid"] is False
+    assert any(
+        "mismatched positional placeholders: sql has ['?', '?'], intent has ['?']"
+        in i["message"]
+        for i in res_count["issues"]
+    )
+
+    # 4. Unparameterized `?` in literal `sql` (outside string literals/comments)
+    tpl_unparam = _valid_template()
+    tpl_unparam["sql"] = "SELECT name FROM `hotels_view` WHERE city = ?"
+    tpl_unparam["parameterized"] = {
+        "parameterized_sql": "SELECT name FROM `hotels_view` WHERE city = ?",
+        "parameterized_intent": "Find hotels in '?'",
+    }
+    file_unparam = _write(tmp_path / "ctx_unparam.json", {"templates": [tpl_unparam]})
+    res_unparam = validate_context_set(str(file_unparam))
+    assert res_unparam["valid"] is False
+    assert any(
+        "sql must contain literal values, not positional placeholders (?)"
+        in i["message"]
+        for i in res_unparam["issues"]
+    )

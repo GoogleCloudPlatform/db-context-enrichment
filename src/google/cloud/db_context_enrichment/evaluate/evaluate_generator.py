@@ -89,8 +89,8 @@ def _extract_toolbox_params(
     """Deterministically extracts connection parameters for a specific database source from tools.yaml.
 
     For Spanner sources, `state_md_path` (the experiment's `experiment_state.md`) is read for
-    the `**Graph Ids**` bullet; for BigQuery sources it is read for the `**Table Ids**`
-    bullet. If it is None or missing, no graph_ids / tables are set.
+    the `**Graph Ids**` bullet; for BigQuery and Bigtable sources it is read for the
+    `**Table Ids**` bullet. If it is None or missing, no graph_ids / tables are set.
     """
     try:
         with open(toolbox_config_path) as f:
@@ -124,10 +124,10 @@ def _extract_toolbox_params(
                 if graph_ids := _parse_graph_ids_from_state_md(state_md_path):
                     source_doc["graph_ids"] = graph_ids
 
-            # Likewise for BigQuery, the QueryData API requires explicit table references,
-            # which have no place in a toolbox BigQuery source block; they come from the
-            # same experiment_state.md (`**Table Ids**` under `## Active Database`).
-            if source_doc.get("type") == "bigquery" and state_md_path:
+            # Likewise for BigQuery (required) and Bigtable (optional scoping), table references
+            # have no place in a toolbox source block; they come from the same experiment_state.md
+            # (`**Table Ids**` under `## Active Database`).
+            if source_doc.get("type") in ("bigquery", "bigtable") and state_md_path:
                 if table_ids := _parse_table_ids_from_state_md(state_md_path):
                     source_doc["tables"] = table_ids
 

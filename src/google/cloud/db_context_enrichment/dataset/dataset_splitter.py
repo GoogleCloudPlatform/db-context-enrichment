@@ -269,11 +269,14 @@ async def split_dataset(
     if max_possible_holdout < min_holdout_size:
         num_singletons = sum(1 for g in groups if len(g) == 1)
         num_multi = len(groups) - num_singletons
+        small_holdout_target = min(
+            min_holdout_size, max(1, int(round(total_items * (1.0 - hillclimb_ratio))))
+        )
         small_dataset_hint = (
             f" (Note: if the user explicitly requested a small custom dataset of {total_items} items, "
-            f"ensure at least {min_holdout_size} item(s) are "
+            f"ensure at least {small_holdout_target} item(s) are "
             f"template-preserving variations of other items in the dataset and pass "
-            f"min_holdout_size={min(min_holdout_size, max(1, int(round(total_items * (1.0 - hillclimb_ratio)))))} to split_dataset.)"
+            f"min_holdout_size={small_holdout_target} to split_dataset.)"
             if total_items < 150
             else ""
         )

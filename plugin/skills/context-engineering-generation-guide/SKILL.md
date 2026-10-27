@@ -44,7 +44,7 @@ The following are the currently supported context types:
 
 ### Templates
 * **Purpose**: A blueprint for a complete query lifecycle. It maps a representative natural language query to an executable SQL statement and a declarative intent, teaching the model the overarching operational logic and join paths for a common query pattern.
-* **Parameterization**: Templates are generalized by replacing literal values in both the intent and SQL with placeholders (e.g., `$1`, `$2`) to match query variations.
+* **Parameterization**: Templates are generalized by replacing literal values in the SQL and intent with placeholders (`$1`, `$2` for PostgreSQL / AlloyDB / Spanner PostgreSQL, or `?` in `parameterized_sql` and `$1`, `$2` in `parameterized_intent` for Spanner GoogleSQL, BigQuery GoogleSQL, Cloud Bigtable BTQL, and MySQL — see [Phrase Extraction and Parameterization Guidelines](references/phrase_extraction/guidelines.md)) to match query variations.
 * **Schema Layout**:
 ```json
 {
@@ -121,6 +121,7 @@ When executing blueprint-driven SQL generation, the model inevitably runs into t
 ### Value Searches
 *   Choose the appropriate match function based on the column content and performance requirements.
 *   Refer to dialect-specific references for performance optimizations (e.g., indices).
+*   **Cloud Bigtable (BTQL) single-entry limit**: Include **at most 1 `value_searches` entry** per `ContextSet` for Bigtable. `GDAToolService` combines multiple `value_searches` entries into a single query using `UNION ALL` (`SetOperationScan`), which fails on BTQL (`BTQL Version does not support SetOperationScan`); see [Bigtable Value Search](references/value_search/bigtable.md).
 
 ## Shared Guidelines
 

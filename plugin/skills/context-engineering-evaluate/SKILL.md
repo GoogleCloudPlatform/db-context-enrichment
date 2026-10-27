@@ -72,7 +72,7 @@ Ask only for what is missing:
      - Poll `get_operation(projectId, location, operationId)` on the returned operation (≥5 s between polls, 5-minute ceiling), logging each response, until `done: true` — see the Context Set MCP Protocol in `context-engineering-workflow`. **Do not call `generate_evalbench_configs` until `done: true` is observed**; evaluating before the upload has landed scores a missing or stale context set.
      - On an operation that reports an `error`, surface it verbatim and stop.
 
-3. **Select the DB source.** Inside an experiment it is the **Source Name** under `## Active Database` in `experiment_state.md` (confirm it still exists in the shared `.context-engineering/tools.yaml`; if not, stop and ask the user to restore it or re-run `context-engineering-init`). Standalone: find all `kind: source` blocks in `.context-engineering/tools.yaml` whose `type` is a supported evaluation engine (consult `generate_evalbench_configs` for the current list); auto-select if exactly one, otherwise list `name` + `type` and let the user pick.
+3. **Select the DB source.** Inside an experiment it is the **Source Name** under `## Active Database` in `experiment_state.md` (confirm it still exists in the shared `.context-engineering/tools.yaml`; if not, stop and ask the user to restore it or re-run `context-engineering-init`). Standalone: find all `kind: source` blocks in `.context-engineering/tools.yaml` whose `type` is a supported evaluation engine (`alloydb-postgres`, `cloud-sql-postgres`, `cloud-sql-mysql`, `spanner` [GoogleSQL and PostgreSQL], `bigquery`, `bigtable`, `firestore`, or `custom`; consult `generate_evalbench_configs` for details); auto-select if exactly one, otherwise list `name` + `type` and let the user pick.
 
 4. **Generate the Evalbench configs.** Call `generate_evalbench_configs(output_dir, dataset_path, context_set_id=<resource>, toolbox_config_path=.context-engineering/tools.yaml, toolbox_source_name=<source>)`. The tool writes configs under `<output_dir>/eval_configs/`. This is the only supported way to produce Evalbench configs — never author them by hand.
 
@@ -82,8 +82,8 @@ Ask only for what is missing:
      export EVAL_GCP_PROJECT_ID="<project_id>"
      export EVAL_GCP_PROJECT_REGION="global"
      ```
-   - Shell out from the caller's cwd: `uvx google-evalbench@1.18.0 --experiment_config=<output_dir>/eval_configs/run_config.yaml`
-   - Reports materialize under `<output_dir>/eval_reports/<job_id>/` (the `job_id` appears in the tool's stdout). The run can take many minutes for larger datasets — let it complete; do not kill or restart on apparent stalls. Treat a non-zero exit code as a hard failure and surface stderr verbatim.
+   - Shell out from the caller's cwd: `uvx google-evalbench@1.19.0 --experiment_config=<output_dir>/eval_configs/run_config.yaml`
+   - Reports materialize under `<output_dir>/eval_reports/<job_id>/` (the `job_id` appears in the tool's stdout). Initial `uv` package resolution and downloads on a cold cache or evaluation of larger datasets can take several minutes — let the command run to completion and do not kill or restart it on apparent stalls (killing `uv` during initial dependency resolution discards download progress). Treat a non-zero exit code as a hard failure and surface stderr verbatim.
 
 6. **Read and return results.** Call `read_evaluation_result` on `<output_dir>/eval_reports/<job_id>/`. Return to the caller:
    ```
@@ -120,7 +120,7 @@ Ask only for what is missing:
 - `read_evaluation_result` — parses `scores.csv` / `summary.csv` into a markdown summary.
 
 **Shell:**
-- `uvx google-evalbench@1.18.0 --experiment_config=<path>` — runs the eval job against the published release.
+- `uvx google-evalbench@1.19.0 --experiment_config=<path>` — runs the eval job against the published release.
 
 **References:**
-- `references/<db_type>.md` — per-engine schema examples for fixing `tools.yaml` source blocks if `generate_evalbench_configs` reports a validation failure, and the extra `experiment_state.md` inputs some engines need: [AlloyDB Postgres](references/alloydb-postgres.md), [BigQuery](references/bigquery.md) (`Table Ids`), [Cloud Bigtable](references/cloud-bigtable.md), [Cloud SQL MySQL](references/cloud-sql-mysql.md), [Cloud SQL Postgres](references/cloud-sql-postgres.md), [Spanner GoogleSQL](references/spanner-googlesql.md) (`Graph Ids`), [Spanner PostgreSQL](references/spanner-postgresql.md), [Custom / Pluggable Engine](references/custom-engine.md).
+- `references/<db_type>.md` — per-engine schema examples for fixing `tools.yaml` source blocks if `generate_evalbench_configs` reports a validation failure, and the extra `experiment_state.md` inputs some engines need: [AlloyDB Postgres](references/alloydb-postgres.md), [BigQuery](references/bigquery.md) (`Table Ids`), [Cloud Bigtable](references/cloud-bigtable.md) (`Table Ids` optional), [Cloud SQL MySQL](references/cloud-sql-mysql.md), [Cloud SQL Postgres](references/cloud-sql-postgres.md), [Spanner GoogleSQL](references/spanner-googlesql.md) (`Graph Ids`), [Spanner PostgreSQL](references/spanner-postgresql.md), [Custom / Pluggable Engine](references/custom-engine.md).

@@ -31,12 +31,15 @@ class BigtableConfigGenerator(BaseDBConfigGenerator):
         ).strip()
 
     def build_datasource_reference(self, context_set_id: str) -> dict[str, Any]:
+        database_reference: dict[str, Any] = {
+            "project_id": self.params.get("project"),
+            "instance_id": self.params.get("instance"),
+        }
+        if tables := self.params.get("tables"):
+            database_reference["table_ids"] = list(tables)
         return {
             "bigtable_reference": {
-                "database_reference": {
-                    "project_id": self.params.get("project"),
-                    "instance_id": self.params.get("instance"),
-                },
+                "database_reference": database_reference,
                 "agent_context_reference": {
                     "context_set_id": context_set_id,
                 },

@@ -4,6 +4,7 @@ This reference provides the SQL templates and examples for Value Search in Cloud
 
 ## Requirements & Dialect Constraints
 
+*   **At most 1 `value_searches` entry per `ContextSet` (Critical)**: When a `ContextSet` defines 2 or more `value_searches` entries, `GDAToolService` combines candidate value retrieval into a single query using `UNION ALL` (`SetOperationScan`). Because Cloud Bigtable (BTQL) does not support `UNION ALL` / `SetOperationScan` (`rpc error: code = InvalidArgument desc = BTQL Version does not support SetOperationScan`), defining multiple `value_searches` entries causes all queries with extracted value phrases to fail at runtime. **Limit Bigtable `value_searches` to at most 1 categorical column (1 entry) per `ContextSet`** until sequential execution is supported by the backend.
 *   **`SEMANTIC_SIMILARITY_MATCH` is NOT supported** on Cloud Bigtable. Bigtable (BTQL) does not provide in-database vector embeddings or vector distance operators. Do not author value searches that rely on semantic embeddings.
 *   **`TRIGRAM_STRING_MATCH` (and `SEARCH_NGRAMS`) is NOT supported** on Cloud Bigtable. Bigtable (BTQL) does not support full-text search indexes, trigram tokenizers, or fuzzy string operators. Do not author fuzzy or trigram value searches for Bigtable.
 *   **Only `EXACT_MATCH_STRINGS` is supported** for Bigtable.
@@ -48,6 +49,7 @@ WHERE CAST(T.`{column}` AS STRING) = CAST($value AS STRING)
 
 ## Best Practices
 
+*   **Single Categorical Column Limit**: Include at most **1 `value_searches` entry** in a Bigtable `ContextSet` (pick the single highest-value categorical column, e.g., `city` or `category`), as multiple entries trigger an unsupported `UNION ALL` (`SetOperationScan`) in BTQL.
 *   **Use on Logical Views**: Prefer applying value searches against Bigtable Logical Views where column types and schemas are explicitly defined.
 *   **Always Backtick Identifiers**: Wrap table names and column names in backticks (`` `...` ``) to avoid collisions with BTQL reserved keywords.
 *   **Case Sensitivity**: BTQL `=` comparisons are case-sensitive. Ensure that search values match the expected database casing.

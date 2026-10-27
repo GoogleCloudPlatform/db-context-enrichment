@@ -17,7 +17,7 @@
     *   **Do NOT Prompt or Ask Permission**: Reuse `experiment_name`, `toolbox_config_path` (`.context-engineering/tools.yaml`), `toolbox_source_name` (**Source Name** from `## Active Database` in `experiment_state.md`), and the **candidate's** resource string — `Final Context Set resource` when `Draft Context Set resource` is `(none …)`, otherwise `Draft Context Set resource` — exactly as recorded in `experiment_state.md`, without asking the user for any parameters or confirmation.
     *   **Generate Holdout Evalbench Configs**: Immediately call the `generate_evalbench_configs` MCP tool with `output_dir=".context-engineering/experiments/<experiment_name>/hillclimb/holdout_eval/"`, `dataset_path=".context-engineering/experiments/<experiment_name>/dataset/splits/holdout.json"`, and the candidate resource string as `context_set_id`, plus `toolbox_config_path` and `toolbox_source_name`.
     *   **Run Holdout Evaluation**: Immediately execute the canonical Evalbench command:
-        `uvx google-evalbench@1.18.0 --experiment_config=.context-engineering/experiments/<experiment_name>/hillclimb/holdout_eval/eval_configs/run_config.yaml`
+        `uvx google-evalbench@1.19.0 --experiment_config=.context-engineering/experiments/<experiment_name>/hillclimb/holdout_eval/eval_configs/run_config.yaml`
     *   **Extract Scores**: Extract `test_passed` and `test_total` from `holdout_eval/eval_reports/<job_id>/summary.csv`, and retrieve `dev_passed` and `dev_total` from the candidate iteration's (`vK`) entry in the `experiment_state.md` Iteration Log.
 
 2.  **Statistical Significance Testing (Two-Proportion Pooled z-Test & Accuracy Threshold)**:

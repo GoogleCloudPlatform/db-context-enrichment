@@ -83,7 +83,10 @@ async def test_split_dataset_enforces_min_holdout_size_45(tmp_path: pathlib.Path
     with open(input_file, "w", encoding="utf-8") as f:
         json.dump(small_entries, f)
 
-    with pytest.raises(ValueError, match="required minimum holdout size of 45"):
+    with pytest.raises(
+        ValueError,
+        match=r"required minimum holdout size of 45.*min_holdout_size=6",
+    ):
         await split_dataset(str(input_file), str(tmp_path / "out"))
 
 

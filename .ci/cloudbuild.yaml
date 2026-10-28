@@ -313,6 +313,7 @@ substitutions:
 
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
+  machineType: 'E2_HIGHCPU_32'
 
 # Steps run in parallel; overall timeout must cover the slowest step
 # (90 min) plus build-extension + preflight + upload + gate overhead.

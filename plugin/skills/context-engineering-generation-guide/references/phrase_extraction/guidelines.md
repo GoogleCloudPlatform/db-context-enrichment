@@ -59,8 +59,8 @@ Replace the extracted value phrases with placeholders in both the SQL query and 
 
 Use the placeholder style required by the target dialect:
 
-*   **PostgreSQL & Spanner (PostgreSQL)**: Use numbered positional parameters (`$1`, `$2`, `$3`, etc.) in both `parameterized_sql` / `parameterized_sql_snippet` and `parameterized_intent`.
-*   **Spanner (GoogleSQL), MySQL & Cloud Bigtable**: Use `?` (or `$1`, `$2`) for parameters in `parameterized_sql` / `parameterized_sql_snippet`, and `$1`, `$2` in `parameterized_intent`.
+*   **PostgreSQL, Spanner (PostgreSQL) & Firestore (MQL)**: Use numbered positional parameters (`$1`, `$2`, `$3`, etc.) in both `parameterized_sql` / `parameterized_sql_snippet` and `parameterized_intent`.
+*   **Spanner (GoogleSQL), BigQuery, MySQL & Cloud Bigtable**: Use `?` (or `$1`, `$2`) for parameters in both `parameterized_sql` / `parameterized_sql_snippet` and `parameterized_intent`.
 
 ### 2. Processing Order (Critical)
 

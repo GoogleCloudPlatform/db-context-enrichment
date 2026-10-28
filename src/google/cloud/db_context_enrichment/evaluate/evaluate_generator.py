@@ -124,10 +124,13 @@ def _extract_toolbox_params(
                 if graph_ids := _parse_graph_ids_from_state_md(state_md_path):
                     source_doc["graph_ids"] = graph_ids
 
-            # Likewise for BigQuery (required) and Bigtable (optional scoping), table references
-            # have no place in a toolbox source block; they come from the same experiment_state.md
-            # (`**Table Ids**` under `## Active Database`).
-            if source_doc.get("type") in ("bigquery", "bigtable") and state_md_path:
+            # Likewise for BigQuery (required) and Bigtable / Firestore (optional scoping),
+            # table / collection references have no place in a toolbox source block; they come
+            # from the same experiment_state.md (`**Table Ids**` under `## Active Database`).
+            if (
+                source_doc.get("type") in ("bigquery", "bigtable", "firestore")
+                and state_md_path
+            ):
                 if table_ids := _parse_table_ids_from_state_md(state_md_path):
                     source_doc["tables"] = table_ids
 

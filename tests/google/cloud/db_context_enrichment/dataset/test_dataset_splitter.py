@@ -288,7 +288,7 @@ async def test_split_dataset_excludes_previous_holdout_explicit_and_autodetected
     # Zero overlap with Experiment 1's holdout IDs!
     assert exp1_holdout_ids.isdisjoint(exp2_explicit_holdout_ids)
 
-    # Case A: Auto-detected from <exp_root>/hillclimb/experiment_state.md
+    # Case A: Auto-detected from <exp_root>/hillclimb/experiment_state.md (including bold markdown bullet)
     exp2_auto_root = tmp_path / ".context-engineering" / "experiments" / "exp1-v2"
     exp2_auto_dataset = exp2_auto_root / "dataset"
     exp2_auto_hillclimb = exp2_auto_root / "hillclimb"
@@ -300,8 +300,8 @@ async def test_split_dataset_excludes_previous_holdout_explicit_and_autodetected
     (exp2_auto_hillclimb / "experiment_state.md").write_text(
         "# Hill-Climbing Experiment: exp1-v2\n\n"
         "## Metadata\n"
-        "- Cloned from: exp1\n"
-        "- Source evaluation report: ./.context-engineering/experiments/exp1/hillclimb/final_evaluation_report.md\n",
+        "- **Cloned from**: exp1\n"
+        "- **Source evaluation report**: ./.context-engineering/experiments/exp1/hillclimb/final_evaluation_report.md\n",
         encoding="utf-8",
     )
 

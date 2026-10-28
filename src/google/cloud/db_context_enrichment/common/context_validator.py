@@ -20,17 +20,32 @@ _ALIAS_TO_ATTR = {
     "fragments": "facets",
 }
 
-_POSITIONAL_PARAM_RE = re.compile(r"(?<!\$)\$(\d+)\b")
+_POSITIONAL_PARAM_RE = re.compile(r"(?<!\$)\$(\d+)\b(?![.,]\d)")
+_MAX_POSITIONAL_PARAM_INDEX = 99
+_QUOTED_POSITIONAL_PARAM_RE = re.compile(r"'\$(\d+)'")
 _SQL_QMARK_PARAM_RE = re.compile(r"(?<![?|&])\?(?![?|&])")
 _INTENT_QMARK_PARAM_RE = re.compile(r"(?:^|(?<=[\s=(<>:,\[]))['\"]?\?")
 _VALUE_PARAM_RE = re.compile(r"(?<!\$)\$value\b")
 
 
 def _strip_sql_comments_and_strings(sql: str) -> str:
-    """Strips SQL comments and single-quoted string literals before scanning for placeholders."""
-    no_comments = re.sub(r"/\*.*?\*/", " ", sql, flags=re.DOTALL)
-    no_comments = re.sub(r"--[^\n]*", " ", no_comments)
-    return re.sub(r"'(?:''|\\'|[^'])*'", "''", no_comments)
+    """Strips SQL comments and single-quoted string literals before scanning for placeholders.
+
+    In MQL queries (starting with 'db.' or '{'), standalone single-quoted
+    positional placeholders like '$1' are preserved so they match intent
+    placeholders.
+    """
+    no_comments = _strip_sql_comments(sql)
+    is_mql = no_comments.lstrip().startswith(("db.", "{"))
+    return re.sub(
+        r"'(?:''|\\'|[^'])*'",
+        lambda m: (
+            m.group(0)[1:-1]
+            if is_mql and re.fullmatch(r"'\$\d+'", m.group(0))
+            else "''"
+        ),
+        no_comments,
+    )
 
 
 def _strip_sql_comments(sql: str) -> str:
@@ -313,16 +328,27 @@ def _check_duplicates(raw: dict[str, Any]) -> list[dict[str, Any]]:
     return issues
 
 
-def _extract_positional_params(text: str, strip_sql_literals: bool = False) -> set[int]:
+def _extract_positional_params(
+    text: str,
+    strip_sql_literals: bool = False,
+    max_index: int = _MAX_POSITIONAL_PARAM_INDEX,
+) -> set[int]:
     cleaned = _strip_sql_comments_and_strings(text) if strip_sql_literals else text
-    return {int(m.group(1)) for m in _POSITIONAL_PARAM_RE.finditer(cleaned)}
+    return {
+        int(m.group(1))
+        for m in _POSITIONAL_PARAM_RE.finditer(cleaned)
+        if 1 <= int(m.group(1)) <= max_index
+    }
 
 
 def _count_qmark_params(text: str, *, is_sql: bool) -> int:
     if is_sql:
         cleaned = _strip_sql_comments_and_strings(text)
         return sum(1 for _ in _SQL_QMARK_PARAM_RE.finditer(cleaned))
-    return sum(1 for _ in _INTENT_QMARK_PARAM_RE.finditer(text))
+    normalized = re.sub(r"\?\s+\?\s*$", "??", text)
+    if _extract_positional_params(normalized):
+        normalized = re.sub(r"\s+\?\s*$", "?", normalized)
+    return sum(1 for _ in _INTENT_QMARK_PARAM_RE.finditer(normalized))
 
 
 def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
@@ -388,7 +414,10 @@ def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
 
             sql_params = _extract_positional_params(param_sql, strip_sql_literals=True)
             sql_qmarks = _count_qmark_params(param_sql, is_sql=True)
-            intent_params = _extract_positional_params(param_intent)
+            max_intent_index = max(max(sql_params, default=0) + 5, 9)
+            intent_params = _extract_positional_params(
+                param_intent, max_index=max_intent_index
+            )
             intent_qmarks = _count_qmark_params(param_intent, is_sql=False)
 
             sql_fmt = [f"${n}" for n in sorted(sql_params)] + ["?"] * sql_qmarks
@@ -397,12 +426,25 @@ def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
             ] * intent_qmarks
 
             if sql_params != intent_params or sql_qmarks != intent_qmarks:
+                no_comment_sql = _strip_sql_comments(param_sql)
+                quoted_sql_params = {
+                    int(m.group(1))
+                    for m in _QUOTED_POSITIONAL_PARAM_RE.finditer(no_comment_sql)
+                    if 1 <= int(m.group(1)) <= _MAX_POSITIONAL_PARAM_INDEX
+                } - sql_params
+                quoted_note = ""
+                if quoted_sql_params:
+                    quoted_fmt = [f"'${n}'" for n in sorted(quoted_sql_params)]
+                    quoted_note = (
+                        f" (found single-quoted placeholder(s) {quoted_fmt} "
+                        "inside SQL string literal; remove surrounding single quotes)"
+                    )
                 issues.append(
                     _make_issue(
                         f"parameterized.{param_sql_name} and "
                         "parameterized.parameterized_intent have mismatched "
                         f"positional placeholders: sql has {sql_fmt}, "
-                        f"intent has {intent_fmt}{suffix}",
+                        f"intent has {intent_fmt}{quoted_note}{suffix}",
                         location=loc,
                     )
                 )

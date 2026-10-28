@@ -496,3 +496,66 @@ def test_question_mark_placeholders_valid_and_mismatched(tmp_path: Path):
         in i["message"]
         for i in res_unparam["issues"]
     )
+
+
+def test_firestore_mql_template_and_sql_quoted_placeholder_diagnostics(
+    tmp_path: Path,
+):
+    # 1. Firestore MQL template with either unquoted $1 or single-quoted '$1' is valid
+    for mql_param in ("status: $1", "status: '$1'", 'status: "$1"'):
+        tpl_mql = {
+            "nl_query": "What is the total revenue for completed orders?",
+            "sql": "db.orders.aggregate([{ $match: { status: 'completed' } }, { $group: { _id: null, totalRevenue: { $sum: '$total_amount' } } }, { $project: { _id: 0, totalRevenue: 1 } }])",
+            "intent": "Total revenue for completed orders",
+            "manifest": "Total revenue for orders with a given status",
+            "parameterized": {
+                "parameterized_sql": f"db.orders.aggregate([{{ $match: {{ {mql_param} }} }}, {{ $group: {{ _id: null, totalRevenue: {{ $sum: '$total_amount' }} }} }}, {{ $project: {{ _id: 0, totalRevenue: 1 }} }}])",
+                "parameterized_intent": "Total revenue for orders with status $1",
+            },
+        }
+        p = _write(tmp_path / "mql.json", {"templates": [tpl_mql]})
+        assert validate_context_set(str(p)) == {"valid": True, "issues": []}
+
+    # 2. Standard SQL with single-quoted '$1' reports explicit diagnostic about quoted placeholder
+    tpl_sql_quoted = _valid_template()
+    tpl_sql_quoted["parameterized"] = {
+        "parameterized_sql": "SELECT * FROM orders WHERE status = '$1'",
+        "parameterized_intent": "Orders with status $1",
+    }
+    p_sql = _write(tmp_path / "sql_quoted.json", {"templates": [tpl_sql_quoted]})
+    res_sql = validate_context_set(str(p_sql))
+    assert res_sql["valid"] is False
+    assert any(
+        "found single-quoted placeholder(s) [\"'$1'\"] inside SQL string literal"
+        in i["message"]
+        for i in res_sql["issues"]
+    )
+
+
+def test_intent_spaced_trailing_qmark_and_currency_literals(tmp_path: Path):
+    # 1. Trailing question mark preceded by a space in a $N-parameterized intent
+    tpl_spaced_q = _valid_template()
+    tpl_spaced_q["sql"] = (
+        'SELECT "account_id" FROM "trans" WHERE to_char("date"::timestamptz, \'YYYY\') = \'1995\' ORDER BY "date" ASC LIMIT 1'
+    )
+    tpl_spaced_q["parameterized"] = {
+        "parameterized_sql": 'SELECT "account_id" FROM "trans" WHERE to_char("date"::timestamptz, $1) = $2 ORDER BY "date" ASC LIMIT 1',
+        "parameterized_intent": "List out the accounts who have the earliest trading date in $2 with format $1 ?",
+    }
+
+    # 2. Unparameterized currency amounts ($4000, $1,000, $50) in parameterized_intent
+    tpl_currency = _valid_template()
+    tpl_currency["sql"] = (
+        "SELECT count(*) FROM customers WHERE birth_year BETWEEN 1970 AND 1980 AND payment > 4000"
+    )
+    tpl_currency["parameterized"] = {
+        "parameterized_sql": "SELECT count(*) FROM customers WHERE birth_year BETWEEN $1 AND $2 AND payment > 4000",
+        "parameterized_intent": "How many customers born between $1 and $2 have made a payment in excess of $4000 (or $1,000 / $50) ?",
+    }
+
+    p = _write(
+        tmp_path / "bird_edge_cases.json",
+        {"templates": [tpl_spaced_q, tpl_currency]},
+    )
+    assert validate_context_set(str(p)) == {"valid": True, "issues": []}
+

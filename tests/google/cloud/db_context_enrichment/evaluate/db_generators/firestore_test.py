@@ -104,3 +104,13 @@ def test_firestore_missing_database_raises():
         match="Missing required fields in tools.yaml config for 'firestore': database",
     ):
         FirestoreConfigGenerator({"project": "my-project"})
+
+
+def test_firestore_accepts_tables_key_from_state_md(mock_params):
+    gen = FirestoreConfigGenerator({**mock_params, "tables": ["movies", "users"]})
+    ref = gen.build_datasource_reference("ctx-1")
+    assert ref["firestore_reference"]["database_reference"]["collection_ids"] == [
+        "movies",
+        "users",
+    ]
+

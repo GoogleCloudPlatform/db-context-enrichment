@@ -25,7 +25,7 @@ Values in the NoSQL query and the intent are parameterized using positional plac
   "intent": "Total revenue for completed orders",
   "manifest": "Total revenue for orders with a given status",
   "parameterized": {
-    "parameterized_sql": "db.orders.aggregate([{ $match: { status: '$1' } }, { $group: { _id: null, totalRevenue: { $sum: '$total_amount' } } }, { $project: { _id: 0, totalRevenue: 1 } }])",
+    "parameterized_sql": "db.orders.aggregate([{ $match: { status: $1 } }, { $group: { _id: null, totalRevenue: { $sum: '$total_amount' } } }, { $project: { _id: 0, totalRevenue: 1 } }])",
     "parameterized_intent": "Total revenue for orders with status $1"
   }
 }

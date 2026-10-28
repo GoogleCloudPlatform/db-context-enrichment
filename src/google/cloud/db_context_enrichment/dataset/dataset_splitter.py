@@ -147,9 +147,9 @@ def _resolve_previous_holdout_ids(
                 with open(state_path, encoding="utf-8") as f:
                     state_text = f.read()
                 match = re.search(
-                    r"^-\s*Source evaluation report:\s*(.+)$",
+                    r"^[-*]\s*(?:\*\*)?Source evaluation report:?(?:\*\*)?:?\s*(.+)$",
                     state_text,
-                    flags=re.MULTILINE,
+                    flags=re.IGNORECASE | re.MULTILINE,
                 )
                 if match:
                     raw_report_path = match.group(1).strip().strip("`")

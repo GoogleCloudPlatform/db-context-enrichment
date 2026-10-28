@@ -113,4 +113,3 @@ def test_firestore_accepts_tables_key_from_state_md(mock_params):
         "movies",
         "users",
     ]
-

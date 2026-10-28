@@ -558,4 +558,3 @@ def test_intent_spaced_trailing_qmark_and_currency_literals(tmp_path: Path):
         {"templates": [tpl_spaced_q, tpl_currency]},
     )
     assert validate_context_set(str(p)) == {"valid": True, "issues": []}
-

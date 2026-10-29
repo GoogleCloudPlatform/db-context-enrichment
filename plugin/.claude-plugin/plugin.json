@@ -24,7 +24,7 @@
     "ctxset": {
       "type": "http",
       "url": "https://dataplex.googleapis.com/mcp/managed-context-sets",
-      "headersHelper": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/adc_headers.sh\""
+      "headersHelper": "bash -c 'for d in \"${CLAUDE_PLUGIN_ROOT:-}\" $(sed -n \"s/.*\\\"installPath\\\"[[:space:]]*:[[:space:]]*\\\"\\([^\\\"]*\\)\\\".*/\\1/p\" \"${HOME}/.claude/plugins/installed_plugins.json\" 2>/dev/null) \"${HOME}/.claude/plugins/cache\"/*/*/* ./plugin; do [ -f \"$d/scripts/adc_headers.sh\" ] && exec bash \"$d/scripts/adc_headers.sh\"; done; exit 1'"
     }
   }
 }

@@ -34,6 +34,15 @@ chmod 600 /tmp/adc.json
 export GOOGLE_APPLICATION_CREDENTIALS=/tmp/adc.json
 export GOOGLE_CLOUD_PROJECT="${EVAL_GCP_PROJECT_ID:-}"
 export GOOGLE_CLOUD_QUOTA_PROJECT="${EVAL_GCP_PROJECT_ID:-}"
+export CLAUDE_PLUGIN_ROOT="/workspace/plugin"
+
+# Replace the relative symlink dev-plugin/plugin/scripts -> ../../plugin/scripts
+# with a real directory copy so `claude plugins install` and `headersHelper`
+# always resolve `scripts/adc_headers.sh` regardless of working directory or cache path.
+if [ -L /workspace/dev-plugin/plugin/scripts ]; then
+  rm -f /workspace/dev-plugin/plugin/scripts
+  cp -r /workspace/plugin/scripts /workspace/dev-plugin/plugin/scripts
+fi
 
 # Isolate: copy this suite + the shared model_configs into its own working
 # directory so parallel runs don't fight over the same .venv / fake_home /
@@ -44,18 +53,19 @@ cp -r "/workspace/evals/${SUITE}" "${WORK_DIR}/"
 cp -r "/workspace/evals/model_configs" "${WORK_DIR}/"
 cd "${WORK_DIR}"
 
-# Pre-seed ADC and gcloud project config inside Claude Code's sandboxed
-# fake_home so `plugin/scripts/adc_headers.sh` (`headersHelper` for `ctxset`)
-# and `gcloud` commands inside Claude Code can mint tokens and read
+# Pre-seed ADC and gcloud project config inside both real HOME and Claude Code's
+# sandboxed fake_home so `plugin/scripts/adc_headers.sh` (`headersHelper` for
+# `ctxset`) and `gcloud` commands inside Claude Code can mint tokens and read
 # `quota_project_id` immediately at plugin install and startup time.
-FAKE_GCLOUD_DIR="${WORK_DIR}/.venv/fake_home_claude/.config/gcloud"
-mkdir -p "${FAKE_GCLOUD_DIR}/configurations"
-cp /tmp/adc.json "${FAKE_GCLOUD_DIR}/application_default_credentials.json"
-chmod 600 "${FAKE_GCLOUD_DIR}/application_default_credentials.json"
-if [ -n "${EVAL_GCP_PROJECT_ID:-}" ]; then
-  printf '[core]\nproject = %s\n' "${EVAL_GCP_PROJECT_ID}" > "${FAKE_GCLOUD_DIR}/configurations/config_default"
-  printf 'default' > "${FAKE_GCLOUD_DIR}/active_config"
-fi
+for GCLOUD_DIR in "${HOME}/.config/gcloud" "${WORK_DIR}/.venv/fake_home_claude/.config/gcloud"; do
+  mkdir -p "${GCLOUD_DIR}/configurations"
+  cp /tmp/adc.json "${GCLOUD_DIR}/application_default_credentials.json"
+  chmod 600 "${GCLOUD_DIR}/application_default_credentials.json"
+  if [ -n "${EVAL_GCP_PROJECT_ID:-}" ]; then
+    printf '[core]\nproject = %s\n' "${EVAL_GCP_PROJECT_ID}" > "${GCLOUD_DIR}/configurations/config_default"
+    printf 'default' > "${GCLOUD_DIR}/active_config"
+  fi
+done
 
 # Repoint `skills_dir` at the in-repo plugin checkout (/workspace/dev-plugin)
 # so we don't need to stage a copy inside WORK_DIR.

@@ -260,12 +260,16 @@ steps:
     args:
       - '-c'
       - |
-        THRESHOLD=60
+        DEFAULT_THRESHOLD=60
         FAILED=0
         for RUN in gemini-cli-smoke-test claude-code-smoke-test gemini-cli-core-cujs gemini-cli-freeform-input gemini-cli-eval-dataset-gen gemini-cli-spanner-graph-cujs claude-code-core-cujs claude-code-freeform-input claude-code-eval-dataset-gen claude-code-spanner-graph-cujs; do
           if [ ! -f /workspace/EVAL_RAN_$$RUN ]; then
             continue
           fi
+          case "$$RUN" in
+            *-smoke-test) THRESHOLD=100 ;;
+            *) THRESHOLD=$$DEFAULT_THRESHOLD ;;
+          esac
           # evalbench writes results/<job-uuid>/summary.csv per run; one row per scorer.
           # Schema: metric_name,metric_score,correct_results_count,total_results_count,...
           # metric_score (col 2) is a hard-coded per-item PASS threshold (always 100
@@ -286,15 +290,15 @@ steps:
             echo "[FAIL] $$RUN: goal_completion=$$SCORE (below $$THRESHOLD threshold)"
             FAILED=1
           else
-            echo "[PASS] $$RUN: goal_completion=$$SCORE"
+            echo "[PASS] $$RUN: goal_completion=$$SCORE (threshold=$$THRESHOLD)"
           fi
         done
         if [ "$$FAILED" = "1" ]; then
-          echo "One or more eval runs failed the $$THRESHOLD%% pass-rate gate."
+          echo "One or more eval runs failed the pass-rate gate."
           echo "Results were still uploaded to gs://context-engineering-agent-eval-results/evals/$BUILD_ID/ — inspect summary.csv there."
           exit 1
         fi
-        echo "All eval runs cleared the $$THRESHOLD%% pass-rate gate."
+        echo "All eval runs cleared the pass-rate gate."
 
 availableSecrets:
   secretManager:

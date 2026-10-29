@@ -102,6 +102,7 @@ Ask only for what is missing:
 
 - Never write `experiment_state.md`. Return results; the caller records them.
 - Never evaluate a context set whose upload operation has not reported `done: true`.
+- Never bypass the `ctxset` MCP tools (`upload_context_set`, `get_context_set`, `get_operation`, `list_context_set_locations`) by calling `https://dataplex.googleapis.com/mcp/managed-context-sets` via `curl`, Python HTTP clients, or shell scripts. If the `ctxset` MCP tools are not visible in your tool list, stop immediately and route to `context-engineering-init`.
 - Inside an experiment, evaluate's only upload target is the working copy recorded in `experiment_state.md`; never write to an existing context set's bare id.
 - Never pick the holdout split on your own initiative; it is used once, by the holdout step, after the hill-climb loop has converged.
 - Never invoke bootstrap or hillclimb from within this skill.

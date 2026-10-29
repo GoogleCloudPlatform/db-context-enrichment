@@ -5,6 +5,10 @@ import os
 import re
 from typing import Any
 
+# Standard minimum holdout size (30% of the 150-item default dataset) required
+# for statistical power in generalizability evaluation.
+_DEFAULT_MIN_HOLDOUT_SIZE = 45
+
 
 def _preserve_clause_positions(match: re.Match[str]) -> str:
     """Marks positional column numbers in GROUP BY / ORDER BY so they are not masked as literals."""
@@ -190,7 +194,7 @@ async def split_dataset(
     golden_dataset_path: str,
     output_dir: str,
     hillclimb_ratio: float = 0.7,
-    min_holdout_size: int = 45,
+    min_holdout_size: int = _DEFAULT_MIN_HOLDOUT_SIZE,
     custom_test_dataset_path: str | None = None,
     previous_holdout_path: str | None = None,
 ) -> str:
@@ -261,10 +265,16 @@ async def split_dataset(
         for k in sorted_keys
     ]
 
-    # Calculate maximum possible holdout items while keeping at least 1 item per template in hillclimb.json
+    # Calculate maximum possible holdout items while keeping at least 1 item per template in hillclimb.json.
+    # Only auto-relax when the caller explicitly requested a custom small holdout size
+    # (< _DEFAULT_MIN_HOLDOUT_SIZE) and template-altering expansion strategies reduced
+    # multi-variation templates below that custom threshold.
     max_possible_holdout = sum(len(g) - 1 for g in groups if len(g) >= 2)
     relaxed_note = ""
-    if min_holdout_size < 45 and 1 <= max_possible_holdout < min_holdout_size:
+    if (
+        min_holdout_size < _DEFAULT_MIN_HOLDOUT_SIZE
+        and 1 <= max_possible_holdout < min_holdout_size
+    ):
         relaxed_note = (
             f"\n- Warning: Auto-relaxed min_holdout_size from {min_holdout_size} to {max_possible_holdout} "
             f"to preserve the invariant that every holdout SQL template is included in hillclimb.json."

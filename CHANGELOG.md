@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.5...v0.8.0) (2026-10-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* autonomous hill-climbing with managed Context Set MCP tools and generalizability (holdout) testing ([#229](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/229))
+
+### Features
+
+* add BigQuery support to evaluation config generation ([#194](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/194)) ([ab96075](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/ab96075c8e11f3808132bf86ac6e0c2c6069bad1))
+* autonomous hill-climbing with managed Context Set MCP tools and generalizability (holdout) testing ([#229](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/229)) ([304bd78](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/304bd783c7cb64b48f708e9a93f14bb89c070261))
+
 ## [0.7.5](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.4...v0.7.5) (2026-10-10)
 
 

@@ -31,13 +31,13 @@ sequenceDiagram
 
 
 1. **`plugin/.claude-plugin/plugin.json` keeps `$.version` and the
-   `mcpServers.db-context-engineering.args[0]` uvx pin
+   `mcpServers.ctxeng.args[0]` uvx pin
    (`google-cloud-db-context-engineering@<version>`) in sync.**
    - `release-please` bumps `$.version` directly via its `json` updater.
    - `.github/workflows/sync-mcp-version.yml` runs on each
      release-please PR and amends a follow-up commit that rewrites
-     `args[0]` to match. The same workflow also syncs the root
-     `gemini-extension.json` consumed by Antigravity — see the
+     `args[0]` to match. The same workflow also syncs `plugin/mcp_config.json`,
+     `plugin/mcp.json`, and root `gemini-extension.json` — see the
      [Antigravity section](#release-atomicity-antigravity-cli) below.
    - The `validate-mcp-version-pin` presubmit job fails any PR where
      the two fields diverge in either manifest — a guard in case the
@@ -66,7 +66,7 @@ same release tarball, so there is nothing to coordinate across pins.
    - On the release tag, `release.yml` → `build-artifacts` builds a
      PyInstaller binary per platform.
    - The job rewrites
-     `mcpServers.mcp_db_context_engineering.command` to point at the
+     `mcpServers.ctxeng.command` to point at the
      bundled `${extensionPath}/google-cloud-db-context-engineering`
      binary, then archives skills + manifest + binary into a single
      `<platform>.<arch>.google-cloud-db-context-engineering.tar.gz`.
@@ -86,20 +86,18 @@ unit.
 
 ## Release atomicity (Antigravity CLI)
 
-Antigravity reads the root `gemini-extension.json` and the root
-`skills/` symlink. There is no PyPI wheel resolution and no marketplace
+Antigravity reads `plugin/plugin.json` + `plugin/mcp_config.json` (and `plugin/skills/`). There is no marketplace
 ref to coordinate, but two failure modes still exist:
 
-1. **The manifest's `uvx pkg@<version>` arg must match its `$.version`**,
+1. **The manifest's `uvx pkg@<version>` arg in `plugin/mcp_config.json` must match `plugin/plugin.json` `$.version`**,
    so end users pull the correct MCP server version. Handled the same
    way as `plugin/.claude-plugin/plugin.json`:
-   - `release-please` bumps `$.version` (configured via `extra-files`
+   - `release-please` bumps `$.version` in `plugin/plugin.json` (configured via `extra-files`
      in `release-please-config.json`).
-   - `.github/workflows/sync-mcp-version.yml` rewrites `args[0]` to
-     match on each release-please PR (it iterates over both manifests
-     in a single commit).
+   - `.github/workflows/sync-mcp-version.yml` rewrites `args[0]` in `plugin/mcp_config.json` (as well as `plugin/mcp.json` and root `gemini-extension.json`) to
+     match on each release-please PR.
    - `validate-mcp-version-pin` in presubmit fails any PR where the
-     two fields diverge in this manifest.
+     two fields diverge.
 2. **The (skills + uvx pin) pair installed on the user's machine must
    originate from the same git revision.** This is *not* automatic —
    `agy plugin install <github-url>` resolves the repo at the `main`
@@ -116,7 +114,7 @@ ref to coordinate, but two failure modes still exist:
    git clone --depth 1 --branch v0.5.1 \
        https://github.com/GoogleCloudPlatform/db-context-enrichment.git \
        db-context-enrichment-0.5.1
-   agy plugin install ./db-context-enrichment-0.5.1
+   agy plugin install ./db-context-enrichment-0.5.1/plugin
    ```
 
    Cloning at a released tag pins skills to the same revision that

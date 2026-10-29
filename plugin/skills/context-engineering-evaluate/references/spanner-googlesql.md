@@ -6,7 +6,7 @@
 - Instance ID (`instance_id`)
 - Database Name (`database_name`)
 - *(Optional)* Dialect (`dialect: GOOGLESQL`, defaults to GoogleSQL if omitted)
-- *(Optional)* Graph IDs (`Graph Ids` in `state.md`)
+- *(Optional)* Graph IDs (`Graph Ids` in `experiment_state.md`)
 
 **EvalBench Database Config Spec (`db_config.yaml`):**
 
@@ -42,4 +42,4 @@ context:
         context_set_id: <context_set_id>
 ```
 
-For Spanner Graph (when `Graph Ids` is configured in `state.md`), `generate_evalbench_configs` captures those values in `graph_ids`.
+For Spanner Graph (when `Graph Ids` is configured in `experiment_state.md`), `generate_evalbench_configs` captures those values in `graph_ids`.

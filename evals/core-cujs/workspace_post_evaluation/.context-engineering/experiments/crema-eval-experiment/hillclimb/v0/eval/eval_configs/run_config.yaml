@@ -1,0 +1,37 @@
+############################################################
+### Dataset / Eval Items
+############################################################
+dataset_config: .context-engineering/experiments/crema-eval-experiment/hillclimb/v0/eval/eval_configs/golden_queries.json
+dataset_format: evalbench-standard-format
+database_configs:
+ - .context-engineering/experiments/crema-eval-experiment/hillclimb/v0/eval/eval_configs/db_config.yaml
+dialect: postgres    # DB connection mapping
+query_types:
+ - dql
+
+############################################################
+### Prompt and Generation Modules
+############################################################
+model_config: .context-engineering/experiments/crema-eval-experiment/hillclimb/v0/eval/eval_configs/model_config.yaml
+prompt_generator: 'NOOPGenerator'
+
+############################################################
+### Evaluator Execution / Parallelism Tuning
+############################################################
+runners:
+  eval_runners: 4
+  sqlgen_runners: 5
+
+############################################################
+### Scorer Related Configs
+############################################################
+scorers:
+  llmrater:
+    model_config: .context-engineering/experiments/crema-eval-experiment/hillclimb/v0/eval/eval_configs/llmrater_config.yaml
+
+############################################################
+### Reporting Related Configs
+############################################################
+reporting:
+  csv:
+    output_directory: '.context-engineering/experiments/crema-eval-experiment/hillclimb/v0/eval/eval_reports/'

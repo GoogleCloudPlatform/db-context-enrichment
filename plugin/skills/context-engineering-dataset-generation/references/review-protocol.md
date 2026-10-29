@@ -1,14 +1,14 @@
 # NL2SQL Dataset Audit & Review Protocol
 
 > [!IMPORTANT]
-> **Parent Skill Reference**: This reference is used as part of the `AUDIT & REPORTING [GATE: USER_APPROVAL]` workflow defined in `context-engineering-dataset-generation/SKILL.md`. Do not execute these steps without adhering to `SKILL.md`.
+> **Parent Skill Reference**: This reference is used as part of the `AUDIT & REPORTING` workflow defined in `context-engineering-dataset-generation/SKILL.md`. Do not execute these steps without adhering to `SKILL.md`.
 
 This protocol dictates the strict evaluation standards, file persistence management, and structured reporting formats for the evaluated NL-SQL pairs. The audit is broken into two distinct tiers: **Individual Pair-Level Review (`Report 1`)** and **Aggregate Dataset-Level Reporting (`Report 2`)**.
 
 ---
 
 ## Goal & File Management
-You must generate and maintain two final markdown reports (`evalset_report_pair_level.md` and `evalset_report_dataset_level.md`). Pay strict attention to file persistence: 
+You must generate and maintain two final markdown reports (`evalset_report_pair_level.md` and `evalset_report_dataset_level.md`). Inside a context-engineering workspace both live in **`<dataset_dir>` = `.context-engineering/experiments/<experiment_name>/dataset/`** (never the current working directory, never the experiment root); outside a workspace, the current working directory. Pay strict attention to file persistence: 
 * **If file already exists:** Read the existing files and intelligently append or update the metrics without destroying historical data or user-approved notes.
 * **If file does not exist:** Create the files.
 
@@ -44,9 +44,9 @@ You must format `evalset_report_pair_level.md` using clean summary tables applic
 
 ---
 
-## Report 2: `evalset_report_dataset_level.md` (User-Reviewed Executive Summary)
+## Report 2: `evalset_report_dataset_level.md` (Dataset-Level Executive Summary)
 
-Use the pair-level audit findings to generate the dataset-level aggregate report. **This report serves as the primary executive artifact presented to the user during the review touchpoint gate.**
+Use the pair-level audit findings to generate the dataset-level aggregate report.
 
 ### Aggregate Dimensions
 1. **Schema Heatmap:** Analyze which tables and columns are queried most frequently across both generated and expanded examples. Identify critical schema elements that were neglected.
@@ -68,7 +68,7 @@ You must format `evalset_report_dataset_level.md` using the exact structure belo
 - **User-Provided Input Seeds**: `N pairs` (`user_provided:*`)
 - **Newly Generated Seeds**: `N pairs` (`generated:*`)
 - **Augmented / Expanded Pairs**: `N pairs` (`expansion:*`)
-- **Total Combined Dataset Volume**: `N approved pairs` (plus `N flagged:empty_result` awaiting review)
+- **Total Combined Dataset Volume**: `N approved pairs`
 
 ---
 
@@ -125,13 +125,4 @@ You must format `evalset_report_dataset_level.md` using the exact structure belo
 ## 5. Gap Analysis & Next Target Recommendations
 - **Identified Schema Gaps**: `<List any key tables, columns, or relationships not yet covered>`
 - **Recommended Next Steps**: `<Provide concrete recommendations for future hill-climbing tuning or expansion>`
-
----
-
-## 6. Action Required: `flagged:empty_result` User Review Gate
-> [!IMPORTANT]
-> **Keep vs. Replace Decision**: We have `N pairs` (`eval_XXX`, `eval_YYY`) that executed cleanly without syntax errors against `<source>-execute-sql` but returned `0 rows`.
-> **Please review and reply:**
-> - Reply **"KEEP ALL"** (or specify IDs) to confirm them as valid 0-row test cases in the final dataset (`golden.json`).
-> - Reply **"REPLACE ALL"** (or specify IDs) to backtrack and generate replacement queries with non-zero parameter values before finalization.
 ```

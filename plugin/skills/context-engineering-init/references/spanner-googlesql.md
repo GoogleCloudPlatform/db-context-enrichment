@@ -62,6 +62,7 @@ kind: tool
 name: <data_source_name>-execute-sql
 type: spanner-execute-sql
 source: <data_source_name>
+readOnly: true
 description: Use this tool to execute SQL or GQL statements against the <data_source_name> database.
 ```
 

@@ -85,13 +85,13 @@ export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"
 # 6. Navigate to evals/ and execute the evaluation
 ```bash
 cd evals/
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.18.0" google-evalbench --experiment_config=<eval_set_to_run>/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.19.0" google-evalbench --experiment_config=<eval_set_to_run>/run_gemini_cli.yaml
 ```
 
 For example, to run Core CUJs:
 ```bash
 cd evals/
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.18.0" google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.19.0" google-evalbench --experiment_config=core-cujs/run_gemini_cli.yaml
 ```
 
 ---
@@ -148,7 +148,7 @@ export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"
 
 # Execute evalbench from evals/ directory
 cd evals
-uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.18.0" google-evalbench --experiment_config=<eval_dir_to_run>/run_gemini_cli.yaml
+uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.19.0" google-evalbench --experiment_config=<eval_dir_to_run>/run_gemini_cli.yaml
 ```
 
 ---
@@ -157,7 +157,7 @@ uvx --default-index https://pypi.org/simple/ --from "google-evalbench==1.18.0" g
 
 1. **Node & NPM Version**: Gemini CLI requires Node.js **v20+** for modern regex and stream support. Verify with `node -v` and ensure `npm` is accessible in `PATH`.
 2. **BigQuery Reporting Variable**: Set `export EVAL_REPORTING_PROJECT="cloud-db-nl2sql"` (or your target GCP project) so EvalBench can write evaluation results to BigQuery without error.
-3. **Workspace Reset**: Always clean generated files (`autoctx/`, `golden.json`, `context_set.json`, `evalset_*.md`) from the scenario workspace and `fake_home` before running, otherwise the agent will detect existing state and skip initialization phases.
+3. **Workspace Reset**: Always clean generated files (`.context-engineering/experiments/<experiment_name>/`, `.context-engineering/workspace_state.md`) from the scenario workspace and `fake_home` before running, otherwise the agent will detect an existing `workspace_state.md` / `experiment_state.md` or dataset and skip initialization phases. Do **not** delete `.context-engineering/tools.yaml` from fixtures that ship one.
 4. **Dirty State Cleanup**: If a run terminates abruptly, `evals/.venv/fake_home/.gemini/extensions/` and `.gemini/tmp/` may contain incomplete installations and previous session logs. Always delete them before re-running.
 5. **Authentication**: Ensure Google Cloud ADC is active via `gcloud auth application-default login`.
 6. **Vertex AI Global Endpoint**: Both `GOOGLE_CLOUD_LOCATION="global"` and `EVAL_GCP_PROJECT_REGION="global"` must be exported for the simulated user model and judge raters.

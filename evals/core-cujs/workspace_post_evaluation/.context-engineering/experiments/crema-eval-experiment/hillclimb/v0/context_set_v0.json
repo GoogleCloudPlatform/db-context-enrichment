@@ -1,0 +1,44 @@
+{
+  "templates": [
+    {
+      "nl_query": "How many accounts are there?",
+      "sql": "SELECT count(*) FROM public.account",
+      "intent": "Count total accounts",
+      "manifest": "Count total accounts",
+      "parameterized": {
+        "parameterized_sql": "SELECT count(*) FROM public.account",
+        "parameterized_intent": "Count total accounts"
+      }
+    },
+    {
+      "nl_query": "What is the average loan amount?",
+      "sql": "SELECT avg(amount) FROM public.loan",
+      "intent": "Calculate average loan amount",
+      "manifest": "Calculate average loan amount",
+      "parameterized": {
+        "parameterized_sql": "SELECT avg(amount) FROM public.loan",
+        "parameterized_intent": "Calculate average loan amount"
+      }
+    }
+  ],
+  "facets": [
+    {
+      "sql_snippet": "public.loan.amount > 100000",
+      "intent": "high amount loans (above 100,000)",
+      "manifest": "high amount loans (above a given number)",
+      "parameterized": {
+        "parameterized_sql_snippet": "public.loan.amount > 100000",
+        "parameterized_intent": "high amount loans (above 100,000)"
+      }
+    },
+    {
+      "sql_snippet": "public.client.gender = 'F'",
+      "intent": "female clients",
+      "manifest": "female clients",
+      "parameterized": {
+        "parameterized_sql_snippet": "public.client.gender = 'F'",
+        "parameterized_intent": "female clients"
+      }
+    }
+  ]
+}

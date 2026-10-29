@@ -29,8 +29,8 @@ class BigQueryConfigGenerator(BaseDBConfigGenerator):
         # GDA API location in the model config: multi-regions like "US" are not
         # valid GDA locations, so the model config uses "global".
         self.location = params.get("location")
-        # Table scope comes from `Table Ids` in state.md (tools.yaml has no
-        # place for it); the GDA API requires at least one table reference.
+        # Table scope comes from `Table Ids` in the experiment's experiment_state.md
+        # (tools.yaml has no place for it); the GDA API requires at least one table reference.
         self.tables = params.get("tables") or []
 
     @staticmethod
@@ -71,8 +71,9 @@ class BigQueryConfigGenerator(BaseDBConfigGenerator):
         if not self.tables:
             raise ValueError(
                 "No BigQuery tables in scope: set `Table Ids` under "
-                "`## Active Database` in state.md (e.g. `- **Table Ids**: [orders, "
-                "customers]`). The QueryData API requires at least one table reference."
+                "`## Active Database` in the experiment's experiment_state.md "
+                "(e.g. `- **Table Ids**: [orders, customers]`). "
+                "The QueryData API requires at least one table reference."
             )
         table_references = [
             {

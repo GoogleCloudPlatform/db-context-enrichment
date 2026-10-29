@@ -2,7 +2,50 @@
 
 This project ships as a Gemini CLI extension, a Claude Code plugin,
 and an Antigravity CLI extension, all from a shared `plugin/` payload
-(skills/commands/`GEMINI.md`). Each client has its own local-dev flow.
+(`plugin/skills/`). Each client has its own local-dev flow.
+
+## MCP servers
+
+Every manifest declares three MCP servers:
+
+| Key | What | Transport |
+| :--- | :--- | :--- |
+| `ctxeng` | This repo's Python server (`main.py`): dataset generation/splitting, Evalbench config generation, `mutate_context_set`, `validate_context_set`, `read_evaluation_result`, `evaluate_generalizability`. | stdio (`uvx` / `uv run`) |
+| `toolbox` | MCP Toolbox for Databases. Reads `.context-engineering/tools.yaml`. The client starts Toolbox with a fixed `--config`, so **any edit to `tools.yaml` requires restarting the `toolbox` MCP server** (or the client) before the new sources/tools are visible. | stdio (`uvx`) |
+| `ctxset` | The **remote Dataplex managed Context Sets MCP server**: `list_context_set_locations`, `upload_context_set`, `get_context_set`, `delete_context_set`, `get_operation`. | Streamable HTTP, Google-credentials auth |
+
+### Context Set server (`ctxset`)
+
+The Context Set tools are **not** implemented in this repo; the agent
+calls the remote server directly. All manifests point at **prod**
+(`https://dataplex.googleapis.com/mcp/managed-context-sets`). The skills are
+written against the server's advertised tool schema: camelCase arguments
+(`projectId` / `location` / `contextSetId` / `contextPayload` /
+`operationId`) and the structured `databases` field
+(`{databaseType, projectId, location, clusterId, instanceId, databaseId}`).
+
+Auth is `authProviderType: "google_credentials"`: the client mints a
+bearer token from Application Default Credentials (scope
+`cloud-platform`) and sets `X-Goog-User-Project` from the ADC quota
+project. Before launching an agent:
+
+```bash
+gcloud auth application-default login
+gcloud auth application-default set-quota-project <project>
+```
+
+Client support:
+
+- **Antigravity** — `plugin/mcp_config.json` (`url` +
+  `authProviderType`). Supported natively.
+- **Gemini CLI** — `gemini-extension.json` / `plugin/gemini-extension.json`
+  (`httpUrl` + `authProviderType` + `oauth.scopes`). Supported natively.
+- **Claude Code** — `plugin/.claude-plugin/plugin.json` (`type: http` +
+  `url` + `headersHelper`). Claude has no native Google-credentials
+  provider, so `plugin/scripts/adc_headers.sh` mints the headers from ADC
+  (`Authorization: Bearer <token>` and `X-Goog-User-Project` from the ADC
+  quota project). Claude re-runs the helper on 401/403, which covers token
+  expiry. Requires `gcloud` on `PATH`.
 
 ## Gemini CLI extension
 
@@ -16,7 +59,7 @@ Verify:
 
 ```bash
 gemini extensions list   # Type: link, Path: .../plugin
-gemini mcp list          # mcp_db_context_engineering ✓ Connected
+gemini mcp list          # ctxeng ✓ Connected, toolbox ✓ Connected, ctxset ✓ Connected
 ```
 
 Both `src/` and `plugin/` edits are picked up on the next `gemini`
@@ -34,8 +77,6 @@ gemini extensions install https://github.com/GoogleCloudPlatform/db-context-enri
 - The linked dev extension and the released extension share the name
   `google-cloud-db-context-engineering`, so only one can be installed
   at a time. Always uninstall before switching.
-- The MCP subprocess launches via `uv run --directory
-  ${extensionPath}/..`, which resolves to the repo root.
 - The MCP subprocess launches via `uv run --directory
   ${extensionPath}/..`, which resolves to the repo root.
 
@@ -84,9 +125,22 @@ step — `--plugin-dir` only affects the session it's passed to.
 
 ### Set up
 
-Edit `dev-plugin/gemini-extension.json` and replace the `<local-repo-path>`
-placeholder in `mcpServers.db-context-engineering.args` with the absolute
-path to this repo's root. Then install the dev extension:
+Edit `dev-plugin/mcp_config.json`:
+
+1. Replace `<local-repo-path>` in `mcpServers.ctxeng.args`
+   with the absolute path to this repo's root.
+2. Replace `<local-workspace-path>` in the `cwd` of **both** stdio servers
+   (`ctxeng` and `toolbox`) with the absolute path of the
+   directory you will launch `agy` in — the one that holds
+   `.context-engineering/tools.yaml`.
+
+> **Note:** For plugin MCP servers, Antigravity resolves an empty `cwd` to
+> the plugin directory (`~/.gemini/config/plugins/<name>/`) rather than
+> the current workspace, so `dev-plugin/mcp_config.json` sets an explicit
+> `cwd` pointing to your workspace directory (where `.context-engineering/tools.yaml` lives).
+
+Make sure ADC is in place (see
+[Context Set server](#context-set-server-ctxset)), then install the dev plugin:
 
 ```bash
 agy plugin install /absolute/path/to/db-context-enrichment/dev-plugin
@@ -95,35 +149,52 @@ agy plugin install /absolute/path/to/db-context-enrichment/dev-plugin
 Verify:
 
 ```bash
-agy plugin list
+agy plugin list                                                      # db-context-engineering-dev
+cat ~/.gemini/config/plugins/db-context-engineering-dev/mcp_config.json   # must still contain "authProviderType"
 ```
 
-Both `src/` and `plugin/` edits are picked up on the next `agy` launch.
+Then launch `agy` in a workspace directory and open `/mcp`: the plugin
+should show all three servers (`ctxeng`, `toolbox`, `ctxset`) connected. A
+quick end-to-end check is asking the agent to call
+`list_context_set_locations` for a project you can access.
+
+`src/` and `plugin/skills/` edits are picked up on the next `agy`
+launch. **Manifest edits are not**: `agy plugin install` copies the
+directory, so re-run the install command after changing
+`dev-plugin/plugin.json` or `dev-plugin/mcp_config.json`.
 
 ### Revert
 
 ```bash
-agy plugin uninstall google-cloud-db-context-engineering-dev
+agy plugin uninstall db-context-engineering-dev
 ```
 
 ### Notes
 
-- `dev-plugin/gemini-extension.json` is a separate manifest from the
-  root `gemini-extension.json`. It runs the server via `uv run
-  --directory <local-repo-path>` instead of `uvx pkg@<version>`, so no
-  PyPI fetch and no version sync with `pyproject.toml` is required. It
-  uses `name: google-cloud-db-context-engineering-dev` so it can sit
-  side-by-side with a prod install without colliding.
-- The dev manifest takes a literal `<local-repo-path>` placeholder
-  rather than `${extensionPath}/..` so the working directory resolves
-  unambiguously regardless of how Antigravity launches the subprocess
-  — see the Q&A note in the commit history for the reasoning.
+- `dev-plugin/plugin.json` + `dev-plugin/mcp_config.json` are the
+  native Antigravity manifest pair and are what `agy plugin install`
+  reads when `plugin.json` is present (mirroring `plugin/plugin.json` +
+  `plugin/mcp_config.json` for the shipped plugin). Do **not** rely on
+  `dev-plugin/gemini-extension.json` for agy: when a directory has only
+  a `gemini-extension.json`, agy runs its Gemini-extension importer,
+  which keeps `url` but **drops `authProviderType`**, so the remote
+  Context Set server would come up unauthenticated. The
+  `gemini-extension.json` is kept in sync for reference only.
+- The dev manifest runs the server via `uv run --project
+  <local-repo-path>` instead of `uvx pkg@<version>`, so no PyPI fetch
+  and no version sync with `pyproject.toml` is required. It takes a
+  literal `<local-repo-path>` placeholder rather than
+  `${extensionPath}/..` so the working directory resolves unambiguously
+  regardless of how Antigravity launches the subprocess. Keep the
+  placeholder in the committed file; only your working copy carries
+  the absolute path.
 - `dev-plugin/skills` is a symlink to `plugin/skills/`, and the root
   `skills` symlink also targets `plugin/skills/`, so all three variants
   (Gemini CLI, Claude Code, Antigravity) share skill files. The
   manifests themselves are hand-maintained — when changing the prod
-  root manifest, mirror any structural change (e.g. adding an MCP
-  server entry) into the dev manifest.
+  manifests (`plugin/mcp_config.json` or root `gemini-extension.json`),
+  mirror any structural change (e.g. adding an MCP server entry) into
+  `dev-plugin/mcp_config.json` and `dev-plugin/gemini-extension.json`.
 - See [releasing.md](releasing.md) for the version-pin atomicity that
   the dev flow sidesteps; the agy root manifest shares the same
   `uvx pkg@<version>` invariant as the Claude Code plugin manifest.

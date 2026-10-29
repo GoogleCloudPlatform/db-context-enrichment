@@ -225,10 +225,16 @@ def test_normalize_sql_template_bigtable_mql_and_group_by_positions():
     assert _normalize_sql_template(bt1) != _normalize_sql_template(bt2)
     assert _normalize_sql_template(bt1) == _normalize_sql_template(bt1_var)
 
-    # 2. JSON / MQL double-quoted values after colons should be masked
+    # 2. JSON / MQL double-quoted values after colons should be masked, while single-quoted '$field' refs stay distinct
     mql1 = 'db.users.find({"city": "Prague", "age": 25})'
     mql2 = 'db.users.find({"city": "Brno", "age": 40})'
     assert _normalize_sql_template(mql1) == _normalize_sql_template(mql2)
+
+    mql_agg1 = "db.orders.aggregate([{ $match: { status: 'completed' } }, { $group: { _id: '$category', total: { $sum: '$amount' } } }])"
+    mql_agg1_var = "db.orders.aggregate([{ $match: { status: 'pending' } }, { $group: { _id: '$category', total: { $sum: '$amount' } } }])"
+    mql_agg2 = "db.orders.aggregate([{ $match: { status: 'completed' } }, { $group: { _id: '$region', total: { $sum: '$tax' } } }])"
+    assert _normalize_sql_template(mql_agg1) == _normalize_sql_template(mql_agg1_var)
+    assert _normalize_sql_template(mql_agg1) != _normalize_sql_template(mql_agg2)
 
     # 3. Positional integers in GROUP BY / ORDER BY stay distinct while LIMIT literals are masked
     gb1 = "SELECT a, b, COUNT(*) FROM t WHERE yr = 2022 GROUP BY 1 ORDER BY 1 DESC LIMIT 5"
@@ -236,6 +242,46 @@ def test_normalize_sql_template_bigtable_mql_and_group_by_positions():
     gb2 = "SELECT a, b, COUNT(*) FROM t WHERE yr = 2022 GROUP BY 2 ORDER BY 2 DESC LIMIT 5"
     assert _normalize_sql_template(gb1) == _normalize_sql_template(gb1_var)
     assert _normalize_sql_template(gb1) != _normalize_sql_template(gb2)
+
+
+@pytest.mark.asyncio
+async def test_split_dataset_auto_relaxes_small_custom_min_holdout_size(
+    tmp_path: pathlib.Path,
+):
+    # 10 items with 2 multi-variation templates (2 items each -> max_possible_holdout = 2) and 6 singletons (e.g. from Merging/Difficulty Adjustment)
+    entries = []
+    for t in range(1, 3):
+        for v in range(1, 3):
+            entries.append(
+                {
+                    "id": f"pair_{t}_{v}",
+                    "database": "db",
+                    "nlq": f"Q {t} var {v}",
+                    "golden_sql": f"SELECT * FROM tbl_{t} WHERE x = {v}",
+                }
+            )
+    for s in range(1, 7):
+        entries.append(
+            {
+                "id": f"single_{s}",
+                "database": "db",
+                "nlq": f"Single {s}",
+                "golden_sql": f"SELECT COUNT(*) FROM single_tbl_{s}",
+            }
+        )
+    input_file = tmp_path / "expanded10.json"
+    input_file.write_text(json.dumps(entries), encoding="utf-8")
+
+    # Passing min_holdout_size=3 (round(10 * 0.3)) auto-relaxes to max_possible_holdout=2 with warning
+    out_dir = tmp_path / "expanded10_out"
+    res = await split_dataset(
+        str(input_file), str(out_dir), hillclimb_ratio=0.7, min_holdout_size=3
+    )
+    assert "Auto-relaxed min_holdout_size from 3 to 2" in res
+    holdout_data = json.loads(
+        (out_dir / "splits" / "holdout.json").read_text(encoding="utf-8")
+    )
+    assert len(holdout_data) == 2
 
 
 @pytest.mark.asyncio

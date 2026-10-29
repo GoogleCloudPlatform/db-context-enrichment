@@ -958,6 +958,76 @@ def test_generate_evalbench_configs_bigtable_tables_from_state_md(tmp_path):
     }
 
 
+def test_generate_evalbench_configs_firestore_tables_from_state_md(tmp_path):
+    """Firestore optional `Table Ids` are read from `experiment_state.md` and passed as `collection_ids`."""
+    ce_dir = tmp_path / ".context-engineering"
+    exp_dir = ce_dir / "experiments" / "fs-exp"
+    (exp_dir / "hillclimb").mkdir(parents=True)
+
+    tools_yaml = ce_dir / "tools.yaml"
+    tools_yaml.write_text(
+        textwrap.dedent("""\
+            kind: source
+            name: fs-source
+            type: firestore
+            project: test-project
+            database: "(default)"
+        """)
+    )
+    (exp_dir / "hillclimb" / "experiment_state.md").write_text(
+        textwrap.dedent("""\
+            # Hill-Climbing Experiment: fs-exp
+
+            ## Active Database
+            - **Source Name**: fs-source
+            - **Type**: firestore
+            - **Table Ids**: ["orders", "customers"]
+        """)
+    )
+
+    dataset_json = exp_dir / "dataset.json"
+    dataset_json.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "1",
+                    "database": "(default)",
+                    "nlq": "Find completed orders",
+                    "golden_sql": "db.orders.find({ status: 'completed' })",
+                }
+            ]
+        )
+    )
+
+    out_dir = exp_dir / "hillclimb" / "v0" / "eval"
+    generate_evalbench_configs(
+        output_dir=str(out_dir),
+        dataset_path=str(dataset_json),
+        context_set_id="projects/test-project/locations/us-central1/contextSets/context-123",
+        toolbox_config_path=str(tools_yaml),
+        toolbox_source_name="fs-source",
+    )
+
+    db_config = yaml.safe_load(
+        (out_dir / "eval_configs" / "db_config.yaml").read_text()
+    )
+    assert db_config["db_type"] == "mongodb"
+    assert db_config["dialect"] == "mongodb"
+    assert (
+        db_config["firestore_database"] == "projects/test-project/databases/(default)"
+    )
+
+    model_config = yaml.safe_load(
+        (out_dir / "eval_configs" / "model_config.yaml").read_text()
+    )
+    fs_ref = model_config["context"]["datasource_references"]["firestore_reference"]
+    assert fs_ref["database_reference"] == {
+        "project_id": "test-project",
+        "database_id": "(default)",
+        "collection_ids": ["orders", "customers"],
+    }
+
+
 def test_generate_evalbench_configs_custom_type():
     tools_yaml_content = textwrap.dedent("""\
         kind: source

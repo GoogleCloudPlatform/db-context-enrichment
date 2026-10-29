@@ -57,10 +57,10 @@ Three sub-workflows; all operate on `.context-engineering/tools.yaml`.
 
 Validate the target source(s) standalone (Example: `uvx toolbox-server@1.14.0 --config .context-engineering/tools.yaml invoke <source>-list-schemas`) — no MCP restart needed for validation. On validation failure, drop into the checks below to diagnose (e.g., `DB source reachable`, `ADC configured`).
 
-**Toolbox restart rule (always state it explicitly).** The `toolbox` MCP server only reads `tools.yaml` when it starts, so the agent's `<source>-*` tools do not change until it is restarted. Tell the user to restart it:
+**Toolbox restart & tool naming rule (always state the restart rule explicitly).** The `toolbox` MCP server only reads `tools.yaml` when it starts, so the agent's `<source>-*` tools do not change until it is restarted. *(Common naming rule: across all context-engineering skills, `<source>-list-schemas` and `<source>-execute-sql` denote a source's schema and query tools — for SQL/BTQL sources these are `<source>-list-schemas` and `<source>-execute-sql` [plus `<source>-list-graphs` for Spanner Graph], and for Firestore they are `<source>-get-schema` and `<source>-execute-mql`.)* Tell the user to restart `toolbox`:
 - after **every** write this skill makes to `tools.yaml`;
 - whenever the user says they edited `tools.yaml` themselves;
-- whenever a source listed in `tools.yaml` has no matching `<source>-list-schemas` / `<source>-execute-sql` tool in the agent's tool list (the tell-tale sign of a stale server).
+- whenever a source listed in `tools.yaml` has no matching `<source>-list-schemas` / `<source>-execute-sql` (or Firestore `<source>-get-schema` / `<source>-execute-mql`) tool in the agent's tool list (the tell-tale sign of a stale server).
 
 Restart instructions per client:
 - Gemini CLI: `/mcp reload`

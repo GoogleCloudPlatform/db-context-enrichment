@@ -21,27 +21,37 @@ _ALIAS_TO_ATTR = {
 }
 
 _POSITIONAL_PARAM_RE = re.compile(r"(?<!\$)\$(\d+)\b(?![.,]\d)")
-_MAX_POSITIONAL_PARAM_INDEX = 99
 _QUOTED_POSITIONAL_PARAM_RE = re.compile(r"'\$(\d+)'")
 _SQL_QMARK_PARAM_RE = re.compile(r"(?<![?|&])\?(?![?|&])")
 _INTENT_QMARK_PARAM_RE = re.compile(r"(?:^|(?<=[\s=(<>:,\[]))['\"]?\?")
 _VALUE_PARAM_RE = re.compile(r"(?<!\$)\$value\b")
 
 
-def _strip_sql_comments_and_strings(sql: str) -> str:
+def _strip_sql_comments_and_strings(
+    sql: str,
+    *,
+    allow_mql_quoted_params: bool = True,
+    literal_strings: set[str] | None = None,
+) -> str:
     """Strips SQL comments and single-quoted string literals before scanning for placeholders.
 
-    In MQL queries (starting with 'db.' or '{'), standalone single-quoted
-    positional placeholders like '$1' are preserved so they match intent
-    placeholders.
+    In parameterized MQL queries/snippets (starting with 'db.', '{', or '['),
+    standalone single-quoted positional placeholders like '$1' are preserved
+    (unless they were already present as literal strings in the unparameterized query)
+    so they match intent placeholders.
     """
     no_comments = _strip_sql_comments(sql)
-    is_mql = no_comments.lstrip().startswith(("db.", "{"))
+    is_mql = allow_mql_quoted_params and no_comments.lstrip().startswith(
+        ("db.", "{", "[")
+    )
+    ignored_literals = literal_strings or set()
     return re.sub(
         r"'(?:''|\\'|[^'])*'",
         lambda m: (
             m.group(0)[1:-1]
-            if is_mql and re.fullmatch(r"'\$\d+'", m.group(0))
+            if is_mql
+            and re.fullmatch(r"'\$\d+'", m.group(0))
+            and m.group(0) not in ignored_literals
             else "''"
         ),
         no_comments,
@@ -331,13 +341,23 @@ def _check_duplicates(raw: dict[str, Any]) -> list[dict[str, Any]]:
 def _extract_positional_params(
     text: str,
     strip_sql_literals: bool = False,
-    max_index: int = _MAX_POSITIONAL_PARAM_INDEX,
+    allow_mql_quoted_params: bool = True,
+    literal_strings: set[str] | None = None,
+    max_index: int | None = None,
 ) -> set[int]:
-    cleaned = _strip_sql_comments_and_strings(text) if strip_sql_literals else text
+    cleaned = (
+        _strip_sql_comments_and_strings(
+            text,
+            allow_mql_quoted_params=allow_mql_quoted_params,
+            literal_strings=literal_strings,
+        )
+        if strip_sql_literals
+        else text
+    )
     return {
         int(m.group(1))
         for m in _POSITIONAL_PARAM_RE.finditer(cleaned)
-        if 1 <= int(m.group(1)) <= max_index
+        if int(m.group(1)) >= 1 and (max_index is None or int(m.group(1)) <= max_index)
     }
 
 
@@ -384,9 +404,15 @@ def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
             suffix = f" ({descriptor})" if descriptor else ""
 
             sql_field_name, raw_sql = _get_first_present(item, sql_keys)
+            raw_sql_literals: set[str] = set()
             if isinstance(raw_sql, str):
+                raw_sql_literals = set(
+                    re.findall(r"'(?:''|\\'|[^'])*'", _strip_sql_comments(raw_sql))
+                )
                 unparam_placeholders = _extract_positional_params(
-                    raw_sql, strip_sql_literals=True
+                    raw_sql,
+                    strip_sql_literals=True,
+                    allow_mql_quoted_params=False,
                 )
                 unparam_qmarks = _count_qmark_params(raw_sql, is_sql=True)
                 if unparam_placeholders or unparam_qmarks:
@@ -412,7 +438,11 @@ def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
             if not isinstance(param_sql, str) or not isinstance(param_intent, str):
                 continue
 
-            sql_params = _extract_positional_params(param_sql, strip_sql_literals=True)
+            sql_params = _extract_positional_params(
+                param_sql,
+                strip_sql_literals=True,
+                literal_strings=raw_sql_literals,
+            )
             sql_qmarks = _count_qmark_params(param_sql, is_sql=True)
             max_intent_index = max(max(sql_params, default=0) + 5, 9)
             intent_params = _extract_positional_params(
@@ -430,7 +460,7 @@ def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
                 quoted_sql_params = {
                     int(m.group(1))
                     for m in _QUOTED_POSITIONAL_PARAM_RE.finditer(no_comment_sql)
-                    if 1 <= int(m.group(1)) <= _MAX_POSITIONAL_PARAM_INDEX
+                    if int(m.group(1)) >= 1
                 } - sql_params
                 quoted_note = ""
                 if quoted_sql_params:

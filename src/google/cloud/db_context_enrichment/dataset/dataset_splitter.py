@@ -18,26 +18,27 @@ def _normalize_sql_template(sql: str) -> str:
     no_comments = re.sub(r"--[^\n]*", " ", no_comments)
     cleaned = no_comments.strip().rstrip(";").strip()
 
-    # Protect Bigtable column qualifiers like cf['col'] so distinct columns don't collapse to cf['?']
-    bt_qualifiers: list[str] = []
+    # Protect Bigtable column qualifiers like cf['col'] and MQL field references like '$amount'
+    # so distinct columns/fields don't collapse to '?' during single-quote masking.
+    stashed_tokens: list[str] = []
 
-    def _stash_bt_qualifier(match: re.Match[str]) -> str:
-        idx = len(bt_qualifiers)
-        bt_qualifiers.append(match.group(0))
-        return f"__bt_qual_{idx}__"
+    def _stash_token(match: re.Match[str]) -> str:
+        idx = len(stashed_tokens)
+        stashed_tokens.append(match.group(0))
+        return f"__stashed_tok_{idx}__"
 
     protected = re.sub(
-        r"\b[a-zA-Z_][a-zA-Z0-9_]*\s*\[\s*'(?:''|\\'|[^'])*'\s*\]",
-        _stash_bt_qualifier,
+        r"\b[a-zA-Z_][a-zA-Z0-9_]*\s*\[\s*'(?:''|\\'|[^'])*'\s*\]|'\$[a-zA-Z_][a-zA-Z0-9_.]*'",
+        _stash_token,
         cleaned,
     )
 
     # Mask single-quoted string literals (including escaped '' or \' quotes)
     normalized = re.sub(r"'(?:''|\\'|[^'])*'", "'?'", protected)
 
-    # Restore Bigtable column qualifiers after single-quote masking
-    for idx, qual in enumerate(bt_qualifiers):
-        normalized = normalized.replace(f"__bt_qual_{idx}__", qual)
+    # Restore Bigtable column qualifiers and MQL field references after single-quote masking
+    for idx, tok in enumerate(stashed_tokens):
+        normalized = normalized.replace(f"__stashed_tok_{idx}__", tok)
 
     # Mask JSON / MQL double-quoted string values after colons (e.g., {"field": "val"})
     normalized = re.sub(r':\s*"(?:\\"|[^"])*"', ': "?"', normalized)
@@ -262,6 +263,14 @@ async def split_dataset(
 
     # Calculate maximum possible holdout items while keeping at least 1 item per template in hillclimb.json
     max_possible_holdout = sum(len(g) - 1 for g in groups if len(g) >= 2)
+    relaxed_note = ""
+    if min_holdout_size < 45 and 1 <= max_possible_holdout < min_holdout_size:
+        relaxed_note = (
+            f"\n- Warning: Auto-relaxed min_holdout_size from {min_holdout_size} to {max_possible_holdout} "
+            f"to preserve the invariant that every holdout SQL template is included in hillclimb.json."
+        )
+        min_holdout_size = max_possible_holdout
+
     desired_holdout = max(
         min_holdout_size, int(round(total_items * (1.0 - hillclimb_ratio)))
     )
@@ -269,8 +278,12 @@ async def split_dataset(
     if max_possible_holdout < min_holdout_size:
         num_singletons = sum(1 for g in groups if len(g) == 1)
         num_multi = len(groups) - num_singletons
+        ratio_target = max(1, int(round(total_items * (1.0 - hillclimb_ratio))))
         small_holdout_target = min(
-            min_holdout_size, max(1, int(round(total_items * (1.0 - hillclimb_ratio))))
+            min_holdout_size,
+            min(max_possible_holdout, ratio_target)
+            if max_possible_holdout >= 1
+            else ratio_target,
         )
         small_dataset_hint = (
             f" (Note: if the user explicitly requested a small custom dataset of {total_items} items, "
@@ -383,5 +396,5 @@ async def split_dataset(
         f"into Hillclimbing ({len(dev_items)} items) and Holdout ({len(test_items)} items).\n"
         f"- Hillclimbing split saved to: {dev_path}\n"
         f"- Holdout split saved to: {test_path}\n"
-        f"- Template Overlap: 100% of holdout SQL templates ({len(holdout_keys)}/{len(holdout_keys)}) are included in hillclimb.json."
+        f"- Template Overlap: 100% of holdout SQL templates ({len(holdout_keys)}/{len(holdout_keys)}) are included in hillclimb.json.{relaxed_note}"
     )

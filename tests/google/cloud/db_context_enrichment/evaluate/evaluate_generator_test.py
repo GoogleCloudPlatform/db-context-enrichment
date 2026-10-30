@@ -971,7 +971,7 @@ def test_generate_evalbench_configs_firestore_tables_from_state_md(tmp_path):
             name: fs-source
             type: firestore
             project: test-project
-            database: "(default)"
+            database: "my-firestore-db"
         """)
     )
     (exp_dir / "hillclimb" / "experiment_state.md").write_text(
@@ -991,7 +991,7 @@ def test_generate_evalbench_configs_firestore_tables_from_state_md(tmp_path):
             [
                 {
                     "id": "1",
-                    "database": "(default)",
+                    "database": "my-firestore-db",
                     "nlq": "Find completed orders",
                     "golden_sql": "db.orders.find({ status: 'completed' })",
                 }
@@ -1014,7 +1014,8 @@ def test_generate_evalbench_configs_firestore_tables_from_state_md(tmp_path):
     assert db_config["db_type"] == "mongodb"
     assert db_config["dialect"] == "mongodb"
     assert (
-        db_config["firestore_database"] == "projects/test-project/databases/(default)"
+        db_config["firestore_database"]
+        == "projects/test-project/databases/my-firestore-db"
     )
 
     model_config = yaml.safe_load(
@@ -1023,7 +1024,7 @@ def test_generate_evalbench_configs_firestore_tables_from_state_md(tmp_path):
     fs_ref = model_config["context"]["datasource_references"]["firestore_reference"]
     assert fs_ref["database_reference"] == {
         "project_id": "test-project",
-        "database_id": "(default)",
+        "database_id": "my-firestore-db",
         "collection_ids": ["orders", "customers"],
     }
 

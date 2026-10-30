@@ -22,8 +22,9 @@ def _normalize_sql_template(sql: str) -> str:
     no_comments = re.sub(r"--[^\n]*", " ", no_comments)
     cleaned = no_comments.strip().rstrip(";").strip()
 
-    # Protect Bigtable column qualifiers like cf['col'] and MQL field references like '$amount'
-    # so distinct columns/fields don't collapse to '?' during single-quote masking.
+    # Protect Bigtable column qualifiers like cf['col'] and single/double-quoted MQL field
+    # references like '$amount' or "$amount" so distinct columns/fields don't collapse to '?'
+    # during quote masking or lose their case sensitivity during lowercasing.
     stashed_tokens: list[str] = []
 
     def _stash_token(match: re.Match[str]) -> str:
@@ -32,17 +33,13 @@ def _normalize_sql_template(sql: str) -> str:
         return f"__stashed_tok_{idx}__"
 
     protected = re.sub(
-        r"\b[a-zA-Z_][a-zA-Z0-9_]*\s*\[\s*'(?:''|\\'|[^'])*'\s*\]|'\$[a-zA-Z_][a-zA-Z0-9_.]*'",
+        r"""\b[a-zA-Z_][a-zA-Z0-9_]*\s*\[\s*'(?:''|\\'|[^'])*'\s*\]|['"]\$[a-zA-Z_][a-zA-Z0-9_.]*['"]""",
         _stash_token,
         cleaned,
     )
 
     # Mask single-quoted string literals (including escaped '' or \' quotes)
     normalized = re.sub(r"'(?:''|\\'|[^'])*'", "'?'", protected)
-
-    # Restore Bigtable column qualifiers and MQL field references after single-quote masking
-    for idx, tok in enumerate(stashed_tokens):
-        normalized = normalized.replace(f"__stashed_tok_{idx}__", tok)
 
     # Mask JSON / MQL double-quoted string values after colons (e.g., {"field": "val"})
     normalized = re.sub(r':\s*"(?:\\"|[^"])*"', ': "?"', normalized)
@@ -69,6 +66,11 @@ def _normalize_sql_template(sql: str) -> str:
         "in (?)",
         normalized,
     )
+
+    # Restore stashed Bigtable column qualifiers and MQL field references after masking and lowercasing
+    for idx, tok in enumerate(stashed_tokens):
+        normalized = normalized.replace(f"__stashed_tok_{idx}__", tok)
+
     return normalized
 
 
@@ -265,11 +267,25 @@ async def split_dataset(
         for k in sorted_keys
     ]
 
-    # Calculate maximum possible holdout items while keeping at least 1 item per template in hillclimb.json.
+    # Calculate maximum possible holdout items while keeping at least max(1, p) items per template
+    # in hillclimb.json (where p is the number of items in the group belonging to previous_holdout_ids).
     # Only auto-relax when the caller explicitly requested a custom small holdout size
     # (< _DEFAULT_MIN_HOLDOUT_SIZE) and template-altering expansion strategies reduced
     # multi-variation templates below that custom threshold.
-    max_possible_holdout = sum(len(g) - 1 for g in groups if len(g) >= 2)
+    group_max_holdout = [
+        max(
+            0,
+            len(g)
+            - max(
+                1,
+                sum(
+                    1 for entry in g if str(entry.get("id", "")) in previous_holdout_ids
+                ),
+            ),
+        )
+        for g in groups
+    ]
+    max_possible_holdout = sum(group_max_holdout)
     relaxed_note = ""
     if (
         min_holdout_size < _DEFAULT_MIN_HOLDOUT_SIZE
@@ -317,26 +333,29 @@ async def split_dataset(
     target_holdout = min(max_possible_holdout, desired_holdout)
 
     # Initial holdout allocation per group:
-    # - Single-item groups (n == 1) MUST have holdout_count = 0 so their template goes to hillclimb.json.
-    # - Multi-item groups (n >= 2) can allocate at most n - 1 items to holdout.json so at least 1 item stays in hillclimb.json.
+    # - Groups with max_h == 0 (singletons or groups where all items are in previous_holdout_ids)
+    #   MUST have holdout_count = 0 so their template and prior holdout items stay in hillclimb.json.
+    # - Other groups can allocate at most group_max_holdout[idx] items to holdout.json so at least
+    #   max(1, p) items stay in hillclimb.json.
     holdout_counts: list[int] = []
-    for g in groups:
+    for idx, g in enumerate(groups):
         n = len(g)
-        if n == 1:
+        max_h = group_max_holdout[idx]
+        if max_h == 0:
             holdout_counts.append(0)
         else:
-            h = max(1, min(n - 1, int(n * (1.0 - hillclimb_ratio))))
+            h = max(1, min(max_h, int(n * (1.0 - hillclimb_ratio))))
             holdout_counts.append(h)
 
     current_holdout = sum(holdout_counts)
 
-    # Adjust holdout_counts up to reach target_holdout if needed (never exceeding n - 1 so dev_count >= 1)
+    # Adjust holdout_counts up to reach target_holdout if needed (never exceeding group_max_holdout[idx])
     while current_holdout < target_holdout:
         best_idx = -1
         best_remainder = -1e9
         for idx, g in enumerate(groups):
             n = len(g)
-            if holdout_counts[idx] < n - 1:
+            if holdout_counts[idx] < group_max_holdout[idx]:
                 remainder = (n * (1.0 - hillclimb_ratio)) - holdout_counts[idx]
                 if remainder > best_remainder:
                     best_remainder = remainder

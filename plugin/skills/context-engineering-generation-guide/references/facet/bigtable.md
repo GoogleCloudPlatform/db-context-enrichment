@@ -59,7 +59,7 @@ BTQL provides built-in map functions for inspecting column family structure dire
 
 ## Parameterization
 
-Values in the SQL snippet and the intent must be replaced with positional parameters represented by `?`, according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
+Values in the SQL snippet and the intent must be replaced with numbered positional parameters represented by `$1`, `$2`, etc., according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
 
 ### Facet JSON Schema
 
@@ -71,8 +71,8 @@ Values in the SQL snippet and the intent must be replaced with positional parame
       "intent": "string (specific intent of the facet filter)",
       "manifest": "string (generalized description replacing values with 'a given <type>')",
       "parameterized": {
-        "parameterized_sql_snippet": "string (SQL snippet with '?' placeholders)",
-        "parameterized_intent": "string (intent with '?' placeholders)"
+        "parameterized_sql_snippet": "string (SQL snippet with '$1', '$2' placeholders)",
+        "parameterized_intent": "string (intent with '$1', '$2' placeholders)"
       }
     }
   ]
@@ -94,8 +94,8 @@ Values in the SQL snippet and the intent must be replaced with positional parame
   "intent": "hotels located in 'London'",
   "manifest": "hotels located in a given city",
   "parameterized": {
-    "parameterized_sql_snippet": "CAST(hotels.info['city'] AS STRING) = ?",
-    "parameterized_intent": "hotels located in ?"
+    "parameterized_sql_snippet": "CAST(hotels.info['city'] AS STRING) = $1",
+    "parameterized_intent": "hotels located in $1"
   }
 }
 ```
@@ -113,8 +113,8 @@ Values in the SQL snippet and the intent must be replaced with positional parame
   "intent": "hotels with rating at least 4.5",
   "manifest": "hotels with rating at least a given number",
   "parameterized": {
-    "parameterized_sql_snippet": "TO_FLOAT64(hotels.rating['score']) >= ?",
-    "parameterized_intent": "hotels with rating at least ?"
+    "parameterized_sql_snippet": "TO_FLOAT64(hotels.rating['score']) >= $1",
+    "parameterized_intent": "hotels with rating at least $1"
   }
 }
 ```
@@ -132,8 +132,8 @@ Values in the SQL snippet and the intent must be replaced with positional parame
   "intent": "rooms accommodating at least 4 guests",
   "manifest": "rooms accommodating at least a given number guests",
   "parameterized": {
-    "parameterized_sql_snippet": "TO_INT64(hotels.room['capacity']) >= ?",
-    "parameterized_intent": "rooms accommodating at least ? guests"
+    "parameterized_sql_snippet": "TO_INT64(hotels.room['capacity']) >= $1",
+    "parameterized_intent": "rooms accommodating at least $1 guests"
   }
 }
 ```
@@ -151,8 +151,8 @@ Values in the SQL snippet and the intent must be replaced with positional parame
   "intent": "hotels with ID prefix 'hotel#100'",
   "manifest": "hotels with ID prefix a given product",
   "parameterized": {
-    "parameterized_sql_snippet": "CAST(hotels._key AS STRING) LIKE ?",
-    "parameterized_intent": "hotels with ID prefix ?"
+    "parameterized_sql_snippet": "CAST(hotels._key AS STRING) LIKE $1",
+    "parameterized_intent": "hotels with ID prefix $1"
   }
 }
 ```
@@ -170,8 +170,8 @@ Values in the SQL snippet and the intent must be replaced with positional parame
   "intent": "hotels that have 'swimming_pool' amenity",
   "manifest": "hotels that have a given product amenity",
   "parameterized": {
-    "parameterized_sql_snippet": "map_contains_key(hotels.amenities, ?)",
-    "parameterized_intent": "hotels that have ? amenity"
+    "parameterized_sql_snippet": "map_contains_key(hotels.amenities, $1)",
+    "parameterized_intent": "hotels that have $1 amenity"
   }
 }
 ```
@@ -189,8 +189,8 @@ Values in the SQL snippet and the intent must be replaced with positional parame
   "intent": "hotels in 'Seattle' from view",
   "manifest": "hotels in a given city from view",
   "parameterized": {
-    "parameterized_sql_snippet": "`hotel-summary-view`.city = ?",
-    "parameterized_intent": "hotels in ? from view"
+    "parameterized_sql_snippet": "`hotel-summary-view`.city = $1",
+    "parameterized_intent": "hotels in $1 from view"
   }
 }
 ```
@@ -215,5 +215,5 @@ When authoring facets for Bigtable, the following constructs must never be used:
 *   **Never Use Table Aliases**: Do not prefix columns with aliases like `T.` or `h.`.
 *   **Explicit Type Decoding**: Apply explicit byte decoders (`CAST(... AS STRING)`, `TO_INT64(...)`, `TO_FLOAT64(...)`) to column family qualifiers because raw cell values are stored as `BYTES`.
 *   **Backtick Quoting**: Always wrap table names and identifiers with hyphens or keywords in backticks (e.g. `` `hotel-reviews` ``).
-*   **Parameterization with `?`**: Replace literal values in `parameterized_sql_snippet` and `parameterized_intent` using `?` according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
+*   **Parameterization with `$1, $2`**: Replace literal values in `parameterized_sql_snippet` and `parameterized_intent` using `$1`, `$2`, etc. (not `?`) according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
 *   **Clear and Descriptive Intents**: The intent must clearly describe the semantic filter condition represented by the facet.

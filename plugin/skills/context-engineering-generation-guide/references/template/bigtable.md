@@ -23,7 +23,7 @@ Bigtable represents data in a sorted wide-column model exposed through BTQL as a
 
 ## Parameterization
 
-Values in the SQL query and the intent must be replaced with positional parameters represented by `?`, according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
+Values in the SQL query and the intent must be replaced with numbered positional parameters represented by `$1`, `$2`, etc. , according to the [Phrase Extraction and Parameterization Guidelines](../phrase_extraction/guidelines.md).
 
 ### Template JSON Schema
 
@@ -36,8 +36,8 @@ Values in the SQL query and the intent must be replaced with positional paramete
       "intent": "string (specific intent of the query)",
       "manifest": "string (generalized description with 'a given <type>')",
       "parameterized": {
-        "parameterized_sql": "string (BTQL query with '?' placeholders)",
-        "parameterized_intent": "string (intent with '?' placeholders)"
+        "parameterized_sql": "string (BTQL query with '$1', '$2' placeholders)",
+        "parameterized_intent": "string (intent with '$1', '$2' placeholders)"
       }
     }
   ]
@@ -61,8 +61,8 @@ Values in the SQL query and the intent must be replaced with positional paramete
   "intent": "count of hotels in Seattle",
   "manifest": "count of hotels in a given city",
   "parameterized": {
-    "parameterized_sql": "SELECT count(*) FROM `hotels` WHERE CAST(address['city'] AS STRING) = ?",
-    "parameterized_intent": "count of hotels in ?"
+    "parameterized_sql": "SELECT count(*) FROM `hotels` WHERE CAST(address['city'] AS STRING) = $1",
+    "parameterized_intent": "count of hotels in $1"
   }
 }
 ```
@@ -82,8 +82,8 @@ Values in the SQL query and the intent must be replaced with positional paramete
   "intent": "hotels with rating at least 4.5",
   "manifest": "hotels with rating at least a given number",
   "parameterized": {
-    "parameterized_sql": "SELECT CAST(_key AS STRING) AS hotel_id, CAST(info['name'] AS STRING) AS name, TO_FLOAT64(rating['score']) AS rating FROM `hotels` WHERE TO_FLOAT64(rating['score']) >= ? ORDER BY rating DESC LIMIT 50",
-    "parameterized_intent": "hotels with rating at least ?"
+    "parameterized_sql": "SELECT CAST(_key AS STRING) AS hotel_id, CAST(info['name'] AS STRING) AS name, TO_FLOAT64(rating['score']) AS rating FROM `hotels` WHERE TO_FLOAT64(rating['score']) >= $1 ORDER BY rating DESC LIMIT 50",
+    "parameterized_intent": "hotels with rating at least $1"
   }
 }
 ```
@@ -103,8 +103,8 @@ Values in the SQL query and the intent must be replaced with positional paramete
   "intent": "average room price in London",
   "manifest": "average room price in a given city",
   "parameterized": {
-    "parameterized_sql": "SELECT CAST(address['city'] AS STRING) AS city, AVG(TO_FLOAT64(pricing['room_rate'])) AS avg_price FROM `hotels` WHERE CAST(address['city'] AS STRING) = ? GROUP BY city",
-    "parameterized_intent": "average room price in ?"
+    "parameterized_sql": "SELECT CAST(address['city'] AS STRING) AS city, AVG(TO_FLOAT64(pricing['room_rate'])) AS avg_price FROM `hotels` WHERE CAST(address['city'] AS STRING) = $1 GROUP BY city",
+    "parameterized_intent": "average room price in $1"
   }
 }
 ```
@@ -128,5 +128,5 @@ When authoring templates for Bigtable, do not use the following SQL constructs a
 *   **Backtick Quoting**: Always wrap table names in backticks (e.g., `` `hotels` ``).
 *   **Explicit Decoding**: Always apply explicit decoders (`CAST(... AS STRING)`, `TO_INT64(...)`, `TO_FLOAT64(...)`) when referencing qualifiers from column family maps.
 *   **Row Key Optimization**: Utilize `_key` equality or prefix matching (`_key LIKE 'prefix%'`) where possible for optimal Bigtable scan performance.
-*   **Parameterization**: Parameterize all literal filter values using `?` in `parameterized_sql` and `parameterized_intent` following the shared guidelines.
+*   **Parameterization**: Parameterize all literal filter values using `$1`, `$2`, etc. (not `?`) in `parameterized_sql` and `parameterized_intent` following the shared guidelines.
 *   **Accurate Intents**: The intent must clearly describe what the query does and match the natural language question.

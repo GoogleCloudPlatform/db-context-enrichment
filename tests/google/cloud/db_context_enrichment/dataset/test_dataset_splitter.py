@@ -236,6 +236,17 @@ def test_normalize_sql_template_bigtable_mql_and_group_by_positions():
     assert _normalize_sql_template(mql_agg1) == _normalize_sql_template(mql_agg1_var)
     assert _normalize_sql_template(mql_agg1) != _normalize_sql_template(mql_agg2)
 
+    # Double-quoted MQL "$field" references and case-sensitive field/column tokens stay distinct
+    mql_dq1 = 'db.orders.aggregate([{ "$match": { "status": "completed" } }, { "$group": { "_id": "$category", "total": { "$sum": "$amount" } } }])'
+    mql_dq1_var = 'db.orders.aggregate([{ "$match": { "status": "pending" } }, { "$group": { "_id": "$category", "total": { "$sum": "$amount" } } }])'
+    mql_dq2 = 'db.orders.aggregate([{ "$match": { "status": "completed" } }, { "$group": { "_id": "$region", "total": { "$sum": "$tax" } } }])'
+    assert _normalize_sql_template(mql_dq1) == _normalize_sql_template(mql_dq1_var)
+    assert _normalize_sql_template(mql_dq1) != _normalize_sql_template(mql_dq2)
+
+    mql_case1 = 'db.events.aggregate([{ "$group": { "_id": "$createdAt" } }])'
+    mql_case2 = 'db.events.aggregate([{ "$group": { "_id": "$createdat" } }])'
+    assert _normalize_sql_template(mql_case1) != _normalize_sql_template(mql_case2)
+
     # 3. Positional integers in GROUP BY / ORDER BY stay distinct while LIMIT literals are masked
     gb1 = "SELECT a, b, COUNT(*) FROM t WHERE yr = 2022 GROUP BY 1 ORDER BY 1 DESC LIMIT 5"
     gb1_var = "SELECT a, b, COUNT(*) FROM t WHERE yr = 2023 GROUP BY 1 ORDER BY 1 DESC LIMIT 10"
@@ -360,3 +371,60 @@ async def test_split_dataset_excludes_previous_holdout_explicit_and_autodetected
     )
     exp2_auto_holdout_ids = {item["id"] for item in exp2_auto_holdout}
     assert exp1_holdout_ids.isdisjoint(exp2_auto_holdout_ids)
+
+    # Case C: A group where p >= 2 items (or all items) belong to previous_holdout_ids
+    # never leaks prior holdout items into holdout.json during upward adjustment.
+    skewed_prev_holdout = [
+        {"id": "g1_1"},
+        {"id": "g1_2"},
+        {"id": "g1_3"},  # all 3 items of g1 were in previous holdout (max_h = 0)
+        {"id": "g2_1"},
+        {"id": "g2_2"},  # 2 of 3 items of g2 were in previous holdout (max_h = 1)
+    ]
+    prev_path = tmp_path / "skewed_prev_holdout.json"
+    prev_path.write_text(json.dumps(skewed_prev_holdout), encoding="utf-8")
+
+    skewed_entries = (
+        [
+            {
+                "id": f"g1_{i}",
+                "database": "db",
+                "nlq": f"G1 {i}",
+                "golden_sql": f"SELECT * FROM t1 WHERE a = {i}",
+            }
+            for i in range(1, 4)
+        ]
+        + [
+            {
+                "id": f"g2_{i}",
+                "database": "db",
+                "nlq": f"G2 {i}",
+                "golden_sql": f"SELECT * FROM t2 WHERE b = {i}",
+            }
+            for i in range(1, 4)
+        ]
+        + [
+            {
+                "id": f"g3_{i}",
+                "database": "db",
+                "nlq": f"G3 {i}",
+                "golden_sql": f"SELECT * FROM t3 WHERE c = {i}",
+            }
+            for i in range(1, 5)
+        ]
+    )
+    skewed_in = tmp_path / "skewed_golden.json"
+    skewed_in.write_text(json.dumps(skewed_entries), encoding="utf-8")
+    skewed_out = tmp_path / "skewed_out"
+    await split_dataset(
+        str(skewed_in),
+        str(skewed_out),
+        hillclimb_ratio=0.6,
+        min_holdout_size=4,
+        previous_holdout_path=str(prev_path),
+    )
+    skewed_holdout = json.loads(
+        (skewed_out / "splits" / "holdout.json").read_text(encoding="utf-8")
+    )
+    skewed_holdout_ids = {item["id"] for item in skewed_holdout}
+    assert skewed_holdout_ids.isdisjoint({item["id"] for item in skewed_prev_holdout})

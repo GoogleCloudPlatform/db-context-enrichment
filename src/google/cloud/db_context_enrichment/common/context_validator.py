@@ -1,3 +1,4 @@
+import collections
 import json
 import re
 from typing import Any
@@ -27,33 +28,44 @@ _INTENT_QMARK_PARAM_RE = re.compile(r"(?:^|(?<=[\s=(<>:,\[]))['\"]?\?")
 _VALUE_PARAM_RE = re.compile(r"(?<!\$)\$value\b")
 
 
+_SINGLE_QUOTED_LIT_RE = re.compile(r"'(?:''|\\'|[^'])*'")
+_MQL_QUOTED_LIT_RE = re.compile(r"'(?:''|\\'|[^'])*'|\"(?:\\\"|[^\"])*\"")
+
+
 def _strip_sql_comments_and_strings(
     sql: str,
     *,
     allow_mql_quoted_params: bool = True,
-    literal_strings: set[str] | None = None,
+    literal_strings: collections.Counter[str] | set[str] | None = None,
 ) -> str:
-    """Strips SQL comments and single-quoted string literals before scanning for placeholders.
+    """Strips SQL comments and string literals before scanning for placeholders.
 
     In parameterized MQL queries/snippets (starting with 'db.', '{', or '['),
-    standalone single-quoted positional placeholders like '$1' are preserved
-    (unless they were already present as literal strings in the unparameterized query)
-    so they match intent placeholders.
+    standalone single- or double-quoted positional placeholders like '$1' or "$1"
+    are preserved (unless accounted for by the baseline count of literal strings
+    in the unparameterized query) so they match intent placeholders.
     """
     no_comments = _strip_sql_comments(sql)
-    is_mql = allow_mql_quoted_params and no_comments.lstrip().startswith(
-        ("db.", "{", "[")
+    starts_like_mql = no_comments.lstrip().startswith(("db.", "{", "["))
+    is_mql = allow_mql_quoted_params and starts_like_mql
+    remaining_literals: collections.Counter[str] = (
+        collections.Counter(literal_strings)
+        if literal_strings is not None
+        else collections.Counter()
     )
-    ignored_literals = literal_strings or set()
-    return re.sub(
-        r"'(?:''|\\'|[^'])*'",
-        lambda m: (
-            m.group(0)[1:-1]
-            if is_mql
-            and re.fullmatch(r"'\$\d+'", m.group(0))
-            and m.group(0) not in ignored_literals
-            else "''"
-        ),
+
+    def _replace_quoted(m: re.Match[str]) -> str:
+        tok = m.group(0)
+        if is_mql and re.fullmatch(r"""['"]\$\d+['"]""", tok):
+            if remaining_literals[tok] > 0:
+                remaining_literals[tok] -= 1
+                return "''"
+            return tok[1:-1]
+        return "''"
+
+    lit_re = _MQL_QUOTED_LIT_RE if starts_like_mql else _SINGLE_QUOTED_LIT_RE
+    return lit_re.sub(
+        _replace_quoted,
         no_comments,
     )
 
@@ -342,7 +354,7 @@ def _extract_positional_params(
     text: str,
     strip_sql_literals: bool = False,
     allow_mql_quoted_params: bool = True,
-    literal_strings: set[str] | None = None,
+    literal_strings: collections.Counter[str] | set[str] | None = None,
     max_index: int | None = None,
 ) -> set[int]:
     cleaned = (
@@ -404,11 +416,15 @@ def _check_parameterization(raw: dict[str, Any]) -> list[dict[str, Any]]:
             suffix = f" ({descriptor})" if descriptor else ""
 
             sql_field_name, raw_sql = _get_first_present(item, sql_keys)
-            raw_sql_literals: set[str] = set()
+            raw_sql_literals: collections.Counter[str] = collections.Counter()
             if isinstance(raw_sql, str):
-                raw_sql_literals = set(
-                    re.findall(r"'(?:''|\\'|[^'])*'", _strip_sql_comments(raw_sql))
+                no_comment_raw = _strip_sql_comments(raw_sql)
+                lit_re = (
+                    _MQL_QUOTED_LIT_RE
+                    if no_comment_raw.lstrip().startswith(("db.", "{", "["))
+                    else _SINGLE_QUOTED_LIT_RE
                 )
+                raw_sql_literals = collections.Counter(lit_re.findall(no_comment_raw))
                 unparam_placeholders = _extract_positional_params(
                     raw_sql,
                     strip_sql_literals=True,

@@ -527,6 +527,22 @@ def test_firestore_mql_template_and_sql_quoted_placeholder_diagnostics(
         )
         assert validate_context_set(str(p)) == {"valid": True, "issues": []}
 
+    # 1b. Raw MQL query legitimately containing '$1' as data AND parameterized '$1' placeholder is valid
+    tpl_mql_with_literal_dollar1 = {
+        "nl_query": "Find completed orders with promo code '$1'",
+        "sql": "db.orders.find({ status: 'completed', promo_code: '$1' })",
+        "intent": "Orders with status completed and promo code '$1'",
+        "manifest": "Orders with a given status and promo code '$1'",
+        "parameterized": {
+            "parameterized_sql": "db.orders.find({ status: '$1', promo_code: '$1' })",
+            "parameterized_intent": "Orders with status $1 and promo code '$1'",
+        },
+    }
+    p_lit = _write(
+        tmp_path / "mql_lit.json", {"templates": [tpl_mql_with_literal_dollar1]}
+    )
+    assert validate_context_set(str(p_lit)) == {"valid": True, "issues": []}
+
     # 2. Standard SQL with single-quoted '$1' reports explicit diagnostic about quoted placeholder
     tpl_sql_quoted = _valid_template()
     tpl_sql_quoted["parameterized"] = {

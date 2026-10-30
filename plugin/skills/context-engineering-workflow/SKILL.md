@@ -104,7 +104,7 @@ Every tool identifies a context set by three separate arguments — `projectId`,
 | Tool | Purpose | Returns |
 | :--- | :--- | :--- |
 | `list_context_set_locations(projectId)` | Discover which locations accept context sets. | `{"locations": [...]}`. |
-| `upload_context_set(projectId, location, contextSetId, contextPayload, displayName?, description?, databases?)` | Create **or overwrite** a context set from an inline **stringified JSON string** (`contextPayload` must be a JSON string, never a parsed dict/object). There is **no file-path argument**; see *Writing a context set from disk*. When creating a **new** context set (including `<context_set_id>_draft`), pass `displayName=<contextSetId>` (if `displayName` is present in the tool's input schema); when updating an **existing** context set, omit `displayName` so its existing display name is preserved. `databases` associates a primary context set (`<context_set_id>`) with the database(s) it describes — see *Database association* (omit `databases` on temporary `<context_set_id>_draft` uploads). | A long-running operation (`name`). |
+| `upload_context_set(projectId, location, contextSetId, contextPayload, description?, databases?)` | Create **or overwrite** a context set from an inline **stringified JSON string** (`contextPayload` must be a JSON string, never a parsed dict/object). There is **no file-path argument**; see *Writing a context set from disk*. `databases` associates a primary context set (`<context_set_id>`) with the database(s) it describes — see *Database association* (omit `databases` on temporary `<context_set_id>_draft` uploads). | A long-running operation (`name`). |
 | `get_context_set(projectId, location, contextSetId)` | Read a context set. | `{"payload": "<ContextSet JSON string>", "description", "displayName", "databases": [...]}`. When called on a non-existent or deleted `contextSetId` (e.g., probing existence during `init` or verifying deletion), the server returns plain text `"Resource was not found."` in `content[0].text` with `isError: true` rather than a JSON object — treat this response as `NOT_FOUND` (and when reporting `NOT_FOUND` to the user, explicitly state that `<contextSetId>` does not exist in `<location>`; do not probe other locations). |
 | `delete_context_set(projectId, location, contextSetId)` | Delete a context set. | A long-running operation (`name`). |
 | `get_operation(projectId, location, operationId)` | Poll a long-running operation. | `{"done": bool, ...}` plus `error` on failure. |
@@ -127,7 +127,7 @@ Keys are camelCase (`databaseType`, `projectId`, `clusterId`, `instanceId`, `dat
 | `cloud-sql-postgres`, `cloud-sql-mysql` | `CLOUD_SQL` | `project` | `region` | — | `instance` | `database` |
 | `spanner` (GoogleSQL or PostgreSQL dialect) | `SPANNER` | `project` | — | — | `instance` | `database` |
 | `bigtable` | `BIGTABLE` | `project` | — | — | `instance` | — |
-| `firestore` | `FIRESTORE` | `project` | — | — | — | `database` (e.g. `(default)`) |
+| `firestore` | `FIRESTORE` | `project` | — | — | — | `database` (e.g. `my-firestore-db`) |
 | `bigquery`, `custom` | *(no `databaseType` exists for these)* — **omit the `databases` argument** for this source; tell the user once that the context set will not be linked to a database. | | | | | |
 
 Rules:

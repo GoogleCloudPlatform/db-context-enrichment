@@ -225,10 +225,43 @@ def test_normalize_sql_template_bigtable_mql_and_group_by_positions():
     assert _normalize_sql_template(bt1) != _normalize_sql_template(bt2)
     assert _normalize_sql_template(bt1) == _normalize_sql_template(bt1_var)
 
-    # 2. JSON / MQL double-quoted values after colons should be masked
+    # 2. JSON / MQL double-quoted values after colons should be masked, while single-quoted '$field' refs stay distinct
     mql1 = 'db.users.find({"city": "Prague", "age": 25})'
     mql2 = 'db.users.find({"city": "Brno", "age": 40})'
     assert _normalize_sql_template(mql1) == _normalize_sql_template(mql2)
+
+    mql_agg1 = "db.orders.aggregate([{ $match: { status: 'completed' } }, { $group: { _id: '$category', total: { $sum: '$amount' } } }])"
+    mql_agg1_var = "db.orders.aggregate([{ $match: { status: 'pending' } }, { $group: { _id: '$category', total: { $sum: '$amount' } } }])"
+    mql_agg2 = "db.orders.aggregate([{ $match: { status: 'completed' } }, { $group: { _id: '$region', total: { $sum: '$tax' } } }])"
+    assert _normalize_sql_template(mql_agg1) == _normalize_sql_template(mql_agg1_var)
+    assert _normalize_sql_template(mql_agg1) != _normalize_sql_template(mql_agg2)
+
+    # Double-quoted MQL "$field" references and case-sensitive field/column tokens stay distinct
+    mql_dq1 = 'db.orders.aggregate([{ "$match": { "status": "completed" } }, { "$group": { "_id": "$category", "total": { "$sum": "$amount" } } }])'
+    mql_dq1_var = 'db.orders.aggregate([{ "$match": { "status": "pending" } }, { "$group": { "_id": "$category", "total": { "$sum": "$amount" } } }])'
+    mql_dq2 = 'db.orders.aggregate([{ "$match": { "status": "completed" } }, { "$group": { "_id": "$region", "total": { "$sum": "$tax" } } }])'
+    assert _normalize_sql_template(mql_dq1) == _normalize_sql_template(mql_dq1_var)
+    assert _normalize_sql_template(mql_dq1) != _normalize_sql_template(mql_dq2)
+
+    mql_case1 = 'db.events.aggregate([{ "$group": { "_id": "$createdAt" } }])'
+    mql_case2 = 'db.events.aggregate([{ "$group": { "_id": "$createdat" } }])'
+    assert _normalize_sql_template(mql_case1) != _normalize_sql_template(mql_case2)
+
+    # Double-quoted string literals inside MQL arrays (e.g. $in) are masked and collapsed
+    mql_in1 = 'db.orders.find({"status": {"$in": ["completed", "shipped"]}})'
+    mql_in2 = (
+        'db.orders.find({"status": {"$in": ["cancelled", "pending", "refunded"]}})'
+    )
+    mql_in_diff_field = 'db.orders.find({"state": {"$in": ["completed", "shipped"]}})'
+    assert _normalize_sql_template(mql_in1) == _normalize_sql_template(mql_in2)
+    assert _normalize_sql_template(mql_in1) != _normalize_sql_template(
+        mql_in_diff_field
+    )
+
+    # SQL string literals starting with '$' (e.g. '$SUMMER') are masked as literals, not treated as MQL fields
+    sql_dollar1 = "SELECT COUNT(*) FROM promotions WHERE promo_code = '$SUMMER'"
+    sql_dollar2 = "SELECT COUNT(*) FROM promotions WHERE promo_code = '$WINTER'"
+    assert _normalize_sql_template(sql_dollar1) == _normalize_sql_template(sql_dollar2)
 
     # 3. Positional integers in GROUP BY / ORDER BY stay distinct while LIMIT literals are masked
     gb1 = "SELECT a, b, COUNT(*) FROM t WHERE yr = 2022 GROUP BY 1 ORDER BY 1 DESC LIMIT 5"
@@ -236,6 +269,46 @@ def test_normalize_sql_template_bigtable_mql_and_group_by_positions():
     gb2 = "SELECT a, b, COUNT(*) FROM t WHERE yr = 2022 GROUP BY 2 ORDER BY 2 DESC LIMIT 5"
     assert _normalize_sql_template(gb1) == _normalize_sql_template(gb1_var)
     assert _normalize_sql_template(gb1) != _normalize_sql_template(gb2)
+
+
+@pytest.mark.asyncio
+async def test_split_dataset_auto_relaxes_small_custom_min_holdout_size(
+    tmp_path: pathlib.Path,
+):
+    # 10 items with 2 multi-variation templates (2 items each -> max_possible_holdout = 2) and 6 singletons (e.g. from Merging/Difficulty Adjustment)
+    entries = []
+    for t in range(1, 3):
+        for v in range(1, 3):
+            entries.append(
+                {
+                    "id": f"pair_{t}_{v}",
+                    "database": "db",
+                    "nlq": f"Q {t} var {v}",
+                    "golden_sql": f"SELECT * FROM tbl_{t} WHERE x = {v}",
+                }
+            )
+    for s in range(1, 7):
+        entries.append(
+            {
+                "id": f"single_{s}",
+                "database": "db",
+                "nlq": f"Single {s}",
+                "golden_sql": f"SELECT COUNT(*) FROM single_tbl_{s}",
+            }
+        )
+    input_file = tmp_path / "expanded10.json"
+    input_file.write_text(json.dumps(entries), encoding="utf-8")
+
+    # Passing min_holdout_size=3 (round(10 * 0.3)) auto-relaxes to max_possible_holdout=2 with warning
+    out_dir = tmp_path / "expanded10_out"
+    res = await split_dataset(
+        str(input_file), str(out_dir), hillclimb_ratio=0.7, min_holdout_size=3
+    )
+    assert "Auto-relaxed min_holdout_size from 3 to 2" in res
+    holdout_data = json.loads(
+        (out_dir / "splits" / "holdout.json").read_text(encoding="utf-8")
+    )
+    assert len(holdout_data) == 2
 
 
 @pytest.mark.asyncio
@@ -314,3 +387,60 @@ async def test_split_dataset_excludes_previous_holdout_explicit_and_autodetected
     )
     exp2_auto_holdout_ids = {item["id"] for item in exp2_auto_holdout}
     assert exp1_holdout_ids.isdisjoint(exp2_auto_holdout_ids)
+
+    # Case C: A group where p >= 2 items (or all items) belong to previous_holdout_ids
+    # never leaks prior holdout items into holdout.json during upward adjustment.
+    skewed_prev_holdout = [
+        {"id": "g1_1"},
+        {"id": "g1_2"},
+        {"id": "g1_3"},  # all 3 items of g1 were in previous holdout (max_h = 0)
+        {"id": "g2_1"},
+        {"id": "g2_2"},  # 2 of 3 items of g2 were in previous holdout (max_h = 1)
+    ]
+    prev_path = tmp_path / "skewed_prev_holdout.json"
+    prev_path.write_text(json.dumps(skewed_prev_holdout), encoding="utf-8")
+
+    skewed_entries = (
+        [
+            {
+                "id": f"g1_{i}",
+                "database": "db",
+                "nlq": f"G1 {i}",
+                "golden_sql": f"SELECT * FROM t1 WHERE a = {i}",
+            }
+            for i in range(1, 4)
+        ]
+        + [
+            {
+                "id": f"g2_{i}",
+                "database": "db",
+                "nlq": f"G2 {i}",
+                "golden_sql": f"SELECT * FROM t2 WHERE b = {i}",
+            }
+            for i in range(1, 4)
+        ]
+        + [
+            {
+                "id": f"g3_{i}",
+                "database": "db",
+                "nlq": f"G3 {i}",
+                "golden_sql": f"SELECT * FROM t3 WHERE c = {i}",
+            }
+            for i in range(1, 5)
+        ]
+    )
+    skewed_in = tmp_path / "skewed_golden.json"
+    skewed_in.write_text(json.dumps(skewed_entries), encoding="utf-8")
+    skewed_out = tmp_path / "skewed_out"
+    await split_dataset(
+        str(skewed_in),
+        str(skewed_out),
+        hillclimb_ratio=0.6,
+        min_holdout_size=4,
+        previous_holdout_path=str(prev_path),
+    )
+    skewed_holdout = json.loads(
+        (skewed_out / "splits" / "holdout.json").read_text(encoding="utf-8")
+    )
+    skewed_holdout_ids = {item["id"] for item in skewed_holdout}
+    assert skewed_holdout_ids.isdisjoint({item["id"] for item in skewed_prev_holdout})

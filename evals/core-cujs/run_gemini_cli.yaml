@@ -22,6 +22,7 @@ scorers:
   # Uses an LLM to judge if the user's goal was met.
   goal_completion:
     model_config: model_configs/gemini_model.yaml
+    include_tool_calls: true
 
   # Metrics for efficiency and performance.
   turn_count: {}

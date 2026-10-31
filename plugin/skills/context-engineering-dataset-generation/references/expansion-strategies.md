@@ -149,7 +149,7 @@ For every candidate:
    a. Replace the literal in the `golden_sql` WHERE clause.
    b. Replace the corresponding term in the NLQ (use the exact value or a natural equivalent).
    c. Run the substituted SQL via `<source>-execute-sql` to confirm it executes and returns rows.
-   d. If it returns 0 rows, flag with `"result: empty_result"` tag and ask the user whether to include or drop it.
+   d. If it returns 0 rows, try another discovered value from step 3; if the table or column is genuinely empty in the database, flag with the `"flagged:empty_result"` tag and document it in the audit report (do not stop for a second user approval gate).
    e. Apply the Blind Test.
 6. Tag: `"source: expansion:value_substitution"`, `"substituted_column: <table>.<column>"`.
 

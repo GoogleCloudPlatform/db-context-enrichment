@@ -36,14 +36,6 @@ export GOOGLE_CLOUD_PROJECT="${EVAL_GCP_PROJECT_ID:-}"
 export GOOGLE_CLOUD_QUOTA_PROJECT="${EVAL_GCP_PROJECT_ID:-}"
 export CLAUDE_PLUGIN_ROOT="/workspace/plugin"
 
-# Replace the relative symlink dev-plugin/plugin/scripts -> ../../plugin/scripts
-# with a real directory copy so `claude plugins install` and `headersHelper`
-# always resolve `scripts/adc_headers.sh` regardless of working directory or cache path.
-if [ -L /workspace/dev-plugin/plugin/scripts ]; then
-  rm -f /workspace/dev-plugin/plugin/scripts
-  cp -r /workspace/plugin/scripts /workspace/dev-plugin/plugin/scripts
-fi
-
 # Isolate: copy this suite + the shared model_configs into its own working
 # directory so parallel runs don't fight over the same .venv / fake_home /
 # .claude state, and sed edits don't leak across SUTs.

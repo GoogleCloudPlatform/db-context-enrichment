@@ -22,9 +22,10 @@ def _normalize_sql_template(sql: str) -> str:
     no_comments = re.sub(r"--[^\n]*", " ", no_comments)
     cleaned = no_comments.strip().rstrip(";").strip()
 
-    # Protect Bigtable column qualifiers like cf['col'] and single/double-quoted MQL field
-    # references like '$amount' or "$amount" so distinct columns/fields don't collapse to '?'
-    # during quote masking or lose their case sensitivity during lowercasing.
+    # Protect Bigtable column qualifiers like cf['col'] (in SQL/BTQL) and MQL field/key
+    # tokens (in MQL queries starting with 'db.', '{', or '[') so distinct columns/fields
+    # don't collapse to '?' during quote masking or lose their case sensitivity.
+    is_mql = cleaned.lstrip().startswith(("db.", "{", "["))
     stashed_tokens: list[str] = []
 
     def _stash_token(match: re.Match[str]) -> str:
@@ -32,17 +33,27 @@ def _normalize_sql_template(sql: str) -> str:
         stashed_tokens.append(match.group(0))
         return f"__stashed_tok_{idx}__"
 
-    protected = re.sub(
-        r"""\b[a-zA-Z_][a-zA-Z0-9_]*\s*\[\s*'(?:''|\\'|[^'])*'\s*\]|['"]\$[a-zA-Z_][a-zA-Z0-9_.]*['"]""",
-        _stash_token,
-        cleaned,
-    )
+    if is_mql:
+        protected = re.sub(
+            r"""['"]\$[a-zA-Z_][a-zA-Z0-9_.]*['"]|(?:"(?:\\"|[^"])*"|'(?:''|\\'|[^'])*')(?=\s*:)""",
+            _stash_token,
+            cleaned,
+        )
+    else:
+        protected = re.sub(
+            r"""\b[a-zA-Z_][a-zA-Z0-9_]*\s*\[\s*'(?:''|\\'|[^'])*'\s*\]""",
+            _stash_token,
+            cleaned,
+        )
 
     # Mask single-quoted string literals (including escaped '' or \' quotes)
     normalized = re.sub(r"'(?:''|\\'|[^'])*'", "'?'", protected)
 
-    # Mask JSON / MQL double-quoted string values after colons (e.g., {"field": "val"})
-    normalized = re.sub(r':\s*"(?:\\"|[^"])*"', ': "?"', normalized)
+    # Mask double-quoted string literals in MQL (including values after ':' and inside arrays like {"$in": ["a", "b"]})
+    if is_mql:
+        normalized = re.sub(r'"(?:\\"|[^"])*"', '"?"', normalized)
+    else:
+        normalized = re.sub(r':\s*"(?:\\"|[^"])*"', ': "?"', normalized)
 
     # Protect positional column integers in GROUP BY / ORDER BY (e.g., GROUP BY 1, 2 or ORDER BY 1 DESC)
     normalized = re.sub(
@@ -66,6 +77,12 @@ def _normalize_sql_template(sql: str) -> str:
         "in (?)",
         normalized,
     )
+    if is_mql:
+        normalized = re.sub(
+            r"\[\s*(?:\?|'\?'|\"\?\")(?:\s*,\s*(?:\?|'\?'|\"\?\"))*\s*\]",
+            "[?]",
+            normalized,
+        )
 
     # Restore stashed Bigtable column qualifiers and MQL field references after masking and lowercasing
     for idx, tok in enumerate(stashed_tokens):

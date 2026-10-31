@@ -27,7 +27,7 @@
     "ctxset": {
       "type": "http",
       "url": "https://dataplex.googleapis.com/mcp/managed-context-sets",
-      "headersHelper": "bash -c 'for d in \"${CLAUDE_PLUGIN_ROOT:-}\" $(sed -n \"s/.*\\\"installPath\\\"[[:space:]]*:[[:space:]]*\\\"\\([^\\\"]*\\)\\\".*/\\1/p\" \"${HOME}/.claude/plugins/installed_plugins.json\" 2>/dev/null) \"${HOME}/.claude/plugins/cache\"/*/*/* ./plugin; do [ -f \"$d/scripts/adc_headers.sh\" ] && exec bash \"$d/scripts/adc_headers.sh\"; done; exit 1'"
+      "headersHelper": "bash -c 'for d in \"${CLAUDE_PLUGIN_ROOT}\" \"$HOME/.claude/plugins/cache\"/*/db-context-engineering*/*; do [ -f \"$d/scripts/adc_headers.sh\" ] && exec bash \"$d/scripts/adc_headers.sh\"; done; t=\"$(gcloud auth application-default print-access-token 2>/dev/null)\" || exit 1; f=\"$GOOGLE_APPLICATION_CREDENTIALS\"; [ -z \"$f\" ] && [ -n \"$CLOUDSDK_CONFIG\" ] && f=\"$CLOUDSDK_CONFIG/application_default_credentials.json\"; [ -z \"$f\" ] && f=\"$HOME/.config/gcloud/application_default_credentials.json\"; q=\"\"; [ -f \"$f\" ] && q=\"$(sed -n \"s/.*\\\"quota_project_id\\\"[[:space:]]*:[[:space:]]*\\\"\\([^\\\"]*\\)\\\".*/\\1/p\" \"$f\" | head -n 1)\"; [ -z \"$q\" ] && [ -f \"$f\" ] && q=\"$(sed -n \"s/.*\\\"project_id\\\"[[:space:]]*:[[:space:]]*\\\"\\([^\\\"]*\\)\\\".*/\\1/p\" \"$f\" | head -n 1)\"; [ -z \"$q\" ] && q=\"$GOOGLE_CLOUD_QUOTA_PROJECT\"; [ -z \"$q\" ] && q=\"$GOOGLE_CLOUD_PROJECT\"; if [ -n \"$q\" ]; then printf \"{\\\"Authorization\\\":\\\"Bearer %s\\\",\\\"X-Goog-User-Project\\\":\\\"%s\\\"}\" \"$t\" \"$q\"; else printf \"{\\\"Authorization\\\":\\\"Bearer %s\\\"}\" \"$t\"; fi'"
     }
   }
 }

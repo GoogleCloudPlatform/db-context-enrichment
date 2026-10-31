@@ -2,8 +2,8 @@
 
 **Required properties from the `kind: source` block in `tools.yaml`:**
 - Source Type (`type: firestore`)
-- Google Cloud Project ID (`project_id` or `project`)
-- Database ID (`database_id` or `database`, e.g., `my-firestore-db`; must be a named Firestore Enterprise database ID)
+- Google Cloud Project ID (`project`)
+- Database ID (`database`, e.g., `my-firestore-db`; must be a named Firestore Enterprise database ID)
 
 **Optional properties from `## Active Database` in `experiment_state.md`:**
 - `**Table Ids**` (e.g., `- **Table Ids**: ["orders", "products", "customers"]`) — when present, `generate_evalbench_configs` sets `firestore_reference.database_reference.collection_ids` in `model_config.yaml` so QueryData scopes schema discovery to the active Firestore collection(s).

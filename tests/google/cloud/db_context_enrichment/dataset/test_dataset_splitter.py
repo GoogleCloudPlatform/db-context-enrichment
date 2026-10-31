@@ -249,10 +249,14 @@ def test_normalize_sql_template_bigtable_mql_and_group_by_positions():
 
     # Double-quoted string literals inside MQL arrays (e.g. $in) are masked and collapsed
     mql_in1 = 'db.orders.find({"status": {"$in": ["completed", "shipped"]}})'
-    mql_in2 = 'db.orders.find({"status": {"$in": ["cancelled", "pending", "refunded"]}})'
+    mql_in2 = (
+        'db.orders.find({"status": {"$in": ["cancelled", "pending", "refunded"]}})'
+    )
     mql_in_diff_field = 'db.orders.find({"state": {"$in": ["completed", "shipped"]}})'
     assert _normalize_sql_template(mql_in1) == _normalize_sql_template(mql_in2)
-    assert _normalize_sql_template(mql_in1) != _normalize_sql_template(mql_in_diff_field)
+    assert _normalize_sql_template(mql_in1) != _normalize_sql_template(
+        mql_in_diff_field
+    )
 
     # SQL string literals starting with '$' (e.g. '$SUMMER') are masked as literals, not treated as MQL fields
     sql_dollar1 = "SELECT COUNT(*) FROM promotions WHERE promo_code = '$SUMMER'"

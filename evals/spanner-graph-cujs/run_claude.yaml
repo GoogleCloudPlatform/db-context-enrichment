@@ -24,6 +24,7 @@ runners:
 scorers:
   goal_completion:
     model_config: model_configs/gemini_model.yaml
+    include_tool_calls: true
 
   turn_count: {}
   end_to_end_latency: {}

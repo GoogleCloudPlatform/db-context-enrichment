@@ -3,7 +3,7 @@
 **Required Information:**
 - Data Source Name (e.g., `my-firestore-db`)
 - Google Cloud Project ID
-- Database Name (e.g., `(default)` or specific database ID)
+- Database Name (e.g., `my-firestore-db`; must be a named Firestore Enterprise database ID)
 
 **Template:**
 

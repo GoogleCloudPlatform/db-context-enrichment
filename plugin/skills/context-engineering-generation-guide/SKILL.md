@@ -44,7 +44,7 @@ The following are the currently supported context types:
 
 ### Templates
 * **Purpose**: A blueprint for a complete query lifecycle. It maps a representative natural language query to an executable SQL statement and a declarative intent, teaching the model the overarching operational logic and join paths for a common query pattern.
-* **Parameterization**: Templates are generalized by replacing literal values in the SQL and intent with placeholders (`$1`, `$2` for PostgreSQL / AlloyDB / Spanner PostgreSQL / Firestore MQL, or `?` in both `parameterized_sql` and `parameterized_intent` for Spanner GoogleSQL, BigQuery GoogleSQL, Cloud Bigtable BTQL, and MySQL — see [Phrase Extraction and Parameterization Guidelines](references/phrase_extraction/guidelines.md)) to match query variations.
+* **Parameterization**: Templates are generalized by replacing literal values in the SQL and intent with placeholders (`$1`, `$2` for PostgreSQL / AlloyDB / Spanner PostgreSQL / Cloud Bigtable BTQL / Firestore MQL, or `?` in both `parameterized_sql` and `parameterized_intent` for Spanner GoogleSQL, BigQuery GoogleSQL, and MySQL — see [Phrase Extraction and Parameterization Guidelines](references/phrase_extraction/guidelines.md)) to match query variations.
 * **Schema Layout**:
 ```json
 {

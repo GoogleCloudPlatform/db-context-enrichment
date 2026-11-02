@@ -16,6 +16,14 @@ fi
 # 2. Install dependencies
 uv sync --frozen
 
+# Replace the relative symlink dev-plugin/plugin/scripts -> ../../plugin/scripts
+# with a real directory copy once before parallel eval steps run so `claude plugins install`
+# and `headersHelper` always resolve `scripts/adc_headers.sh` without racing on /workspace.
+if [ -L dev-plugin/plugin/scripts ]; then
+    rm -f dev-plugin/plugin/scripts
+    cp -r plugin/scripts dev-plugin/plugin/scripts
+fi
+
 # 3. Get versions from pyproject.toml
 TOOLBOX_VERSION=$(grep -o '^toolbox_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)
 EVALBENCH_VERSION=$(grep -o '^evalbench_version = "[^"]*"' pyproject.toml | cut -d '"' -f 2)

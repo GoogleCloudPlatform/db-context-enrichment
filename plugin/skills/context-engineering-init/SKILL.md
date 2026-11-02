@@ -38,8 +38,8 @@ Pick the flow that matches the user's intent:
 Three sub-workflows; all operate on `.context-engineering/tools.yaml`.
 
 **Create new**
-1. Identify the DB type. The supported databases are: Cloud SQL Postgres, Cloud SQL MySQL, AlloyDB Postgres, Spanner GoogleSQL (Graph supported), Spanner PostgreSQL (no Graph support), Cloud Bigtable, Firestore (MongoDB API), BigQuery, and Custom / Pluggable Engine (`type: custom`). **Spanner dialect disambiguation rule**: if the user says "Spanner" without specifying the dialect (`GoogleSQL` vs `PostgreSQL`), run `gcloud spanner databases describe <database_name> --instance=<instance_id> --project=<project_id> --format="value(databaseDialect)"` (`GOOGLE_STANDARD_SQL` → `spanner-googlesql.md`; `POSTGRESQL` → `spanner-postgresql.md`) or explicitly ask the user before loading the reference template. Load the corresponding `references/<db_type>.md` for required fields.
-2. Ask the user for every required field explicitly. Do not fill in missing values.
+1. Identify the DB type. The supported databases are: Cloud SQL Postgres, Cloud SQL MySQL, AlloyDB Postgres, Spanner GoogleSQL (Graph supported), Spanner PostgreSQL (no Graph support), Cloud Bigtable, Firestore (MongoDB API), BigQuery, and Custom / Pluggable Engine (`type: custom`). Load the corresponding `references/<db_type>.md` for required fields. **Spanner dialect disambiguation rule**: if the user says "Spanner" without specifying the dialect (`GoogleSQL` vs `PostgreSQL`), ask the user for the dialect alongside the connection details in step 2 (or, **only if** the user has already explicitly provided `<project_id>`, `<instance_id>`, and `<database_name>` in their message, run `gcloud spanner databases describe <database_name> --instance=<instance_id> --project=<project_id> --format="value(databaseDialect)"` — `GOOGLE_STANDARD_SQL` → `spanner-googlesql.md`; `POSTGRESQL` → `spanner-postgresql.md`). Never run `gcloud spanner instances list` or `gcloud spanner databases list` to search for or guess `<instance_id>` or `<database_name>`.
+2. Ask the user for every required field explicitly (do not fill in missing values or extract unconfirmed connection details from design docs).
 3. Generate the YAML from the template with the user's values.
 4. Save to `.context-engineering/tools.yaml`. This path is fixed — the Toolbox MCP server reads it directly; any other path won't be picked up.
 
@@ -57,10 +57,10 @@ Three sub-workflows; all operate on `.context-engineering/tools.yaml`.
 
 Validate the target source(s) standalone (Example: `uvx toolbox-server@1.14.0 --config .context-engineering/tools.yaml invoke <source>-list-schemas`) — no MCP restart needed for validation. On validation failure, drop into the checks below to diagnose (e.g., `DB source reachable`, `ADC configured`).
 
-**Toolbox restart rule (always state it explicitly).** The `toolbox` MCP server only reads `tools.yaml` when it starts, so the agent's `<source>-*` tools do not change until it is restarted. Tell the user to restart it:
+**Toolbox restart & tool naming rule (always state the restart rule explicitly).** The `toolbox` MCP server only reads `tools.yaml` when it starts, so the agent's `<source>-*` tools do not change until it is restarted. *(Common naming rule: across all context-engineering skills, `<source>-list-schemas` and `<source>-execute-sql` denote a source's schema and query tools — for SQL/BTQL sources these are `<source>-list-schemas` and `<source>-execute-sql` [plus `<source>-list-graphs` for Spanner Graph], and for Firestore they are `<source>-get-schema` and `<source>-execute-mql`.)* Tell the user to restart `toolbox`:
 - after **every** write this skill makes to `tools.yaml`;
 - whenever the user says they edited `tools.yaml` themselves;
-- whenever a source listed in `tools.yaml` has no matching `<source>-list-schemas` / `<source>-execute-sql` tool in the agent's tool list (the tell-tale sign of a stale server).
+- whenever a source listed in `tools.yaml` has no matching `<source>-list-schemas` / `<source>-execute-sql` (or Firestore `<source>-get-schema` / `<source>-execute-mql`) tool in the agent's tool list (the tell-tale sign of a stale server).
 
 Restart instructions per client:
 - Gemini CLI: `/mcp reload`

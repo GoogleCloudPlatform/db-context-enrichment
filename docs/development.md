@@ -100,7 +100,7 @@ step — `--plugin-dir` only affects the session it's passed to.
 
 - `dev-plugin/plugin/.claude-plugin/plugin.json` is a separate manifest from
   `plugin/.claude-plugin/plugin.json`. It runs the server via `uv run
-  --directory ${CLAUDE_PLUGIN_ROOT}/..` instead of `uvx pkg@<version>`,
+  --project ${CLAUDE_PLUGIN_ROOT}/..` instead of `uvx pkg@<version>`,
   so no PyPI fetch and no version sync with `pyproject.toml` is
   required. It uses `name: db-context-engineering-dev` so its skills
   appear under `/db-context-engineering-dev:<skill>` and don't

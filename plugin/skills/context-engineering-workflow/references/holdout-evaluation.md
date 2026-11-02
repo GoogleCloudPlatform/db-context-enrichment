@@ -21,7 +21,7 @@
     *   **Extract Scores**: Extract `test_passed` and `test_total` from `holdout_eval/eval_reports/<job_id>/summary.csv`, and retrieve `dev_passed` and `dev_total` from the candidate iteration's (`vK`) entry in the `experiment_state.md` Iteration Log.
 
 2.  **Statistical Significance Testing (Two-Proportion Pooled z-Test & Accuracy Threshold)**:
-    *   Call the `evaluate_generalizability` tool with `dev_passed`, `dev_total`, `test_passed`, `test_total`, `tuning_target` (default `1.0`, or the user's session override if specified), and the candidate's resource string as `context_set_id` (plus optional `context_file`, `diagnosis`, `recommended_action`, and `next_step` overrides; the significance threshold `alpha = 0.05` is fixed server-side).
+    *   Call the `evaluate_generalizability` tool with `dev_passed`, `dev_total`, `test_passed`, `test_total`, `tuning_target` (default `1.0`, or the user's session override if specified), and the candidate's resource string as `context_set_id` (plus optional `context_file`, `diagnosis`, `recommended_action`, `next_step`, `failure_breakdown_md`, `actionable_recommendations_md`, `tldr_summary`, `tldr_next_steps`, and `report_output_path=".context-engineering/experiments/<experiment_name>/hillclimb/final_evaluation_report.md"` so the tool deterministically formats and writes the report; the significance threshold `alpha = 0.05` is fixed server-side).
     *   **Statistical Formulation**:
         *   $p_{\text{dev}} = \frac{x_{\text{dev}}}{N_{\text{dev}}}$, $p_{\text{test}} = \frac{x_{\text{test}}}{N_{\text{test}}}$
         *   $p_{\text{pool}} = \frac{x_{\text{dev}} + x_{\text{test}}}{N_{\text{dev}} + N_{\text{test}}}$
@@ -30,11 +30,11 @@
         *   $\text{min\_test\_accuracy} = \max(0, \text{tuning\_target} - 0.15)$ (e.g., $0.85$ when $\text{tuning\_target} = 1.0$)
     *   **Directional Decision Logic**:
         *   **INCONCLUSIVE**: $N_{\text{test}} < 45$ (underpowered sample size).
-        *   **INVESTIGATE**: ($p < 0.05$ AND $p_{\text{dev}} > p_{\text{test}}$, indicating a statistically significant drop / overfitting to hillclimbing wording) OR $p_{\text{test}} < \text{min\_test\_accuracy}$ (overall holdout accuracy is below the target threshold, e.g., when hillclimbing plateaued below target).
-        *   **PASS**: $N_{\text{test}} \ge 45$, no statistically significant drop ($p \ge 0.05$ OR $p_{\text{test}} \ge p_{\text{dev}}$), AND $p_{\text{test}} \ge \text{min\_test\_accuracy}$ (context generalizes reliably and meets the accuracy threshold).
+        *   **INVESTIGATE**: ($p < 0.05$ AND $p_{\text{dev}} > p_{\text{test}}$, indicating a statistically significant drop / overfitting to hillclimbing wording) OR $p_{\text{test}} < \text{min\_test\_accuracy}$ OR $p_{\text{dev}} < \text{min\_test\_accuracy}$ (holdout or hillclimbing accuracy is below the target threshold, e.g., when hillclimbing plateaued below target).
+        *   **PASS**: $N_{\text{test}} \ge 45$, no statistically significant drop ($p \ge 0.05$ OR $p_{\text{test}} \ge p_{\text{dev}}$), AND $p_{\text{test}} \ge \text{min\_test\_accuracy}$ AND $p_{\text{dev}} \ge \text{min\_test\_accuracy}$ (context generalizes reliably and both splits meet the accuracy threshold).
 
 3.  **Save Final Evaluation Report (`final_evaluation_report.md`)**:
-    *   Write the comprehensive audit report to `.context-engineering/experiments/<experiment_name>/hillclimb/final_evaluation_report.md`.
+    *   Write the comprehensive audit report to `.context-engineering/experiments/<experiment_name>/hillclimb/final_evaluation_report.md` (either by passing `report_output_path=".context-engineering/experiments/<experiment_name>/hillclimb/final_evaluation_report.md"`, `failure_breakdown_md`, and `actionable_recommendations_md` directly to `evaluate_generalizability`, or by writing the exact 4-section markdown returned by the tool).
     *   Ordered strictly by decision relevance (Verdict & Status $\rightarrow$ Recommended Action / Next Steps $\rightarrow$ Performance Overview & Failure Breakdown $\rightarrow$ Statistical Details):
         *   `TL;DR`: Verdict, Next Steps, Generalization Drop, Significance Assessment, Summary.
         *   `1. ACTIONABLE RECOMMENDATIONS`: Concrete recommended action and next steps for the user placed at the top. Frame recommendations at the general schema-concept or query-pattern level (e.g., a column-level Value Search, a reusable business-rule Facet, or broader phrasing coverage) rather than targeting specific failed holdout examples, literal values, or exact `golden_sql` queries from `splits/holdout.json`.
@@ -146,7 +146,7 @@ When a user asks to act on a `final_evaluation_report.md` (typically with the ha
 *   **Action:** Route to [context-engineering-dataset-generation](../../context-engineering-dataset-generation/SKILL.md) inside the new experiment, treating the copied `golden.json` as the seed. Execute the expansion workflow to scale up the dataset using template-preserving strategies until it meets the required volume and variation thresholds, overwrite `dataset/golden.json` with the expanded dataset, split with `split_dataset` (ensuring both `hillclimb.json` and `holdout.json` receive variations of every pattern), then run `context-engineering-hillclimb` seeded from the previous experiment's context set.
 
 ### 2. Verdict: INVESTIGATE
-When the verdict is INVESTIGATE, the model either suffered a statistically significant generalization drop or finished with holdout accuracy below the target threshold ($\text{tuning\_target} - 0.15$).
+When the verdict is INVESTIGATE, the model either suffered a statistically significant generalization drop or finished with holdout or hillclimbing accuracy below the target threshold ($\text{tuning\_target} - 0.15$).
 
 > [!IMPORTANT]
 > **Anti-Overfitting & Data-Leakage Rule:** Avoid overfitting the cloned experiment to the previous holdout failures. Do not memorize specific `golden_sql` queries or literal values from `splits/holdout.json`, do not add one-off `Templates`, `Facets`, or `Value Searches` tailored to individual failed holdout examples, and do not reuse the previous experiment's `splits/holdout.json`.

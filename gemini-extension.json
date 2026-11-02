@@ -5,7 +5,7 @@
     "ctxeng": {
       "command": "uvx",
       "args": [
-        "google-cloud-db-context-engineering@0.7.5"
+        "google-cloud-db-context-engineering@0.8.0"
       ]
     },
     "toolbox": {

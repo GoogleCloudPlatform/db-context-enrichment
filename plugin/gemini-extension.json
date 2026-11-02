@@ -1,6 +1,6 @@
 {
   "name": "google-cloud-db-context-engineering",
-  "version": "0.7.5",
+  "version": "0.8.0",
   "mcpServers": {
     "ctxeng": {
       "command": "uv",
@@ -24,7 +24,9 @@
       "httpUrl": "https://dataplex.googleapis.com/mcp/managed-context-sets",
       "authProviderType": "google_credentials",
       "oauth": {
-        "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
+        "scopes": [
+          "https://www.googleapis.com/auth/cloud-platform"
+        ]
       }
     }
   }

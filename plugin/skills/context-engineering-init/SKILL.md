@@ -64,8 +64,8 @@ Validate the target source(s) standalone (Example: `uvx toolbox-server@1.14.0 --
 
 Restart instructions per client:
 - Gemini CLI: `/mcp reload`
-- Claude Code: `/mcp` → `toolbox` → Reconnect (or `/quit` and relaunch)
-- Antigravity CLI: `/mcp` → `toolbox` → Restart
+- Claude Code: `/mcp` → `toolbox` → Reconnect (or `/quit` and relaunch). *(Note: On the very first run on a machine with a cold `uvx` cache, `uvx toolbox-server@1.14.0` downloads a ~40 MiB binary, which can take longer than 30s and hit Claude Code's 30s MCP connection timeout (`connection timed out after 30000ms`). If the timeout still occurs during `/mcp` → Reconnect, simply click **Reconnect** a second time — and the binary should be cached and connected)*
+- Antigravity CLI: `/mcp` → `toolbox` → Restart. *(Note: Because Antigravity starts plugin MCP servers inside `~/.gemini/config/plugins/<plugin>/` rather than the workspace directory, before asking the user to restart `toolbox` — and whenever checking `tools.yaml` in preflight — if `~/.gemini/config/plugins/db-context-engineering` or `~/.gemini/config/plugins/db-context-engineering-dev` exists, symlink its `.context-engineering` path to the active workspace via `ln -sfn "<workspace_path>/.context-engineering" ~/.gemini/config/plugins/<plugin>/.context-engineering` so `uvx` resolves `.context-engineering/tools.yaml` to the current workspace immediately on `/mcp` → Restart.)*
 
 ### Record the workspace inputs (`workspace_state.md`)
 

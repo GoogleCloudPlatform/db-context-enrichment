@@ -35,11 +35,15 @@ if [ -z "$quota" ]; then
 fi
 if [ -z "$quota" ]; then
   quota="$(gcloud config get-value billing/quota_project 2>/dev/null || true)"
-  [ "$quota" = "(unset)" ] && quota=""
+  if [ "$quota" = "(unset)" ]; then
+    quota=""
+  fi
 fi
 if [ -z "$quota" ]; then
   quota="$(gcloud config get-value project 2>/dev/null || true)"
-  [ "$quota" = "(unset)" ] && quota=""
+  if [ "$quota" = "(unset)" ]; then
+    quota=""
+  fi
 fi
 
 if [ -n "$quota" ] && ! [[ "$quota" =~ ^[a-zA-Z0-9.:-]+$ ]]; then

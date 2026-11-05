@@ -81,7 +81,6 @@ steps:
   - id: eval-gemini-cli-smoke-test
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     timeout: 2700s
     env:
@@ -93,7 +92,6 @@ steps:
   - id: eval-claude-code-smoke-test
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     timeout: 2700s
     env:
@@ -107,7 +105,6 @@ steps:
   - id: eval-gemini-cli-core-cujs
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     timeout: 5400s
     env:
@@ -119,7 +116,6 @@ steps:
   - id: eval-gemini-cli-freeform-input
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     timeout: 2700s
     env:
@@ -131,7 +127,6 @@ steps:
   - id: eval-gemini-cli-eval-dataset-gen
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     timeout: 2700s
     env:
@@ -142,7 +137,6 @@ steps:
   - id: eval-gemini-cli-spanner-graph-cujs
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
@@ -154,7 +148,6 @@ steps:
   - id: eval-claude-code-core-cujs
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     timeout: 5400s
     env:
@@ -167,7 +160,6 @@ steps:
   - id: eval-claude-code-freeform-input
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     timeout: 2700s
     env:
@@ -180,7 +172,6 @@ steps:
   - id: eval-claude-code-eval-dataset-gen
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     timeout: 2700s
     env:
@@ -192,7 +183,6 @@ steps:
   - id: eval-claude-code-spanner-graph-cujs
     name: 'us-central1-docker.pkg.dev/cloud-db-nl2sql/evalbench/eval_server:${_EVALBENCH_IMAGE_TAG}'
     entrypoint: 'bash'
-    secretEnv: ['ADC_KEY']
     waitFor: ['build-extension', 'preflight']
     env:
       - 'EVAL_GCP_PROJECT_ID=$PROJECT_ID'
@@ -304,8 +294,6 @@ availableSecrets:
   secretManager:
   - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-pat/versions/latest
     env: 'GITHUB_TOKEN'
-  - versionName: projects/cloud-db-nl2sql/secrets/context-engineering-agent-adc-credentials/versions/latest
-    env: 'ADC_KEY'
 
 serviceAccount: 'projects/cloud-db-nl2sql/serviceAccounts/crema-eval@cloud-db-nl2sql.iam.gserviceaccount.com'
 

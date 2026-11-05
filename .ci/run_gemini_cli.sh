@@ -2,7 +2,7 @@
 # Run a single evalbench suite against the Gemini CLI SUT in an isolated
 # working directory.
 #
-# Invoked from .ci/cloudbuild.yaml. Required env vars: ADC_KEY,
+# Invoked from .ci/cloudbuild.yaml. Required env vars:
 # EVAL_GCP_PROJECT_ID, EVAL_GCP_PROJECT_REGION.
 # Required argument: <suite-name> (e.g. core-cujs, freeform-input).
 
@@ -18,10 +18,12 @@ if [ "${SUITE}" != "smoke-test" ] && [ ! -f /workspace/SHOULD_RUN_GEMINI_CLI ]; 
   exit 0
 fi
 
-# ADC setup
-echo "${ADC_KEY}" > /tmp/adc.json
-chmod 600 /tmp/adc.json
-export GOOGLE_APPLICATION_CREDENTIALS=/tmp/adc.json
+# ADC setup: use Cloud Build's attached service account via the GCE metadata
+# server (no static JSON key file that expires after 90 days). Export project
+# and quota project so google-auth and MCP clients attach X-Goog-User-Project.
+unset GOOGLE_APPLICATION_CREDENTIALS
+export GOOGLE_CLOUD_PROJECT="${EVAL_GCP_PROJECT_ID:-}"
+export GOOGLE_CLOUD_QUOTA_PROJECT="${EVAL_GCP_PROJECT_ID:-}"
 
 # Isolate: copy this suite + the shared model_configs into its own working
 # directory so parallel runs don't fight over the same .venv / fake_home /
@@ -31,6 +33,18 @@ mkdir -p "${WORK_DIR}"
 cp -r "/workspace/evals/${SUITE}" "${WORK_DIR}/"
 cp -r "/workspace/evals/model_configs" "${WORK_DIR}/"
 cd "${WORK_DIR}"
+
+# Pre-seed gcloud project and quota_project config inside both real HOME and
+# Gemini CLI's sandboxed fake_home so gcloud commands run by the agent resolve
+# the project and quota project without a static ADC JSON key file.
+for GCLOUD_DIR in "${HOME}/.config/gcloud" "${WORK_DIR}/.venv/fake_home/.config/gcloud"; do
+  mkdir -p "${GCLOUD_DIR}/configurations"
+  if [ -n "${EVAL_GCP_PROJECT_ID:-}" ]; then
+    printf '[core]\nproject = %s\n[billing]\nquota_project = %s\n' \
+      "${EVAL_GCP_PROJECT_ID}" "${EVAL_GCP_PROJECT_ID}" > "${GCLOUD_DIR}/configurations/config_default"
+    printf 'default' > "${GCLOUD_DIR}/active_config"
+  fi
+done
 
 escape_sed() {
   printf '%s' "$1" | sed 's/[&|\\]/\\&/g'

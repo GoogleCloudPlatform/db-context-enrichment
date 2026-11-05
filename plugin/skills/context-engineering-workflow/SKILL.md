@@ -192,7 +192,7 @@ Two files, two jobs. `.context-engineering/workspace_state.md` holds **what the 
 
 `upload_context_set` accepts the ContextSet only as an inline JSON string in `contextPayload`. Even for ad-hoc or minimal test uploads, **the agent must run the local `validate_context_set` tool before calling `upload_context_set`**. To upload a file:
 
-1.  Run `validate_context_set` (local plugin tool) on the file. Do not upload a file that fails validation
+1.  Run `validate_context_set` (local plugin tool) on the file. Do not upload a file that fails validation.
 2.  Read the file with ordinary file tooling.
 3.  Call `upload_context_set` with `contextPayload` set to the **exact, complete** file contents. Do not summarise, reformat, truncate, or "fix" the JSON on the way through; the payload must round-trip byte-for-byte in meaning.
 4.  Follow the poll gate below.

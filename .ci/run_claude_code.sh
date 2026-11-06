@@ -2,8 +2,8 @@
 # Run a single evalbench suite against the Claude Code SUT in an isolated
 # working directory.
 #
-# Invoked from .ci/cloudbuild.yaml. Required env vars: ADC_KEY,
-# CLAUDE_GCP_VERTEX_PROJECT_ID.
+# Invoked from .ci/cloudbuild.yaml. Required env vars:
+# EVAL_GCP_PROJECT_ID, CLAUDE_GCP_VERTEX_PROJECT_ID.
 # Required argument: <suite-name> (e.g. core-cujs, freeform-input).
 
 set -e
@@ -18,20 +18,10 @@ if [ "${SUITE}" != "smoke-test" ] && [ ! -f /workspace/SHOULD_RUN_CLAUDE_CODE ];
   exit 0
 fi
 
-# ADC setup
-# Ensure `quota_project_id` is populated in /tmp/adc.json (service-account keys
-# lack it by default, and `gcloud auth application-default set-quota-project`
-# does not work on service-account key files) and copy it into the sandboxed
-# fake_home (`~/.config/gcloud/application_default_credentials.json`) because
-# evalbench's ClaudeCodeGenerator sets `HOME` and `CLOUDSDK_CONFIG` to fake_home
-# without forwarding `GOOGLE_APPLICATION_CREDENTIALS` from the host environment.
-if [ -n "${EVAL_GCP_PROJECT_ID:-}" ] && command -v jq >/dev/null 2>&1; then
-  printf '%s' "${ADC_KEY}" | jq --arg qp "${EVAL_GCP_PROJECT_ID}" '. + {quota_project_id: (.quota_project_id // $qp)}' > /tmp/adc.json
-else
-  echo "${ADC_KEY}" > /tmp/adc.json
-fi
-chmod 600 /tmp/adc.json
-export GOOGLE_APPLICATION_CREDENTIALS=/tmp/adc.json
+# ADC setup: use Cloud Build's attached service account via the GCE metadata
+# server (no static JSON key file that expires after 90 days). Export project
+# and quota project so google-auth and MCP clients attach X-Goog-User-Project.
+unset GOOGLE_APPLICATION_CREDENTIALS
 export GOOGLE_CLOUD_PROJECT="${EVAL_GCP_PROJECT_ID:-}"
 export GOOGLE_CLOUD_QUOTA_PROJECT="${EVAL_GCP_PROJECT_ID:-}"
 export CLAUDE_PLUGIN_ROOT="/workspace/plugin"
@@ -45,16 +35,16 @@ cp -r "/workspace/evals/${SUITE}" "${WORK_DIR}/"
 cp -r "/workspace/evals/model_configs" "${WORK_DIR}/"
 cd "${WORK_DIR}"
 
-# Pre-seed ADC and gcloud project config inside both real HOME and Claude Code's
-# sandboxed fake_home so `plugin/scripts/adc_headers.sh` (`headersHelper` for
-# `ctxset`) and `gcloud` commands inside Claude Code can mint tokens and read
-# `quota_project_id` immediately at plugin install and startup time.
+# Pre-seed gcloud project and quota_project config inside both real HOME and
+# Claude Code's sandboxed fake_home so `plugin/scripts/adc_headers.sh`
+# (`headersHelper` for `ctxset`) and `gcloud` commands inside Claude Code can
+# mint tokens from the GCE metadata server and read the quota project at
+# plugin install and startup time.
 for GCLOUD_DIR in "${HOME}/.config/gcloud" "${WORK_DIR}/.venv/fake_home_claude/.config/gcloud"; do
   mkdir -p "${GCLOUD_DIR}/configurations"
-  cp /tmp/adc.json "${GCLOUD_DIR}/application_default_credentials.json"
-  chmod 600 "${GCLOUD_DIR}/application_default_credentials.json"
   if [ -n "${EVAL_GCP_PROJECT_ID:-}" ]; then
-    printf '[core]\nproject = %s\n' "${EVAL_GCP_PROJECT_ID}" > "${GCLOUD_DIR}/configurations/config_default"
+    printf '[core]\nproject = %s\n[billing]\nquota_project = %s\n' \
+      "${EVAL_GCP_PROJECT_ID}" "${EVAL_GCP_PROJECT_ID}" > "${GCLOUD_DIR}/configurations/config_default"
     printf 'default' > "${GCLOUD_DIR}/active_config"
   fi
 done

@@ -33,6 +33,18 @@ fi
 if [ -z "$quota" ]; then
   quota="${GOOGLE_CLOUD_QUOTA_PROJECT:-${GOOGLE_CLOUD_PROJECT:-}}"
 fi
+if [ -z "$quota" ]; then
+  quota="$(gcloud config get-value billing/quota_project 2>/dev/null || true)"
+  if [ "$quota" = "(unset)" ]; then
+    quota=""
+  fi
+fi
+if [ -z "$quota" ]; then
+  quota="$(gcloud config get-value project 2>/dev/null || true)"
+  if [ "$quota" = "(unset)" ]; then
+    quota=""
+  fi
+fi
 
 if [ -n "$quota" ] && ! [[ "$quota" =~ ^[a-zA-Z0-9.:-]+$ ]]; then
   echo "adc_headers.sh: warning: ignoring invalid quota project format: $quota" >&2

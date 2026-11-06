@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.8.0...v0.8.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **plugin:** resolve Antigravity release feedback for toolbox routing, context set uploads, and hillclimb validation ([#231](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/231)) ([a843b1c](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/a843b1c8a83620c3be82049c45ef501bba107cca))
+
 ## [0.8.0](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.7.5...v0.8.0) (2026-11-02)
 
 

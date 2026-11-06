@@ -190,7 +190,7 @@ Two files, two jobs. `.context-engineering/workspace_state.md` holds **what the 
 
 ### Writing a context set from disk
 
-`upload_context_set` accepts the ContextSet only as an inline JSON string in `contextPayload`. To upload a file:
+`upload_context_set` accepts the ContextSet only as an inline JSON string in `contextPayload`. Even for ad-hoc or minimal test uploads, **the agent must run the local `validate_context_set` tool before calling `upload_context_set`**. To upload a file:
 
 1.  Run `validate_context_set` (local plugin tool) on the file. Do not upload a file that fails validation.
 2.  Read the file with ordinary file tooling.

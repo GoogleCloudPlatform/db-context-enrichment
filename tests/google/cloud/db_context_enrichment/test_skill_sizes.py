@@ -13,7 +13,7 @@ def test_all_skill_markdown_files_under_24kb():
 
     oversized = []
     for md_file in md_files:
-        size_bytes = md_file.stat().st_size
+        size_bytes = len(md_file.read_bytes().replace(b"\r\n", b"\n"))
         if size_bytes >= MAX_SKILL_FILE_BYTES:
             rel_path = md_file.relative_to(REPO_ROOT)
             oversized.append(

@@ -6,7 +6,7 @@
 - Dataset ID
 - *(Optional)* Dataset location (e.g., `US`, `EU`, `us-central1`)
 
-> The toolbox BigQuery source has **no `dataset` field** (toolbox rejects unknown fields). Declare the target dataset in `allowedDatasets` instead — evaluation requires exactly one entry. This also restricts the toolbox tools to that dataset.
+> The toolbox BigQuery source has **no `dataset` field** (toolbox rejects unknown fields). Declare the target dataset in `allowedDatasets` instead — evaluation and `upload_context_set` database association (`datasetId`) require exactly one entry. This also restricts the toolbox tools to that dataset.
 
 **Template:**
 

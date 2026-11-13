@@ -25,21 +25,22 @@ Every tool identifies a context set by three separate arguments — `projectId`,
 Every `upload_context_set` in this workflow **must** carry `databases` — the database the context set is for — so QueryData and the console can tie the context set to its source. `databases` is a list of structured objects:
 
 ```json
-{"databaseType": "<SPANNER|CLOUD_SQL|ALLOYDB|FIRESTORE|BIGTABLE>", "projectId": "…", "location": "…", "clusterId": "…", "instanceId": "…", "databaseId": "…"}
+{"databaseType": "<SPANNER|CLOUD_SQL|ALLOYDB|FIRESTORE|BIGTABLE|BIGQUERY>", "projectId": "…", "location": "…", "clusterId": "…", "instanceId": "…", "databaseId": "…", "datasetId": "…"}
 ```
 
-Keys are camelCase (`databaseType`, `projectId`, `clusterId`, `instanceId`, `databaseId`), as in the server's tool schema; `get_context_set` returns `databases` in the same shape, so a returned list can be passed back to `upload_context_set` unchanged.
+Keys are camelCase (`databaseType`, `projectId`, `location`, `clusterId`, `instanceId`, `databaseId`, `datasetId`), as in the server's tool schema; `get_context_set` returns `databases` in the same shape, so a returned list can be passed back to `upload_context_set` unchanged.
 
 **Derive it at upload time — never record it.** Take the **Source Name** under `## Active Database` in `experiment_state.md` (standalone: the chosen source), read that `kind: source` block from `.context-engineering/tools.yaml`, and map it with the table below (omit fields that do not apply). `tools.yaml` stays the single place connection details live; `experiment_state.md` only names the source.
 
-| `tools.yaml` source `type` | `databaseType` | `projectId` | `location` | `clusterId` | `instanceId` | `databaseId` |
-| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| `alloydb-postgres` | `ALLOYDB` | `project` | `region` | `cluster` | `instance` | `database` |
-| `cloud-sql-postgres`, `cloud-sql-mysql` | `CLOUD_SQL` | `project` | `region` | — | `instance` | `database` |
-| `spanner` (GoogleSQL or PostgreSQL dialect) | `SPANNER` | `project` | — | — | `instance` | `database` |
-| `bigtable` | `BIGTABLE` | `project` | — | — | `instance` | — |
-| `firestore` | `FIRESTORE` | `project` | — | — | — | `database` (e.g. `my-firestore-db`) |
-| `bigquery`, `custom` | *(no `databaseType` exists for these)* — **omit the `databases` argument** for this source; tell the user once that the context set will not be linked to a database. | | | | | |
+| `tools.yaml` source `type` | `databaseType` | `projectId` | `location` | `clusterId` | `instanceId` | `databaseId` | `datasetId` |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| `alloydb-postgres` | `ALLOYDB` | `project` | `region` | `cluster` | `instance` | `database` | — |
+| `cloud-sql-postgres`, `cloud-sql-mysql` | `CLOUD_SQL` | `project` | `region` | — | `instance` | `database` | — |
+| `spanner` (GoogleSQL or PostgreSQL dialect) | `SPANNER` | `project` | — | — | `instance` | `database` | — |
+| `bigtable` | `BIGTABLE` | `project` | — | — | `instance` | — | — |
+| `firestore` | `FIRESTORE` | `project` | — | — | — | `database` (e.g. `my-firestore-db`) | — |
+| `bigquery` | `BIGQUERY` | `project` | — | — | — | — | `allowedDatasets[0]` (if `project.dataset`, take the segment after `.`) |
+| `custom` | *(no `databaseType` exists for `custom`)* — **omit the `databases` argument** for this source; tell the user once that the context set will not be linked to a database. | | | | | | |
 
 Rules:
 *   **Pass it on primary context sets (`<context_set_id>`), omit it on temporary `<context_set_id>_draft` working copies** — fresh-case iteration uploads (where `<working_copy>` = `<context_set_id>`), the final candidate upload to `<context_set_id>` (or `<Seed Context Set resource>`), bootstrap's optional upload, and evaluate's standalone upload all include `databases` derived as above from the experiment's **Source Name** + `tools.yaml` (standalone bootstrap/evaluate: from the chosen source). For temporary `<context_set_id>_draft` uploads during hill-climbing (or evaluate inside an existing-case experiment), **omit `databases`** so the temporary `_draft` context set does not appear in the Google Cloud Console (Database Studio) Object Explorer UI during the run or if a session is interrupted before `Finalize`. Evalbench and `QueryData` reference `<context_set_id>_draft` directly by its explicit resource name and do not require `databases` on the draft.

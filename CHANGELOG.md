@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.2](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.8.1...v0.8.2) (2026-11-16)
+
+
+### Features
+
+* **skills:** add BigQuery database association support for Context Set uploads ([#237](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/237)) ([672afee](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/672afeebfc7bd7dcd9ae52084008dfed29bf30ad))
+
+
+### Bug Fixes
+
+* **ci:** use keyless Cloud Build metadata-server ADC instead of static SA key ([#232](https://github.com/GoogleCloudPlatform/db-context-enrichment/issues/232)) ([3beafbe](https://github.com/GoogleCloudPlatform/db-context-enrichment/commit/3beafbe1e55d71272c966486b60fde27ca2758e8))
+
 ## [0.8.1](https://github.com/GoogleCloudPlatform/db-context-enrichment/compare/v0.8.0...v0.8.1) (2026-11-06)
 
 

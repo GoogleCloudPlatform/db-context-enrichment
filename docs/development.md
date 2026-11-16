@@ -22,7 +22,7 @@ calls the remote server directly. All manifests point at **prod**
 written against the server's advertised tool schema: camelCase arguments
 (`projectId` / `location` / `contextSetId` / `contextPayload` /
 `operationId`) and the structured `databases` field
-(`{databaseType, projectId, location, clusterId, instanceId, databaseId}`).
+(`{databaseType, projectId, location, clusterId, instanceId, databaseId, datasetId}`).
 
 Auth is `authProviderType: "google_credentials"`: the client mints a
 bearer token from Application Default Credentials (scope

@@ -1326,3 +1326,49 @@ def test_get_db_generator_plugin_transitive_import_error_does_not_mutate_sys_pat
         assert sys.path == [pkg_dir]
     finally:
         sys.modules.pop("broken_dep_plugin", None)
+
+
+def test_generate_evalbench_configs_entry_groups_resource_name_verbatim():
+    """Ensure server-returned entryGroups/... resource names (including _draft) pass through verbatim."""
+    tools_yaml_content = textwrap.dedent("""\
+        kind: source
+        name: alloydb-source
+        type: alloydb-postgres
+        project: test-project
+        region: us-central1
+        cluster: test-cluster
+        instance: test-instance
+        database: test-db
+    """).strip()
+
+    kc_draft_name = (
+        "projects/test-project/locations/us-central1/entryGroups/my-ctx_draft"
+    )
+    with patch("builtins.open", mock_open(read_data=tools_yaml_content)) as m:
+        with patch(
+            "google.cloud.db_context_enrichment.evaluate.evaluate_generator._convert_dataset",
+            return_value='[{"mock": "data"}]',
+        ):
+            with patch(
+                "google.cloud.db_context_enrichment.evaluate.evaluate_generator.os.makedirs"
+            ):
+                generate_evalbench_configs(
+                    output_dir="/test/out",
+                    dataset_path="/fake/dataset.json",
+                    context_set_id=kc_draft_name,
+                    toolbox_config_path="/fake/tools.yaml",
+                    toolbox_source_name="alloydb-source",
+                )
+
+    model_config_raw = next(
+        call[0][0]
+        for call in m().write.call_args_list
+        if "generator: query_data_api" in call[0][0]
+    )
+    model_config = yaml.safe_load(model_config_raw)
+    assert (
+        model_config["context"]["datasource_references"]["alloydb"][
+            "agent_context_reference"
+        ]["context_set_id"]
+        == kc_draft_name
+    )

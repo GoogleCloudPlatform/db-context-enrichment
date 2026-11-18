@@ -186,7 +186,7 @@ def generate_evalbench_configs(
     Args:
         output_dir: Directory (absolute or workspace-relative) where the eval configs and reports should live. Created if missing.
         dataset_path: The absolute path to the golden dataset file in the simplified user-facing format (JSON list of objects with keys: "id", "database", "nlq", "golden_sql").
-        context_set_id: Full ContextSet resource name to evaluate against.
+        context_set_id: Full ContextSet resource name to evaluate against (for example, `projects/{project}/locations/{location}/contextSets/{id}` or `projects/{project}/locations/{location}/entryGroups/{id}`, as returned by `get_context_set`).
         toolbox_config_path: The absolute path to the tools.yaml configuration file.
         toolbox_source_name: The name of the database source to use inside tools.yaml. The underlying source block must use a supported 'type' (alloydb-postgres, bigquery, bigtable, cloud-sql-mysql, cloud-sql-postgres, firestore, spanner, spanner-postgres, or custom).
 

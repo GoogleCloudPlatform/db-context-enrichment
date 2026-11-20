@@ -16,9 +16,9 @@ Every tool identifies a context set by three separate arguments — `projectId`,
 | :--- | :--- | :--- |
 | `list_context_set_locations(projectId)` | Discover which locations accept context sets. | `{"locations": [...]}`. |
 | `upload_context_set(projectId, location, contextSetId, contextPayload, description?, databases?)` | Create **or overwrite** a context set from an inline **stringified JSON string** (`contextPayload` must be a JSON string, never a parsed dict/object). There is **no file-path argument**; see *Writing a context set from disk*. `databases` associates a primary context set (`<context_set_id>`) with the database(s) it describes — see *Database association* (omit `databases` on temporary `<context_set_id>_draft` uploads). | A long-running operation (`name`). |
-| `get_context_set(projectId, location, contextSetId)` | Read a context set. | `{"payload": "<ContextSet JSON string>", "description", "displayName", "databases": [...]}`. When called on a non-existent or deleted `contextSetId` (e.g., probing existence during `init` or verifying deletion), the server returns plain text `"Resource was not found."` in `content[0].text` with `isError: true` rather than a JSON object — treat this response as `NOT_FOUND` (and when reporting `NOT_FOUND` to the user, explicitly state that `<contextSetId>` does not exist in `<location>`; do not probe other locations). |
+| `get_context_set(projectId, location, contextSetId)` | Read an existing context set and its canonical `name` (read-only lookups, seed downloads, and pre-replacement checks — never called after `upload_context_set`). | `{"name"?: "projects/<project_id>/locations/<location>/<collection>/<context_set_id>", "payload": "<ContextSet JSON string>", "description", "displayName", "databases": [...]}` (`name` may be omitted/`""` on older servers — never error; see *Authoritative `name` resolution*). Non-existent/deleted IDs return plain text `"Resource was not found."` in `content[0].text` with `isError: true` — treat as `NOT_FOUND` (state `<contextSetId>` does not exist in `<location>`; do not probe other locations). |
 | `delete_context_set(projectId, location, contextSetId)` | Delete a context set. | A long-running operation (`name`). |
-| `get_operation(projectId, location, operationId)` | Poll a long-running operation. | `{"done": bool, ...}` plus `error` on failure. |
+| `get_operation(projectId, location, operationId)` | Poll a long-running operation. | `{"done": bool, "response"?: {"contextSetDetails": {"contextSet": "projects/…/<collection>/<id>"}}, "error"?: ...}` (accept both camelCase `contextSetDetails.contextSet` and snake_case `context_set_details.context_set`). |
 
 ## Database association (`databases`)
 
@@ -60,13 +60,17 @@ projects/<project_id>/locations/<location>/<collection>/<context_set_id>
 
 where `<collection>` is the service's collection segment — **`contextSets` today, expected to become `entryGroups`**. The skills never depend on that segment:
 
-*   **Parsing (always by position, never by validating the collection):** `projectId` = the segment after `projects`, `location` = the segment after `locations`, `contextSetId` = the **last** segment. Accept any collection segment; if the name does not have the `projects/…/locations/…/<collection>/<id>` structure at all, ask the user to re-check it rather than guessing.
+*   **Parsing (always by position, never by validating the collection):** `projectId` = the segment after `projects`, `location` = the segment after `locations`, `contextSetId` = the **last** segment. Accept any collection segment (`contextSets`, `entryGroups`, …); if the name does not have the `projects/…/locations/…/<collection>/<id>` structure at all, ask the user to re-check it rather than guessing.
 *   **Calling tools:** every tool takes the three parsed parts (`projectId`, `location`, `contextSetId`) — never the full string — so the collection segment is irrelevant to tool calls.
-*   **Recording names in `experiment_state.md`:** when the user supplied a resource name, record it **verbatim** as the resource it refers to (`Seed Context Set resource`, and `Final Context Set resource` when improving in place). Derive the `Draft Context Set resource` from it by replacing only the last segment with `<context_set_id>_draft`, keeping the user's collection segment. Only when *no* name was supplied (fresh experiment) construct `Final Context Set resource` / `Draft Context Set resource` with the current default collection `contextSets`. If a tool response carries a resource `name`, prefer that string verbatim over a constructed one.
-*   **Passing names to Evalbench:** `generate_evalbench_configs(context_set_id=…)` passes the string straight through to Evalbench/QueryData; give it the recorded resource string unchanged.
+*   **Authoritative `name` resolution:** never treat an omitted, empty (`""`), or `null` server `name` as an error, warning, or retry trigger:
+    *   **Post-upload (`upload_context_set` → `get_operation` returns `done: true`):** inspect `response.contextSetDetails.contextSet` (accepting both camelCase `contextSetDetails.contextSet` and snake_case `context_set_details.context_set`) from the completed `get_operation` LRO payload. If present and non-empty, use it **verbatim**. Do **not** call `get_context_set` after uploading — relying directly on the completed operation response avoids redundant Data Plane reads and transient post-create IAM propagation `403`s on net-new sets.
+    *   **Read-only lookups (no upload — `init` probes, `evaluate` resource checks, `hillclimb` seed download):** when `get_context_set(projectId, location, contextSetId)` is called, use its non-empty `name` field **verbatim**.
+    *   **Deterministic legacy fallback:** if the relevant response omits or returns an empty `name` (or before a net-new resource is first uploaded), preserve any explicitly supplied full resource name (`projects/<p>/locations/<l>/<collection>/<id>`) **verbatim** (replacing only the last segment with `<id>_draft` for drafts); otherwise fall back to `projects/<project_id>/locations/<location>/contextSets/<context_set_id>` (and `…/contextSets/<context_set_id>_draft` for drafts).
+*   **Draft working copies (`<context_set_id>_draft`) do not assume `Final`'s collection segment:** an existing `Final Context Set resource` may live at `…/contextSets/<id>` while a newly created `<id>_draft` is assigned `…/entryGroups/<id>_draft`. `init` writes a provisional `Draft Context Set resource`; once `v0` uploads `<id>_draft` and `get_operation` completes (`done: true`), `hillclimb` resolves the canonical name directly from `get_operation.response.contextSetDetails.contextSet` (or `context_set_details.context_set`, never calling `get_context_set`), updates `Draft Context Set resource` in `experiment_state.md` if the collection segment changed (verified against `(projectId, location, contextSetId)`), and passes it to `generate_evalbench_configs` and user display.
+*   **Passing names to Evalbench:** `generate_evalbench_configs(context_set_id=…)` passes the string straight through to Evalbench/QueryData; give it the resolved authoritative resource string unchanged.
 
 > [!IMPORTANT]
-> **This section is the only definition of the resource-name shape.** Peer skills (`init`, `bootstrap`, `evaluate`, `hillclimb`) and the examples in `context-engineering-hillclimb/references/layout.md` refer to it as *the Resource naming rule* and must not spell out a different path. When the service switches collection, change the default collection word above and the `layout.md` examples; nothing else should need to change.
+> **This section is the only definition of the resource-name shape and fallback.** Peer skills (`init`, `bootstrap`, `evaluate`, `hillclimb`) and the examples in `context-engineering-hillclimb/references/layout.md` refer to it as *the Resource naming rule* and must not spell out a different path.
 
 *   `<context_set_id>` is user-chosen. `context-engineering-init` asks for it once (default: the experiment name) and records it in `experiment_state.md`; peers read it from there.
 *   **Working copy — decided by whether `<context_set_id>` already exists when init probes it**, and recorded as the `Draft Context Set resource` bullet:
@@ -75,9 +79,9 @@ where `<collection>` is the service's collection segment — **`contextSets` tod
 
 ## Improving a context set that already exists on the Context Set server
 
-When the user hands over an existing resource name ("improve / fix `projects/…/<collection>/<id>`"), `context-engineering-init` parses it (rule above), confirms it exists, records it **verbatim** as `Seed Context Set resource` (its project and location are then carried by that string — `workspace_state.md` is not edited, and a mismatch with the workspace defaults is only mentioned in the summary), and asks **one** question — should the improved version replace it (**same name**, the default) or be published under a **new name**?
+When the user hands over an existing resource name ("improve / fix `projects/…/<collection>/<id>`"), `context-engineering-init` parses it (rule above), confirms it exists with `get_context_set(projectId, location, contextSetId)`, resolves the authoritative resource name (`response.name` verbatim when non-empty, else the user-supplied string verbatim — never erroring when `name` is omitted/empty), records it as `Seed Context Set resource` (its project and location are then carried by that string — `workspace_state.md` is not edited, and a mismatch with the workspace defaults is only mentioned in the summary), and asks **one** question — should the improved version replace it (**same name**, the default) or be published under a **new name**?
 
-*   **Same name** → `Context set id` = parsed `<id>`, `Final Context Set resource` = the supplied string. Because the name exists, the *existing* working-copy rule applies automatically: iterations run on `<id>_draft`, the original is untouched until the end-of-run HITL, and the original payload is kept locally as `v0/context_set_v0.json`.
+*   **Same name** → `Context set id` = parsed `<id>`, `Final Context Set resource` = that resolved authoritative resource name. Because the name exists, the *existing* working-copy rule applies automatically: iterations run on `<id>_draft` (whose own `Draft Context Set resource` is canonicalized from the completed `get_operation` LRO response after the first `_draft` upload), the original is untouched until the end-of-run HITL, and the original payload is kept locally as `v0/context_set_v0.json`.
 *   **New name** → `Context set id` = the new name; it does not exist, so the *fresh* rule applies and the seed is never written to.
 
 In both cases hillclimb seeds `v0` from the existing resource via `get_context_set` (not bootstrap). No extra bookkeeping (`Publish mode` or similar) is needed — the `Seed Context Set resource`, `Final Context Set resource` and `Draft Context Set resource` bullets fully determine the behaviour.
@@ -109,17 +113,21 @@ Two files, two jobs. `.context-engineering/workspace_state.md` holds **what the 
 3.  Call `upload_context_set` with `contextPayload` set to the **exact, complete** file contents. Do not summarise, reformat, truncate, or "fix" the JSON on the way through; the payload must round-trip byte-for-byte in meaning.
 4.  Follow the poll gate below.
 
-## Long-running operations — the poll gate
+## Long-running operations — the poll gate & post-upload name resolution
 
 `upload_context_set` and `delete_context_set` are **asynchronous**: the tool returns as soon as the request is accepted, not when the work is done. After either call:
 
-1.  Take `name` from the response. It has the form `projects/<project_id>/locations/<location>/operations/<operation_id>`; the last path segment is the `operationId`.
+1.  Take `name` from the operation response. It has the form `projects/<project_id>/locations/<location>/operations/<operation_id>`; the last path segment is the `operationId`.
 2.  Call `get_operation(projectId=…, location=…, operationId=…)` with those three parts.
 3.  If `done` is not `true`, wait **at least 5 seconds** and call again (the server asks for ≥5 s between polls). Stop after 5 minutes total.
 4.  Log every poll response so the user can see progress.
-5.  **`done: true` means the operation is complete.** Continue with the next step. No additional verification call is needed.
-6.  `done: true` together with an `error` field means the operation failed. Surface the error verbatim and stop.
-7.  If the 5-minute ceiling is reached, surface the operation name and stop.
+5.  `done: true` together with an `error` field means the operation failed. Surface the error verbatim and stop.
+6.  If the 5-minute ceiling is reached, surface the operation name and stop.
+7.  **Post-upload authoritative name resolution (`upload_context_set` only — skip on `delete_context_set`):** as soon as `get_operation` returns `done: true` without `error` (across `bootstrap`, `evaluate`, and `hillclimb`, including fresh `<context_set_id>`, `<context_set_id>_draft`, and Finalize uploads), resolve the canonical resource name directly from the completed operation (**do not call `get_context_set`**):
+    *   Read `response.contextSetDetails.contextSet` (or snake_case `response.context_set_details.context_set`) from the completed `get_operation` response and use it **verbatim** when non-empty.
+    *   If `get_operation.response` omits or returns an empty `contextSet` name, do **not** call `get_context_set`, error, warn, or retry — apply the deterministic legacy fallback in *Resource naming*.
+    *   In `hillclimb`, if that server-returned name matches the allow-listed `(projectId, location, contextSetId)` and differs from the provisional `Final Context Set resource`, `Draft Context Set resource`, or `Seed Context Set resource` bullet in `experiment_state.md`, update that bullet verbatim. Pass the resolved name to `generate_evalbench_configs(context_set_id=…)` and user display.
+    *   For `delete_context_set`, `done: true` completes the deletion directly.
 
 **Never act on a context set whose upload operation has not yet reported `done: true`.** In particular, `evaluate` must not generate Evalbench configs or launch an evaluation until the upload it depends on is done; otherwise the evaluation runs against a missing or stale context set and its score is meaningless.
 
